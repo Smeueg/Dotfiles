@@ -1,0 +1,21 @@
+#!/bin/sh
+
+file=/tmp/weather
+current_day=$(date "+%a %d %b")
+current_month=$(date "+%b")
+
+download(){
+    curl wttr.in/Bandung -o $file
+}
+
+check_date(){
+    check_date="$(grep "$current_month" $file -m1 | grep -o "$current_day")"
+    [ -z "$check_date" ] && download
+}
+
+if [ -f $file ]; then
+    check_date
+    less -Srf $file
+else
+    download && $0
+fi

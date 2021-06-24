@@ -1,0 +1,42 @@
+#!/bin/bash
+
+alias screenFetch="curl -Ls https://github.com/KittyKatt/screenFetch/raw/master/screenfetch-dev | bash"
+alias neofetch="curl -Ls https://github.com/dylanaraps/neofetch/raw/master/neofetch | bash"
+alias pfetch="curl -Ls https://github.com/dylanaraps/pfetch/raw/master/pfetch | sh"
+
+
+# Simple aliases
+alias cman="connmanctl"
+alias e="$EDITOR"
+
+
+# Default options
+alias ytmp3="youtube-dl --extract-audio --audio-format mp3"
+alias mkdir="mkdir -pv"
+alias grep="grep --color=auto"
+alias diff="diff --color=always"
+alias ls="ls --color --group-directories-first"
+alias mv="mv -i"
+alias rm="rm -I"
+alias cp="cp -i"
+alias ip="ip --color=auto"
+
+# Devour terminal
+command -v devour >/dev/null && alias z="devour zathura"
+
+if command -v devour >/dev/null; then
+  alias sxiv="devour sxiv -o"
+  alias z="devour zathura"
+else
+  alias sxiv="sxiv -o"
+  alias z="zathura"
+fi
+
+# Bookmarks
+alias scr="cd ~/.local/bin/; ls"
+alias D="cd ~/Documents"
+
+# Extra functionality
+alias makepkgmem="BUILDDIR=/tmp/makepkg makepkg"
+alias parumem="BUILDDIR=/tmp/makepkg paru"
+alias sx="cd ~ && startx ~/.config/X11/xinitrc"

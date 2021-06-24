@@ -1,0 +1,13 @@
+:root {
+	--background: #161B1B;
+	--status_light: #252d2d;
+	--status_lighter: #2a3434;
+	--background_lighter: #1F2626;
+	--background_light: #1B2121;
+}
+
+@-moz-document url("about:newtab") {
+  .activity-stream {
+    background-color: var(--background) !important;
+  }
+}

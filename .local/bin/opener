@@ -1,0 +1,39 @@
+#!/bin/sh
+
+file="$1"
+file="/tmp/testdir/sample.pdf"
+mime_type=$(file --mime-type --brief "$file")
+
+
+execute() {
+	program="$1"
+	devour_true=$2
+	eval "command -v ${program} 2> /dev/nulll"
+	if [ $? != 0 ]; then
+		command -v herbe 2>/dev/null &&
+			ps -e | grep X &&
+			herbe "$program is not installed"
+
+		exit
+	fi
+
+
+	if [ ! -z "$devour_true" ] &&
+		[ "$devour_true" = "1" ] &&
+		command -v devour >/dev/null; then
+
+		eval "devour $program \"$file\""
+	else
+		eval "$program \"$file\""
+	fi
+}
+
+
+case $mime_type in
+	image/*) execute "sxiv"    1; exit;;
+	*/pdf)   execute "zathura" 1; exit;;
+esac
+
+case $file in
+	*.html) execute "$BROWSER" 1; exit;;
+esac

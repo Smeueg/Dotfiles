@@ -1,0 +1,19 @@
+#!/bin/sh
+if ! command -v loginctl >/dev/null; then
+	herbe "loginctl/elogind is not in this system... Will not run"
+	exit
+fi
+
+OPTIONS="\
+ Suspend           - loginctl suspend  & herbe Suspending
+ Lock              - slock
+ Lock & Suspend    - slock & loginctl suspend
+ Reboot            - loginctl reboot & herbe Rebooting
+ Shutdown          - loginctl poweroff & herbe 'Shutting down'
+ Cancel            - herbe Canceled\
+"
+
+
+Chosen=$(echo "$OPTIONS" | grep -Po "^. [A-Za-z( & )]*(?= *-)" | dmenu $@)
+[ -z "$Chosen" ] && Chosen="Cancel"
+echo "$OPTIONS" | grep -Po "$Chosen *- \K.*" | sh

@@ -1,0 +1,33 @@
+! HiDPI
+Xft.autohint: 0
+Xft.lcdfilter: lcddefault
+Xft.hintstyle: hintfull
+Xft.hinting: 1
+Xft.antialias: 1
+Xft.rgba: rgb
+
+! herbe !
+herbe.background_color: #191E1E
+herbe.border_color: #C5B7AD
+herbe.font_color: #C5B7AD
+herbe.font_pattern: JetBrains Mono:size=10
+herbe.line_spacing: 8
+herbe.padding: 15
+herbe.width: 250
+herbe.border_size: 1
+herbe.pos_x: 2
+herbe.pos_y: 40
+! 0 = TOP_LEFT, 1 = TP_RIGHT, 2 = BOTTOM_LEFT, 3 = BOTTOM_RIGHT
+herbe.corner: 1
+herbe.duration: 3
+
+! slock !
+slock.color0: #D9B48F
+slock.color4: #89644B
+slock.color1: #841E1E
+slock.color3: #D68B30
+
+! sxiv !
+Sxiv.background: #191E1E
+Sxiv.foreground: #C5B7AD
+Sxiv.font: JetBrains Mono:size=9

@@ -1,0 +1,33 @@
+#!/bin/sh
+
+xrandr_output=$(xrandr)
+x=$(echo "$xrandr_output" | grep -Po "^\s*\K.*(?=x.* \s+.*\*\s*.*)")
+y=$(echo "$xrandr_output" | grep -Po "^\s*\d+x\K.*(?=.* \s+.*\*\s*.*)")
+
+
+DmenuDisplay(){
+	width=$(expr $x / 2)
+	x_offset=$( expr $(expr $x - $width) / 2 )
+	y_offset=$( expr $(expr $y - 264) / 2 )
+
+	echo "$1" | dmenu -x $x_offset -y $y_offset -z $width -p "$2"
+}
+
+
+ChangeResolution(){
+	resolutions=$(echo "$xrandr_output" | grep -Po "\s*\K\d+x\d+\s+\d+.*")
+	SELECTED_RESOLUTION=$(DmenuDisplay "$resolutions" "Resolution for $1:" | cut -d' ' -f1)
+
+	[ ! -z "$SELECTED_RESOLUTION" ] &&
+		xrandr --output $1 --mode $SELECTED_RESOLUTION
+}
+
+
+monitor="$(echo "$xrandr_output" | grep -Po '.*(?= connected.*)')"
+
+if [ $(echo "$monitor" | wc -l) -gt 1 ]; then
+	SELECTED_MONITOR=$(DmenuDisplay "$monitor" "Select Monitor:" )
+	[ ! -z "$SELECTED_MONITOR" ] && ChangeResolution $SELECTED_MONITOR
+else
+	ChangeResolution $monitor
+fi

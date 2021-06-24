@@ -1,0 +1,223 @@
+#!/bin/bash
+colors(){
+	for i in {0..255} ; do
+	  printf "\033[38;5;${i}mcolour${i} "
+	done; echo
+}
+
+
+ff(){
+	if [ "$1" = '-h' ]; then
+		dir=$HOME
+	else
+		dir=.
+	fi
+
+
+    chosen="$(find $dir -type d \
+        \( -name 'BraveSoftware' -o -path '*/dots/*' -o -path '*/.git/*' -o -path '*/_cacache/*' -o -path '*coc*' -o -path '*.cache*' \) \
+        -prune -false -o -name '*' |
+        fzf --preview '[ -d {} ] && ls -A --color --group-directories-first {}; [ -f {} ] && head -n 100 {}')"
+
+	if [ -f "$chosen" ]; then
+		case $(file --mime-type --brief "$chosen") in
+			image*)
+				devour sxiv "$chosen" || sxiv "$chosen"
+				;;
+
+			*pdf)
+				devour zathura "$chosen" || zathura "$chosen"
+				;;
+
+			*)
+				orig_dir="$(pwd)"
+				cd "$(dirname "$chosen")"
+				$EDITOR "$(basename "$chosen")"
+				cd "$orig_dir"
+				;;
+
+		esac
+	elif [ -d "$chosen" ]; then
+		cd "$chosen"
+	fi
+
+	unset chosen
+	unset orig_dir
+}
+
+
+saur(){
+	git clone https://aur.archlinux.org/$1.git &&
+	cd $1 &&
+	aur_version=$(grep -m 1 pkgver PKGBUILD | awk -F'=' '{print $2}') &&
+	echo "AUR version: $aur_version"
+	unset aur_version
+}
+
+
+pycalc(){
+  echo -e '#!/bin/python\nprint()' > /tmp/pycalc
+	$EDITOR /tmp/pycalc
+	rm /tmp/pycalc
+}
+
+
+cheat(){ curl cheat.sh/$1 | less -Srf ; }
+
+loadDroidCam(){
+    module=$(find /usr/lib/modules/$(uname -r) -type f | grep v4l2loopback)
+    if [ -n "$module" ]; then
+        sudo modprobe videodev
+        sudo insmod "$module" width=640 height=480
+    else
+        echo "Module for current kernel not found"
+    fi
+
+	unset module
+}
+
+# DotFile "alias"
+dit(){
+    if [ $1 == "files" ]; then
+        orig_dir=$(pwd) && cd
+        files=$(git --git-dir=$HOME/.local/dots/ --work-tree=$HOME ls-tree -r master --name-only)
+        output=""
+
+        for file in $files; do
+            [ ! -f $file ] && output="${output}\n~/${file}"
+        done
+
+        [ -n "$output" ] && echo -e "Files that are present in the git repository but not locally:${output}"
+        cd $orig_dir
+    else
+        git --git-dir=$HOME/.local/dots/ --work-tree=$HOME "$@"
+    fi
+
+	unset orig_dir
+	unset files
+	unset output
+
+}
+
+
+
+# Random Wallpaper
+RandWall(){
+    file=$(ls * | shuf -n1)
+    echo "$file"
+    hsetroot -cover $file
+	unset file
+}
+
+
+# TestDirectory in /tmp
+tt(){
+  dir=/tmp/testdir
+  [ ! -d $dir ] && mkdir $dir; cd $dir
+  unset dir
+}
+
+
+man(){
+  if [ "$1" == "lf" ]; then
+    [ ! -f /tmp/lf.1 ] && curl -L https://github.com/gokcehan/lf/raw/master/lf.1 -o /tmp/lf.1
+    /usr/bin/man -l /tmp/lf.1
+  else
+    /usr/bin/man $@
+  fi
+}
+
+
+exportgpg(){
+  gpg --export --armor $1 > /tmp/public_keys.asc
+  gpg --export-secret-keys --armor $1 > /tmp/secret_keys.asc
+  gpg --export-ownertrust > /tmp/ownertrust.txt
+}
+
+
+backup(){
+	tar czf backup_$(date +'%d_%m_%Y').tar.gz $HOME/Documents/ &&
+	msg="Backup done" ||
+	msg="Backup failed"
+
+	(command -v herbe >/dev/null && (herbe "${msg}"; exit 0) || echo "${msg}")
+	unset msg
+}
+
+
+# n³ cd on quit (not mine)
+n()
+{
+	if [ ! -f $HOME/.config/nnn/plugins/getplugs ]; then
+		read -p "The nnn³ getplugs plugin is not installed. Download? [Y/n] " GrabPlugin
+
+		case $GrabPlugin in
+			[Yy][Ee][Ss]|[Yy]|"")
+				dir=$HOME/.config/nnn/plugins
+				[ ! -d "$dir" ] && mkdir --verbose "$dir"
+				curl -L https://raw.githubusercontent.com/jarun/nnn/master/plugins/getplugs -o $HOME/.config/nnn/plugins/getplugs
+				;;
+
+			*) echo "Will not download" ;;
+		esac
+		[ -f "$dir/getplugs" ] &&
+			[ ! -x "$dir/getplugs" ] &&
+			chmod +x "$dir/getplugs"
+
+		unset GrabPlugin
+	fi
+
+
+    # Block nesting of nnn in subshells
+    if [ -n $NNNLVL ] && [ "${NNNLVL:-0}" -ge 1 ]; then
+        echo "nnn is already running"
+        return
+    fi
+
+    # The default behaviour is to cd on quit (nnn checks if NNN_TMPFILE is set)
+    # To cd on quit only on ^G, remove the "export" as in:
+    #     NNN_TMPFILE="${XDG_CONFIG_HOME:-$HOME/.config}/nnn/.lastd"
+    # NOTE: NNN_TMPFILE is fixed, should not be modified
+    export NNN_TMPFILE="${XDG_CONFIG_HOME:-$HOME/.config}/nnn/.lastd"
+
+    # Unmask ^Q (, ^V etc.) (if required, see `stty -a`) to Quit nnn
+    # stty start undef
+    # stty stop undef
+    # stty lwrap undef
+    # stty lnext undef
+
+    nnn -Had "$@"
+
+    if [ -f "$NNN_TMPFILE" ]; then
+            . "$NNN_TMPFILE"
+            rm -f "$NNN_TMPFILE" > /dev/null
+    fi
+}
+
+
+record() {
+	if command -v ffmpeg >/dev/null; then
+		ffmpeg -f x11grab -i :0.0 $1
+	else
+		echo "! ffmpeg is not installed !"
+	fi
+}
+
+
+cell() {
+	if mountpoint -q /tmp/cell; then
+		umount /tmp/cell &&
+			rmdir /tmp/cell &&
+			echo "Unmounted /tmp/cell"
+
+	else
+		if command -v jmtpfs >/dev/null; then
+			[ ! -d /tmp/cell ] &&
+				mkdir /tmp/cell
+
+			jmtpfs /tmp/cell
+		else
+			echo "Jmtpfs is not installed"
+		fi
+	fi
+}

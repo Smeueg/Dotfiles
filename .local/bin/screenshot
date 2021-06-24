@@ -1,0 +1,58 @@
+#!/bin/sh
+! command -v && herbe "Scrot not installed"
+
+if [ "$1" == '-t' ]; then
+	dir="/tmp/TmpScreenshots/"
+	tmpmsg="in /tmp/TmpScreenshots"
+	shift
+else
+	dir="$HOME/Pictures/Screenshots"
+	tmpmsg=""
+fi
+[ ! -d "$dir" ] && mkdir --parents "$dir"
+cd "$dir"
+
+
+CMD=$(echo -e "Full Screenshot\nPartial Screenshot\nCancel" | dmenu "$@" | cut -d' ' -f1);
+Current_Date=$(date '+%Y_%m_%d-(%H:%M:%S)')
+
+
+scrot_screenshot(){
+	case $CMD in
+		Full)
+			scrot -d 0.5 "Screenshot_${Current_Date}.png" &&
+			herbe "Took Screenshot Screenshot_${Current_Date}.png ${tmpmsg}"
+			;;
+
+		Partial)
+			scrot -s -d 0.5 "Screenshot_${Current_Date}.png" &&
+			herbe "Took Screenshot Screenshot_${Current_Date}.png ${tmpmsg}"
+			;;
+
+		*) herbe "Did not take screenshot";
+	esac
+}
+
+imagemagick_screenshot(){
+	case $CMD in
+		Full)
+			sleep 0.5 && magick import -window root "Screenshot_${Current_Date}.png" &&
+			herbe "Took Screenshot Screenshot_${Current_Date}.png"
+			;;
+
+		Partial)
+			sleep 0.5 && magick import "Screenshot_${Current_Date}.png" &&
+			herbe "Took Screenshot Screenshot_${Current_Date}.png"
+			;;
+		*) herbe "Did not take screenshot";
+	esac
+}
+
+
+if command -v scrot; then
+    scrot_screenshot
+elif command -v magick; then
+    imagemagick_screenshot
+else
+    herbe "You do not have either scrot or imagemagick installed"
+fi

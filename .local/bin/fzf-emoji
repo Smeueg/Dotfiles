@@ -1,0 +1,28 @@
+#!/bin/sh
+main(){
+    selected=$(fzf --color fg+:4,bg+:-1,hl:4,hl+:6,pointer:2,prompt:2 < ~/.local/share/emoji.txt)
+    [ -z "$selected" ] && exit
+
+    echo "$selected" | cut -d ' ' -f1 | setsid -f xclip -r -selection clipboard &&
+	setsid -f herbe "Copied $(echo "$selected" | cut -d' ' -f3-) emoji to clipboard"
+}
+
+
+in_terminal(){
+    xrandr_output="$(xrandr | grep -E "\*")"
+    x=$(echo "$xrandr_output" | awk -F' *|x' '{print $2}')
+    y=$(echo "$xrandr_output" | awk -F' *|x' '{print $3}')
+
+    if command -v st; then
+        st -t fzf-emoji -g 100x30+$(expr $(expr $x - 800) / 2)+$(expr $(expr $y - 600) / 2) -e $0
+    else
+        $TERMINAL -t fzf-emoji -e $0
+    fi
+}
+
+
+if [ "$1" = "-t" ]; then
+    in_terminal
+else
+    main
+fi

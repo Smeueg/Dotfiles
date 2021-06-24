@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# This script returns an $icon and $volume variable
+
+# This line may not be required. It checks if pulseaudio is running. If not, then it will start pulseaudio
+(! pidof pulseaudio >/dev/null 2>&1 && setsid -f pulseaudio --start --exit-idle-time=-1) &
+
+sink_info=$(pactl list sinks)
+volume=$(echo "$sink_info" | grep -Po "^\s+Volume.*\/ +\K\d*[%]")
+mute=$(echo "$sink_info" | grep -Po 'Mute: \K.*')
+
+[ "$mute" = "no" ] && icon="" || icon=""

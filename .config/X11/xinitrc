@@ -1,0 +1,14 @@
+#!/bin/sh
+xrandr --output $(xrandr | awk '(NR==2){print $1}') --mode 1280x1024 --scale 1.1
+
+hsetroot -cover ~/.local/rice/Wallpapers/"Rock Thing.png"
+
+
+setxkbmap -option keypad:pointerkeys
+xset r rate 250 50
+xrdb ~/.config/X11/Xresources
+
+export WINIT_X11_SCALE_FACTOR=1
+
+xcompmgr &
+(dwmblocks &) ; exec dwm

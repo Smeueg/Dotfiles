@@ -1,0 +1,37 @@
+#!/bin/sh
+disconnect=""
+
+get_networkmanager(){
+	connected=$(nmcli device | grep -w "connected" -m1)
+	if [ -n "$connected" ]; then
+		icon=$(awk -F' ' '{print $2}' <<< "$connected" | sed 's/wifi//; s/ethernet//')
+		network=$(awk -F' ' '{print $4}' <<< "$connected" )
+	else
+		icon="$disconnect"
+		network="No Internet"
+	fi
+}
+
+
+get_connman(){
+	connected=$(connmanctl services | grep -E "^\*")
+	if [ -n "$connected" ]; then
+		type_name=$(awk -F'_| *' '(NR==1){print $3,$2}' <<< "$connected" | sed 's/wifi//; s/ethernet//')
+		icon="$(cut -d' ' -f1 <<< "$type_name")"
+		network="$(cut -d' ' -f2- <<< "$type_name")"
+	else
+		icon="$disconnect"
+		network="No Internet"
+	fi
+}
+
+
+if command -v NetworkManager >/dev/null && pgrep NetworkManager >/dev/null; then
+	get_networkmanager
+elif command -v connmand >/dev/null && pgrep connmand >/dev/null; then
+	get_connman
+else
+	icon="$disconnect"
+	network="No Internet"
+fi
+# Returns icon and network variable
