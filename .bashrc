@@ -13,9 +13,10 @@ Prompt() {
 	PS1='\[\033[1;36m\]\w'
 
 	# Git branch + symbol color depending on return value of previous command
+	PS1+='\[\033[1;32m\]'
 	PS1+="\$(
 		ret=\$?
-		printf \"\$(git branch 2>&1 | sed '/^[^*]/d; s/* \(.*\)$/\\[\\033[1;32m\\] [\1]/')\"
+		printf \"\$(git branch 2>&1 | sed '/^[^*]/d; s/* \(.*\)$/ [\1]/')\"
 		[ \$ret = 0 ] && printf '\n\[\033[32m\]' || printf '\n\[\033[31m\]'
 	)"
 
