@@ -1,0 +1,141 @@
+#!/bin/python
+import os
+
+
+# Variables #
+home   = os.environ["HOME"]
+dotDir = home + "/.local/dots"
+dotURL = "https://gitlab.com/Smeueg/Dotfiles.git"
+
+wallpaperDir = home + "/.local/rice/wallpapers"
+wallpapers   = {
+        "Rock Thing.png" : "https://images2.alphacoders.com/950/950452.png"
+}
+
+
+
+# Utilities #
+def DownloadFile(url, file):
+    from urllib.request import Request, urlopen
+
+    if file[-1] == "/":
+        file += url.split("/")[-1]
+
+    req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+
+    with open(file, 'wb') as f:
+        f.write(urlopen(req).read())
+
+
+
+# Main Code #
+class Choice:
+    def __init__(self, name, submenu, func, arg, deps):
+        self.name    = name
+        self.submenu = submenu
+        self.func    = func
+        self.arg     = arg
+        self.deps    = deps
+        self.toggled = False
+
+
+        self.missingDep = []
+        if self.deps != None:
+            path = os.environ["PATH"]
+            if type(self.deps) == str:
+                self.deps = [self.deps]
+
+            for dep in self.deps:
+                found = False
+                for directory in path.split(":"):
+                    if directory[-1] != "/":
+                        directory += "/"
+
+                    if os.access(directory + dep, os.X_OK):
+                        found = True
+
+                if not found:
+                    self.missingDep.append(dep)
+
+
+def CheckDep(choices):
+    missingDeps = {}
+
+    for choice in choices:
+        if choice.missingDep != []:
+            for dep in choice.missingDep:
+                if missingDeps.get(dep) == None:
+                    missingDeps[dep] = [choice.name]
+                else:
+                    missingDeps[dep].append(choice.name)
+
+    if missingDeps == {}:
+        return True
+
+    print("\033[1;33m!! WARNING !!\033[0m")
+
+    for dep in missingDeps:
+        print("{} is required to install:".format(dep))
+        for name in missingDeps[dep]:
+            print("  - {}".format(name))
+        print("")
+
+    confirm = input("Do you still want to continue? [Y/n] ").lower()
+    if confirm == "" or confirm == "y" or confirm == "yes":
+        return True
+
+    return False
+
+
+
+def getDot():
+    import subprocess
+    print("\n\nDownloading dotfiles...")
+    os.system("git clone --bare {} {}".format(dotURL, dotDir))
+
+
+    output = subprocess.run(["git", "--git-dir=" + dotURL, "ls-tree", "-r", "HEAD"], capture_output=True, text=True)
+    output = output.stdout
+
+    for line in output.splitlines():
+        file = line.split("\t")[1]
+
+        if os.path.isfile(home + "/" + file):
+            import shutil
+
+            directory = home + "/" + "/".join(file.split("/")[:-1])
+            os.makedirs(directory)
+            shutil.move(home + "/" + file, directory)
+
+    os.system("git --git-dir={} --work-tree={} checkout".format(dotDir, home))
+    print("Downloaded dotfiles!")
+
+
+
+def getWallpapers():
+    global wallpaperDir
+
+    if not os.path.isdir(wallpaperDir):
+        os.makedirs(wallpaperDir)
+
+    if wallpaperDir[-1] != "/":
+        wallpaperDir += "/"
+
+    for file in wallpapers:
+        DownloadFile(wallpapers[file], wallpaperDir + file)
+
+
+
+
+
+mainChoice = (
+    Choice("Dotfiles",                  None, getDot,        None, "git"),
+    Choice("Wallpaper(s)",              None, getWallpapers, None, None),
+    Choice("Suckless & Other Programs", None, None,          None, ["git", "patch"]),
+    Choice("Fonts",                     None, None,          None, None)
+)
+
+if not CheckDep(mainChoice):
+    exit(-1)
+
+
