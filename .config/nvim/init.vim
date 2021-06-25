@@ -94,12 +94,13 @@ function! CompileAndOrRun()
 	w
 
 	let filetypes = {
-		\ 'c'      : term_cmd.'cc "'.file.'" -o "'.file_noext.'" && "'.file_noext.'"',
-		\ 'cpp'    : term_cmd.'g++ "'.file.'" -o "'.file_noext.'" && "'.file_noext.'"',
 		\ 'python' : term_cmd.'python3 %',
-		\ 'sh'     : term_cmd.'sh %',
-		\ 'vim'    : 'source %',
-		\ 'html'   : '!$BROWSER "%"'
+		\ 'cpp'    : term_cmd.'g++ "'.file.'" -o "'.file_noext.'" && "'.file_noext.'"',
+		\ 'lua'    : term_cmd.'lua '.file,
+		\ 'sh'     : term_cmd.'sh '.file,
+		\ 'c'      : term_cmd.'cc "'.file.'" -o "'.file_noext.'" && "'.file_noext.'"',
+		\ 'html'   : '!$BROWSER "%"',
+		\ 'vim'    : 'source %'
 	\ }
 
 	if has_key(filetypes, &filetype)
@@ -156,8 +157,7 @@ let g:netrw_banner = 0
 autocmd FileType netrw :execute 'setlocal fillchars=eob:\ | setlocal statusline=%3*\ '
 " ----- "
 
-" Subscript n "
-execute "digraphs ns " . 0x2099
 
 if $TERM != 'linux' | set termguicolors | endif
+
 luafile ~/.config/nvim/plugconf.lua
