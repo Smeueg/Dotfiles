@@ -14,12 +14,12 @@ Prompt() {
 
 	# Git branch + symbol color depending on return value of previous command
 	PS1+="\$(
-	ret=\$?
-	printf \"\$(git branch 2>&1 | sed '/^[^*]/d; s/* \(.*\)$/\\[\\033[1;32m\\] [\1]/')\";
-	[ \$ret == 0 ] && printf '\[\033[32m\]' || printf '\033[31m'
+		ret=\$?
+		printf \"\$(git branch 2>&1 | sed '/^[^*]/d; s/* \(.*\)$/\\[\\033[1;32m\\] [\1]/')\"
+		[ \$ret = 0 ] && printf '\n\[\033[32m\]' || printf '\n\[\033[31m\]'
 	)"
 
-	PS1+='\n> '
+	PS1+='> '
 	PS1+='\[\033[0m\]'
 	export PS1
 }
@@ -100,4 +100,10 @@ if command -v nnn >/dev/null; then
 	BLK="0B" CHR="0B" DIR="04" EXE="02" REG="00" HARDLINK="05" SYMLINK="06" MISSING="07" ORPHAN="09" FIFO="06" SOCK="03" OTHER="06"
 	export NNN_FCOLORS="$BLK$CHR$DIR$EXE$REG$HARDLINK$SYMLINK$MISSING$ORPHAN$FIFO$SOCK$OTHER"
 	export NNN_OPENER=opener
+fi
+
+
+if [ ! -f "$XDG_CONFIG_HOME"/git/config ]; then
+	mkdir --parent "$XDG_CONFIG_HOME"/git
+	touch "$XDG_CONFIG_HOME"/git/config
 fi
