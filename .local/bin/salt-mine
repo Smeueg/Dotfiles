@@ -1,6 +1,17 @@
 #!/bin/python
-import os
 
+# Salt-Mine: Mine, my salty dotfiles from salt rocks
+#
+# This script is basically just a migration script using
+# curses that makes migrating my *personal* dotfiles easier
+
+
+# TODO #
+# - Check for internet connection
+# - Check if the operating system is supported
+# - Dependencies: Add the possibility to check if a file/directory exists (and and operating system)
+
+import os
 
 # Variables #
 home   = os.environ["HOME"]
@@ -15,8 +26,6 @@ wallpapers   = {
 sucklessDir = home + "/.local/rice"
 fontsDir    = home + "/.local/share/fonts"
 
-
-
 # Utilities #
 def DownloadFile(url, file):
     from urllib.request import Request, urlopen
@@ -29,7 +38,8 @@ def DownloadFile(url, file):
     with open(file, 'wb') as f:
         f.write(urlopen(req).read())
 
-def confirm(string):
+
+def Confirm(string):
     if not string.endswith("[Y/n] "):
         if string[-1] != " ":
             string += " "
@@ -42,6 +52,24 @@ def confirm(string):
 
     return False
 
+
+def GithubRegex(repoUrl, regex):
+    from urllib.request import Request, urlopen
+    import re
+    if repoUrl[-1] != "/":
+        repoUrl += "/"
+
+    repoUrl = Request(repoUrl + "releases", headers={"User-Agent": "Mozilla/5.0"})
+    repoUrl = urlopen(repoUrl).read().decode()
+
+    latestTag = re.findall("(?<=/releases/tag/).*(?=\")", repoUrl)[0]
+
+    files = []
+    for file in re.findall('(?<=href="){}(?=")'.format(regex), repoUrl):
+        if latestTag in file:
+            files.append("https://github.com" + file)
+
+    return files
 
 
 # UI
@@ -271,6 +299,7 @@ def getDot():
 
 
 
+# Wallpapers #
 def getWallpapers():
     global wallpaperDir
 
@@ -282,14 +311,62 @@ def getWallpapers():
 
     for file in wallpapers:
         DownloadFile(wallpapers[file], wallpaperDir + file)
+# ---------- #
 
 
-def getSuckless():
-    pass
+# Suckless #
+def GetSuckless(arg):
+    if type(arg) == str:
+        url     = arg
+        regex   = None
+        patches = None
+    else:
+        url     = arg[0]
+        regex   = arg[1]
+        patches = arg[2]
+
+    if regex != None:
+        url = GithubRegex(url, regex)[0]
+
+    dest = url.split("/")[-1]
+    if url.endswith(".git"):
+        dest = dest[:-4]
+        dest = sucklessDir + "/" + dest
+        os.system("git clone {}".format(url, dest))
+
+    elif url.endswith(".tar.gz"):
+        from urllib.request import Request, urlopen
+        from io import BytesIO
+        import tarfile
+        tar = Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        tar = urlopen(tar).read()
+        tar = tarfile.open(fileobj=BytesIO(tar))
+
+        dirAmount = 0
+        for member in tar.getmembers():
+            if member.isdir():
+                dirAmount += 1
+
+        if dirAmount == 1:
+            dest = sucklessDir + "/" + tar.getmembers()[0].name
+        else:
+            dest = sucklessDir + dest[:-7]
+
+        tar.extractall(dest)
+        tar.close()
+
+    if patches == None:
+        return
+
+    for patch in patches:
+        DownloadFile(patch, dest)
+        os.system("patch -d {} < {}".format(dest, dest + "/" + patch.split("/")[-1]))
+# -------- #
 
 
-def compileSuckless():
-    if confirm("Do you with to compile all of your suckless Utilities (You need root privilages)?"):
+
+def CompileSuckless():
+    if Confirm("Do you with to compile all of your suckless Utilities (You need root privilages)?"):
         import termios
         import sys
         fd = sys.stdin.fileno()
@@ -300,13 +377,14 @@ def compileSuckless():
 
 
 
+# Fonts #
 def getFonts(arg):
     from urllib.request import Request, urlopen
     from zipfile import ZipFile
     from io import BytesIO
-    url               = [arg[0]]
-    githubRegex       = arg[1]
-    directory         = arg[2]
+    url       = [arg[0]]
+    regex     = arg[1]
+    directory = arg[2]
 
     if directory == None or directory == "":
         directory = fontsDir
@@ -317,23 +395,8 @@ def getFonts(arg):
     if not os.path.isdir(directory):
         os.makedirs(directory)
 
-    if githubRegex != "" or githubRegex != None:
-        import re
-        url = url[0]
-        if url[-1] != "/":
-            url += "/"
-
-        url = Request(url + "releases", headers={"User-Agent": "Mozilla/5.0"})
-        url = urlopen(url).read().decode()
-
-        latestTag = re.findall("(?<=/releases/tag/).*(?=\")", url)[0]
-
-        files = []
-        for file in re.findall('(?<=href="){}(?=")'.format(githubRegex), url):
-            if latestTag in file:
-                files.append("https://github.com" + file)
-
-        url = files
+    if regex != "" or regex != None:
+        url = GithubRegex(url, regex)
 
 
     for file in url:
@@ -349,18 +412,32 @@ def getFonts(arg):
 
 
 suckless = (
-    Choice("Dynamic Window Manager", None, None, None, "git"),
-    Choice("Simple Terminal",        None, None, None, "git"),
-    Choice("DwmBlocks",              None, None, None, "git"),
-    Choice("Herbe",                  None, None, None, "patch"),
-    Choice("Slock",                  None, None, None, "patch"),
-    Choice("Devour",                 None, None, None, "")
+    Choice("Dynamic Window Manager", None, GetSuckless, "https://gitlab.com/Smeueg/dwm.git",       "git"),
+    Choice("Simple Terminal",        None, GetSuckless, "https://gitlab.com/Smeueg/st.git",        "git"),
+    Choice("DwmBlocks",              None, GetSuckless, "https://gitlab.com/Smeueg/dwmblocks.git", "git"),
+    Choice("Herbe", None, GetSuckless, [
+            "https://github.com/dudik/herbe",
+            ".*.tar.gz",
+            (
+                "https://patch-diff.githubusercontent.com/raw/dudik/herbe/pull/11.diff",
+                "https://patch-diff.githubusercontent.com/raw/dudik/herbe/pull/19.diff"
+            )
+        ], "patch"),
+    Choice("Slock", None, GetSuckless, [
+            "https://dl.suckless.org/tools/slock-1.4.tar.gz",
+            None,
+            (
+                "https://tools.suckless.org/slock/patches/xresources/slock-xresources-20191126-53e56c7.diff",
+            )
+        ],"patch"),
+    Choice("Devour", None, GetSuckless, ["https://github.com/salman-abedin/devour", ".*.tar.gz", None], "")
 )
 
 fonts = (
     Choice("JetBrains Mono", None, getFonts, (
             "https://github.com/JetBrains/JetBrainsMono",
-            ".*JetBrains-.*.zip", "JetBrainsMono"
+            ".*JetBrains-.*.zip",
+            "JetBrainsMono"
         ),
         None),
 
@@ -374,7 +451,7 @@ fonts = (
 mainChoice = (
     Choice("Dotfiles",                  None,     getDot,          None, "git"),
     Choice("Wallpaper(s)",              None,     getWallpapers,   None, None),
-    Choice("Suckless & Other Programs", suckless, compileSuckless, None, "make"),
+    Choice("Suckless & Other Programs", suckless, CompileSuckless, None, "make"),
     Choice("Fonts",                     fonts,    None,            None, None)
 )
 
