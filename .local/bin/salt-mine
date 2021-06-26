@@ -44,6 +44,122 @@ def confirm(string):
 
 
 
+# UI
+import curses
+stdscr = None
+menu   = None
+
+
+def drawMenu(choices, isSubmenu):
+    global stdscr
+    global menu
+
+    menuH = len(choices)
+    menuW = 0
+
+    for choice in choices:
+        if len(choice.name) > menuW:
+            menuW = len(choice.name)
+
+    if stdscr == None:
+        stdscr = curses.initscr()
+
+    menuH += 2
+    menuW += 7
+    menuY = (stdscr.getmaxyx()[0] - menuH) / 2
+    menuX = (stdscr.getmaxyx()[1] - menuW) / 2
+
+    if menu == None:
+        menu = curses.newwin(0, 0)
+
+    menu.resize(menuH, menuW)
+    menu.mvwin(int(menuY), int(menuX))
+    menu.box()
+
+
+    curses.start_color()
+    curses.use_default_colors()
+
+    curses.init_pair(1, 1, -1) # grey foreground
+    curses.init_pair(2, -1, 1) # grey background
+
+    highlighted = 0
+    while True:
+        highlightedOffset = 1
+
+        for index in range(menuH - 1):
+            attr = [curses.A_NORMAL, curses.A_REVERSE][highlighted == index]
+
+            if index != len(choices):
+                offset = 1
+                choice = choices[index]
+
+                if choice.missingDep != []:
+                    if highlighted == index:
+                        attr = curses.color_pair(2)
+                    else:
+                        attr = curses.color_pair(1)
+
+                if choice.submenu == None:
+                    string = "[" + [" ", "X"][choices[index].toggled] + "]"
+                else:
+                    string = " * "
+
+                string += " " + choices[index].name + " "
+            else:
+                string = [" CONTINUE ", " BACK "][isSubmenu]
+                offset = int((menuW - len(string)) / 2)
+
+            if highlighted == index:
+                highlightedOffset = offset
+
+            menu.addstr(index + 1, offset, string, attr)
+
+        menu.move(highlighted+1, highlightedOffset)
+
+        key = menu.getkey()
+
+
+        if key == "j" or key == curses.KEY_DOWN:
+            highlighted += (highlighted != menuH-2)
+        elif key == "k" or key == curses.KEY_UP:
+            highlighted -= (highlighted != 0)
+        elif key == "g":
+            highlighted = 0
+        elif key == "G":
+            highlighted = menuH - 2
+        elif key == "a":
+            selectedAll = True
+            for choice in choices:
+                if not choice.toggled and not choice.submenu:
+                    selectedAll = False
+                    break
+
+            for choice in choices:
+                if choice.submenu == None:
+                    choice.toggled = not selectedAll
+
+        elif key == "q":
+            curses.endwin()
+            exit(1)
+        elif key == "\n" or key == " ":
+            if highlighted == menuH-2:
+                return True
+            if choices[highlighted].missingDep != []:
+                continue
+            elif choices[highlighted].submenu == None:
+                choices[highlighted].toggled = not choices[highlighted].toggled
+            else:
+                menu.clear()
+                menu.refresh()
+                if drawMenu(choices[highlighted].submenu, True):
+                    menu.clear()
+                    menu.resize(menuH, menuW)
+                    menu.mvwin(int(menuY), int(menuX))
+                    menu.box()
+
+
+
 # Main Code #
 class Choice:
     def __init__(self, name, submenu, func, arg, deps):
@@ -73,6 +189,24 @@ class Choice:
 
                 if not found:
                     self.missingDep.append(dep)
+
+    def execute(self):
+        if self.func == None:
+            return
+
+        submenuExec = False
+        if self.submenu != None:
+            for choice in self.submenu:
+                if choice.toggled:
+                    submenuExec = True
+                    break
+
+        if self.toggled or submenuExec:
+            if self.arg == None:
+                self.func()
+            else:
+                self.func(self.arg)
+
 
 
 def CheckDep(choices):
@@ -220,7 +354,7 @@ suckless = (
     Choice("DwmBlocks",              None, None, None, "git"),
     Choice("Herbe",                  None, None, None, "patch"),
     Choice("Slock",                  None, None, None, "patch"),
-    Choice("Devour",                 None, None, None, "make")
+    Choice("Devour",                 None, None, None, "")
 )
 
 fonts = (
@@ -244,7 +378,13 @@ mainChoice = (
     Choice("Fonts",                     fonts,    None,            None, None)
 )
 
+
 if not CheckDep(mainChoice):
     exit(-1)
 
+execute = drawMenu(mainChoice, False)
+curses.endwin()
 
+if execute:
+    for choice in mainChoice:
+        choice.execute()
