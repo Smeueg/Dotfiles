@@ -12,6 +12,9 @@ wallpapers   = {
         "Rock Thing.png" : "https://images2.alphacoders.com/950/950452.png"
 }
 
+sucklessDir = home + "/.local/rice"
+fontsDir    = home + "/.local/share/fonts"
+
 
 
 # Utilities #
@@ -25,6 +28,19 @@ def DownloadFile(url, file):
 
     with open(file, 'wb') as f:
         f.write(urlopen(req).read())
+
+def confirm(string):
+    if not string.endswith("[Y/n] "):
+        if string[-1] != " ":
+            string += " "
+        string += "[Y/n] "
+
+    confirmation = input(string).lower()
+
+    if confirmation == "" or confirmation == "y" or confirmation == "yes":
+        return True
+
+    return False
 
 
 
@@ -40,6 +56,7 @@ class Choice:
 
 
         self.missingDep = []
+
         if self.deps != None:
             path = os.environ["PATH"]
             if type(self.deps) == str:
@@ -61,13 +78,21 @@ class Choice:
 def CheckDep(choices):
     missingDeps = {}
 
-    for choice in choices:
-        if choice.missingDep != []:
-            for dep in choice.missingDep:
-                if missingDeps.get(dep) == None:
-                    missingDeps[dep] = [choice.name]
-                else:
-                    missingDeps[dep].append(choice.name)
+    def getDeps(submenu, menu):
+        for choice in submenu:
+            if choice.submenu != None:
+                getDeps(choice.submenu, choice.name)
+
+            if choice.missingDep != []:
+                for dep in choice.missingDep:
+                    string = choice.name + ["", " \033[1m\033[3m\033[4min\033[0m " + menu][menu != ""]
+                    if missingDeps.get(dep) == None:
+                        missingDeps[dep] = [string]
+                    else:
+                        missingDeps[dep].append(string)
+
+
+    getDeps(choices, "")
 
     if missingDeps == {}:
         return True
@@ -125,14 +150,98 @@ def getWallpapers():
         DownloadFile(wallpapers[file], wallpaperDir + file)
 
 
+def getSuckless():
+    pass
 
 
+def compileSuckless():
+    if confirm("Do you with to compile all of your suckless Utilities (You need root privilages)?"):
+        import termios
+        import sys
+        fd = sys.stdin.fileno()
+        default = termios.tcgetattr(fd)
+        os.system("su -c 'for dir in {}/*/*[Mm]akefile; do make install -C $(dirname $dir); done'".format(sucklessDir))
+        termios.tcsetattr(fd, termios.TCSADRAIN, default)
+
+
+
+
+def getFonts(arg):
+    from urllib.request import Request, urlopen
+    from zipfile import ZipFile
+    from io import BytesIO
+    url               = [arg[0]]
+    githubRegex       = arg[1]
+    directory         = arg[2]
+
+    if directory == None or directory == "":
+        directory = fontsDir
+
+    if directory[-1] != "/":
+        directory += "/"
+
+    if not os.path.isdir(directory):
+        os.makedirs(directory)
+
+    if githubRegex != "" or githubRegex != None:
+        import re
+        url = url[0]
+        if url[-1] != "/":
+            url += "/"
+
+        url = Request(url + "releases", headers={"User-Agent": "Mozilla/5.0"})
+        url = urlopen(url).read().decode()
+
+        latestTag = re.findall("(?<=/releases/tag/).*(?=\")", url)[0]
+
+        files = []
+        for file in re.findall('(?<=href="){}(?=")'.format(githubRegex), url):
+            if latestTag in file:
+                files.append("https://github.com" + file)
+
+        url = files
+
+
+    for file in url:
+        if file.endswith(".zip"):
+            zipData = Request(file, headers={"User-Agent": "Mozilla/5.0"})
+            zipData = urlopen(zipData)
+            zipData = ZipFile(BytesIO(zipData.read()))
+            zipData.extractall(directory)
+        else:
+            DownloadFile(file, directory)
+
+
+
+
+suckless = (
+    Choice("Dynamic Window Manager", None, None, None, "git"),
+    Choice("Simple Terminal",        None, None, None, "git"),
+    Choice("DwmBlocks",              None, None, None, "git"),
+    Choice("Herbe",                  None, None, None, "patch"),
+    Choice("Slock",                  None, None, None, "patch"),
+    Choice("Devour",                 None, None, None, "make")
+)
+
+fonts = (
+    Choice("JetBrains Mono", None, getFonts, (
+            "https://github.com/JetBrains/JetBrainsMono",
+            ".*JetBrains-.*.zip", "JetBrainsMono"
+        ),
+        None),
+
+    Choice("Material Icons", None, getFonts, (
+            "https://github.com/google/material-design-icons/blob/master/font/MaterialIcons-Regular.ttf",
+            "",
+            ""),
+        None),
+)
 
 mainChoice = (
-    Choice("Dotfiles",                  None, getDot,        None, "git"),
-    Choice("Wallpaper(s)",              None, getWallpapers, None, None),
-    Choice("Suckless & Other Programs", None, None,          None, ["git", "patch"]),
-    Choice("Fonts",                     None, None,          None, None)
+    Choice("Dotfiles",                  None,     getDot,          None, "git"),
+    Choice("Wallpaper(s)",              None,     getWallpapers,   None, None),
+    Choice("Suckless & Other Programs", suckless, compileSuckless, None, "make"),
+    Choice("Fonts",                     fonts,    None,            None, None)
 )
 
 if not CheckDep(mainChoice):
