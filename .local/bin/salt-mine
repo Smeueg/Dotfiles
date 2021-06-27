@@ -78,13 +78,13 @@ def GithubRegex(repoUrl, regex):
     return files
 
 
-def checkVersion():
+def CheckVersion():
     from sys import version_info
     if version_info.major != 3:
         print("This script currently only supports python3.X")
         exit(-1)
 
-def checkInternet():
+def CheckInternet():
     import socket
 
     print("Checking internet connection")
@@ -95,7 +95,7 @@ def checkInternet():
         print("You do not have an internet connetion... Exiting")
         exit(-1)
 
-def checkOS():
+def CheckOS():
     from sys import platform
     unsupportedOS = ("win32", "cygwin")
     if platform in unsupportedOS:
@@ -347,7 +347,7 @@ def CheckDep(choices):
 
 
 # Dotfiles #
-def getDot():
+def GetDot():
     if os.path.isdir(dotDir):
         print("Target directory exists, Will not install dotfiles...")
         return
@@ -380,7 +380,7 @@ def getDot():
 
 
 # Wallpapers #
-def getWallpapers():
+def GetWallpapers():
     global wallpaperDir
 
     print("Getting wallpaper(s)")
@@ -417,6 +417,11 @@ def GetSuckless(arg):
     if url.endswith(".git"):
         dest      = dest[:-4]
         dest      = sucklessDir + "/" + dest
+
+        if os.path.isdir(dest):
+            print("Will not install {}, directory exists...".format(dest))
+            return
+
         patchDest = dest
         os.system("git clone {} {}".format(url, dest))
 
@@ -443,8 +448,13 @@ def GetSuckless(arg):
         if not os.path.isdir(dest):
             os.makedirs(dest)
 
-        tar.extractall(dest)
-        tar.close()
+        if not os.path.isdir(patchDest):
+            tar.extractall(dest)
+            tar.close()
+        else:
+            tar.close()
+            print("Will not install {}, directory exists...".format(patchDest))
+            return
     else:
         return
 
@@ -474,7 +484,7 @@ def CompileSuckless():
 
 
 # Fonts #
-def getFonts(arg):
+def GetFonts(arg):
     from urllib.request import Request, urlopen
     from zipfile import ZipFile
     from io import BytesIO
@@ -544,14 +554,14 @@ suckless = (
 )
 
 fonts = (
-    Choice("JetBrains Mono", None, getFonts, (
+    Choice("JetBrains Mono", None, GetFonts, (
             "https://github.com/JetBrains/JetBrainsMono",
             ".*JetBrainsMono\\-.*.zip",
             "JetBrainsMono"
         ),
         None),
 
-    Choice("Material Icons", None, getFonts, (
+    Choice("Material Icons", None, GetFonts, (
             "https://github.com/google/material-design-icons/blob/master/font/MaterialIcons-Regular.ttf",
             None,
             None),
@@ -559,15 +569,15 @@ fonts = (
 )
 
 mainChoice = (
-    Choice("Dotfiles",                  None,     getDot,          None, {"progs":"git"}),
-    Choice("Wallpaper(s)",              None,     getWallpapers,   None, None),
+    Choice("Dotfiles",                  None,     GetDot,          None, {"progs":"git"}),
+    Choice("Wallpaper(s)",              None,     GetWallpapers,   None, None),
     Choice("Suckless & Other Programs", suckless, CompileSuckless, None, {"progs":"make"}),
     Choice("Fonts",                     fonts,    None,            None, None)
 )
 
-checkOS()
-checkVersion()
-checkInternet()
+CheckOS()
+CheckVersion()
+CheckInternet()
 
 if not CheckDep(mainChoice):
     exit(-1)
