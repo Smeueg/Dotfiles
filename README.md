@@ -1,15 +1,14 @@
 # Salty Dotfiles for Linux Ricing and Seasoning
 These dotfiles are meant to also be used alongside my suckless forks:
-- (dwm)[https://gitlab.com/FriedTeaCP/tea-dwm]
-- (st)[https://gitlab.com/FriedTeaCP/tea-st]
-- (dwmblocks)[https://gitlab.com/FriedTeaCP/tea-dwmblocks]
-- (dmenu)[https://gitlab.com/FriedTeaCP/tea-dmenu]
+- (dwm)[https://gitlab.com/Smeueg/dwm]
+- (st)[https://gitlab.com/Smeueg/st]
+- (dwmblocks)[https://gitlab.com/Smeueg/dwmblocks]
+- (dmenu)[https://gitlab.com/Smeueg/dmenu]
 
 
 - Neovim as the text editor
-- CMUS (C Music Player) as the audio player
-- Simple Terminal (ST) as the terminal emulator
 - Tmux as a terminal multiplexer
+And some other stuff
 
 
 ## Using a git bare repository to manage your salty dotfiles
@@ -17,9 +16,12 @@ Refer to the arch wiki: https://wiki.archlinux.org/index.php/Dotfiles
 
 
 ## Installing/Migrating into a new system
-### IN DEVELOMPENT
+### Salt Mine
+This one liner:
+```sh
+curl -L https://gitlab.com/Smeueg/dotfiles/-/raw/master/.local/bin/salt-mine | python
+```
 
-After migrating/installing, make sure to allow the user to be able to shutdown, reboot, and suspend without a password (Either configuring visudo for sudo or /etc/doas.conf for doas).
 
 ### "Dependencies"
 These are all really optional, since without them, the "rice" would still be functional:
@@ -34,11 +36,7 @@ These are all really optional, since without them, the "rice" would still be fun
 ## TODO
 - Make a dwm patch to add a bottom line of the statusbar
 - Finish the migration script
-- Recreate a color-pallete and remake themes (tmux, neovim, dwm, st, dmenu, firefox, cmus, ...)
-- Show current session and all available sessions on tmux
-- Fix Fonts (FiraCode vs Jetbrains Mono) (Maybe NerdFont)
 - Create a better dotfiles management script
-- Allow user to shutdown/reboot/suspend without password
 
 
 
