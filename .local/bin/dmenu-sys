@@ -13,7 +13,6 @@ OPTIONS="\
  Cancel            - herbe Canceled\
 "
 
-
 Chosen=$(echo "$OPTIONS" | grep -Po "^. [A-Za-z( & )]*(?= *-)" | dmenu $@)
 [ -z "$Chosen" ] && Chosen="Cancel"
-echo "$OPTIONS" | grep -Po "$Chosen *- \K.*" | sh
+eval "$(echo "$OPTIONS" | grep -Po "$Chosen *- \K.*")"
