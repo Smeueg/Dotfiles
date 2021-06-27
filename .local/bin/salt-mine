@@ -9,14 +9,22 @@
 # TODO #
 # - Check for internet connection
 # - Check if the operating system is supported
-# - Dependencies: Add the possibility to check if a file/directory exists (and and operating system)
+# - Make the script compatible with python2
+# TEST
 
 import os
 
 # Variables #
-home   = os.environ["HOME"]
-dotDir = home + "/.local/dots"
-dotURL = "https://gitlab.com/Smeueg/Dotfiles.git"
+message = (
+        "Underline means the dependency or dependencies are not meant.",
+        "k: UP  j: DOWN,  a: Select All or arrow keys",
+        "G: Go to bottom  g: Go to Top"
+    )
+
+home      = os.environ["HOME"]
+dotDir    = home + "/.local/dots"
+dotBackup = home + "/dotBackup"
+dotURL    = "https://gitlab.com/Smeueg/Dotfiles.git"
 
 wallpaperDir = home + "/.local/rice/wallpapers"
 wallpapers   = {
@@ -78,6 +86,18 @@ stdscr = None
 menu   = None
 
 
+def drawMsg(menuY):
+    global stdscr
+    if stdscr == None:
+        stdscr = curses.initscr()
+
+    msgAmount = len(message)
+    for i in range(msgAmount):
+        stdscr.addstr(int(menuY-msgAmount+i), int((stdscr.getmaxyx()[1] - len(message[i])) / 2), message[i])
+
+    stdscr.refresh()
+
+
 def drawMenu(choices, isSubmenu):
     global stdscr
     global menu
@@ -99,17 +119,12 @@ def drawMenu(choices, isSubmenu):
 
     if menu == None:
         menu = curses.newwin(0, 0)
+        menu.keypad(True)
 
     menu.resize(menuH, menuW)
     menu.mvwin(int(menuY), int(menuX))
     menu.box()
-
-
-    curses.start_color()
-    curses.use_default_colors()
-
-    curses.init_pair(1, 1, -1) # grey foreground
-    curses.init_pair(2, -1, 1) # grey background
+    drawMsg(menuY)
 
     highlighted = 0
     while True:
@@ -122,11 +137,8 @@ def drawMenu(choices, isSubmenu):
                 offset = 1
                 choice = choices[index]
 
-                if choice.missingDep != []:
-                    if highlighted == index:
-                        attr = curses.color_pair(2)
-                    else:
-                        attr = curses.color_pair(1)
+                if choice.missingDep["progs"] != [] or choice.missingDep["libs"] != []:
+                    attr = attr | curses.A_UNDERLINE
 
                 if choice.submenu == None:
                     string = "[" + [" ", "X"][choices[index].toggled] + "]"
@@ -148,14 +160,22 @@ def drawMenu(choices, isSubmenu):
         key = menu.getkey()
 
 
-        if key == "j" or key == curses.KEY_DOWN:
+        if key == "j" or key == "KEY_DOWN":
             highlighted += (highlighted != menuH-2)
-        elif key == "k" or key == curses.KEY_UP:
+
+        elif key == "k" or key == "KEY_UP":
             highlighted -= (highlighted != 0)
+
         elif key == "g":
             highlighted = 0
+
         elif key == "G":
             highlighted = menuH - 2
+
+        elif key == "q":
+            curses.endwin()
+            exit(1)
+
         elif key == "a":
             selectedAll = True
             for choice in choices:
@@ -167,24 +187,34 @@ def drawMenu(choices, isSubmenu):
                 if choice.submenu == None:
                     choice.toggled = not selectedAll
 
-        elif key == "q":
-            curses.endwin()
-            exit(1)
-        elif key == "\n" or key == " ":
+        elif key == "\n" or key == " " or key == "KEY_RIGHT":
             if highlighted == menuH-2:
+                menu.clear()
+                menu.refresh()
                 return True
-            if choices[highlighted].missingDep != []:
+
+            if choices[highlighted].missingDep["progs"] != [] or choices[highlighted].missingDep["libs"]:
                 continue
-            elif choices[highlighted].submenu == None:
+
+            if choices[highlighted].submenu == None:
                 choices[highlighted].toggled = not choices[highlighted].toggled
             else:
                 menu.clear()
                 menu.refresh()
-                if drawMenu(choices[highlighted].submenu, True):
-                    menu.clear()
-                    menu.resize(menuH, menuW)
-                    menu.mvwin(int(menuY), int(menuX))
-                    menu.box()
+                stdscr.clear()
+                stdscr.refresh()
+                drawMenu(choices[highlighted].submenu, True)
+                stdscr.clear()
+                menu.clear()
+                menu.resize(menuH, menuW)
+                menu.mvwin(int(menuY), int(menuX))
+                menu.box()
+                drawMsg(menuY)
+
+        elif key == "KEY_LEFT":
+            menu.clear()
+            menu.refresh()
+            return True
 
 
 
@@ -199,89 +229,111 @@ class Choice:
         self.toggled = False
 
 
-        self.missingDep = []
+        # Dependency Checking #
+        self.missingDep = {
+            "progs" : [],
+            "libs"  : []
+        }
 
         if self.deps != None:
+            progs = self.deps.get("progs")
+            libs  = self.deps.get("libs")
+
             path = os.environ["PATH"]
-            if type(self.deps) == str:
-                self.deps = [self.deps]
+            if progs != None:
+                if type(progs) == str:
+                    progs = [progs]
 
-            for dep in self.deps:
-                found = False
-                for directory in path.split(":"):
-                    if directory[-1] != "/":
-                        directory += "/"
+                for file in progs:
+                    found = False
+                    for directory in path.split(":"):
+                        if directory[-1] != "/":
+                            directory += "/"
 
-                    if os.access(directory + dep, os.X_OK):
-                        found = True
+                        if os.access(directory + file, os.X_OK):
+                            found = True
 
-                if not found:
-                    self.missingDep.append(dep)
+                    if not found:
+                        self.missingDep["progs"].append(file)
+
+            if libs != None:
+                import subprocess
+                if type(libs) == str:
+                    libs = [libs]
+
+                for lib in libs:
+                    err = subprocess.run(["cc", "-l" + lib], capture_output=True, text=True)
+
+                    if "cannot find -l" + lib in err.stderr:
+                        self.missingDep["libs"].append("lib" + lib)
+
 
     def execute(self):
-        if self.func == None:
+        if self.func == None and self.submenu == None:
             return
 
         submenuExec = False
         if self.submenu != None:
             for choice in self.submenu:
                 if choice.toggled:
+                    choice.execute()
                     submenuExec = True
-                    break
 
-        if self.toggled or submenuExec:
+        if (self.toggled or submenuExec) and self.func != None:
             if self.arg == None:
                 self.func()
             else:
                 self.func(self.arg)
 
 
-
 def CheckDep(choices):
-    missingDeps = {}
+    print("Checking dependencies...")
+    missing = {}
 
-    def getDeps(submenu, menu):
-        for choice in submenu:
-            if choice.submenu != None:
-                getDeps(choice.submenu, choice.name)
+    def CheckMenu(menu, prevMenu):
+        for choice in menu:
+            for depType in choice.missingDep:
+                for dep in choice.missingDep[depType]:
+                    string = choice.name
 
-            if choice.missingDep != []:
-                for dep in choice.missingDep:
-                    string = choice.name + ["", " \033[1m\033[3m\033[4min\033[0m " + menu][menu != ""]
-                    if missingDeps.get(dep) == None:
-                        missingDeps[dep] = [string]
+                    if prevMenu != None:
+                        string += "\033[4m\033[1m\033[3m in \033[0m" + prevMenu.name
+
+                    if missing.get(dep) == None:
+                        missing[dep] = [string]
                     else:
-                        missingDeps[dep].append(string)
+                        missing[dep].append(string)
 
+            if choice.submenu != None:
+                CheckMenu(choice.submenu, choice)
 
-    getDeps(choices, "")
+    CheckMenu(choices, None)
 
-    if missingDeps == {}:
+    if missing == {}:
         return True
 
-    print("\033[1;33m!! WARNING !!\033[0m")
-
-    for dep in missingDeps:
-        print("{} is required to install:".format(dep))
-        for name in missingDeps[dep]:
-            print("  - {}".format(name))
+    print("!! WARNING !!")
+    for dep in missing:
+        print(dep + " is needed to install:")
+        for name in missing[dep]:
+            print("  - " + name)
         print("")
 
-    confirm = input("Do you still want to continue? [Y/n] ").lower()
-    if confirm == "" or confirm == "y" or confirm == "yes":
-        return True
-
-    return False
+    return Confirm("Do you want to continue?")
+# --------- #
 
 
-
+# Dotfiles #
 def getDot():
+    if os.path.isdir(dotDir):
+        print("Target directory exists, Will not install dotfiles...")
+        return
+
     import subprocess
     print("\n\nDownloading dotfiles...")
     os.system("git clone --bare {} {}".format(dotURL, dotDir))
 
-
-    output = subprocess.run(["git", "--git-dir=" + dotURL, "ls-tree", "-r", "HEAD"], capture_output=True, text=True)
+    output = subprocess.run(["git", "--git-dir=" + dotDir, "ls-tree", "-r", "HEAD"], capture_output=True, text=True)
     output = output.stdout
 
     for line in output.splitlines():
@@ -290,12 +342,17 @@ def getDot():
         if os.path.isfile(home + "/" + file):
             import shutil
 
-            directory = home + "/" + "/".join(file.split("/")[:-1])
-            os.makedirs(directory)
+            directory = dotBackup + "/" + "/".join(file.split("/")[:-1])
+            if not os.path.isdir(directory):
+                os.makedirs(directory)
+                print("Made directory: " + directory)
+
             shutil.move(home + "/" + file, directory)
 
     os.system("git --git-dir={} --work-tree={} checkout".format(dotDir, home))
+    os.system("git --git-dir={} config status.showUntrackedFiles no".format(dotDir))
     print("Downloaded dotfiles!")
+# -------- #
 
 
 
@@ -303,7 +360,9 @@ def getDot():
 def getWallpapers():
     global wallpaperDir
 
+    print("Getting wallpaper(s)")
     if not os.path.isdir(wallpaperDir):
+        print("Made directory: " + wallpaperDir)
         os.makedirs(wallpaperDir)
 
     if wallpaperDir[-1] != "/":
@@ -311,6 +370,7 @@ def getWallpapers():
 
     for file in wallpapers:
         DownloadFile(wallpapers[file], wallpaperDir + file)
+        print("Downloaded " + file)
 # ---------- #
 
 
@@ -328,11 +388,14 @@ def GetSuckless(arg):
     if regex != None:
         url = GithubRegex(url, regex)[0]
 
+
+    print("Downloading {}...".format(url.split("/")[-1]))
     dest = url.split("/")[-1]
     if url.endswith(".git"):
-        dest = dest[:-4]
-        dest = sucklessDir + "/" + dest
-        os.system("git clone {}".format(url, dest))
+        dest      = dest[:-4]
+        dest      = sucklessDir + "/" + dest
+        patchDest = dest
+        os.system("git clone {} {}".format(url, dest))
 
     elif url.endswith(".tar.gz"):
         from urllib.request import Request, urlopen
@@ -348,21 +411,29 @@ def GetSuckless(arg):
                 dirAmount += 1
 
         if dirAmount == 1:
-            dest = sucklessDir + "/" + tar.getmembers()[0].name
+            dest = sucklessDir
+            patchDest = sucklessDir + "/" + tar.getmembers()[0].name
         else:
-            dest = sucklessDir + dest[:-7]
+            dest      = sucklessDir + dest[:-7]
+            patchDest = dest
+
+        if not os.path.isdir(dest):
+            os.makedirs(dest)
 
         tar.extractall(dest)
         tar.close()
+    else:
+        return
 
     if patches == None:
         return
 
-    for patch in patches:
-        DownloadFile(patch, dest)
-        os.system("patch -d {} < {}".format(dest, dest + "/" + patch.split("/")[-1]))
-# -------- #
+    if patchDest[-1] != "/":
+        patchDest += "/"
 
+    for patch in patches:
+        DownloadFile(patch, patchDest)
+        os.system("patch -d {} < {}".format(patchDest, patchDest + "/" + patch.split("/")[-1]))
 
 
 def CompileSuckless():
@@ -373,6 +444,8 @@ def CompileSuckless():
         default = termios.tcgetattr(fd)
         os.system("su -c 'for dir in {}/*/*[Mm]akefile; do make install -C $(dirname $dir); done'".format(sucklessDir))
         termios.tcsetattr(fd, termios.TCSADRAIN, default)
+# -------- #
+
 
 
 
@@ -386,8 +459,11 @@ def getFonts(arg):
     regex     = arg[1]
     directory = arg[2]
 
+
     if directory == None or directory == "":
         directory = fontsDir
+    else:
+        directory = fontsDir + "/" + directory
 
     if directory[-1] != "/":
         directory += "/"
@@ -395,11 +471,11 @@ def getFonts(arg):
     if not os.path.isdir(directory):
         os.makedirs(directory)
 
-    if regex != "" or regex != None:
-        url = GithubRegex(url, regex)
-
+    if regex != "" and regex != None:
+        url = GithubRegex(url[0], regex)
 
     for file in url:
+        print("Downloading {}...".format(file.split("/")[-1]))
         if file.endswith(".zip"):
             zipData = Request(file, headers={"User-Agent": "Mozilla/5.0"})
             zipData = urlopen(zipData)
@@ -412,9 +488,15 @@ def getFonts(arg):
 
 
 suckless = (
-    Choice("Dynamic Window Manager", None, GetSuckless, "https://gitlab.com/Smeueg/dwm.git",       "git"),
-    Choice("Simple Terminal",        None, GetSuckless, "https://gitlab.com/Smeueg/st.git",        "git"),
-    Choice("DwmBlocks",              None, GetSuckless, "https://gitlab.com/Smeueg/dwmblocks.git", "git"),
+    Choice("Dynamic Window Manager", None, GetSuckless, "https://gitlab.com/Smeueg/dwm.git",
+        {"progs":"git","libs":["X11", "Xinerama", "fontconfig", "Xft"]}),
+
+    Choice("Simple Terminal", None, GetSuckless, "https://gitlab.com/Smeueg/st.git",
+        {"progs":"git","libs":["X11", "Xft", "Xrender"]}),
+
+    Choice("DwmBlocks", None, GetSuckless, "https://gitlab.com/Smeueg/dwmblocks.git",
+        {"progs":"git","libs":"X11"}),
+
     Choice("Herbe", None, GetSuckless, [
             "https://github.com/dudik/herbe",
             ".*.tar.gz",
@@ -422,36 +504,32 @@ suckless = (
                 "https://patch-diff.githubusercontent.com/raw/dudik/herbe/pull/11.diff",
                 "https://patch-diff.githubusercontent.com/raw/dudik/herbe/pull/19.diff"
             )
-        ], "patch"),
-    Choice("Slock", None, GetSuckless, [
-            "https://dl.suckless.org/tools/slock-1.4.tar.gz",
-            None,
-            (
-                "https://tools.suckless.org/slock/patches/xresources/slock-xresources-20191126-53e56c7.diff",
-            )
-        ],"patch"),
-    Choice("Devour", None, GetSuckless, ["https://github.com/salman-abedin/devour", ".*.tar.gz", None], "")
+        ], {"progs":"patch","libs":["X11","Xft"]}),
+
+    Choice("Devour", None, GetSuckless,
+        ["https://github.com/salman-abedin/devour", ".*.tar.gz", None],
+        {"libs":"X11"})
 )
 
 fonts = (
     Choice("JetBrains Mono", None, getFonts, (
             "https://github.com/JetBrains/JetBrainsMono",
-            ".*JetBrains-.*.zip",
+            ".*JetBrainsMono\\-.*.zip",
             "JetBrainsMono"
         ),
         None),
 
     Choice("Material Icons", None, getFonts, (
             "https://github.com/google/material-design-icons/blob/master/font/MaterialIcons-Regular.ttf",
-            "",
-            ""),
+            None,
+            None),
         None),
 )
 
 mainChoice = (
-    Choice("Dotfiles",                  None,     getDot,          None, "git"),
+    Choice("Dotfiles",                  None,     getDot,          None, {"progs":"git"}),
     Choice("Wallpaper(s)",              None,     getWallpapers,   None, None),
-    Choice("Suckless & Other Programs", suckless, CompileSuckless, None, "make"),
+    Choice("Suckless & Other Programs", suckless, CompileSuckless, None, {"progs":"make"}),
     Choice("Fonts",                     fonts,    None,            None, None)
 )
 
@@ -465,3 +543,4 @@ curses.endwin()
 if execute:
     for choice in mainChoice:
         choice.execute()
+
