@@ -7,8 +7,6 @@
 
 
 # TODO #
-# - Check for internet connection
-# - Check if the operating system is supported
 # - Make the script compatible with python2
 # TEST
 
@@ -78,6 +76,31 @@ def GithubRegex(repoUrl, regex):
             files.append("https://github.com" + file)
 
     return files
+
+
+def checkVersion():
+    from sys import version_info
+    if version_info.major != 3:
+        print("This script currently only supports python3.X")
+        exit(-1)
+
+def checkInternet():
+    import socket
+
+    print("Checking internet connection")
+    try:
+        socket.create_connection(("1.1.1.1", 53))
+        return
+    except:
+        print("You do not have an internet connetion... Exiting")
+        exit(-1)
+
+def checkOS():
+    from sys import platform
+    unsupportedOS = ("win32", "cygwin")
+    if platform in unsupportedOS:
+        print("No. Windows is garbage.")
+        exit(-1)
 
 
 # UI
@@ -172,7 +195,7 @@ def drawMenu(choices, isSubmenu):
         elif key == "G":
             highlighted = menuH - 2
 
-        elif key == "q":
+        elif key == "q" or ord(key) == 27: # Esc or q
             curses.endwin()
             exit(1)
 
@@ -506,6 +529,15 @@ suckless = (
             )
         ], {"progs":"patch","libs":["X11","Xft"]}),
 
+    Choice("Slock", None, GetSuckless, [
+            "https://dl.suckless.org/tools/slock-1.4.tar.gz",
+            None,
+            (
+                "https://tools.suckless.org/slock/patches/foreground-and-background/slock-foreground-and-background-20210611-35633d4.diff",
+                "https://gitlab.com/Smeueg/dotfiles/-/raw/master/.local/rice/misc/slockConfig.diff"
+            )
+        ], {"progs":"patch","libs":["X11", "Xinerama", "Xft", "Xext", "Xrandr", "Imlib2"]}),
+
     Choice("Devour", None, GetSuckless,
         ["https://github.com/salman-abedin/devour", ".*.tar.gz", None],
         {"libs":"X11"})
@@ -533,6 +565,9 @@ mainChoice = (
     Choice("Fonts",                     fonts,    None,            None, None)
 )
 
+checkOS()
+checkVersion()
+checkInternet()
 
 if not CheckDep(mainChoice):
     exit(-1)
