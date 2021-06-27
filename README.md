@@ -27,16 +27,16 @@ curl -L https://gitlab.com/Smeueg/dotfiles/-/raw/master/.local/bin/salt-mine | p
 These are all really optional, since without them, the "rice" would still be functional:
 - hsetroot (Setting the wallpaper)
 - xcompmgr or any other compositor for that matter. (For terminal transparency, change the alpha value in the st config.h)
-- setxkbmap (To enable keypad mouse/pointer)
-- xrandr (Change and grab the screen resolution)
 - xset (Change autorepeat value)
 - Patched libxft with the bgra patch for emojis on st
+- Xrandr
 
 
 ## TODO
 - Make a dwm patch to add a bottom line of the statusbar
 - Finish the migration script
 - Create a better dotfiles management script
+- Add a license
 
 
 
