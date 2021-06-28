@@ -4,13 +4,14 @@
 #
 # This script is basically just a migration script using
 # curses that makes migrating my *personal* dotfiles easier
+# Python2 *should* be supported as well
 
-
-# TODO #
-# - Make the script compatible with python2
-# TEST
-
+import sys
 import os
+try:
+    from urllib.request import Request, urlopen
+except:
+    from urllib2 import Request, urlopen
 
 # Variables #
 message = (
@@ -24,7 +25,7 @@ dotDir    = home + "/.local/dots"
 dotBackup = home + "/dotBackup"
 dotURL    = "https://gitlab.com/Smeueg/Dotfiles.git"
 
-wallpaperDir = home + "/.local/rice/wallpapers"
+wallpaperDir = home + "/.local/rice/Wallpapers"
 wallpapers   = {
         "Rock Thing.png" : "https://images2.alphacoders.com/950/950452.png"
 }
@@ -34,8 +35,6 @@ fontsDir    = home + "/.local/share/fonts"
 
 # Utilities #
 def DownloadFile(url, file):
-    from urllib.request import Request, urlopen
-
     if file[-1] == "/":
         file += url.split("/")[-1]
 
@@ -51,7 +50,12 @@ def Confirm(string):
             string += " "
         string += "[Y/n] "
 
-    confirmation = input(string).lower()
+    try:
+        inputFunc = raw_input
+    except:
+        inputFunc = input
+
+    confirmation = inputFunc(string).lower()
 
     if confirmation == "" or confirmation == "y" or confirmation == "yes":
         return True
@@ -60,13 +64,15 @@ def Confirm(string):
 
 
 def GithubRegex(repoUrl, regex):
-    from urllib.request import Request, urlopen
     import re
     if repoUrl[-1] != "/":
         repoUrl += "/"
 
     repoUrl = Request(repoUrl + "releases", headers={"User-Agent": "Mozilla/5.0"})
-    repoUrl = urlopen(repoUrl).read().decode()
+    repoUrl = urlopen(repoUrl).read()
+
+    if type(repoUrl) != str:
+        repoUrl = repoUrl.decode()
 
     latestTag = re.findall("(?<=/releases/tag/).*(?=\")", repoUrl)[0]
 
@@ -78,11 +84,23 @@ def GithubRegex(repoUrl, regex):
     return files
 
 
-def CheckVersion():
-    from sys import version_info
-    if version_info.major != 3:
-        print("This script currently only supports python3.X")
-        exit(-1)
+def GetCmd(arr):
+    import subprocess
+    out = subprocess.Popen(arr, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out = out.communicate()
+    stdout = out[0]
+    stderr = out[1]
+
+    if type(stdout) == bytes:
+        stdout = stdout.decode()
+
+    if type(stderr) == bytes:
+        stderr = stderr.decode()
+
+    return {"stdout":stdout, "stderr":stderr}
+
+
+
 
 def CheckInternet():
     import socket
@@ -93,21 +111,20 @@ def CheckInternet():
         return
     except:
         print("You do not have an internet connetion... Exiting")
-        exit(-1)
+        sys.exit(-1)
 
 def CheckOS():
     from sys import platform
-    unsupportedOS = ("win32", "cygwin")
+    unsupportedOS = ("win32", "cygwin", "msys")
     if platform in unsupportedOS:
         print("No. Windows is garbage.")
-        exit(-1)
+        sys.exit(-1)
 
 
-# UI
+# UI #
 import curses
 stdscr = None
 menu   = None
-
 
 def drawMsg(menuY):
     global stdscr
@@ -197,7 +214,7 @@ def drawMenu(choices, isSubmenu):
 
         elif key == "q" or ord(key) == 27: # Esc or q
             curses.endwin()
-            exit(1)
+            sys.exit(1)
 
         elif key == "a":
             selectedAll = True
@@ -239,6 +256,15 @@ def drawMenu(choices, isSubmenu):
             menu.refresh()
             return True
 
+def handleCtrlC(signal, frameType):
+    if not curses.isendwin():
+        curses.endwin()
+
+    sys.exit(signal)
+
+import signal
+signal.signal(signal.SIGINT, handleCtrlC)
+# -- #
 
 
 # Main Code #
@@ -280,14 +306,17 @@ class Choice:
                         self.missingDep["progs"].append(file)
 
             if libs != None:
-                import subprocess
                 if type(libs) == str:
                     libs = [libs]
 
-                for lib in libs:
-                    err = subprocess.run(["cc", "-l" + lib], capture_output=True, text=True)
+                cmd = ["cc"]
 
-                    if "cannot find -l" + lib in err.stderr:
+                for lib in libs:
+                    cmd.append("-l" + lib)
+
+                err = GetCmd(cmd)["stderr"]
+                for lib in libs:
+                    if "cannot find -l" + lib in err:
                         self.missingDep["libs"].append("lib" + lib)
 
 
@@ -310,7 +339,6 @@ class Choice:
 
 
 def CheckDep(choices):
-    print("Checking dependencies...")
     missing = {}
 
     def CheckMenu(menu, prevMenu):
@@ -352,12 +380,11 @@ def GetDot():
         print("Target directory exists, Will not install dotfiles...")
         return
 
-    import subprocess
     print("\n\nDownloading dotfiles...")
     os.system("git clone --bare {} {}".format(dotURL, dotDir))
 
-    output = subprocess.run(["git", "--git-dir=" + dotDir, "ls-tree", "-r", "HEAD"], capture_output=True, text=True)
-    output = output.stdout
+    output = GetCmd(["git", "--git-dir=" + dotDir, "ls-tree", "-r", "HEAD"])["stdout"]
+    output = "{}".format(output)
 
     for line in output.splitlines():
         file = line.split("\t")[1]
@@ -426,7 +453,6 @@ def GetSuckless(arg):
         os.system("git clone {} {}".format(url, dest))
 
     elif url.endswith(".tar.gz"):
-        from urllib.request import Request, urlopen
         from io import BytesIO
         import tarfile
         tar = Request(url, headers={"User-Agent": "Mozilla/5.0"})
@@ -485,7 +511,6 @@ def CompileSuckless():
 
 # Fonts #
 def GetFonts(arg):
-    from urllib.request import Request, urlopen
     from zipfile import ZipFile
     from io import BytesIO
     url       = [arg[0]]
@@ -518,7 +543,9 @@ def GetFonts(arg):
             DownloadFile(file, directory)
 
 
-
+CheckOS()
+CheckInternet()
+print("Checking dependencies")
 
 suckless = (
     Choice("Dynamic Window Manager", None, GetSuckless, "https://gitlab.com/Smeueg/dwm.git",
@@ -575,12 +602,9 @@ mainChoice = (
     Choice("Fonts",                     fonts,    None,            None, None)
 )
 
-CheckOS()
-CheckVersion()
-CheckInternet()
 
 if not CheckDep(mainChoice):
-    exit(-1)
+    sys.exit(-1)
 
 execute = drawMenu(mainChoice, False)
 curses.endwin()
