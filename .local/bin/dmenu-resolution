@@ -6,7 +6,7 @@ y=$(echo "$xrandr_output" | grep -Po "^\s*\d+x\K.*(?=.* \s+.*\*\s*.*)")
 
 
 DmenuDisplay(){
-	width=$(expr $x / 2)
+	width=$(expr $x \* 3 / 4)
 	x_offset=$( expr $(expr $x - $width) / 2 )
 	y_offset=$( expr $(expr $y - 264) / 2 )
 
@@ -15,7 +15,7 @@ DmenuDisplay(){
 
 
 ChangeResolution(){
-	resolutions=$(echo "$xrandr_output" | grep -Po "\s*\K\d+x\d+\s+\d+.*")
+	resolutions=$(echo "$xrandr_output" | grep -Po "^\s+\K\d+x\d+i*\s+\d+\.\d+[+*]*")
 	SELECTED_RESOLUTION=$(DmenuDisplay "$resolutions" "Resolution for $1:" | cut -d' ' -f1)
 
 	[ ! -z "$SELECTED_RESOLUTION" ] &&

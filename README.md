@@ -37,6 +37,7 @@ These are all really optional, since without them, the "rice" would still be fun
 - Finish the migration script
 - Create a better dotfiles management script
 - Add a license
+- Setup slock again
 
 
 

@@ -68,7 +68,7 @@ fzfConfig
 unset fzfConfig
 
 # To bind Ctrl-l to type clear and then return/enter:
-bind '"\C-l":"\033[4~\C-uclear;echo\n"'
+bind '"\C-l":"\033[4~\C-uclear\n"'
 
 # LF Icons
 command -v lf >/dev/null &&
