@@ -10,7 +10,7 @@ Xft.rgba: rgb
 herbe.background_color: #191E1E
 herbe.border_color: #C5B7AD
 herbe.font_color: #C5B7AD
-herbe.font_pattern: JetBrains Mono:size=7
+herbe.font_pattern: JetBrains Mono:size=11
 herbe.line_spacing: 8
 herbe.padding: 15
 herbe.width: 250
@@ -24,4 +24,4 @@ herbe.duration: 3
 ! sxiv !
 Sxiv.background: #191E1E
 Sxiv.foreground: #C5B7AD
-Sxiv.font: JetBrains Mono:size=7
+Sxiv.font: JetBrains Mono:size=11
