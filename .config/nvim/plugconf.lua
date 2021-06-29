@@ -61,7 +61,6 @@ local function CompeConfig()
 				omni      = false;
 				nvim_lsp  = true;
 				nvim_lua  = true;
-				vsnip     = true;
 				ultisnips = false;
 			};
 		}
@@ -85,16 +84,6 @@ local function delimitMateConfig()
 	vim.b.delimitMate_insert_eol_marker = 2
 end
 ---------------------------------
-
-
----- fzf configuration --
-local function fzfConfig()
-	vim.cmd [[
-		nnoremap <leader>Ff <cmd>Files<CR>
-		nnoremap <leader>Fh <cmd>Files $HOME<CR>
-	]]
-end
--------------------------
 
 
 ---- IndentLine Configuration --
@@ -140,7 +129,7 @@ return require("packer").startup({
 		use {'neovim/nvim-lspconfig',     config = LspConfig()}
 		use {'kabouzeid/nvim-lspinstall', config = LspInstallInit()}  -- If it doesn't work, you may need to install npm
 		use {'hrsh7th/nvim-compe',        config = CompeConfig()}
-		use {'hrsh7th/vim-vsnip',         requires = {'rafamadriz/friendly-snippets'}}
+		-- use {'hrsh7th/vim-vsnip',         requires = {'rafamadriz/friendly-snippets'}} -- I have no use for it currently
 		use {'lukas-reineke/indent-blankline.nvim', branch = 'lua', config = indentLineConfig()}
 
 		-- Utilities
@@ -148,7 +137,6 @@ return require("packer").startup({
 		use 'tpope/vim-commentary'
 		use {'vimwiki/vimwiki',          config = vimWikiConfig()}
 		use {'Raimondi/delimitMate',     config = delimitMateConfig()}
-		use {'junegunn/fzf.vim',         config = fzfConfig()}
 
 		-- Colorschemes
 		use {
