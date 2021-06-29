@@ -15,13 +15,21 @@ Refer to the arch wiki: https://wiki.archlinux.org/index.php/Dotfiles
 
 
 ## Installing/Migrating into a new system
+To enable firefox theme symlink ~/.config/browser/firefox to ~/.mozilla/firefox/xxxxxxxx.default-release/chrome:
+```sh
+ln -s $HOME/.config/browser/firefox  $HOME/.mozilla/firefox/*.default-release/chrome
+```
+Replace '*' with your profile directory if you don't want all of your profiles to have the theme
+
+
 ### Salt Mine
 This one liner:
 ```sh
 curl -L https://gitlab.com/Smeueg/dotfiles/-/raw/master/.local/bin/salt-mine | python
 ```
-
 This _should_ work on both python3 and python2.
+
+
 
 
 ### "Dependencies"
@@ -34,6 +42,7 @@ These are all really optional, since without them, the "rice" would still be fun
 
 ## TODO
 - Create a better dotfiles management script
+- Finish firefox theming
 - Add a license
 
 
