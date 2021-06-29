@@ -4,45 +4,45 @@ chrome://browser/skin/browser.css
 chrome://browser/content/browser.css
 */
 
-:root {
-	--background: #161B1B;
-	--status_light: #252d2d;
-	--status_lighter: #2a3434;
-	--background_lighter: #1F2626;
-	--background_light: #1B2121;
-}
+@import "colors.css";
 
-/* TABS */
+
+/* Tabs */
 #tabbrowser-tabs, .tabbrowser-tab {
-	background-color: var(--background) !important;
+	background-color: var(--bg1) !important;
 	background-image: none !important;
 }
 
 .tab-background { /* tab background */
-  background-color: var(--background_light) !important;
+  background-color: var(--bg2) !important;
   background-image: none !important;
 }
 .tab-background[selected=true] { /* Selected tab background */
-  background-color: var(--background_lighter) !important;
+  background-color: var(--bg3) !important;
   background-image: none !important;
 }
 
 .tab-line { /* tab line */
-  background-color: var(--status_light) !important;
+  background-color: var(--bg2) !important;
 }
 
 .tab-line[selected=true] { /* selected tab line */
-  background-color: var(--status_lighter) !important;
+  background-color: var(--cyan) !important;
 }
 
 
 /* navbar, toolbar, and urlbar */
 #nav-bar, #PersonalToolbar { /* The thing below the tabs (nav-bar), and where the bookmarks are (PersonalToolbar) */
-	background-color: var(--background_lighter) !important;
+	background-color: var(--bg3) !important;
 }
 
 
 #urlbar-background { /* Where you type in the url */
-	background-color: var(--background) !important;
+	background-color: var(--bg1) !important;
 }
 
+/* Unloaded Page */
+browser[type="content-primary"],
+browser[type="content"] {
+  background: var(--bg1) !important;
+}
