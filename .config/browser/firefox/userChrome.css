@@ -7,6 +7,12 @@ chrome://browser/content/browser.css
 @import "colors.css";
 
 
+/*
+ * TODO
+ * - Add padding for context-menu
+ * - Figure out how to change color of context-menu-seperator
+*/
+
 /* Tabs */
 #tabbrowser-tabs, .tabbrowser-tab {
 	background-color: var(--bg1) !important;
@@ -22,27 +28,44 @@ chrome://browser/content/browser.css
   background-image: none !important;
 }
 
-.tab-line { /* tab line */
-  background-color: var(--bg2) !important;
-}
+.tab-line /* tab line */
+{ background-color: var(--bg2) !important; }
 
-.tab-line[selected=true] { /* selected tab line */
-  background-color: var(--cyan) !important;
-}
+.tab-line[selected=true] /* selected tab line */
+{ background-color: var(--cyan) !important; }
 
 
 /* navbar, toolbar, and urlbar */
-#nav-bar, #PersonalToolbar { /* The thing below the tabs (nav-bar), and where the bookmarks are (PersonalToolbar) */
-	background-color: var(--bg3) !important;
-}
+#nav-bar, #PersonalToolbar  /* The thing below the tabs (nav-bar), and where the bookmarks are (PersonalToolbar) */
+{ background-color: var(--bg3) !important; }
 
-
-#urlbar-background { /* Where you type in the url */
-	background-color: var(--bg1) !important;
-}
+#urlbar-background /* Where you type in the url */
+{ background-color: var(--bg1) !important; }
 
 /* Unloaded Page */
 browser[type="content-primary"],
-browser[type="content"] {
-  background: var(--bg1) !important;
+browser[type="content"]
+{ background: var(--bg1) !important; }
+
+
+/* Menu (including right click) */
+#contentAreaContextMenu menuitem {
+	color: var(--white) !important;
+	background: var(--bg2) !important;
+	-moz-appearance: none !important; /* Needed for whatever reason, I hate css */
 }
+
+#contentAreaContextMenu menuitem[_moz-menuactive="true"] {
+	background: var(--bg3) !important;
+	-moz-appearance: none !important; /* Needed for whatever reason, I hate css */
+}
+
+menuseperator { /* Doesn't work */
+	fill: var(--bg3) !important;
+	color: var(--bg3) !important;
+	background: var(--bg3) !important;
+	-moz-appearance: none !important;
+}
+
+#context-navigation menuitem hbox .menu-iconic-icon
+{ fill: var(--white) !important }

@@ -1,5 +1,30 @@
 @import "./colors.css";
 
+html, body
+{ scrollbar-color: var(--white) var(--bg3) !important; }
+
+/* Firefox Popup Footers */
+.SnippetBaseContainer.SimpleSnippet.has-section-header
+{ background: var(--bg2) !important }
+
+.section-title-text
+{ color: var(--white) !important }
+
+.innerContentWrapper div p span
+{ color: var(--white) !important }
+
+.innerContentWrapper div p span a
+{ color: var(--blue) !important }
+
+.ASRouterButton.secondary {
+	background: var(--bg3) !important;
+	color: var(--white) !important;
+}
+
+.ASRouterButton.secondary:hover
+{ background: var(--bg1) !important }
+
+
 @-moz-document url("about:home") {
 	body:after {
 		content: "Welcome" !important;
@@ -11,6 +36,7 @@
 	}
 }
 
+
 @-moz-document url("about:newtab"), url("about:home") {
 	body {
 		background-color: var(--bg1) !important;
@@ -18,23 +44,40 @@
 		justify-content: center;
 		align-items: center;
 	}
-	div#root { display: none !important; }
+
+	div#root
+	{ display: none !important; }
 }
 
 
 @-moz-document domain("youtube.com") {
-	#logo-icon { display: none !important }
+	/* Youtube Logo */
+	#logo-icon
+	{ display: none !important }
 
-	a.yt-simple-endpoint { color: var(--blue) !important; }
+	/* Hastags and links */
+	a.yt-simple-endpoint
+	{ color: var(--blue) !important; }
 
-	yt-icon svg { color: var(--white) !important; }
+	/* Icons */
+	yt-icon svg
+	{ color: var(--white) !important; }
 
-	yt-formatted-string { color: var(--white) !important; }
+	/* Types of text */
+	yt-formatted-string
+	{ color: var(--white) !important; }
 
-	.ytd-button-renderer { color: var(--white) !important; }
-	tp-yt-paper-button#button { color: var(--blue) !important; }
+	.ytd-button-renderer
+	{ color: var(--white) !important; }
 
-	.ytd-masthead  { background: var(--bg2) !important; }
+	tp-yt-paper-button#button
+	{ color: var(--blue) !important; }
+
+	/* Top Header */
+	.ytd-masthead
+	{ background: var(--bg2) !important; }
+
+	/* Search Bar */
 	.ytd-searchbox {
 		background: var(--bg1) !important;
 		box-shadow: none !important;
@@ -42,14 +85,20 @@
 		color: var(--white) !important;
 	}
 
-	.sbdd_b { margin-top: -1px !important; background: none !important; border:none !important; }
+	.sbdd_b {
+		margin-top: -1px !important;
+		background: none !important;
+		border:none !important;
+	}
 
 	.sbsb_a, .sbsb_c {
 		background: var(--bg2) !important;
 		color: var(--white) !important;
 		border: none !important;
 	}
-	.sbsb_d { background: var(--bg3) !important; } /* Selected */
+
+	.sbsb_d
+	{ background: var(--bg3) !important; } /* Selected */
 
 	.sbfl_b /* Report Search Prediction */
 	{ display: none !important }
@@ -58,11 +107,10 @@
 	#voice-search-button /* Voice Search */
 	{ display: none !important }
 
+	/* Main Page */
 	.ytd-feed-filter-chip-bar-renderer{ display:none !important; }
 	.ytd-rich-grid-renderer,
-	#page-manager {
-		background: var(--bg1) !important;
-	}
+	#page-manager { background: var(--bg1) !important; }
 
 	/* Video Thumbnail and info */
 	.ytd-rich-grid-media { background: var(--bg2) !important; }
@@ -74,20 +122,24 @@
 		font-weight: bold !important;
 	}
 
+	span#title
+	{ color: var(--white) !important }
+
 	.ytd-channel-name a,
 	.ytd-video-meta-block
 	{ color: var(--white) !important; }
 
-	.ytd-badge-supported-renderer .yt-icon { fill: var(--white) !important }
+	.ytd-badge-supported-renderer .yt-icon
+	{ fill: var(--white) !important }
 
-	span#title { color: var(--bg4) !important }
-	#button-container { background: var(--bg2) !important; }
+	#button-container
+	{ background: var(--bg2) !important; }
+
+	#guide-inner-content
+	{ background: var(--bg2) !important; }
 
 	yt-icon-button#button.dropdown-trigger.style-scope.ytd-menu-renderer
 	{ display: none !important; }
-
-
-	#guide-inner-content { background: var(--bg2) !important; }
 
 	h1.title,
 	#info-text,
@@ -108,9 +160,47 @@
 	tp-yt-paper-button[aria-label="Join this channel"] { border: 1px solid var(--blue) !important }
 
 	/* Information in the description (Genre + Game) */
-	a#endpoint-link { background: var(--bg2) !important }
-	#text-container #title { color: var(--white) !important }
-	#text-container #subtitle { color: var(--white) !important }
-	#text-container #call-to-action { color: var(--white) !important }
-	#text-container yt-icon svg { color: var(--white) !important }
+	#text-container yt-icon svg
+	{ color: var(--white) !important }
+
+	#endpoint-link
+	{ background: var(--bg2) !important }
+
+	#text-container #title,
+	#text-container #subtitle,
+	#text-container #call-to-action
+	{ color: var(--white) !important }
+
+
+	/* Youtube apps and Youtube Settings */
+	div#sections.ytd-multi-page-menu-renderer {
+		background: var(--bg2) !important;
+		border: none !important;
+	}
+
+	ytd-multi-page-menu-renderer.ytd-popup-container
+	{ border: none !important }
+
+	div#label.ytd-toggle-theme-compact-link-renderer
+	{ color: var(--white) !important; }
+
+
+	/* Channel Page */
+	#channel-header
+	{ background: var(--bg2) !important }
+
+	#tabs-inner-container
+	{ background: var(--bg2) !important }
+
+	#contents
+	{ background: var(--bg1) !important }
+
+	.ytd-page-manager
+	{ background: var(--bg1) !important }
+
+	#selectionBar
+	{ border: 2px solid var(--white) !important }
+
+	.tab-content
+	{ color: var(--white) !important }
 }
