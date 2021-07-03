@@ -101,6 +101,24 @@ def GetCmd(arr):
 
 
 
+def CheckVersion():
+    print("Checking python version...")
+
+    version = sys.version_info
+    msg = "This version of python ({}.{}.{}) is not supported, please install a higher version (2.6 or above)".format(version.major, version.minor, version.micro)
+
+    if version.major == 3:
+        return
+    elif version.major == 2:
+        if version.minor < 6:
+            print(msg)
+            sys.exit(-1)
+        else:
+            return
+    else:
+        print(msg)
+        sys.exit(-1)
+
 
 def CheckInternet():
     import socket
@@ -543,9 +561,10 @@ def GetFonts(arg):
             DownloadFile(file, directory)
 
 
-CheckOS()
 CheckInternet()
-print("Checking dependencies")
+CheckVersion()
+CheckOS()
+print("Checking dependencies...")
 
 suckless = (
     Choice("Dynamic Window Manager", None, GetSuckless, "https://gitlab.com/Smeueg/dwm.git",
