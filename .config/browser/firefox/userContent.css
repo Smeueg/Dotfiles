@@ -199,6 +199,7 @@
 	#selectionBar
 	{ border: 2px solid var(--white) !important }
 
+	#label-text,
 	.tab-content
 	{ color: var(--white) !important }
 }

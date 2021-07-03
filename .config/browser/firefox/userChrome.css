@@ -164,3 +164,36 @@ toolbaritem#appMenu-library-recentHighlights
 
 #sidebar-splitter
 { display: none !important }
+
+
+/* Find Word */
+findbar
+{ background: var(--bg2) !important }
+
+.findbar-textbox {
+	background: var(--bg1) !important;
+	border-color: var(--bg2) !important;
+	color: var(--white) !important;
+}
+
+.findbar-textbox:focus
+{ border-color: var(--cyan) !important }
+
+
+.findbar-container toolbarbutton {
+	background: var(--bg2) !important;
+	border: none !important;
+	color: var(--white) !important;
+}
+
+.findbar-container toolbarbutton:hover,
+.findbar-container toolbarbutton[checked="true"],
+.findbar-container toolbarbutton:hover image,
+.findbar-container toolbarbutton[checked="true"] image
+{ background: var(--bg3) !important; }
+
+.findbar-closebutton:hover
+{ background: var(--bg2) !important; }
+
+.findbar-closebutton:hover image
+{ background: var(--bg3) !important; }
