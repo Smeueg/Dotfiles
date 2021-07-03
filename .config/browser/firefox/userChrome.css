@@ -10,13 +10,25 @@ chrome://browser/content/browser.css
 
 :root {
 	--lwt-toolbarbutton-icon-fill: var(--white) !important;
-	--arrowpanel-background: var(--bg3) !important;
-	--arrowpanel-border-color: var(--bg4) !important;
-
+	--arrowpanel-background: var(--bg2) !important;
+	--arrowpanel-border-color: var(--bg2) !important;
 	--urlbar-separator-color: var(--bg4) !important;
 }
 
+* { font-family: "JetBrains Mono" }
+
+image
+{ color: var(--white) !important }
+
 /* Tabs */
+.tab-icon-image,
+.close-icon,
+.tab-text
+{ color: var(--white) !important }
+
+.close-icon:hover
+{ background: var(--bg4) }
+
 #tabbrowser-tabs, .tabbrowser-tab {
 	background-color: var(--bg1) !important;
 	background-image: none !important;
@@ -39,13 +51,22 @@ chrome://browser/content/browser.css
 
 
 /* navbar, toolbar, and urlbar */
+
+#navigator-toolbox
+{ border: none !important }
+
+#star-button
+{ color: var(--white) !important }
+
 image[label="Back"] {
 	background: none !important;
 	border: none !important;
 }
 
-#nav-bar, #PersonalToolbar  /* The thing below the tabs (nav-bar), and where the bookmarks are (PersonalToolbar) */
-{ background-color: var(--bg3) !important; }
+#nav-bar, #PersonalToolbar { /* The thing below the tabs (nav-bar), and where the bookmarks are (PersonalToolbar) */
+	background-color: var(--bg3) !important;
+	background-image: none !important
+}
 
 #urlbar-background {
 	background-color: var(--bg1) !important;
@@ -55,6 +76,12 @@ image[label="Back"] {
 #urlbar-input-container
 { border-color: var(--bg3) !important; }
 
+#urlbar-input
+{ color: var(--white) !important }
+
+.urlbarView-row-inner
+{ color: var(--white) !important }
+
 .urlbarView-row[aria-selected="true"] .urlbarView-row-inner,
 .urlbarView-row:hover .urlbarView-row-inner,
 .urlbarView-row-inner:hover
@@ -62,6 +89,17 @@ image[label="Back"] {
 
 .urlbarView-action
 { color: var(--green) !important }
+
+#identity-box:hover
+{ background: var(--bg2) !important }
+
+#identity-icon,
+#identity-icon-label
+{ color: var(--white) !important }
+
+
+.search-one-offs
+{ display: none !important }
 
 /* Unloaded Page */
 browser[type="content-primary"],
@@ -107,13 +145,13 @@ toolbarbutton[label="Firefox Account"]:hover image
 { background: none !important }
 
 toolbaritem#appMenu-library-recentHighlights
-{ background: var(--bg3) !important }
+{ background: var(--bg2) !important }
 
 .panel-subview-body
-{ background: var(--bg3) !important }
+{ background: var(--bg2) !important; color: var(--white) !important }
 
 .panel-subview-body *:hover
-{ background: var(--bg4) !important }
+{ background: var(--bg3) !important }
 
 
 /* Side Bar (History Panel) */
