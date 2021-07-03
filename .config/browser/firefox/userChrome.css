@@ -7,11 +7,14 @@ chrome://browser/content/browser.css
 @import "colors.css";
 
 
-/*
- * TODO
- * - Add padding for context-menu
- * - Figure out how to change color of context-menu-seperator
-*/
+
+:root {
+	--lwt-toolbarbutton-icon-fill: var(--white) !important;
+	--arrowpanel-background: var(--bg3) !important;
+	--arrowpanel-border-color: var(--bg4) !important;
+
+	--urlbar-separator-color: var(--bg4) !important;
+}
 
 /* Tabs */
 #tabbrowser-tabs, .tabbrowser-tab {
@@ -36,11 +39,29 @@ chrome://browser/content/browser.css
 
 
 /* navbar, toolbar, and urlbar */
+image[label="Back"] {
+	background: none !important;
+	border: none !important;
+}
+
 #nav-bar, #PersonalToolbar  /* The thing below the tabs (nav-bar), and where the bookmarks are (PersonalToolbar) */
 { background-color: var(--bg3) !important; }
 
-#urlbar-background /* Where you type in the url */
-{ background-color: var(--bg1) !important; }
+#urlbar-background {
+	background-color: var(--bg1) !important;
+	border-color: var(--bg3) !important;
+}
+
+#urlbar-input-container
+{ border-color: var(--bg3) !important; }
+
+.urlbarView-row[aria-selected="true"] .urlbarView-row-inner,
+.urlbarView-row:hover .urlbarView-row-inner,
+.urlbarView-row-inner:hover
+{ background: var(--bg2) !important }
+
+.urlbarView-action
+{ color: var(--green) !important }
 
 /* Unloaded Page */
 browser[type="content-primary"],
@@ -49,23 +70,59 @@ browser[type="content"]
 
 
 /* Menu (including right click) */
-#contentAreaContextMenu menuitem {
+menupopup menuitem,
+menupopup menu
+{
 	color: var(--white) !important;
 	background: var(--bg2) !important;
 	-moz-appearance: none !important; /* Needed for whatever reason, I hate css */
+	padding: 5px 5px 5px 5px !important;
 }
 
-#contentAreaContextMenu menuitem[_moz-menuactive="true"] {
+menupopup menuitem[_moz-menuactive="true"],
+menupopup menu[_moz-menuactive="true"]
+{
 	background: var(--bg3) !important;
 	-moz-appearance: none !important; /* Needed for whatever reason, I hate css */
 }
 
-menuseperator { /* Doesn't work */
-	fill: var(--bg3) !important;
-	color: var(--bg3) !important;
-	background: var(--bg3) !important;
-	-moz-appearance: none !important;
-}
+menupopup > menuseparator
+{ display: none !important; }
 
 #context-navigation menuitem hbox .menu-iconic-icon
 { fill: var(--white) !important }
+
+toolbarbutton[checked="true"] stack,
+toolbarbutton[checked="true"] image,
+toolbarbutton[open="true"] stack,
+toolbarbutton[open="true"] image
+{ background: var(--bg4) !important }
+
+
+toolbarbutton:hover stack,
+toolbarbutton:hover image
+{ background: var(--bg4) !important }
+
+toolbarbutton[label="Firefox Account"]:hover image
+{ background: none !important }
+
+toolbaritem#appMenu-library-recentHighlights
+{ background: var(--bg3) !important }
+
+.panel-subview-body
+{ background: var(--bg3) !important }
+
+.panel-subview-body *:hover
+{ background: var(--bg4) !important }
+
+
+/* Side Bar (History Panel) */
+.sidebar-placesTreechildren,
+#sidebar-search-container,
+#sidebar-box { background: var(--bg2) !important; color: var(--white) !important }
+
+.tree-rows scrollbar
+{ scrollbar-color: var(--bg3) var(--bg2) !important }
+
+#sidebar-splitter
+{ display: none !important }

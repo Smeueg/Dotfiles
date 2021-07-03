@@ -1,7 +1,5 @@
 @import "./colors.css";
 
-html, body
-{ scrollbar-color: var(--white) var(--bg3) !important; }
 
 /* Firefox Popup Footers */
 .SnippetBaseContainer.SimpleSnippet.has-section-header
@@ -88,7 +86,7 @@ html, body
 	.sbdd_b {
 		margin-top: -1px !important;
 		background: none !important;
-		border:none !important;
+		border: none !important;
 	}
 
 	.sbsb_a, .sbsb_c {
@@ -156,8 +154,8 @@ html, body
 
 	/* Buttons */
 	tp-yt-paper-button[aria-label="Subscribe"] { background: var(--red) !important }
-	tp-yt-paper-button[aria-label="Sign in"] { border: 1px solid var(--white) !important }
-	tp-yt-paper-button[aria-label="Join this channel"] { border: 1px solid var(--blue) !important }
+	tp-yt-paper-button[aria-label="Sign in"] { border-color: var(--white) !important }
+	tp-yt-paper-button[aria-label="Join this channel"] { border-color: var(--blue) !important }
 
 	/* Information in the description (Genre + Game) */
 	#text-container yt-icon svg
