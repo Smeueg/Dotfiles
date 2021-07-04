@@ -141,7 +141,7 @@ return require("packer").startup({
 		-- Colorschemes
 		use {
 			'https://gitlab.com/Smeueg/Salt.vim',
-			config = vim.cmd[[try | colorscheme Salt | catch /^Vim\%((\a\+)\)\=:E185/ | endtry ]]
+			config = vim.cmd [[try | colorscheme Salt | catch /^Vim\%((\a\+)\)\=:E185/ | endtry ]]
 		}
 	end,
 

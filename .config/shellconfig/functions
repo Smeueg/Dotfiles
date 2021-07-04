@@ -47,11 +47,22 @@ ff(){
 
 
 saur(){
-	git clone https://aur.archlinux.org/$1.git &&
-	cd $1 &&
-	aur_version=$(grep -m 1 pkgver PKGBUILD | awk -F'=' '{print $2}') &&
-	echo "AUR version: $aur_version"
-	unset aur_version
+	if [ -z "$1" ]; then
+		[ -d /tmp/saur ] && cd /tmp/saur
+		return
+	fi
+
+	found="$(curl -L --silent https://aur.archlinux.org/packages/$1 | grep -Po '404 - Page Not Found')"
+	if [ -z "$found" ]; then
+		[ ! -d /tmp/saur ] && mkdir /tmp/saur
+		git clone https://aur.archlinux.org/$1.git /tmp/saur/$1 &&
+		cd /tmp/saur/$1 &&
+		aur_version=$(grep -m 1 pkgver PKGBUILD | awk -F'=' '{print $2}') &&
+		echo "AUR version: $aur_version"
+		unset aur_version
+	else
+		echo "Aur package not found: $1"
+	fi
 }
 
 
@@ -120,7 +131,7 @@ tt(){
 
 man(){
   if [ "$1" == "lf" ]; then
-    [ ! -f /tmp/lf.1 ] && curl -L https://github.com/gokcehan/lf/raw/master/lf.1 -o /tmp/lf.1
+	[ ! -f /tmp/lf.1 ] && curl -L https://github.com/gokcehan/lf/raw/master/lf.1 -o /tmp/lf.1
     /usr/bin/man -l /tmp/lf.1
   else
     /usr/bin/man $@
@@ -129,9 +140,25 @@ man(){
 
 
 exportgpg(){
-  gpg --export --armor $1 > /tmp/public_keys.asc
-  gpg --export-secret-keys --armor $1 > /tmp/secret_keys.asc
-  gpg --export-ownertrust > /tmp/ownertrust.txt
+	# To import gpg keys:
+	# gpg —-import /path/secret_keys.asc
+	# gpg —-import /path/public_keys.asc
+	# gpg --import-ownertrust < /path/ownertrust.txt
+
+
+	tmpdir=/tmp/exportedGPG
+
+	if [ -z "$1" ]; then
+		[ -d $tmpdir ] && cd $tmpdir
+		return
+	fi
+
+	[ ! -d $tmpdir ] && mkdir $tmpdir
+	gpg --export --armor $1 > $tmpdir/public_keys.asc
+	gpg --export-secret-keys --armor $1 > $tmpdir/secret_keys.asc
+	gpg --export-ownertrust > $tmpdir/ownertrust.txt
+
+	unset tmpdir
 }
 
 

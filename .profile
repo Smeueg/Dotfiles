@@ -23,6 +23,12 @@ export EDITOR="nvim"
 
 
 export GNUPGHOME="$XDG_DATA_HOME"/gnupg
+if [ ! -d "$GNUPGHOME" ]; then
+	echo "Creating ${GNUPGHOME}..."
+	mkdir --parents "$GNUPGHOME"
+	find "$GNUPGHOME" -type f -exec chmod 600 {} \; # Set 600 for files
+	find "$GNUPGHOME" -type d -exec chmod 700 {} \; # Set 700 for directories
+fi
 
 export _JAVA_AWT_WM_NONREPARENTING=1
 export ANDROID_PREFS_ROOT="$XDG_CONFIG_HOME"/android
