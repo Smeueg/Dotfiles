@@ -197,3 +197,8 @@ findbar
 
 .findbar-closebutton:hover image
 { background: var(--bg3) !important; }
+
+
+/* Title Bar */
+#titlebar
+{ background: var(--bg1) }

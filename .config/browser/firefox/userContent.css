@@ -23,27 +23,37 @@
 { background: var(--bg1) !important }
 
 
-@-moz-document url("about:home") {
-	body:after {
-		content: "Welcome" !important;
+@-moz-document url("about:home")
+{ body:after { content: "Welcome" !important; } }
+
+@-moz-document url("about:privatebrowsing")
+{ body:after { content: "Private Browsing" !important; } }
+
+@-moz-document url("about:tor")
+{ body:after { content: "I Think Tor Is Very Secure" !important; } }
+
+@-moz-document
+url("about:home"),
+url("about:blank"),
+url("about:newtab"),
+url("about:privatebrowsing"),
+url("about:tor") {
+	html { background: var(--bg1) !important }
+
+	body {
+		background: var(--bg1) !important;
+		display: flex !important;
+		justify-content: center !important;
+		align-items: center !important;
+
 		font-weight: bold !important;
 		font-size: 500% !important;
 		color: var(--bg3) !important;
 
 		font-family: "JetBrains Mono" !important;
 	}
-}
 
-
-@-moz-document url("about:newtab"), url("about:home") {
-	body {
-		background-color: var(--bg1) !important;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-	}
-
-	div#root
+	body div
 	{ display: none !important; }
 }
 
