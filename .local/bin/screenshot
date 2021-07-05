@@ -1,7 +1,5 @@
 #!/bin/sh
-! command -v && herbe "Scrot not installed"
-
-if [ "$1" == '-t' ]; then
+if [ "$1" == "-t" ]; then
 	dir="/tmp/TmpScreenshots/"
 	tmpmsg="in /tmp/TmpScreenshots"
 	shift
@@ -9,24 +7,31 @@ else
 	dir="$HOME/Pictures/Screenshots"
 	tmpmsg=""
 fi
-[ ! -d "$dir" ] && mkdir --parents "$dir"
-cd "$dir"
+
+checkDir(){
+	[ ! -d "$dir" ] && mkdir --parents "$dir"
+}
 
 
 CMD=$(echo -e "Full Screenshot\nPartial Screenshot\nCancel" | dmenu "$@" | cut -d' ' -f1);
 Current_Date=$(date '+%Y_%m_%d-(%H:%M:%S)')
 
+path="$dir/Screenshot_${Current_Date}.png"
+string="Took Screenshot Screenshot_${Current_Date}.png ${tmpmsg}"
+
 
 scrot_screenshot(){
 	case $CMD in
 		Full)
-			scrot -d 0.5 "Screenshot_${Current_Date}.png" &&
-			herbe "Took Screenshot Screenshot_${Current_Date}.png ${tmpmsg}"
+			checkDir
+			scrot -d 0.5 "$path" &&
+			herbe "$string"
 			;;
 
 		Partial)
-			scrot -s -d 0.5 "Screenshot_${Current_Date}.png" &&
-			herbe "Took Screenshot Screenshot_${Current_Date}.png ${tmpmsg}"
+			checkDir
+			scrot -s -d 0.5 "$path" &&
+			herbe "$string"
 			;;
 
 		*) herbe "Did not take screenshot";
@@ -36,13 +41,15 @@ scrot_screenshot(){
 imagemagick_screenshot(){
 	case $CMD in
 		Full)
-			sleep 0.5 && magick import -window root "Screenshot_${Current_Date}.png" &&
-			herbe "Took Screenshot Screenshot_${Current_Date}.png"
+			checkDir
+			sleep 0.5 && magick import -window root "$path" &&
+			herbe "$string"
 			;;
 
 		Partial)
-			sleep 0.5 && magick import "Screenshot_${Current_Date}.png" &&
-			herbe "Took Screenshot Screenshot_${Current_Date}.png"
+			checkDir
+			sleep 0.5 && magick import "$path" &&
+			herbe "$string"
 			;;
 		*) herbe "Did not take screenshot";
 	esac
