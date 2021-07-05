@@ -66,24 +66,13 @@ local function CompeConfig()
 		}
 		end)
 
+	vim.api.nvim_set_keymap('i', '<C-l>', 'compe#confirm("<C-l>")', {silent = true, expr = true})
 	vim.o.completeopt = "menuone,noselect"
 	vim.o.shortmess = vim.o.shortmess .. "c"
 end
 ------------------------------
 
 
-
-
----- DelimitMate Configuration --
-local function delimitMateConfig()
-	vim.b.delimitMate_expand_space = 1
-	vim.b.delimitMate_expand_cr = 2
-	vim.b.delimitMate_balance_matchpairs = 1
-	vim.cmd [[inoremap <silent><expr> <CR>  compe#confirm({ 'keys': "\<Plug>delimitMateCR", 'mode': '' })]]
-	vim.cmd [[inoremap <silent><expr> <C-l> compe#confirm({ 'keys': "\<Plug>delimitMateCR", 'mode': '' })]]
-	vim.b.delimitMate_insert_eol_marker = 2
-end
----------------------------------
 
 
 ---- IndentLine Configuration --
@@ -102,6 +91,26 @@ local function vimWikiConfig()
 end
 ----------------------------
 
+
+-- Pairs.nvim --
+local function pairsConfig()
+	pcall(
+	function()
+		require "pears".setup(function(conf)
+			conf.preset "tag_matching"
+		end)
+
+		-- Don't know if this'll do anything but why not
+		conf.on_enter(function(pears_handle)
+			if vim.fn.pumvisible() == 1 and vim.fn.complete_info().selected ~= -1 then
+				return vim.fn["compe#confirm"]("<C-l>")
+			else
+				pears_handle()
+			end
+		end)
+	end)
+end
+-- ---------- --
 
 
 ---- Packer Setup --
@@ -135,8 +144,9 @@ return require("packer").startup({
 		-- Utilities
 		use 'ap/vim-css-color'
 		use 'tpope/vim-commentary'
-		use {'vimwiki/vimwiki',          config = vimWikiConfig()}
-		use {'Raimondi/delimitMate',     config = delimitMateConfig()}
+		use {'vimwiki/vimwiki',       config = vimWikiConfig()}
+		-- use {'Raimondi/delimitMate',     config = delimitMateConfig()}
+		use {'steelsojka/pears.nvim', config = pairsConfig()}
 
 		-- Colorschemes
 		use {
