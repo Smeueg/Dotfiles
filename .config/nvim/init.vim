@@ -42,6 +42,8 @@ let mapleader = " "
 nnoremap <C-s> <cmd>nohl<CR>
 inoremap <C-s> <cmd>nohl<CR>
 
+imap <C-h> <BS>
+
 nnoremap k gk
 nnoremap j gj
 vnoremap k gk

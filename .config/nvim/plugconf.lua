@@ -67,7 +67,7 @@ local function CompeConfig()
 		end)
 
 	vim.api.nvim_set_keymap('i', '<C-l>', 'compe#confirm("<C-l>")', {silent = true, expr = true})
-	vim.o.completeopt = "menuone,noselect"
+	vim.o.completeopt = "menu,menuone,noselect"
 	vim.o.shortmess = vim.o.shortmess .. "c"
 end
 ------------------------------
@@ -96,18 +96,29 @@ end
 local function pairsConfig()
 	pcall(
 	function()
-		require "pears".setup(function(conf)
-			conf.preset "tag_matching"
-		end)
+		local npairs = require('nvim-autopairs')
+		local Rule = require('nvim-autopairs.rule')
+		local cond = require('nvim-autopairs.conds')
 
-		-- Don't know if this'll do anything but why not
-		conf.on_enter(function(pears_handle)
-			if vim.fn.pumvisible() == 1 and vim.fn.complete_info().selected ~= -1 then
-				return vim.fn["compe#confirm"]("<C-l>")
-			else
-				pears_handle()
-			end
-		end)
+		require('nvim-autopairs').setup({
+			ignored_next_char = "[%w%$]" -- will ignore alphanumeric and `.` symbol
+		})
+
+		require("nvim-autopairs.completion.compe").setup({
+			map_cr = true, --  map <CR> on insert mode
+			map_complete = true -- it will auto insert `(` after select function or method item
+		})
+
+
+
+
+		npairs.add_rules({
+			Rule(" ", " ")
+			:with_pair(cond.after_text_check("]"))
+			:with_pair(cond.before_text_check("["))
+			:with_move(cond.none())
+			:with_cr(cond.none())
+		})
 	end)
 end
 -- ---------- --
@@ -146,7 +157,8 @@ return require("packer").startup({
 		use 'tpope/vim-commentary'
 		use {'vimwiki/vimwiki',       config = vimWikiConfig()}
 		-- use {'Raimondi/delimitMate',     config = delimitMateConfig()}
-		use {'steelsojka/pears.nvim', config = pairsConfig()}
+		-- use {'steelsojka/pears.nvim', config = pairsConfig()}
+		use {'windwp/nvim-autopairs', config = pairsConfig()}
 
 		-- Colorschemes
 		use {
