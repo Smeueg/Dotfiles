@@ -1,0 +1,167 @@
+#!/bin/sh
+
+# Variables
+bookmarkPath=$HOME/.local/share/dmenuBookmarks
+delimiter='|'
+xrandrOutput="$(xrandr)"
+x=$(echo "$xrandrOutput" | grep -Po "^\s*\K.*(?=x.* \s+.*\*\s*.*)")
+y=$(echo "$xrandrOutput" | grep -Po "^\s*\d+x\K.*(?=.* \s+.*\*\s*.*)")
+
+
+CenterDmenu()
+{
+	options="$1"
+	message="$2"
+
+
+	height=$(echo -e "$options" | wc -l)
+	height=$(expr $height + 1)
+
+	if [ ! -z "$options" ]; then
+		width=$(echo -e "${options}${message}" | awk -v len=0 '
+			{
+				if (len < length($0))
+					len = length($0)
+			}
+
+			END {
+				len = (len + 2) * 15
+				print len
+			}
+		')
+	else
+		width=$(expr $x \* 2 / 3)
+	fi
+
+	xOffset=$(awk "BEGIN {print ($x - $width) / 2}")
+	yOffset=$(awk "BEGIN {print ($y - $height) / 2}")
+
+	cmd="echo -e '$options' | dmenu -z $width -x $xOffset -y $yOffset"
+
+	[ ! -z "$message" ] && cmd="$cmd -p '$message'"
+	[ -z "$options" ] && cmd="$cmd -l 0"
+
+	eval "$cmd"
+}
+
+
+Notify()
+{
+	msg="$1"
+	if command -v herbe >/dev/null 2>&1; then
+		herbe "${msg}"
+	else
+		echo "${msg}"
+	fi
+}
+
+
+CheckDmenu()
+{
+	if ! command -v dmenu >/dev/null 2>&1; then
+		Notify "Dmenu is not installed"
+		echo 0
+	else
+		echo 1
+	fi
+}
+
+
+GetTitle()
+{
+	url="$1"
+	curl --silent -A "Mozilla/5.0" -L "$url" | grep -Po '<title>\K.*(?=</title>)'
+}
+
+
+Add()
+{
+	url="$(CenterDmenu '' 'Add Url:')"
+
+	if [ -z "$url" ]; then
+		Notify "Empty url"
+		return
+	fi
+
+	name="$(CenterDmenu '' 'Add Name:')"
+	if [ -z "$name" ]; then
+		confirmation="$(CenterDmenu 'Yes\nNo' 'Empty name, find title automatically?' | grep -i 'y' | grep -i 'yes')"
+
+		if [ ! -z "$confirmation" ]; then
+			name="$(GetTitle "$url")"
+			if [ -z "$name" ]; then
+				Notify "Failed to get title"
+				return
+			fi
+		else
+			return
+		fi
+	fi
+
+	[ ! -d $HOME/.local/share/ ] && mkdir --parents $HOME/.local/share
+
+	echo "${name}${delimiter}${delimiter}${delimiter}${url}" >> "$bookmarkPath"
+}
+
+
+Remove()
+{
+	name="$(grep -Po "^.*(?=[${delimiter}]{3})" "$bookmarkPath")"
+	name="$(CenterDmenu "$name" 'Remove:')"
+
+	[ -z "$name" ] && return
+
+	line=$(grep -n "$name" "$bookmarkPath" | grep -Po "^[0-9]+")
+	sed -i "${line}d" "$bookmarkPath"
+}
+
+
+Open()
+{
+	name="$(grep -Po "^.*(?=[${delimiter}]{3})" "$bookmarkPath")"
+	name="$(CenterDmenu "$name" 'Open:')"
+
+	[ -z "$name" ] && return
+
+	if [ -z "$BROWSER" ]; then
+		Notify '$BROWSER environment variable is not set'
+	fi
+
+	url="$(grep "$name" "$bookmarkPath" | grep -Po "[$delimiter]{3}\K.*")"
+
+	$BROWSER "$url"
+}
+
+
+Edit()
+{
+	$TERMINAL -e $EDITOR "$bookmarkPath"
+}
+
+
+main()
+{
+	[ $(CheckDmenu) -eq 0 ] && return
+
+	if [ -f "$bookmarkPath" ] && [ -s "$bookmarkPath" ]; then
+		options="\
+		Add Bookmark
+		Open Bookmark
+		Remove Bookmark
+		Edit
+		"
+	else
+		options="\
+		Add Bookmark
+		Edit
+		"
+	fi
+
+	options="$(echo "$options" | sed 's/^\t*//g')"
+
+	chosen=$(CenterDmenu "$options" 'Options:' | grep -Po "^[a-zA-Z]+")
+
+	eval "$chosen"
+}
+
+main
