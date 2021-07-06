@@ -6,6 +6,9 @@
 # curses that makes migrating my *personal* dotfiles easier
 # Python2 *should* be supported as well
 
+# TODO
+# - Add a are you sure menu
+
 import sys
 import os
 try:
@@ -614,11 +617,12 @@ fonts = (
         None),
 )
 
+
 mainChoice = (
-    Choice("Dotfiles",                  None,     GetDot,          None, {"progs":"git"}),
-    Choice("Wallpaper(s)",              None,     GetWallpapers,   None, None),
-    Choice("Suckless & Other Programs", suckless, CompileSuckless, None, {"progs":"make"}),
-    Choice("Fonts",                     fonts,    None,            None, None)
+    Choice("Dotfiles",                None,     GetDot,          None, {"progs":"git"}),
+    Choice("Wallpaper(s)",            None,     GetWallpapers,   None, None),
+    Choice("Suckless(-ish) Programs", suckless, CompileSuckless, None, {"progs":"make"}),
+    Choice("Fonts",                   fonts,    None,            None, None),
 )
 
 

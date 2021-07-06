@@ -1,5 +1,4 @@
 #!/bin/sh
-
 xrandr_output=$(xrandr)
 x=$(echo "$xrandr_output" | grep -Po "^\s*\K.*(?=x.* \s+.*\*\s*.*)")
 y=$(echo "$xrandr_output" | grep -Po "^\s*\d+x\K.*(?=.* \s+.*\*\s*.*)")
@@ -7,8 +6,8 @@ y=$(echo "$xrandr_output" | grep -Po "^\s*\d+x\K.*(?=.* \s+.*\*\s*.*)")
 
 DmenuDisplay(){
 	width=$(expr $x \* 3 / 4)
-	x_offset=$( expr $(expr $x - $width) / 2 )
-	y_offset=$( expr $(expr $y - 264) / 2 )
+	x_offset=$( expr  $x / 2 - $width / 2 )
+	y_offset=$( expr  $y / 2 - 264 / 2 )
 
 	echo "$1" | dmenu -x $x_offset -y $y_offset -z $width -p "$2"
 }

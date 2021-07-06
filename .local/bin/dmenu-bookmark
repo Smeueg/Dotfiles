@@ -4,8 +4,8 @@
 bookmarkPath=$HOME/.local/share/dmenuBookmarks
 delimiter='|'
 xrandrOutput="$(xrandr)"
-x=$(echo "$xrandrOutput" | grep -Po "^\s*\K.*(?=x.* \s+.*\*\s*.*)")
-y=$(echo "$xrandrOutput" | grep -Po "^\s*\d+x\K.*(?=.* \s+.*\*\s*.*)")
+x=$(printf "$xrandrOutput" | grep -Po "^\s*\K.*(?=x.* \s+.*\*\s*.*)")
+y=$(printf "$xrandrOutput" | grep -Po "^\s*\d+x\K.*(?=.* \s+.*\*\s*.*)")
 
 
 CenterDmenu()
@@ -14,11 +14,11 @@ CenterDmenu()
 	message="$2"
 
 
-	height=$(echo -e "$options" | wc -l)
+	height=$(printf '%s' "$options" | wc -l)
 	height=$(expr $height + 1)
 
 	if [ ! -z "$options" ]; then
-		width=$(echo -e "${options}${message}" | awk -v len=0 '
+		width=$(printf '%s%s' "${options}" "${message}" | awk -v len=0 -v x=$x '
 			{
 				if (len < length($0))
 					len = length($0)
@@ -26,6 +26,8 @@ CenterDmenu()
 
 			END {
 				len = (len + 2) * 15
+				if (len > (x * 2 / 3))
+					len = (x * 2 / 3)
 				print len
 			}
 		')
@@ -36,7 +38,7 @@ CenterDmenu()
 	xOffset=$(awk "BEGIN {print ($x - $width) / 2}")
 	yOffset=$(awk "BEGIN {print ($y - $height) / 2}")
 
-	cmd="echo -e '$options' | dmenu -z $width -x $xOffset -y $yOffset"
+	cmd="printf '$options' | dmenu -z $width -x $xOffset -y $yOffset"
 
 	[ ! -z "$message" ] && cmd="$cmd -p '$message'"
 	[ -z "$options" ] && cmd="$cmd -l 0"
@@ -51,7 +53,7 @@ Notify()
 	if command -v herbe >/dev/null 2>&1; then
 		herbe "${msg}"
 	else
-		echo "${msg}"
+		printf '%s\n' "${msg}"
 	fi
 }
 
@@ -60,9 +62,9 @@ CheckDmenu()
 {
 	if ! command -v dmenu >/dev/null 2>&1; then
 		Notify "Dmenu is not installed"
-		echo 0
+		printf 0
 	else
-		echo 1
+		printf 1
 	fi
 }
 
@@ -100,7 +102,13 @@ Add()
 
 	[ ! -d $HOME/.local/share/ ] && mkdir --parents $HOME/.local/share
 
-	echo "${name}${delimiter}${delimiter}${delimiter}${url}" >> "$bookmarkPath"
+	printf '%s' "$name" >> "$bookmarkPath"
+
+	for i in $(seq 3); do
+		printf '%s' "$delimiter" >> "$bookmarkPath"
+	done
+
+	printf '%s\n' "$url" >> "$bookmarkPath"
 }
 
 
@@ -157,7 +165,7 @@ main()
 		"
 	fi
 
-	options="$(echo "$options" | sed 's/^\t*//g')"
+	options="$(printf "$options" | sed 's/^\t*//g')"
 
 	chosen=$(CenterDmenu "$options" 'Options:' | grep -Po "^[a-zA-Z]+")
 

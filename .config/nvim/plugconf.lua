@@ -106,19 +106,22 @@ local function pairsConfig()
 
 		require("nvim-autopairs.completion.compe").setup({
 			map_cr = true, --  map <CR> on insert mode
-			map_complete = true -- it will auto insert `(` after select function or method item
+			map_complete = true, -- it will auto insert `(` after select function or method item
+			enable_check_bracket_line = false
 		})
 
 
-
-
-		npairs.add_rules({
-			Rule(" ", " ")
-			:with_pair(cond.after_text_check("]"))
-			:with_pair(cond.before_text_check("["))
-			:with_move(cond.none())
-			:with_cr(cond.none())
-		})
+		npairs.add_rules {
+		Rule(' ', ' ')
+			:with_pair(function (opts)
+				local pair = opts.line:sub(opts.col, opts.col + 1)
+				return vim.tbl_contains({ '()', '[]', '{}' }, pair)
+			end),
+		Rule('( ',' )')
+			:with_pair(function() return false end)
+			:with_move(function() return true end)
+			:use_key(")")
+		}
 	end)
 end
 -- ---------- --
