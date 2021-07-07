@@ -55,7 +55,7 @@ nnoremap <leader>f :tabe<Space>
 nnoremap <A-p> gT
 nnoremap <A-n> gt
 
-vnoremap t "+y
+vnoremap <leader>c "cy <cmd>call system('xclip -selection clipboard', @c)<CR>
 vnoremap < <gv
 vnoremap > >gv
 vnoremap <C-a> <C-a>gv
@@ -75,9 +75,8 @@ cnoremap <C-f> <Right>
 cnoremap <C-b> <Left>
 
 nnoremap <leader>r <cmd>source $MYVIMRC <Bar> echo 'Refreshed'<CR>
-nnoremap <leader>ci <cmd>e! $MYVIMRC<CR>
-nnoremap <leader>ct <cmd>e! $HOME/.config/nvim/pack/packer/start/tea.vim/colors/tea.vim<CR>
-nnoremap <leader>cp <cmd>e! ~/.config/nvim/plugconf.lua<CR>
+nnoremap <leader>ei <cmd>e! $MYVIMRC<CR>
+nnoremap <leader>ep <cmd>e! ~/.config/nvim/plugconf.lua<CR>
 nnoremap <leader>t <cmd>split<bar>set nonumber<bar>cd %:p:h<bar>term<CR>10<C-w>-a
 nnoremap <leader>T <cmd>split<bar>set nonumber<bar>cd %:p:h<bar>term<CR>10<C-w>-a<C-Bslash><C-n><C-w><S-t>a
 

@@ -110,17 +110,12 @@ local function pairsConfig()
 			enable_check_bracket_line = false
 		})
 
-
 		npairs.add_rules {
 		Rule(' ', ' ')
 			:with_pair(function (opts)
 				local pair = opts.line:sub(opts.col, opts.col + 1)
 				return vim.tbl_contains({ '()', '[]', '{}' }, pair)
-			end),
-		Rule('( ',' )')
-			:with_pair(function() return false end)
-			:with_move(function() return true end)
-			:use_key(")")
+			end)
 		}
 	end)
 end
@@ -152,15 +147,12 @@ return require("packer").startup({
 		use {'neovim/nvim-lspconfig',     config = LspConfig()}
 		use {'kabouzeid/nvim-lspinstall', config = LspInstallInit()}  -- If it doesn't work, you may need to install npm
 		use {'hrsh7th/nvim-compe',        config = CompeConfig()}
-		-- use {'hrsh7th/vim-vsnip',         requires = {'rafamadriz/friendly-snippets'}} -- I have no use for it currently
 		use {'lukas-reineke/indent-blankline.nvim', branch = 'lua', config = indentLineConfig()}
 
 		-- Utilities
 		use 'ap/vim-css-color'
 		use 'tpope/vim-commentary'
 		use {'vimwiki/vimwiki',       config = vimWikiConfig()}
-		-- use {'Raimondi/delimitMate',     config = delimitMateConfig()}
-		-- use {'steelsojka/pears.nvim', config = pairsConfig()}
 		use {'windwp/nvim-autopairs', config = pairsConfig()}
 
 		-- Colorschemes

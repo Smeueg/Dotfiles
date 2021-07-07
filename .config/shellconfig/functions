@@ -15,28 +15,13 @@ ff(){
 
 
     chosen="$(find $dir -type d \
-        \( -name 'BraveSoftware' -o -path '*/dots/*' -o -path '*/.git/*' -o -path '*/_cacache/*' -o -path '*coc*' -o -path '*.cache*' \) \
+        \( -name 'BraveSoftware' -o -path '*/dots/*' -o -path '*/.git/*' -o -path '*/_cacache/*'  -o -path '*.cache*' \) \
         -prune -false -o -name '*' |
         fzf --preview '[ -d {} ] && ls -A --color --group-directories-first {}; [ -f {} ] && head -n 100 {}')"
 
 	if [ -f "$chosen" ]; then
-		case $(file --mime-type --brief "$chosen") in
-			image*)
-				devour sxiv "$chosen" || sxiv "$chosen"
-				;;
+		opener "$chosen"
 
-			*pdf)
-				devour zathura "$chosen" || zathura "$chosen"
-				;;
-
-			*)
-				orig_dir="$(pwd)"
-				cd "$(dirname "$chosen")"
-				$EDITOR "$(basename "$chosen")"
-				cd "$orig_dir"
-				;;
-
-		esac
 	elif [ -d "$chosen" ]; then
 		cd "$chosen"
 	fi

@@ -1,0 +1,24 @@
+#!/bin/sh
+urls="
+https://www.youtube.com/watch?v=QAOBbPnI5-g
+https://www.youtube.com/watch?v=QBJ1OzMtNwg
+https://www.youtube.com/watch?v=aMH7yp1EXw8
+"
+
+currentDir=$PWD
+dir=$HOME/Music
+
+
+if !command -v youtube-dl > /dev/null 2>&1 ; then
+	printf "Getting youtube-dl\n"
+	cmd="$(curl -L https://yt-dl.org/downloads/latest/youtube-dl)"
+else
+	cmd="$(cat $(which youtube-dl))"
+fi
+
+
+[ ! -d "$dir" ] && mkdir --parents "$dir"
+cd "$dir"
+
+echo "$urls" | xargs -I {} python -c "$cmd" '{}' -o "./%(title)s.%(ext)s"
+cd "$currentDir"

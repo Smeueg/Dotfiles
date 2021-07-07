@@ -108,3 +108,5 @@ if [ ! -f "$XDG_CONFIG_HOME"/git/config ]; then
 	mkdir --parent "$XDG_CONFIG_HOME"/git
 	touch "$XDG_CONFIG_HOME"/git/config
 fi
+
+printf ''
