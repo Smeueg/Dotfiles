@@ -92,7 +92,7 @@ end
 ----------------------------
 
 
--- Pairs.nvim --
+-- nvim-autopairs --
 local function pairsConfig()
 	pcall(
 	function()
@@ -114,8 +114,23 @@ local function pairsConfig()
 		Rule(' ', ' ')
 			:with_pair(function (opts)
 				local pair = opts.line:sub(opts.col, opts.col + 1)
-				return vim.tbl_contains({ '()', '[]', '{}' }, pair)
+				return vim.tbl_contains({ '()', '[]', '{}', '**', '==' }, pair)
 			end)
+		}
+
+		npairs.add_rules {
+		Rule('=', '=', "vimwiki")
+			:with_pair(function (opts)
+				return string.find(opts.line, '[^= \t]') == nil
+			end)
+		}
+
+		npairs.add_rules {
+			Rule("/*", "*/", {"css", "c", "cpp"})
+			-- don't move right when repeat character
+			:with_move(cond.none())
+			-- disable add newline when press <cr>
+			:with_cr(cond.none())
 		}
 	end)
 end
@@ -147,11 +162,10 @@ return require("packer").startup({
 		use {'neovim/nvim-lspconfig',     config = LspConfig()}
 		use {'kabouzeid/nvim-lspinstall', config = LspInstallInit()}  -- If it doesn't work, you may need to install npm
 		use {'hrsh7th/nvim-compe',        config = CompeConfig()}
-		use {'lukas-reineke/indent-blankline.nvim', branch = 'lua', config = indentLineConfig()}
+		use {'lukas-reineke/indent-blankline.nvim', branch = 'master', config = indentLineConfig()}
 
 		-- Utilities
 		use 'ap/vim-css-color'
-		use 'tpope/vim-commentary'
 		use {'vimwiki/vimwiki',       config = vimWikiConfig()}
 		use {'windwp/nvim-autopairs', config = pairsConfig()}
 
@@ -160,6 +174,13 @@ return require("packer").startup({
 			'https://gitlab.com/Smeueg/Salt.vim',
 			config = vim.cmd [[try | colorscheme Salt | catch /^Vim\%((\a\+)\)\=:E185/ | endtry ]]
 		}
+
+		if vim.fn.executable('firefox') then
+			use {
+				'glacambre/firenvim',
+				run = function() vim.fn['firenvim#install'](0) end,
+			}
+		end
 	end,
 
 	config = {

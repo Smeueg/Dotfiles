@@ -1,4 +1,6 @@
 #!/bin/sh
+# These songs take about 1GB of space
+
 urls="
 https://www.youtube.com/watch?v=QAOBbPnI5-g
 https://www.youtube.com/watch?v=QBJ1OzMtNwg

@@ -13,6 +13,7 @@ chrome://browser/content/browser.css
 	--arrowpanel-background: var(--bg2) !important;
 	--arrowpanel-border-color: var(--bg2) !important;
 	--urlbar-separator-color: var(--bg4) !important;
+	--tab-loading-fill: var(--blue) !important;
 }
 
 * { font-family: "JetBrains Mono" }
@@ -26,8 +27,12 @@ image
 .tab-text
 { color: var(--white) !important }
 
+
+.tab-background[selected="true"]
+{ box-shadow: none !important }
+
 .close-icon:hover
-{ background: var(--bg4) }
+{ background: var(--bg4) !important }
 
 #tabbrowser-tabs, .tabbrowser-tab {
 	background-color: var(--bg1) !important;
@@ -49,9 +54,16 @@ image
 .tab-line[selected=true] /* selected tab line */
 { background-color: var(--cyan) !important; }
 
+image.tab-close-button:hover
+{ background: var(--bg3) !important }
+
+image.tab-close-button[selected="true"]:hover
+{ background: var(--bg4) !important }
+
+#tabs-newtab-button:hover image
+{ background-color: var(--bg2) !important }
 
 /* navbar, toolbar, and urlbar */
-
 #navigator-toolbox
 { border: none !important }
 
@@ -130,15 +142,18 @@ menupopup > menuseparator
 #context-navigation menuitem hbox .menu-iconic-icon
 { fill: var(--white) !important }
 
-toolbarbutton[checked="true"] stack,
-toolbarbutton[checked="true"] image,
-toolbarbutton[open="true"] stack,
-toolbarbutton[open="true"] image
+#nav-bar-customization-target toolbarbutton[checked="true"] stack,
+#nav-bar-customization-target toolbarbutton[checked="true"] image,
+#nav-bar-customization-target toolbarbutton[open="true"] stack,
+#nav-bar-customization-target toolbarbutton[open="true"] image,
+#nav-bar-overflow-button[open="true"] image,
+#PanelUI-menu-button[open="true"] stack
 { background: var(--bg4) !important }
 
-
-toolbarbutton:hover stack,
-toolbarbutton:hover image
+#nav-bar-customization-target toolbarbutton:hover stack,
+#nav-bar-customization-target toolbarbutton:hover image,
+#nav-bar-overflow-button:hover image,
+#PanelUI-menu-button:hover stack
 { background: var(--bg4) !important }
 
 toolbarbutton[label="Firefox Account"]:hover image
@@ -192,13 +207,49 @@ findbar
 .findbar-container toolbarbutton[checked="true"] image
 { background: var(--bg3) !important; }
 
+#overflowMenu-customize-button
+{ color: var(--white) !important }
+
+#overflowMenu-customize-button:hover
+{ background: var(--bg3) !important }
+
+#widget-overflow-list
+{ background: var(--bg2) !important }
+
+#widget-overflow-list toolbarbutton:hover
+{ background: var(--bg3) !important }
+
 .findbar-closebutton:hover
 { background: var(--bg2) !important; }
 
 .findbar-closebutton:hover image
 { background: var(--bg3) !important; }
 
+#personal-toolbar-empty-description
+{ color: var(--white) !important }
+
+#personal-toolbar-empty-description *
+{ color: var(--blue) !important }
+
+#OtherBookmarks
+{ color: var(--white) !important }
+
+.PanelUI-subView box h1 span
+{ color: var(--white) !important }
+
+#appMenu-fxa-label2
+{ background: var(--bg3) !important }
+
+#appMenu-fxa-label2:hover
+{ background: var(--bg4) !important }
+
+#appMenu-fxa-status2:hover,
+#appMenu-fxa-text:hover
+{ background: var(--bg2) !important }
+
+toolbarbutton .toolbarbutton-text
+{ color: var(--white) !important }
 
 /* Title Bar */
 #titlebar
-{ background: var(--bg1) }
+{ background: var(--bg1) !important }

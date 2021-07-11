@@ -18,6 +18,8 @@ set breakindent
 set linebreak
 set formatoptions=1
 
+set guifont=JetBrains\ Mono
+
 set splitright splitbelow
 " -------- "
 
@@ -25,9 +27,11 @@ set splitright splitbelow
 function! SetStatus()
 	set statusline=%*\ %t
 	set statusline+=\ %{&modified?'+\ ':''}%*
-	set statusline+=%#StatusLineNC#\ %{&filetype}
+	set statusline+=%#StatusLineNC#
+	set statusline+=\ %{expand('%:p:~:h')}/
 	set statusline+=%=
-	if ('&fileencoding'!='') | set statusline+=\ %{&encoding}   | endif
+	set statusline+=%{&filetype}
+	if ('&fileencoding'!='') | set statusline+=\ \ %{&encoding}   | endif
 	if ('&fileformat'  !='') | set statusline+=\ \ %{&fileformat} | endif
 	set statusline+=\ \ %*\ \ %l/%L\ \ %*
 	set noshowmode
@@ -63,8 +67,6 @@ vnoremap <C-x> <C-x>gv
 
 inoremap <C-f> <Right>
 inoremap <C-b> <Left>
-inoremap <C-e> <C-o><C-e>
-inoremap <C-y> <C-o><C-y>
 
 nnoremap <C-Down>  <C-w>-
 nnoremap <C-Up>    <C-w>+
@@ -77,12 +79,11 @@ cnoremap <C-b> <Left>
 nnoremap <leader>r <cmd>source $MYVIMRC <Bar> echo 'Refreshed'<CR>
 nnoremap <leader>ei <cmd>e! $MYVIMRC<CR>
 nnoremap <leader>ep <cmd>e! ~/.config/nvim/plugconf.lua<CR>
-nnoremap <leader>t <cmd>split<bar>set nonumber<bar>cd %:p:h<bar>term<CR>10<C-w>-a
-nnoremap <leader>T <cmd>split<bar>set nonumber<bar>cd %:p:h<bar>term<CR>10<C-w>-a<C-Bslash><C-n><C-w><S-t>a
+nnoremap <leader>t <cmd>split<bar>set nonumber<bar>term cd %:p:h; $SHELL<CR>10<C-w>-a
+nnoremap <leader>T <cmd>split<bar>set nonumber<bar>term cd %:p:h; $SHELL<CR>10<C-w>-a<C-Bslash><C-n><C-w><S-t>a
 
 " Spell Checking
 nnoremap <leader>se <cmd>setlocal spell! spelllang=en_us<CR>
-nnoremap <leader>si <cmd>setlocal spell! spelllang=id<CR>
 nnoremap <leader>i <cmd>filetype detect<CR>
 " -------- "
 
@@ -98,6 +99,7 @@ function! CompileAndOrRun()
 		\ 'python' : term_cmd.'python3 %',
 		\ 'cpp'    : term_cmd.'g++ "'.file.'" -o "'.file_noext.'" && "'.file_noext.'"',
 		\ 'lua'    : term_cmd.'lua '.file,
+		\ 'awk'    : term_cmd.'awk -f '.file,
 		\ 'sh'     : term_cmd.'sh '.file,
 		\ 'c'      : term_cmd.'cc "'.file.'" -o "'.file_noext.'" && "'.file_noext.'"',
 		\ 'html'   : '!$BROWSER "%"',
@@ -159,6 +161,12 @@ autocmd FileType netrw :execute 'setlocal fillchars=eob:\ | setlocal statusline=
 " ----- "
 
 
-if $TERM != 'linux' | set termguicolors | endif
+if $TERM != 'linux'
+	set termguicolors
+else
+	if $PWD == '/run/user/1000/firenvim'
+		set termguicolors
+	endif
+endif
 
 luafile ~/.config/nvim/plugconf.lua

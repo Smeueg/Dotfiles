@@ -59,6 +59,11 @@ url("about:tor") {
 
 
 @-moz-document domain("youtube.com") {
+	:root {
+		--yt-live-chat-primary-text-color: var(--white) !important;
+		--yt-spec-text-primary: var(--white) !important;
+	}
+
 	/* Youtube Logo */
 	#logo-icon
 	{ display: none !important }
@@ -110,6 +115,12 @@ url("about:tor") {
 
 	.sbfl_b /* Report Search Prediction */
 	{ display: none !important }
+
+	.sbpqs_a /* Previously Searched */
+	{ color: var(--magenta) !important }
+
+	.sbsb_i /* Remove Previously Searched */
+	{ color: var(--blue) !important }
 
 	#search-icon-legacy, /* Search Button next to searchbox */
 	#voice-search-button /* Voice Search */
@@ -211,5 +222,337 @@ url("about:tor") {
 
 	#label-text,
 	.tab-content
+	{ color: var(--white) !important }
+
+	/* Stream */
+	#message
+	{ color: var(--white) !important }
+
+	.yt-live-chat-renderer
+	{ background: var(--bg2) !important }
+
+	#author-name
+	{ color: var(--white) !important }
+
+	#menu.yt-live-chat-text-message-renderer
+	{ background: none !important }
+
+	#card
+	{ background: var(--bg2) !important }
+
+	tp-yt-paper-button[aria-label="Sign in to chat"]
+	{ background: var(--bg3) !important }
+
+	.yt-live-chat-message-input-renderer
+	{ background: var(--bg2) !important }
+
+	#show-hide-button ytd-toggle-button-renderer a .ytd-toggle-button-renderer
+	{ background: var(--bg2) !important }
+
+	yt-live-chat-text-input-field-renderer,
+	yt-live-chat-text-input-field-renderer label,
+	#count
+	{ color: var(--white) !important }
+
+	/* Tags/Topics/Whatever those things are */
+	#scroll-container
+	{ display: none !important }
+
+	/* Newly Created Channel Buttons */
+	tp-yt-paper-button[aria-label="Upload video"],
+	tp-yt-paper-button[aria-label="Customize channel"],
+	tp-yt-paper-button[aria-label="Manage Videos"]
+	{ background: var(--blue) !important }
+}
+
+
+
+@-moz-document domain("duckduckgo.com")
+{
+	a:visited
+	{ color: var(--bg3) !important }
+
+
+	/* Header */
+	#header_wrapper
+	{
+		background: var(--bg2) !important;
+		box-shadow: none !important;
+	}
+
+	.js-logo-ddg
+	{ display: none !important } /* Logo */
+
+	/* Search */
+	.header__search
+	{ background: none !important }
+
+	#search_form
+	{
+		background: var(--bg1) !important;
+		border-color: var(--bg2) !important;
+	}
+
+	#search_form_input
+	{ color: var(--white) !important }
+
+	.search__autocomplete
+	{ border-color: var(--bg2) !important }
+
+	.acp-wrap
+	{ background: var(--bg1) !important }
+
+	.acp
+	{ color: var(--white) !important }
+
+	.acp--highlight
+	{ background: var(--bg2) !important }
+
+	#search_button
+	{ color: var(--white) !important }
+
+	.search--hover #search_button
+	{ background: var(--bg2) !important }
+
+	#search_form_input_clear
+	{ display: none !important }
+
+
+	/* Below the search bar */
+	.zcm ul li a
+	{ color: var(--white) !important }
+
+	.zcm__link:hover
+	{ background: none !important }
+
+	#duckbar_dynamic_sep
+	{ display: none !important }
+
+	/* Beside the search bar (Right) + it's menu */
+
+	.header__button--menu,
+	.ddgsi,
+	#wedonttrack
+	{ color: var(--white) !important }
+
+	.header__button--menu:hover
+	{ background: var(--bg3) !important }
+
+	.showcase__dropdown-top,
+	.showcase__dropdown-bottom
+	{
+		background: var(--bg2) !important;
+		border: 1px solid var(--bg3) !important;
+	}
+
+	.showcase__dropdown__list:hover
+	{ background: var(--bg3) !important }
+
+	.showcase__heading,
+	.showcase__subheading
+	{ color: var(--white) !important }
+
+	.modal__body
+	{
+		background: var(--bg2) !important;
+		border: 1px solid var(--bg3) !important;
+	}
+
+	.social__link a
+	{ color: var(--white) !important }
+
+
+	.nav-menu--slideout
+	{
+		background: var(--bg2) !important;
+		border: 1px solid var(--bg3) !important;
+	}
+
+	.nav-menu__close
+	{ color: var(--white) !important }
+
+	.nav-menu__list ul li span
+	{ color: var(--white) !important }
+
+	.badge-link
+	{
+		background: var(--bg2) !important;
+		border: 1px solid var(--bg3) !important;
+	}
+
+	.badge-link span
+	{ color: var(--white) !important }
+
+
+	/* Search Results */
+	#web_content_wrapper
+	{ background: var(--bg1) !important }
+
+	.search-filters-wrap::after,
+	.search-filters-wrap::before
+	{ background: var(--bg1) !important }
+
+	.switch
+	{ background: var(--bg2) !important }
+
+	.module--about
+	{
+		background: var(--bg2) !important;
+		border-color: var(--bg3) !important
+	}
+
+	.module__title__link
+	{ color: var(--white) !important }
+
+	.module__text *
+	{ color: var(--white) !important }
+
+	module__toggle__chevron::after
+	{ background: none !important }
+
+	code,
+	pre
+	{
+		background: var(--bg1) !important;
+		color: var(--white) !important;
+	}
+
+	.tx--bold
+	{ color: var(--white) !important }
+
+	.module__toggle::before
+	{ background: none !important }
+
+	.module__toggle
+	{
+		background: var(--bg3) !important;
+		border-color: var(--bg3) !important
+	}
+
+	.result.highlight,
+	.result.highlight .result__body
+	{
+		background: var(--bg2) !important;
+		border-color: var(--bg3) !important;
+	}
+
+	.result__a,
+	.result__url *,
+	.result__snippet
+	{ color: var(--white) !important }
+
+	.result--sep::before,
+	.result--sep::after
+	{ background: var(--bg2) !important }
+
+	.result__pagenum
+	{ color: var(--bg2) !important }
+
+	.btn
+	{
+		background: var(--bg2) !important;
+		color: var(--white) !important;
+		border: none !important;
+	}
+
+	.feedback-btn__send
+	{ color: var(--white) !important }
+
+	/* Footer */
+	.footer
+	{
+		background: var(--bg2) !important;
+		border-color: var(--bg3) !important;
+	}
+
+	.footer__column *
+	{ color: var(--white) !important }
+
+	.footer__card
+	{ background: var(--bg3) !important }
+
+	.footer__card *
+	{ color: var(--white) !important }
+
+	/* Images Section */
+	.metabar
+	{ border-bottom-color: var(--bg3) !important }
+
+	.metabar.has-dropdowns
+	{ background: var(--bg1) !important }
+
+	.metabar__dropdowns-wrap::before,
+	.metabar__dropdowns-wrap::after
+	{ background: var(--bg1) !important }
+
+	.dropdown__button,
+	.dropdown__button::after
+	{ color: var(--white) !important }
+
+	.modal__header__clear
+	{ color: var(--white) !important }
+
+	.modal__list__link.is-highlighted
+	{ background: var(--bg3) !important }
+
+	.modal__list__link a
+	{ color: var(--white) !important }
+
+	.modal__list__divider
+	{ background: var(--bg3) !important }
+
+	.modal__box
+	{ border-color: var(--bg3) !important }
+
+	.js-region-filter-input
+	{
+		background: var(--bg1) !important;
+		color: var(--white) !important
+	}
+
+	modal__header::before
+	{ color: var(--white) !important }
+
+	#zci-images
+	{ background: var(--bg1) !important }
+
+	.tile--img__sub *
+	{ color: var(--white) !important }
+
+	.detail
+	{ border-color: var(--bg3) !important }
+
+	.detail__pane
+	{ background: var(--bg2) !important }
+
+	.detail__close
+	{ color: var(--white) !important }
+
+	.detail__body__content * *
+	{ color: var(--white) !important }
+
+	.tile-nav--sm
+	{ background: var(--bg3) !important }
+
+	.tile-nav--sm::before
+	{ color: var(--white) !important }
+
+	.module--carousel__item
+	{ background: var(--bg2) !important }
+
+	.module--carousel__body__title,
+	.module--carousel__source,
+	.module__header,
+	.module__footer,
+	.sep.tile__sep,
+	.tile__time
+	{
+		border-color: var(--white) !important;
+		color: var(--white) !important;
+	}
+
+	.js-spelling-suggestion-link,
+	.js-spelling-recourse-link,
+	.msg__line
 	{ color: var(--white) !important }
 }

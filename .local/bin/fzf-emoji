@@ -1,4 +1,6 @@
 #!/bin/sh
+errorString='$TERMINAL variable is not set'
+
 main(){
     selected=$(fzf --color fg+:4,bg+:-1,hl:4,hl+:6,pointer:2,prompt:2 < ~/.local/share/emoji.txt)
     [ -z "$selected" ] && exit
@@ -13,11 +15,21 @@ in_terminal(){
     x=$(echo "$xrandr_output" | awk -F' *|x' '{print $2}')
     y=$(echo "$xrandr_output" | awk -F' *|x' '{print $3}')
 
-    if command -v st; then
-        st -t fzf-emoji -g 100x30+$(expr $(expr $x - 800) / 2)+$(expr $(expr $y - 600) / 2) -e $0
-    else
-        $TERMINAL -t fzf-emoji -e $0
-    fi
+	case "$TERMINAL" in
+		"st")
+			st -t fzf-emoji -g 100x30+$(expr $x / 2 - 800 / 2)+$(expr $y / 2 - 600 / 2) -e $0 ;;
+		"")
+			if command -v herbe >/dev/null; then
+				herbe "$errorString"
+			else
+				printf '%s' "$errorString"
+			fi
+			;;
+
+		*)
+			$TERMINAL -t fzf-emoji -e $0 ;;
+	esac
+
 }
 
 

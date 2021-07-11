@@ -4,8 +4,8 @@ shopt -s autocd # Change directories without typing cd
 shopt -s checkwinsize
 stty -ixon 		# Disable Ctrl-q and Ctrl-s
 set -o vi 		# Vi mode
-export HISTFILE=/home/$USER/.cache/bash_history
-export LESSHISTFILE=-
+export HISTFILE=$XDG_CACHE_HOME/bash_history
+export LESSHISTFILE=/dev/null
 
 
 # Prompt
@@ -28,13 +28,13 @@ Prompt
 unset Prompt
 
 
-
 # Source seperate bash config file
 for f in ~/.config/shellconfig/*; do source "$f"; done
 
 # Source bash completion
 [[ $PS1 && -f /usr/share/bash-completion/bash_completion ]] &&
     . /usr/share/bash-completion/bash_completion
+
 
 # "Less" coloring
 lessColors() {
@@ -70,29 +70,6 @@ unset fzfConfig
 # To bind Ctrl-l to type clear and then return/enter:
 bind '"\C-l":"\033[4~\C-uclear\n"'
 
-# LF Icons
-command -v lf >/dev/null &&
-export LF_ICONS="\
-*=:\
-tw=:\
-st=:\
-ow=:\
-dt=:\
-di=:\
-fi=:\
-ln=:\
-or=:\
-ex=:\
-*.c=:\
-*.h=:\
-*.html=:\
-*.lua=:\
-*.md=:\
-*.vim=:\
-*.sh=:\
-*.gz=:\
-*.zip=:\
-"
 
 if command -v nnn >/dev/null; then
 	export NNN_PLUG="g:getplugs;p:preview-tui;m:nmount"
@@ -108,5 +85,6 @@ if [ ! -f "$XDG_CONFIG_HOME"/git/config ]; then
 	mkdir --parent "$XDG_CONFIG_HOME"/git
 	touch "$XDG_CONFIG_HOME"/git/config
 fi
+
 
 printf ''

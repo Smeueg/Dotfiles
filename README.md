@@ -15,7 +15,7 @@ Refer to the arch wiki: https://wiki.archlinux.org/index.php/Dotfiles
 
 
 ## Installing/Migrating into a new system
-To enable firefox theme symlink ~/.config/browser/firefox to ~/.mozilla/firefox/xxxxxxxx.default-release/chrome:
+To enable the firefox theme, symlink ~/.config/browser/firefox to ~/.mozilla/firefox/xxxxxxxx.default-release/chrome:
 ```sh
 ln -s $HOME/.config/browser/firefox  $HOME/.mozilla/firefox/*.default-release/chrome
 ```
@@ -43,6 +43,7 @@ These are all really optional, since without them, the "rice" would still be fun
 - Finish firefox theming (Add css for stackoverflow and it's siblings, duckduckgo, gitlab, github, and reddit)
 - Add a gtk theme
 - Add a license
+- Try out vifm
 
 
 ## Recommendations (from myself)

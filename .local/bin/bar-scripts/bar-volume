@@ -10,3 +10,8 @@ volume=$(echo "$sink_info" | grep -Po "^\s+Volume.*\/ +\K\d*[%]")
 mute=$(echo "$sink_info" | grep -Po 'Mute: \K.*')
 
 [ "$mute" = "no" ] && icon="" || icon=""
+
+case $BUTTON in
+	4) pactl set-sink-volume @DEFAULT_SINK@ +1%; kill -49 $(pidof dwmblocks) ;;
+	5) pactl set-sink-volume @DEFAULT_SINK@ -1%; kill -49 $(pidof dwmblocks) ;;
+esac

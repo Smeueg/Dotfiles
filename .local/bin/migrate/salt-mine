@@ -66,6 +66,7 @@ def Confirm(string):
     return False
 
 
+# Get a file from the latest github release
 def GithubRegex(repoUrl, regex):
     import re
     if repoUrl[-1] != "/":
@@ -87,6 +88,7 @@ def GithubRegex(repoUrl, regex):
     return files
 
 
+# Capture/return a command
 def GetCmd(arr):
     import subprocess
     out = subprocess.Popen(arr, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -188,9 +190,12 @@ def drawMenu(choices, isSubmenu):
     drawMsg(menuY)
 
     highlighted = 0
+
+    # Main Loop
     while True:
         highlightedOffset = 1
 
+        # Draw choices
         for index in range(menuH - 1):
             attr = [curses.A_NORMAL, curses.A_REVERSE][highlighted == index]
 
@@ -216,6 +221,7 @@ def drawMenu(choices, isSubmenu):
 
             menu.addstr(index + 1, offset, string, attr)
 
+        # Move cursor to a "hidden" place
         menu.move(highlighted+1, highlightedOffset)
 
         key = menu.getkey()
@@ -260,6 +266,7 @@ def drawMenu(choices, isSubmenu):
             if choices[highlighted].submenu == None:
                 choices[highlighted].toggled = not choices[highlighted].toggled
             else:
+                # Clear the window
                 menu.clear()
                 menu.refresh()
                 stdscr.clear()
@@ -267,6 +274,7 @@ def drawMenu(choices, isSubmenu):
                 drawMenu(choices[highlighted].submenu, True)
                 stdscr.clear()
                 menu.clear()
+                # Redraw window
                 menu.resize(menuH, menuW)
                 menu.mvwin(int(menuY), int(menuX))
                 menu.box()
@@ -527,9 +535,6 @@ def CompileSuckless():
 # -------- #
 
 
-
-
-
 # Fonts #
 def GetFonts(arg):
     from zipfile import ZipFile
@@ -635,4 +640,3 @@ curses.endwin()
 if execute:
     for choice in mainChoice:
         choice.execute()
-

@@ -38,7 +38,7 @@ CenterDmenu()
 	xOffset=$(awk "BEGIN {print ($x - $width) / 2}")
 	yOffset=$(awk "BEGIN {print ($y - $height) / 2}")
 
-	cmd="printf '$options' | dmenu -z $width -x $xOffset -y $yOffset"
+	cmd="printf '$options' | dmenu -z $width -x $xOffset -y $yOffset -i"
 
 	[ ! -z "$message" ] && cmd="$cmd -p '$message'"
 	[ -z "$options" ] && cmd="$cmd -l 0"

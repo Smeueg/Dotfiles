@@ -9,5 +9,8 @@ xrdb ~/.config/X11/Xresources
 
 export WINIT_X11_SCALE_FACTOR=1
 
+# Turn of screen saver and dpms
+xset s off -dpms
+
 xcompmgr &
 (dwmblocks &) ; exec dwm
