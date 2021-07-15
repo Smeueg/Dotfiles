@@ -516,6 +516,41 @@ url("about:tor") {
 	#zci-images
 	{ background: var(--bg1) !important }
 
+	.zci
+	{
+		background: var(--bg2) !important;
+		border-bottom-color: var(--bg2) !important;
+	}
+
+	.c-info__title a,
+	.c-info__content,
+	.c-info__link
+	{ color: var(--white) !important }
+
+	.attribution--link__icon
+	{ display: none !important }
+
+	.tile
+	{
+		background: var(--bg2) !important;
+		border-color: var(--bg3) !important;
+	}
+
+	.tile .info
+	{ border-color: var(--bg2) !important }
+
+	.tile .info span
+	{ color: var(--white) !important }
+
+	.tile__expand
+	{
+		background: var(--bg3) !important;
+		border-color: var(--bg2) !important;
+	}
+
+	.tile__expand::before
+	{ color: var(--white) !important }
+
 	.tile--img__sub *
 	{ color: var(--white) !important }
 

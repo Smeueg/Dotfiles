@@ -1,8 +1,7 @@
 #!/bin/sh
+WM="dwm"
+
 xrandr --output $(xrandr | grep -Po '.*(?= connected)') --mode 1360x768 --scale 1.2
-
-hsetroot -cover ~/.local/rice/Wallpapers/"Rock Thing.png"
-
 setxkbmap -option keypad:pointerkeys
 xset r rate 250 50
 xrdb ~/.config/X11/Xresources
@@ -12,5 +11,16 @@ export WINIT_X11_SCALE_FACTOR=1
 # Turn of screen saver and dpms
 xset s off -dpms
 
-xcompmgr &
-(dwmblocks &) ; exec dwm
+
+case "$WM" in
+	"dwm")
+		hsetroot -cover ~/.local/rice/Wallpapers/"Rock Thing.png"
+
+		xcompmgr &
+		(dwmblocks &) ; exec dwm
+		;;
+
+	"awesome")
+		exec awesome
+		;;
+esac

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # I hate pulseaudio
 # Changes the output device
 
@@ -12,6 +12,7 @@ lines=$(echo "$options" | wc -l)
 printf '\033[33mj: UP;  K: Down;  Enter / Space: Select;  q: Quit\n'
 printf '\033[33m              !!! NO ARROW KEYS !!!\n'
 printf '%s\n' '-------------------------------------------------'
+
 while [ $returned -eq 0 ]; do
 	selectedString=$(echo "$options" | awk "NR==$selected{print}")
 
