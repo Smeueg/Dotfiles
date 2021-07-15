@@ -25,7 +25,11 @@ end
 
 local function LspConfig()
 	vim.lsp.handlers["textDocument/publishDiagnostics"] = vim.lsp.with(
-		vim.lsp.diagnostic.on_publish_diagnostics, {update_in_insert = true}
+		vim.lsp.diagnostic.on_publish_diagnostics,
+		{
+			virtual_text = false,
+			update_in_insert = true
+		}
 	)
 
 
@@ -43,6 +47,8 @@ local function LspConfig()
 	vim.cmd 'sign define LspDiagnosticsSignWarning text=● texthl=LspDiagnosticsSignWarning'
 	vim.cmd 'sign define LspDiagnosticsSignInformation text=● texthl=LspDiagnosticsSignInformation'
 	vim.cmd 'sign define LspDiagnosticsSignHint text=● texthl=LspDiagnosticsSignHint'
+
+	vim.cmd 'autocmd CursorHold,CursorHoldI * lua vim.lsp.diagnostic.show_line_diagnostics()'
 end
 ------------------------------------------------
 
@@ -174,13 +180,6 @@ return require("packer").startup({
 			'https://gitlab.com/Smeueg/Salt.vim',
 			config = vim.cmd [[try | colorscheme Salt | catch /^Vim\%((\a\+)\)\=:E185/ | endtry ]]
 		}
-
-		if vim.fn.executable('firefox') then
-			use {
-				'glacambre/firenvim',
-				run = function() vim.fn['firenvim#install'](0) end,
-			}
-		end
 	end,
 
 	config = {

@@ -2,6 +2,18 @@
 # I hate pulseaudio
 # Changes the output device
 
+
+# Check if tput exists
+if ! command -v tput >/dev/null; then
+	printf "Error: tput is not installed\n"
+	exit -1
+fi
+
+if ! pidof pulseaudio >/dev/null; then
+	printf "Error: Pulseaudio is not running\n"
+	exit -1
+fi
+
 output=$(pacmd list-cards)
 options=$(printf '%s' "$output" | grep -Po '\s+output:.*: \K.*(?= [(]priority)')
 returned=0
@@ -9,18 +21,21 @@ selected=1
 
 lines=$(echo "$options" | wc -l)
 
-printf '\033[33mj: UP;  K: Down;  Enter / Space: Select;  q: Quit\n'
-printf '\033[33m              !!! NO ARROW KEYS !!!\n'
+tput setaf 3
+printf 'j: UP;  K: Down;  Enter / Space: Select;  q: Quit\n'
+printf '              !!! NO ARROW KEYS !!!\n'
 printf '%s\n' '-------------------------------------------------'
 
+tput sgr0
 while [ $returned -eq 0 ]; do
 	selectedString=$(echo "$options" | awk "NR==$selected{print}")
 
 	echo "$options" | while read line; do
 		[ "$selectedString" = "$line" ] &&
-			printf '\033[7m'
+			tput rev
 
-		printf '%s\033[0m\n' "$line"
+		printf '%s\n' "$line"
+		tput sgr0
 	done
 
 
@@ -30,14 +45,21 @@ while [ $returned -eq 0 ]; do
  	elif [ "$input" = 'k' ] && [ ! $selected -eq 1 ]; then
  		selected=$(expr $selected - 1)
  	elif [ "$input" = 'q' ] ; then
-		returned=1
+		returned=-1
  	elif [ "$input" = ' ' ] || [ "$input" = '' ] ; then
 		returned=$selected
  	fi
 
- 	printf '\033[%iF' $lines
- 	printf '\033[0J'
+	tput cuu $lines
+	tput ed
 done
+
+tput cuu 3
+tput ed
+
+if [ $returned -eq -1 ]; then
+	exit
+fi
 
 echo "Changing output device to: ${selectedString}"
 profile=$(printf '%s' "$output" | grep "$selectedString (priority" | cut -d ':' -f 2)

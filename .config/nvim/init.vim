@@ -1,6 +1,7 @@
 " Settings "
 set mouse=a
 set number
+set updatetime=1000
 set cursorline | highlight clear CursorLine
 
 syntax enable
