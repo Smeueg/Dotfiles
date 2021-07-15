@@ -14,12 +14,17 @@ if ! pidof pulseaudio >/dev/null; then
 	exit -1
 fi
 
+
+
+
 output=$(pacmd list-cards)
 options=$(printf '%s' "$output" | grep -Po '\s+output:.*: \K.*(?= [(]priority)')
 returned=0
 selected=1
 
 lines=$(echo "$options" | wc -l)
+
+trap "tput sgr0; tput cuu $lines; tput cuu 3; tput ed; exit" SIGINT
 
 tput setaf 3
 printf 'j: UP;  K: Down;  Enter / Space: Select;  q: Quit\n'

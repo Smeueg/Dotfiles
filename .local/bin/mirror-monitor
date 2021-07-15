@@ -1,0 +1,112 @@
+#!/bin/sh
+if ! command -v xrandr >/dev/null; then
+	printf 'Xrandr is not installed, exiting...\n'
+	exit
+fi
+
+if ! command -v tput >/dev/null; then
+	printf 'tput is not installed, exiting...\n'
+	exit
+fi
+
+
+# Variables #
+selected=1
+notFinished=true
+monitors=$(xrandr | grep -Po '.*(?= connected.*)')
+amount=$(printf '%s\n' "$monitors" | wc -l)
+
+HandleKey() {
+	read -rn1 key
+
+	if [ "$key" = $'\033' ]; then
+		read -rn2 key
+	fi
+
+	case "$key" in
+		""|" ")
+			notFinished=false
+			;;
+
+		"[A"|"k")
+			[ ! $selected -eq 1 ] && selected=$(expr $selected - 1)
+			;;
+
+		"[B"|"j")
+			[ ! $selected -eq $amount ] && selected=$(expr $selected + 1)
+			;;
+
+		"q")
+			selected=0
+			notFinished=false
+			;;
+	esac
+}
+
+
+selection() {
+	prompt="$1"
+	choices="$2"
+	var="$3"
+
+	trap 'selected=0;notFinished=false' SIGINT
+	printf "${prompt}\n\n"
+
+	notFinished=true
+	while $notFinished; do
+		index=1
+		tput sc
+		tput cub 10
+
+		printf '%s\n' "$choices" | while read line; do
+			if [ $index -eq $selected ]; then
+				tput rev
+				printf '%s\n' "$line"
+				tput sgr0
+			else
+				printf '%s\n' "$line"
+			fi
+
+			index=$(expr $index + 1)
+		done
+
+		HandleKey
+		tput rc
+		tput cuu1
+		tput ed
+		tput cud1
+	done
+
+	tput cuu 2
+	tput ed
+
+	if [ ! $selected -eq 0 ]; then
+		eval "$var=$(printf '%s\n' "$monitors" | head -n $selected | tail -n 1)"
+	fi
+}
+
+
+main() {
+	printf "Make sure to select a monitor that's not already mirrored\n"
+	selection "Select monitor to be mirrored:" "$monitors" dest
+	[ -z "$dest" ] && exit
+	selection "Select source monitor:" "$(printf '%s' "$monitors" | sed "/$dest/d")" src
+	[ -z "$src" ] && exit
+
+	printf 'dest:%s, src:%s\n' "$dest" "$src"
+	read -p "Are you sure? [Y/n] " confirmation
+	case "$confirmation" in
+		[Yy][Ee][Ss]|[Yy]|"")
+			printf 'Mirroring monitors...\n'
+			xrandr --output $dest --auto --same-as $src &&
+				printf 'Mirrored monitors...\n' ||
+				printf 'Failed to mirror monitors...\n'
+			;;
+
+		*)
+			printf 'Will not mirror monitors\n'
+			;;
+	esac
+}
+
+main
