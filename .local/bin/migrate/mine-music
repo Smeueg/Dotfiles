@@ -11,9 +11,16 @@ currentDir=$PWD
 dir=$HOME/Music
 
 
-if !command -v youtube-dl > /dev/null 2>&1 ; then
+if ! command -v youtube-dl >/dev/null; then
 	printf "Getting youtube-dl\n"
-	cmd="$(curl -L https://yt-dl.org/downloads/latest/youtube-dl)"
+	if command -v curl >/dev/null; then
+		cmd="$(curl -L https://yt-dl.org/downloads/latest/youtube-dl)"
+	elif command -v wget >/dev/null; then
+		cmd="$(wget https://yt-dl.org/downloads/latest/youtube-dl)"
+	else
+		printf 'Cannot download youtube-dl, curl and wget is not installed...\n'
+		exit
+	fi
 else
 	cmd="$(cat $(which youtube-dl))"
 fi

@@ -1,0 +1,37 @@
+#!/bin/sh
+file="$1"
+x="$2"
+y="$3"
+height="$4"
+width="$5"
+mime=$(filetype --mime-type --brief "$file")
+
+ImageRemove() {
+
+}
+
+
+ImageAdd() {
+
+}
+
+case $mime in
+	*/directory) ls -lA --color=always --group-directories-first ;;
+	text/plain|text/x-shellscript|text/x-script.python)
+		if command -v bat >/dev/null; then
+			bat "$file"
+		else
+			head -n 500 "$file"
+		fi
+		;;
+
+	image/*)
+		if [ -z "$UEBERZUG_FIFO" ]; then
+			printf '$UEBERZUG_FIFO is not set...\n'
+		else
+			printf 'Work in progress...'
+		fi
+		;;
+
+	*) printf 'Preview for current mime-type is not implemented yet...\n'
+esac

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-file="$1"
+file="$(realpath "$1")"
 mime_type=$(file --mime-type --brief "$file")
 
 
@@ -31,7 +31,14 @@ execute() {
 case $mime_type in
 	image/*) execute "sxiv"    1; exit;;
 	*/pdf)   execute "zathura" 1; exit;;
-	text/*)  execute "$EDITOR" 0; exit;;
+	text/*)
+
+		cwd=$PWD
+		cd "$(dirname "$file")"
+		execute "$EDITOR" 0;
+		cd "$cwd"
+		exit
+		;;
 esac
 
 case $file in

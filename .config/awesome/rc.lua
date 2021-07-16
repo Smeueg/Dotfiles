@@ -1,6 +1,9 @@
 -- TODO
--- Change Tag Icon
 -- Add statusbar (time, wifi, volume, ram)
+-- Add a scratchpad
+-- Add floating widgets (lock screen, other stuff)
+-- Add notifications
+
 
 -- Import libraries --
 local gears = require("gears")
@@ -29,7 +32,7 @@ local empty_tag    = "    "
 
 beautiful.init({
 	useless_gap   = 10,
-	border_width  = 2,
+	border_width  = bw,
 	border_normal = bg,
 	border_focus  = fg,
 	border_marked = bg,
@@ -82,6 +85,7 @@ local function Volume(action, value)
 	end
 
 	awful.spawn("pactl " .. cmd .. " @DEFAULT_SINK@ " .. value)
+	SetVol()
 end
 
 
@@ -154,7 +158,10 @@ globalkeys = gears.table.join(
 	awful.key({modkey}, "Return", function() awful.spawn(terminal .. " -e tmux-spawn") end,
 		{description = "Open a Terminal", group = "Applications"}),
 
-	awful.key({modkey}, "b", function() awful.spawn(browser) end,
+	awful.key({modkey}, "b", function()
+		awful.spawn(browser)
+		naughty.notify({title = "Opened " .. browser})
+	end,
 		{description = "Open a Web Browser", group = "Applications"}),
 
 	-- Launcher
@@ -291,7 +298,7 @@ local windows = gears.table.join(
                                           end))
 
 
--- Widgets --
+-- Custom Widgets --
 local function seperatorWidget(string)
 	return wibox.widget {
 		text = string,
@@ -354,6 +361,53 @@ local dateWidget = wibox.widget {
 	},
 	layout = wibox.layout.fixed.horizontal
 }
+
+local volumeWidget = wibox.widget {
+	{
+		{
+			text   = "",
+			id     = "volicon",
+			font   = "Material Icons 12",
+			widget = wibox.widget.textbox
+		},
+		id = "submain",
+		fg = fg2,
+		widget = wibox.container.background
+	},
+	{
+		{
+			text   = " 100%",
+			id     = "volvalue",
+			font   = "JetBrainsMono 11",
+			widget = wibox.widget.textbox
+		},
+		id = "submain",
+		fg = fg,
+		widget = wibox.container.background
+	},
+	id = "main",
+	layout = wibox.layout.fixed.horizontal,
+}
+
+local function SetVol()
+	awful.spawn.easy_async("pactl list sinks", function(stdout, stderr, reason, exit_code)
+		output = stdout
+		volume = string.match(string.match(output, 'left: [0-9]* / *[0-9]*%%'), '[0-9]*%%')
+		muted  = string.match(string.match(output, 'Mute: ...?'), 'no')
+
+		if volume == nil then
+			volumeWidget.main.submain.volicon.text = ""
+			volumeWidget.main.submain.volvalue.text = " "
+		else
+			if muted ~= nil then
+				volumeWidget.main.submain.volicon.text = ""
+			else
+				volumeWidget.main.submain.volicon.text = ""
+			end
+			volumeWidget.main.submain.volvalue.text = " " .. volume
+		end
+	end)
+end
 -- ------- --
 
 
@@ -402,6 +456,8 @@ awful.screen.connect_for_each_screen(function(s)
 
 		-- Right Widgets --
         {
+			volumeWidget,
+			seperatorWidget("  "),
 			timeWidget,
 			seperatorWidget("  "),
 			dateWidget,
@@ -470,7 +526,7 @@ end)
 client.connect_signal("focus",   function(c) c.border_color = fg end)
 client.connect_signal("unfocus", function(c) c.border_color = bg end)
 
-screen.connect_signal("arrange", function (s)
+screen.connect_signal("arrange", function(s)
     for _, c in pairs(s.clients) do
         if s.selected_tag.layout.name == "max" and not c.floating then
 			c:tags()[1].gap = 0
@@ -482,3 +538,12 @@ screen.connect_signal("arrange", function (s)
     end
 end)
 
+
+-- Timer --
+gears.timer {
+    timeout   = 10,
+    call_now  = true,
+    autostart = true,
+    callback  = SetVol
+}
+-- ----- --

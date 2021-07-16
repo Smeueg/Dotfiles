@@ -39,4 +39,5 @@ alias D="cd ~/Documents"
 # Extra functionality
 alias makepkgmem="BUILDDIR=/tmp/makepkg makepkg"
 alias parumem="paru --clonedir /tmp/makepkg"
+alias vifm='cd $($(which vifm) . --choose-dir -)'
 alias sx="cd ~ && startx ~/.config/X11/xinitrc"

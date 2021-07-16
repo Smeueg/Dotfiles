@@ -127,7 +127,9 @@ url("about:tor") {
 	{ display: none !important }
 
 	/* Main Page */
-	.ytd-feed-filter-chip-bar-renderer{ display:none !important; }
+	.ytd-feed-filter-chip-bar-renderer
+	{ display: none !important; }
+
 	.ytd-rich-grid-renderer,
 	#page-manager { background: var(--bg1) !important; }
 
@@ -157,8 +159,8 @@ url("about:tor") {
 	#guide-inner-content
 	{ background: var(--bg2) !important; }
 
-	yt-icon-button#button.dropdown-trigger.style-scope.ytd-menu-renderer
-	{ display: none !important; }
+	/*yt-icon-button#button.dropdown-trigger.style-scope.ytd-menu-renderer*/
+	/*{ display: none !important; }*/
 
 	h1.title,
 	#info-text,
@@ -254,15 +256,14 @@ url("about:tor") {
 	#count
 	{ color: var(--white) !important }
 
-	/* Tags/Topics/Whatever those things are */
-	#scroll-container
-	{ display: none !important }
-
 	/* Newly Created Channel Buttons */
 	tp-yt-paper-button[aria-label="Upload video"],
 	tp-yt-paper-button[aria-label="Customize channel"],
 	tp-yt-paper-button[aria-label="Manage Videos"]
 	{ background: var(--blue) !important }
+
+	#content .yt-related-chip-cloud-renderer #scroll-container
+	{ display: none !important }
 }
 
 

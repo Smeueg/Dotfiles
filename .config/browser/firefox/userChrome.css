@@ -14,6 +14,7 @@ chrome://browser/content/browser.css
 	--arrowpanel-border-color: var(--bg2) !important;
 	--urlbar-separator-color: var(--bg4) !important;
 	--tab-loading-fill: var(--blue) !important;
+	--tab-border-radius: 0px !important
 }
 
 * { font-family: "JetBrains Mono" }
@@ -37,22 +38,30 @@ image
 #tabbrowser-tabs, .tabbrowser-tab {
 	background-color: var(--bg1) !important;
 	background-image: none !important;
+	padding: 0px 0px 0px 0px !important;
 }
 
 .tab-background { /* tab background */
-  background-color: var(--bg2) !important;
-  background-image: none !important;
+	background-color: var(--bg2) !important;
+	background-image: none !important;
+	margin: 0px 0px 0px 0px !important;
 }
+
+.tabbrowser-tab[selected="true"] {
+	border-left: 1px solid var(--bg1) !important;
+	border-right: 1px solid var(--bg1) !important;
+}
+
 .tab-background[selected=true] { /* Selected tab background */
   background-color: var(--bg3) !important;
   background-image: none !important;
 }
 
 .tab-line /* tab line */
-{ background-color: var(--bg2) !important; }
+{ background: var(--bg2) !important; }
 
 .tab-line[selected=true] /* selected tab line */
-{ background-color: var(--cyan) !important; }
+{ background: var(--cyan) !important; }
 
 image.tab-close-button:hover
 { background: var(--bg3) !important }
@@ -61,9 +70,18 @@ image.tab-close-button[selected="true"]:hover
 { background: var(--bg4) !important }
 
 #tabs-newtab-button:hover image
-{ background-color: var(--bg2) !important }
+{ background: var(--bg2) !important }
 
 /* navbar, toolbar, and urlbar */
+#urlbar-search-mode-indicator-title
+{ color: var(--white) !important }
+
+#urlbar-search-mode-indicator-close
+{ fill: var(--white) !important }
+
+#urlbar-search-mode-indicator
+{ background: var(--bg2) !important }
+
 #navigator-toolbox
 { border: none !important }
 

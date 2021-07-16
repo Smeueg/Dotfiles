@@ -109,6 +109,7 @@ Add()
 	done
 
 	printf '%s\n' "$url" >> "$bookmarkPath"
+	Notify "Added $name"
 }
 
 
@@ -121,6 +122,7 @@ Remove()
 
 	line=$(grep -n "$name" "$bookmarkPath" | grep -Po "^[0-9]+")
 	sed -i "${line}d" "$bookmarkPath"
+	Notify "Removed $name"
 }
 
 
