@@ -271,7 +271,7 @@ url("about:tor") {
 @-moz-document domain("duckduckgo.com")
 {
 	a:visited
-	{ color: var(--bg3) !important }
+	{ color: var(--bg4) !important }
 
 
 	/* Header */

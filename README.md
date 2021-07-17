@@ -40,10 +40,10 @@ These are all really optional, since without them, the "rice" would still be fun
 
 ## TODO
 - Create a better dotfiles management script
-- Finish firefox theming (Add css for stackoverflow and it's siblings, duckduckgo, gitlab, github, and reddit)
+- Finish firefox theming (Add css for stackoverflow and it's siblings, gitlab, github, and reddit)
 - Add a gtk theme
 - Add a license
-- Try out vifm
+- Finish previewer
 
 
 ## Recommendations (from myself)

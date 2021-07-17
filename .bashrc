@@ -86,5 +86,9 @@ if [ ! -f "$XDG_CONFIG_HOME"/git/config ]; then
 	touch "$XDG_CONFIG_HOME"/git/config
 fi
 
+if command -v ueberzug >/dev/null; then
+	export UEBERZUG_FIFO=/tmp/ueberzug-fifo
+fi
+
 
 printf ''
