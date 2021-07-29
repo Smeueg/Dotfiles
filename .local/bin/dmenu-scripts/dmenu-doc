@@ -22,8 +22,18 @@ fi
 cd $HOME
 Documents="$(find Documents -type f)"
 chosen=$(echo "$Documents" | dmenu -i $@)
-mime_type=$(file --mime-type --brief "$chosen")
 
+if [ ! -f "$chosen" ]; then
+	if command -v herbe >/dev/null; then
+		herbe 'Did not pick a file'
+	else
+		printf 'Did not pick a file\n'
+	fi
+
+	exit
+fi
+
+mime_type=$(file --mime-type --brief "$chosen")
 case $mime_type in
 	*/pdf)
 		if ! command -v zathura >/dev/null ; then

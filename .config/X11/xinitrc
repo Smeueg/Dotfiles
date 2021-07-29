@@ -17,7 +17,8 @@ case "$WM" in
 		hsetroot -cover ~/.local/rice/Wallpapers/"Rock Thing.png"
 
 		xcompmgr &
-		(dwmblocks &) ; exec dwm
+		dwmblocks &
+		exec dwm
 		;;
 
 	"awesome")

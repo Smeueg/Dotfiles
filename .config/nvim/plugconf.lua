@@ -48,7 +48,7 @@ local function LspConfig()
 	vim.cmd 'sign define LspDiagnosticsSignInformation text=● texthl=LspDiagnosticsSignInformation'
 	vim.cmd 'sign define LspDiagnosticsSignHint text=● texthl=LspDiagnosticsSignHint'
 
-	vim.cmd 'autocmd CursorHold,CursorHoldI * lua vim.lsp.diagnostic.show_line_diagnostics()'
+	-- vim.cmd 'autocmd CursorHold,CursorHoldI * lua vim.lsp.diagnostic.show_line_diagnostics()'
 end
 ------------------------------------------------
 

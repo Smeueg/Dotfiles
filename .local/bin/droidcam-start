@@ -1,0 +1,104 @@
+#!/bin/sh
+
+# Variables
+arguments="$@"
+modulesToLoad='' # modules that will be loaded
+modulesError=''  # modules that needs to be loaded but doesn't exist
+video=true
+audio=false
+
+
+ModuleExists() {
+	moduleName="$1"
+	! modinfo $moduleName 2>&1 | grep "ERROR: Module $moduleName not found"
+	printf '%i' "$?"
+}
+
+
+ModuleLoaded() {
+	moduleName="$1"
+	lsmod | grep "$moduleName"
+	printf '%i' "$?"
+}
+
+
+LoadModules() {
+	cmd=""
+	if [ ! -z "${modulesError}" ]; then
+		printf 'The following modules are required, however does not exist in this system:\n'
+		printf '%s' "${modulesError}" | xargs -I {} printf '    {}\n'
+	fi
+	exit -1
+
+	if [ ! -z "${modulesToLoad}" ]; then
+		printf 'The following modules are going to be loaded:\n'
+		printf '%s' "${modulesToLoad}" | xargs -I {} printf '    {}\n'
+
+		printf '%s' "${modulesToLoad}" | xargs -I {} cmd="$cmd; modprobe {}"
+	fi
+
+	eval "su -c '$cmd'"
+}
+
+
+LoadPulseaudioModule() {
+	pactl list | grep droidcam_audio && moduleLoaded=true || moduleLoaded=false
+
+	if ${moduleLoaded}; then
+		printf 'Pulseaudio module is already loaded, skipping...'
+	else
+		printf 'Loading pulseaudio module...\n'
+		pactl load-module module-alsa-source device=hw:Loopback,1,0 source_properties=device.description=droidcam_audio &&
+			printf 'Loaded pulseaudio module\n' ||
+			printf 'Failed to load pulseaudio module\n'
+	fi
+
+	pactl list | grep droidcam_audio &&
+		printf 'Setting default source to alsa_input.hw_Loopback_1_0... ' &&
+		pactl set-default-source 'alsa_input.hw_Loopback_1_0' &&
+		printf 'Success\n' || printf 'Failed\n'
+}
+
+
+HandleArg() {
+	arg="$1"
+	module="$2"
+
+	if printf '%s' "${arguments}" | grep "${arg}"; then
+		if ModuleLoaded ${module}; then
+			ModuleExists ${module} &&
+				modulesToLoad="${module}\n${modulesToLoad}" ||
+				modulesError="${module}\n${modulesError}"
+		fi
+
+		printf '0'
+	else
+		printf '1'
+	fi
+}
+
+
+main() {
+	if [ -z "${arguments}" ]; then
+		droidcam-cli
+		tput bold
+		tput setaf 3
+		printf 'Please add arguments\n'
+		tput sgr 0
+		exit
+	fi
+
+	HandleArg '-a' 'v4l2loopback' && (audio=true; video=false)
+	HandleArg '-v' 'v4l2loopback' && (video=true)
+
+	if ${audio} && ! pidof pulseaudio; then
+		printf 'Pulseaudio is not running, exiting...\n'
+		exit
+	fi
+
+	LoadModules
+	droidcam-cli ${arguments} &
+	${audio} && LoadPulseaudioModule
+	fg
+}
+main

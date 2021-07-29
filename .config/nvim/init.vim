@@ -62,7 +62,7 @@ nnoremap <leader>f :tabe<Space>
 nnoremap <A-p> gT
 nnoremap <A-n> gt
 
-vnoremap <leader>c "cy <cmd>call system('xclip -selection clipboard', @c)<CR>
+vnoremap <leader>c "cy <cmd>call system('xclip -selection clipboard', @c) <Bar> echo 'Copied to clipboard' <CR>
 vnoremap < <gv
 vnoremap > >gv
 vnoremap <C-a> <C-a>gv
@@ -124,13 +124,15 @@ nnoremap <Space><Space> <cmd>call CompileAndOrRun()<CR>
 nnoremap <C-Space><C-Space> <cmd>call CompileAndOrRun()<CR><C-Bslash><C-n><C-w><S-t>a
 
 
+command! -range -nargs=0 Overline        call s:CombineSelection(<line1>, <line2>, '0305')
+command! -range -nargs=0 Underline       call s:CombineSelection(<line1>, <line2>, '0332')
+command! -range -nargs=0 DoubleUnderline call s:CombineSelection(<line1>, <line2>, '0333')
+command! -range -nargs=0 Strikethrough   call s:CombineSelection(<line1>, <line2>, '0336')
 
-function! FormatFile()
-	if     &filetype=='python' && executable('black') | execute '!black -q %'
-	elseif &filetype=='c' | execute 'lua vim.lsp.buf.formatting_sync(nil, 1000)'
-	else | echohl Error | echo 'Unknown filetype, will not format' | echohl None | endif
+function! s:CombineSelection(line1, line2, cp)
+  execute 'let char = "\u'.a:cp.'"'
+  execute a:line1.','.a:line2.'s/\%V[^[:cntrl:]]/&'.char.'/ge'
 endfunction
-command! Format call FormatFile()
 
 
 function! Distract()

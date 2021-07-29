@@ -6,23 +6,12 @@ height="$4"
 width="$5"
 
 ImageRemove() {
-	PID=$1
-	printf '{"action": "remove", "identifier": "preview"\n'> "$UEBERZUG_FIFO"
-
-	kill $PID
-	echo poo
+	printf '{"action": "remove", "identifier": "preview"\n' > "$UEBERZUG_FIFO"
 }
 
 
 ImageAdd() {
-	[ ! -p "$UEBERZUG_FIFO" ] && mkfifo "$UEBERZUG_FIFO"
-
-	tail --follow "$UEBERZUG_FIFO" | ueberzug layer --silent --parser json &
-	UEBERZUG_PID=$!
-
 	printf '{"action": "add", "identifier": "preview", "x": "%d", "y": "%d", "width": "%d", "height": "%d", "scaler": "fit_contain", "path": "%s"}\n' $x $y $width $height "$file" > "$UEBERZUG_FIFO"
-
-	trap "ImageRemove $UEBERZUG_PID" EXIT
 }
 
 

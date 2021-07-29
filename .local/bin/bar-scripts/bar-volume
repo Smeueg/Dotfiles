@@ -1,17 +1,36 @@
 #!/bin/sh
 
 # This script returns an $icon and $volume variable
+StartPulseaudio() {
+	pidof pulseaudio >/dev/null || setsid --fork pulseaudio --start --exit-idle-time=-1
+}
 
-# This line may not be required. It checks if pulseaudio is running. If not, then it will start pulseaudio
-(! pidof pulseaudio >/dev/null 2>&1 && setsid -f pulseaudio --start --exit-idle-time=-1) &
 
-sink_info=$(pactl list sinks)
-volume=$(echo "$sink_info" | grep -Po "^\s+Volume.*\/ +\K\d*[%]")
-mute=$(echo "$sink_info" | grep -Po 'Mute: \K.*')
+StartPipewire() {
+	pidof pipewire >/dev/null               || setsid --fork pipewire
+	pidof pipewire-pulse >/dev/null         || setsid --fork pipewire-pulse
+	pidof pipewire-media-session >/dev/null || setsid --fork pipewire-media-session
+}
 
-[ "$mute" = "no" ] && icon="" || icon=""
+CheckProcess() {
+	if command -v pipewire >/dev/null && command -v pipewire-pulse >/dev/null && command -v pipewire-media-session >/dev/null; then
+		StartPipewire
+	elif command -v pulseaudio >/dev/null; then
+		StartPulseaudio
+	fi
+}
+
+main() {
+	CheckProcess
+	sink_info=$(pactl list sinks)
+	volume=$(echo "$sink_info" | grep -Po "^\s+Volume.*\/ +\K\d*[%]" -m 1)
+	mute=$(echo "$sink_info" | grep -Po 'Mute: \K.*' -m 1)
+
+	[ "$mute" = "no" ] && icon="" || icon=""
+}
 
 case $BUTTON in
 	4) pactl set-sink-volume @DEFAULT_SINK@ +1%; kill -49 $(pidof dwmblocks) ;;
 	5) pactl set-sink-volume @DEFAULT_SINK@ -1%; kill -49 $(pidof dwmblocks) ;;
+	*) main
 esac
