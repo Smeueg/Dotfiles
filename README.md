@@ -39,7 +39,10 @@ These are all really optional, since without them, the "rice" would still be fun
 
 
 ## TODO
+* TRY OUT ALPINE LINUX
+
 - Create a better dotfiles management script
+- Add support for connman and iwd
 - Finish firefox theming (Add css for stackoverflow and it's siblings, gitlab, github, and reddit)
 - Add a gtk theme
 - Add a license
@@ -55,7 +58,7 @@ These are all really optional, since without them, the "rice" would still be fun
 ### Dual Booting Windows:
 Don't... Windows is garbage
 
-If you still are going to, shame on you:
+If you still are going to:
 Either change linux to use localtime instead of UTC *or* change Windows to use utc instead of localtime.
 
 [This Link](https://itsfoss.com/wrong-time-dual-boot/) (beware of the blinding light)
