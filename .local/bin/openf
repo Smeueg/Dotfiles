@@ -1,0 +1,188 @@
+#!/bin/sh
+# Like printf but instead of printing, this opens files (or changes current directory)
+
+# Variables
+dir="${PWD}"
+arguments="${@}"
+cmd=fzf
+
+HIDDEN=false
+ADJUST=false
+USETERM=true
+
+prune="
+*BraveSoftware/*
+*/dots/*
+*/.git/*
+*/_cacache/*
+*.cache/*
+"
+
+usage="\
+Usage: [DIRECTORY] [--fzf] [--help] [--dmenu] [--dmenuopts]
+	--fzf,          Use fzf
+	--dmenu,        Use dmenu instead of fzf
+	--dmenuopts,    Give arguments to dmenu
+	--help,         show this option\
+"
+
+avoidstr="
+	$(
+		for i in ${prune}; do
+			printf '\t%s) return 0;;\n' "$i"
+		done
+	)
+"
+
+Avoid() {
+	eval "
+	case \"${1}\" in
+		${avoidstr}
+	esac
+	return 1"
+}
+
+
+CheckDep() {
+	[ -n "$(command -v ${1})" ] && return 0
+	return 1
+}
+
+
+ListFiles() {
+	if true; then
+		for fd in "${1}"/.* "${1}"/*; do
+			Avoid "${fd}" && continue
+			if [ "${fd#${fd%???}}" = '/..' ] || [ "${fd#${fd%??}}" = '/.' ]; then
+				continue
+			elif [ -d "${fd}" ]; then
+				printf '%s\n' "${fd}"
+				ListFiles "${fd}"
+			elif [ ! -f "${fd}" ]; then
+				continue
+			else
+				printf '%s\n' "${fd}"
+			fi
+		done
+	else
+		for fd in "${1}"/*; do
+			Avoid "${fd}" && continue
+			if [ -d "${fd}" ]; then
+				printf '%s\n' "${fd}"
+				ListFiles "${fd}"
+			elif [ ! -f "${fd}" ]; then
+				continue
+			else
+				printf '%s\n' "${fd}"
+			fi
+		done
+	fi
+}
+
+
+HandleArgs() {
+	while [ -n "${1}" ]; do
+		if [ -d "${1}" ]; then
+			dir="${1}"
+			shift
+			continue
+		fi
+
+		case "${1}" in
+			--fzf)
+				if [ -n "$(command -v fzf)" ]; then
+					cmd=fzf
+				fi
+				;;
+
+			--dmenu)
+				if [ -n "$(command -v dmenu)" ] && [ -n "${DISPLAY}" ]; then cmd=dmenu
+
+					if [ -n "${@#*--dmenu}" ]; then
+						opts="${@#*--dmenu}"
+					fi
+				fi
+
+				;;
+
+			--dmenuopts)
+				if [ -n "${@}" ]; then
+					opts="${@}"
+				fi
+				;;
+
+			-h|--help)
+				printf '%s\n' "${usage}"
+				exit 0
+				;;
+		esac
+		shift
+	done
+}
+
+
+Open() {
+	[ -d "${1}" ] && printf "${1}" >/tmp/openftmp
+	[ ! -f "${1}" ] && exit
+	[ -f "/tmp/openftmp" ] && rm "/tmp/openftmp"
+
+	case $(file --mime-type --brief "${1}") in
+		text/*)
+			if [ ! -t 0 ]; then
+				${TERMINAL} ${EDITOR} "${1}"
+			else
+				${EDITOR} "${1}"
+			fi
+			;;
+
+		*/pdf)
+			tty=$(tty)
+			if [ -n "${tty##/dev/tty*}" ]; then
+				if CheckDep zathura; then
+					if CheckDep devour && [ -n "${DISPLAY}" ]; then
+						devour zathura "${1}"
+					else
+						zathura "${1}"
+					fi
+				fi
+			else
+				CheckDep fbgs ||
+					printf 'Error `fbgs` is not installed, will not open pdf in tty...\n' ||
+					fbgs "${1}"
+			fi
+			;;
+
+		image/*)
+			tty=$(tty)
+			if [ -n "${tty##/dev/tty*}" ]; then
+				if CheckDep sxiv; then
+					if CheckDep devour && [ -n "${DISPLAY}" ]; then
+						devour sxiv "${1}"
+					else
+						sxiv "${1}"
+					fi
+				fi
+			else
+				CheckDep fib ||
+					printf 'ERROR: `fib` is not installed, will not open image in tty\n' ||
+					fib "${1}"
+			fi
+			;;
+	esac
+}
+
+
+main() {
+	HandleArgs ${arguments}
+	if [ "${cmd}" = "fzf" ] ; then
+
+		# IF not running from the terminal, spawn new terminal
+		if [ ! -t 0 ]; then
+			$TERMINAL -e $0
+			exit
+		fi
+	fi
+
+	Open "$(ListFiles ${dir} | ${cmd} ${opts})"
+}
+main

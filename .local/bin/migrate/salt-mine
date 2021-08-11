@@ -30,7 +30,8 @@ dotURL    = "https://gitlab.com/Smeueg/Dotfiles.git"
 
 wallpaperDir = home + "/.local/rice/Wallpapers"
 wallpapers   = {
-        "Rock Thing.png" : "https://images2.alphacoders.com/950/950452.png"
+        "Rock Thing.png" : "https://images2.alphacoders.com/950/950452.png",
+        "Red Space.jpg"  : "https://cdna.artstation.com/p/assets/images/images/004/085/784/large/starkiteckt-designs-untitled-2.jpg?1480219852"
 }
 
 sucklessDir = home + "/.local/rice"
@@ -439,7 +440,8 @@ def GetDot():
 def GetWallpapers():
     global wallpaperDir
 
-    print("Getting wallpaper(s)")
+    print("NOTICE: I DO NOT OWN NOR HAVE MADE ANY OF THE WALLPAPERS NOR FONT, ALL CREDIT GOES TO THE RESPECTIVE ARTIST/CREATORS")
+    print("Getting wallpaper(s)...")
     if not os.path.isdir(wallpaperDir):
         print("Made directory: " + wallpaperDir)
         os.makedirs(wallpaperDir)
@@ -620,6 +622,11 @@ fonts = (
             None,
             None),
         None),
+    Choice("Noto Color Emoji", None, GetFonts, (
+            "https://noto-website-2.storage.googleapis.com/pkgs/NotoColorEmoji-unhinted.zip",
+            None,
+            "NotoColorEmoji"),
+        None)
 )
 
 

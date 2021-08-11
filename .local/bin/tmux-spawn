@@ -2,11 +2,17 @@
 # A script to determine whether tmux exists, a tmux session exists, and to attach/create a session
 # This script will NOT spawn a new terminal
 
+
+if [ "$1" = "-t" ]; then
+	$TERMINAL -e $0
+fi
+
+
 if command -v tmux >/dev/null; then
-	if tmux has-session >/dev/null; then
-		tmux attach
+	if tmux has-session >/dev/null 2>&1; then
+		tmux attach >/dev/null 2>&1
 	else
-		tmux new-session -s Default
+		tmux new-session -s Default >/dev/null 2>&1
 	fi
 else
 	$SHELL

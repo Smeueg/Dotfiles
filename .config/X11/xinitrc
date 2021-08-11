@@ -11,12 +11,13 @@ export WINIT_X11_SCALE_FACTOR=1
 # Turn of screen saver and dpms
 xset s off -dpms
 
+xcompmgr &
+
 
 case "$WM" in
 	"dwm")
-		hsetroot -cover ~/.local/rice/Wallpapers/"Rock Thing.png"
+		hsetroot -cover ~/.local/rice/Wallpapers/"Red Space.jpg"
 
-		xcompmgr &
 		dwmblocks &
 		exec dwm
 		;;

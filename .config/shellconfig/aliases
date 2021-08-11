@@ -1,10 +1,4 @@
 #!/bin/bash
-
-alias screenFetch="curl -Ls https://github.com/KittyKatt/screenFetch/raw/master/screenfetch-dev | bash"
-alias neofetch="curl -Ls https://github.com/dylanaraps/neofetch/raw/master/neofetch | bash"
-alias pfetch="curl -Ls https://github.com/dylanaraps/pfetch/raw/master/pfetch | sh"
-
-
 # Simple aliases
 alias cman="connmanctl"
 alias e="$EDITOR"

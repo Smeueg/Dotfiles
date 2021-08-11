@@ -92,6 +92,39 @@ nnoremap <leader>i <cmd>filetype detect<CR>
 
 
 " Functions "
+function! CCompile()
+	let cmd = 'cc '
+
+	let flags = {
+		\ 'ncurses.h' : 'ncurses',
+		\ 'magic.h'   : 'magic',
+	\ }
+
+	for flag in keys(flags)
+		if search(flag, 'nc')
+			let cmd .= '-l' . flags[flag] . ' '
+		endif
+	endfor
+
+	let cmd .= expand('%:p') . ' -o ' . expand('%:p:r') . ' && ' . expand('%:p:r')
+	return cmd
+endfunction
+
+
+function! ShRun()
+	let basic_pattern = '#!/\(usr/\)\?bin/\(env \)\?'
+	let shells = ['bash', 'zsh', 'sh']
+
+	for shell in shells
+		if search(basic_pattern . shell, 'nc') != 0
+			return shell . ' ' . expand('%:p')
+		endif
+	endfor
+
+	return 'sh ' . expand('%:p')
+endfunction
+
+
 function! CompileAndOrRun()
 	let term_cmd = 'split | set nonumber | cd %:p:h | term '
 	let file = expand('%:p')
@@ -103,8 +136,8 @@ function! CompileAndOrRun()
 		\ 'cpp'    : term_cmd.'g++ "'.file.'" -o "'.file_noext.'" && "'.file_noext.'"',
 		\ 'lua'    : term_cmd.'lua '.file,
 		\ 'awk'    : term_cmd.'awk -f '.file,
-		\ 'sh'     : term_cmd.'sh '.file,
-		\ 'c'      : term_cmd.'cc "'.file.'" -o "'.file_noext.'" && "'.file_noext.'"',
+		\ 'sh'     : term_cmd.ShRun(),
+		\ 'c'      : term_cmd.CCompile(),
 		\ 'html'   : '!$BROWSER "%"',
 		\ 'vim'    : 'source %'
 	\ }
@@ -124,11 +157,6 @@ nnoremap <Space><Space> <cmd>call CompileAndOrRun()<CR>
 nnoremap <C-Space><C-Space> <cmd>call CompileAndOrRun()<CR><C-Bslash><C-n><C-w><S-t>a
 
 
-command! -range -nargs=0 Overline        call s:CombineSelection(<line1>, <line2>, '0305')
-command! -range -nargs=0 Underline       call s:CombineSelection(<line1>, <line2>, '0332')
-command! -range -nargs=0 DoubleUnderline call s:CombineSelection(<line1>, <line2>, '0333')
-command! -range -nargs=0 Strikethrough   call s:CombineSelection(<line1>, <line2>, '0336')
-
 function! s:CombineSelection(line1, line2, cp)
   execute 'let char = "\u'.a:cp.'"'
   execute a:line1.','.a:line2.'s/\%V[^[:cntrl:]]/&'.char.'/ge'
@@ -136,15 +164,19 @@ endfunction
 
 
 function! Distract()
-	if &number == 1
-		execute 'setlocal fillchars=eob:\ '
-		set statusline=%#Normal#
+    if &number  != 0
+        set noruler
+        set laststatus=0
+        set noshowcmd
 		set nonumber
-	else
+		execute 'set fillchars=eob:\ '
+    else
+        set ruler
+        set laststatus=2
+        set showcmd
 		set number
-		call SetStatus()
-		setlocal fillchars=eob:~
-	endif
+		set fillchars=eob:~
+    endif
 endfunction
 nnoremap <leader>N <cmd>call Distract()<CR>
 " --------- "

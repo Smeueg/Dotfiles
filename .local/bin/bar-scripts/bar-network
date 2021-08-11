@@ -1,27 +1,38 @@
 #!/bin/sh
 # This script returns an icon and network variable
+# Dependencies:
+#   * Posix compliant shell (screw off fish)
+
 disconnect=""
 ethernet=""
 wifi=""
 
 get_networkmanager(){
-	connected=$(nmcli device | grep -w "connected" -m1)
-	if [ -n "$connected" ]; then
-		icon=$(printf '%s' "$connected" | awk -F' ' '{print $2}' | sed "s/wifi/${wifi}/; s/ethernet/${ethernet}/")
-		network=$(printf '%s' "$connected" | awk -F' ' '{print $4}')
-	else
-		icon="$disconnect"
-		network="No Internet"
-	fi
+	printf '%b' "`nmcli device`" | while read line; do
+		case ${line} in
+			*\ connected\ *)
+				case "${line}" in
+					*\ ethernet\ *) printf "${ethernet}" ;;
+					*\ wifi\ *)     printf "${wifi}" ;;
+				esac
+
+				line="${line#[0-9a-zA-z]* }"
+				line="${line#${line%%[! ]*}}"
+				network="${line#*connected}"
+				printf ' %b' "${network#${network%%[! ]*}}"
+				;;
+		esac
+	done
 }
 
 
+# Needs Updating
 get_connman(){
 	connected=$(connmanctl services | grep -E "^\*")
 	if [ -n "$connected" ]; then
 		type_name=$(printf '%s' "$connected" | awk -F'_| *' '(NR==1){print $3,$2}' | sed "s/wifi/${wifi}/; s/ethernet/${ethernet}/")
 		icon="$(printf '%s' "$type_name" | cut -d' ' -f1)"
-		network="$(printf '%s' "$type_name" | cut -d' ' -f2- <<< "$type_name")"
+		network="$(printf '%s' "$type_name" | cut -d' ' -f2-)"
 	else
 		icon="$disconnect"
 		network="No Internet"
@@ -30,13 +41,18 @@ get_connman(){
 
 
 main() {
-	if command -v NetworkManager >/dev/null && pidof NetworkManager >/dev/null; then
-		get_networkmanager
-	elif command -v connmand >/dev/null && pidof connmand >/dev/null; then
-		get_connman
+	if pidof NetworkManager >/dev/null; then
+		network=$(get_networkmanager)
+	elif pidof connmand >/dev/null; then
+		network=$(get_connman)
 	else
-		icon="$disconnect"
-		network="No Network Manager"
+		network="${disconnect} No Network Manager"
+	fi
+
+	if [ -n "${network}" ]; then
+		printf '%b\n' "${network}"
+	else
+		printf '%b Not Connected\n' "${disconnect}"
 	fi
 }
 main

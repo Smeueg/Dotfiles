@@ -10,19 +10,25 @@ export LESSHISTFILE=/dev/null
 
 # Prompt
 Prompt() {
-	PS1='\[\033[1;36m\]\w'
+	dirCol=3
+	branchCol=11
+	PS1="\[\033[1m\]\[\033[38;5;${dirCol}m\]\w"
 
 	# Git branch + symbol color depending on return value of previous command
-	PS1+='\[\033[1;32m\]'
+	PS1+="\[\033[1m\]\[\033[38;5;${branchCol}m\]"
 	PS1+="\$(
 		ret=\$?
 		printf \"\$(git branch 2>&1 | sed '/^[^*]/d; s/* \(.*\)$/ [\1]/')\"
-		[ \$ret = 0 ] && printf '\n\[\033[32m\]' || printf '\n\[\033[31m\]'
+		[ \$ret = 0 ] && printf '\n\[\033[38;5;11m\]' ||  printf '\n\[\033[38;5;1m\]'
 	)"
 
-	PS1+='> '
+	PS1+='\[\033[1m\]> '
 	PS1+='\[\033[0m\]'
 	export PS1
+
+	unset dirCol
+	unset branchCol
+
 }
 Prompt
 unset Prompt
@@ -51,11 +57,11 @@ unset lessColors
 
 
 # fzf coloring
-fzfConfig(){
-  local color1=6
-  local color2=10
+fzfConfig() {
+  local color1=11
+  local color2=3
   export FZF_DEFAULT_OPTS="
-    --color fg:7,bg:-1,hl:${color1},fg+:7,bg+:-1,hl+:${color2}
+    --color fg:15,bg:-1,hl:${color1},fg+:15,bg+:-1,hl+:${color2}
     --color info:${color2},prompt:${color2},spinner:${color2}
     --color pointer:${color2},marker:${color2},header:${color2}
   "
@@ -66,9 +72,6 @@ fzfConfig(){
 command -v fzf >/dev/null &&
 fzfConfig
 unset fzfConfig
-
-# To bind Ctrl-l to type clear and then return/enter:
-bind '"\C-l":"\033[4~\C-uclear\n"'
 
 
 if command -v nnn >/dev/null; then

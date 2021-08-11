@@ -1,0 +1,260 @@
+window:
+  # Window padding (changes require restart)
+  #
+  # Blank space added around the window in pixels. This padding is scaled
+  # by DPI and the specified value is always added at both opposing sides.
+  padding:
+    x: 20
+    y: 20
+
+  # Spread additional padding evenly around the terminal content.
+  #dynamic_padding: false
+
+  # Window decorations
+  #
+  # Values for `decorations`:
+  #     - full: Borders and title bar
+  #     - none: Neither borders nor title bar
+  #
+  # Values for `decorations` (macOS only):
+  #     - transparent: Title bar, transparent background and title bar buttons
+  #     - buttonless: Title bar, transparent background and no title bar buttons
+  decorations: none
+
+  # Startup Mode (changes require restart)
+  #
+  # Values for `startup_mode`:
+  #   - Windowed
+  #   - Maximized
+  #   - Fullscreen
+  #
+  # Values for `startup_mode` (macOS only):
+  #   - SimpleFullscreen
+  #startup_mode: Windowed
+
+  # Window title
+  title: Alacritty
+
+  # Allow terminal applications to change Alacritty's window title.
+  #dynamic_title: true
+
+  # Window class (Linux/BSD only):
+  class:
+    instance: Alacritty
+    general: Alacritty
+
+scrolling:
+  # Maximum number of lines in the scrollback buffer.
+  # Specifying '0' will disable scrolling.
+  history: 10000
+
+  # Scrolling distance multiplier.
+  multiplier: 3
+
+# Font configuration
+font:
+  normal:
+    family: JetBrains Mono
+    style: Regular
+
+  bold:
+    family: JetBrains Mono
+    style: Bold
+
+  italic:
+    family: JetBrains Mono
+    style: Italic
+
+  bold_italic:
+    family: JetBrains Mono
+    style: Bold Italic
+
+  # Point size
+  size: 12.0
+
+  # Offset is the extra space around each character. `offset.y` can be thought
+  # of as modifying the line spacing, and `offset.x` as modifying the letter
+  # spacing.
+  offset:
+    x: 0
+    y: 0
+
+  # Glyph offset determines the locations of the glyphs within their cells with
+  # the default being at the bottom. Increasing `x` moves the glyph to the
+  # right, increasing `y` moves the glyph upward.
+  glyph_offset:
+    x: 0
+    y: 0
+
+# If `true`, bold text is drawn using the bright color variants.
+draw_bold_text_with_bright_colors: false
+
+# Colors (Tomorrow Night)
+colors:
+  # Default colors
+  primary:
+    background: '#100B0D'
+    foreground: '#E2D2A8'
+
+  # Cursor colors
+  cursor:
+    text: CellBackground
+    cursor: CellForeground
+
+
+  # Normal colors
+  normal:
+    black:   '#20191C'
+    red:     '#8e312d'
+    green:   '#C0C565'
+    yellow:  '#B56825'
+    blue:    '#3A4F67'
+    magenta: '#563251'
+    cyan:    '#59938F'
+    white:   '#403B2F'
+
+  # Bright coLORS
+  bright:
+    black:   '#20191C'
+    red:     '#8e312d'
+    green:   '#6B4B2F'
+    yellow:  '#CEA04E'
+    blue:    '#3A4F67'
+    magenta: '#563251'
+    cyan:    '#59938F'
+    white:   '#E2D2A8'
+
+
+
+# Bell
+#
+# The bell is rung every time the BEL control character is received.
+#bell:
+  # Visual Bell Animation
+  #
+  # Animation effect for flashing the screen when the visual bell is rung.
+  #
+  # Values for `animation`:
+  #   - Ease
+  #   - EaseOut
+  #   - EaseOutSine
+  #   - EaseOutQuad
+  #   - EaseOutCubic
+  #   - EaseOutQuart
+  #   - EaseOutQuint
+  #   - EaseOutExpo
+  #   - EaseOutCirc
+  #   - Linear
+  #animation: EaseOutExpo
+
+  # Duration of the visual bell flash in milliseconds. A `duration` of `0` will
+  # disable the visual bell animation.
+  #duration: 0
+
+  # Visual bell animation color.
+  #color: '#ffffff'
+
+  # Bell Command
+  #
+  # This program is executed whenever the bell is rung.
+  #
+  # When set to `command: None`, no command will be executed.
+  #
+  # Example:
+  #   command:
+  #     program: notify-send
+  #     args: ["Hello, World!"]
+  #
+  #command: None
+
+# Background opacity
+#
+# Window opacity as a floating point number from `0.0` to `1.0`.
+# The value `0.0` is completely transparent and `1.0` is opaque.
+background_opacity: 1
+
+
+# Live config reload (changes require restart)
+live_config_reload: true
+
+# Key bindings
+#
+# Key bindings are specified as a list of objects. For example, this is the
+# default paste binding:
+#
+# `- { key: V, mods: Control|Shift, action: Paste }`
+#
+# Each key binding will specify a:
+#
+# - `key`: Identifier of the key pressed
+#
+#    - A-Z
+#    - F1-F24
+#    - Key0-Key9
+#
+#    A full list with available key codes can be found here:
+#    https://docs.rs/glutin/*/glutin/event/enum.VirtualKeyCode.html#variants
+#
+#    Instead of using the name of the keys, the `key` field also supports using
+#    the scancode of the desired key. Scancodes have to be specified as a
+#    decimal number. This command will allow you to display the hex scancodes
+#    for certain keys:
+#
+#       `showkey --scancodes`.
+#
+# Then exactly one of:
+#
+# - `chars`: Send a byte sequence to the running application
+#
+#    The `chars` field writes the specified string to the terminal. This makes
+#    it possible to pass escape sequences. To find escape codes for bindings
+#    like `PageUp` (`"\x1b[5~"`), you can run the command `showkey -a` outside
+#    of tmux. Note that applications use terminfo to map escape sequences back
+#    to keys. It is therefore required to update the terminfo when changing an
+#    escape sequence.
+#
+# - `action`: Execute a predefined action
+#
+#   - ToggleViMode
+#   - SearchForward
+#       Start searching toward the right of the search origin.
+#   - SearchBackward
+#       Start searching toward the left of the search origin.
+#   - Copy
+#   - Paste
+#   - IncreaseFontSize
+#   - DecreaseFontSize
+#   - ResetFontSize
+#   - ScrollPageUp
+#   - ScrollPageDown
+#   - ScrollHalfPageUp
+#   - ScrollHalfPageDown
+#   - ScrollLineUp
+#   - ScrollLineDown
+#   - ScrollToTop
+#   - ScrollToBottom
+#   - ClearHistory
+#       Remove the terminal's scrollback history.
+#   - Hide
+#       Hide the Alacritty window.
+#   - Minimize
+#       Minimize the Alacritty window.
+#   - Quit
+#       Quit Alacritty.
+#   - ToggleFullscreen
+#   - SpawnNewInstance
+#       Spawn a new instance of Alacritty.
+#   - ClearLogNotice
+#       Clear Alacritty's UI warning and error notice.
+#   - ClearSelection
+#       Remove the active selection.
+#   - ReceiveChar
+#   - None
+#
+key_bindings:
+    - { key: K, mods: Control|Shift, action: IncreaseFontSize }
+    - { key: J, mods: Control|Shift, action: DecreaseFontSize }
+    - { key: R, mods: Control|Shift, action: ResetFontSize }
+    - { key: L, mods: Control|Shift, action: ScrollLineUp }
+    - { key: H, mods: Control|Shift, action: ScrollLineDown }
+

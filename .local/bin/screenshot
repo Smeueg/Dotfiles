@@ -1,65 +1,167 @@
 #!/bin/sh
-if [ "$1" == "-t" ]; then
-	dir="/tmp/TmpScreenshots/"
-	tmpmsg="in /tmp/TmpScreenshots"
-	shift
-else
-	dir="$HOME/Pictures/Screenshots"
-	tmpmsg=""
-fi
+DIRECTORY="${1:-$HOME/Pictures/Screenshots}"
+IMG_PATH="${DIRECTORY%/}/Screenshot_$(date '+%Y-%m-%d-(%H:%M:%S)').png"
+SUCCESS_MSG="Saved screenshot in ${IMG_PATH}"
+FAILED_MSG="Failed to save screenshot in ${IMG_PATH}"
 
-checkDir(){
-	[ ! -d "$dir" ] && mkdir --parents "$dir"
+[ -t 0 ] &&
+	USING_TERMINAL=true  ||
+	USING_TERMINAL=false
+
+notify() {
+	if ! ${USING_TERMINAL}; then
+		if [ -n "$(command -v herbe)" ]; then
+			herbe "${1}"
+		else
+			printf 'ERROR: `herbe` is not installed\n'
+			printf '%b\n' "${1}"
+		fi
+	else
+		printf '%b\n' "${1}"
+	fi
 }
 
 
-CMD=$(echo -e "Full Screenshot\nPartial Screenshot\nCancel" | dmenu "$@" | cut -d' ' -f1);
-Current_Date=$(date '+%Y_%m_%d-(%H:%M:%S)')
+check_dir() {
+	[ ! -d "${DIRECTORY}" ] && mkdir "${DIRECTORY}" ||
+		notify 'Failed to create DIRECTORY' && exit
+}
 
-path="$dir/Screenshot_${Current_Date}.png"
-string="Took Screenshot Screenshot_${Current_Date}.png ${tmpmsg}"
+
+picker() {
+	if ! ${USING_TERMINAL}; then
+		if [ -n "$(command -v dmenu)" ]; then
+			printf 'Full\nPartial\nCancel\n' | dmenu -p 'Type of screenshot'
+		else
+			${TERMINAL} -e $0
+		fi
+	elif [ -n "$(command -v fzf)" ]; then
+		printf 'Cancel\nPartial\nFull\n' | fzf --height 5
+		return
+	fi
 
 
-scrot_screenshot(){
-	case $CMD in
+	if [ -n "${BASH_VERSION}" ]; then
+		get_key='read -n1 key'
+	elif [ -n "${ZSH_VERSION}" ]; then
+		get_key='read -k1 key'
+	elif [ -n "$(command -v stty)" ] && [ -n "$(command -v dd)" ]; then
+		stty_old=$(stty -g)
+		stty -icanon -echo
+
+		esc=$(printf '\033')
+		get_key='key=$(dd ibs=1 count=1 2>/dev/null)'
+	else
+		notify 'ERROR: Dependencies not met (bash is not installed, zsh is not installed, stty and dd is not installed)'
+		exit
+	fi
+
+
+	index=0
+	string="Full 0\nPartial 1\nCancel 2\n"
+	while true; do
+		printf 'Select type of screenshot:\n' >&2
+		printf '%b' "${string}" | while read line; do
+			[ "${line##* }" -eq ${index} ] &&
+				printf '\033[7m%s\033[0m\n' "${line%% ?}" >&2 ||
+				printf '%s\n' "${line%% ?}" >&2
+		done
+		printf '\n' >&2
+
+		eval "${get_key}"
+		if [ -z "${key#$'\n'}" ] || [ "${key}" = " " ]; then
+			printf '\033[1F' >&2
+			printf '\033[1F' >&2
+			printf '\033[1F' >&2
+			printf '\033[1F' >&2
+			printf '\033[1F' >&2
+			printf '\033[1F' >&2
+			printf '\033[0J' >&2
+
+			printf '%b' "${string}" | while read line; do
+				[ "${line##* }" -eq ${index} ] &&
+					printf '%s\n' "${line%% ?}"
+			done
+			break
+		fi
+
+		case ${key}${esc:-0} in
+			k?|A1) [ ${index} -ne 0 ] && index=$((index - 1)) ;;
+			j?|B1) [ ${index} -ne 2 ] && index=$((index + 1)) ;;
+			q?) return ;;
+			${esc}*|'['?) esc=1;;
+			*) esc=0;;
+		esac
+
+		printf '\033[1F' >&2
+		printf '\033[1F' >&2
+		printf '\033[1F' >&2
+		printf '\033[1F' >&2
+		printf '\033[1F' >&2
+		printf '\033[1F' >&2
+	done
+
+	[ -n "${stty_old}" ] &&
+		stty "${stty_old}"
+}
+
+
+use_scrot() {
+	read input
+	case "${input}" in
 		Full)
-			checkDir
-			scrot -d 0.5 "$path" &&
-			herbe "$string"
+			scrot -d 0.5 "${IMG_PATH}" &&
+				(notify "${SUCCESS_MSG}"; true) ||
+				notify "${FAILED_MSG}"
 			;;
 
 		Partial)
-			checkDir
-			scrot -s -d 0.5 "$path" &&
-			herbe "$string"
+			scrot -s -d 0.5 "${IMG_PATH}" &&
+				(notify "${SUCCESS_MSG}"; true) ||
+				notify "${FAILED_MSG}"
 			;;
 
-		*) herbe "Did not take screenshot";
+		*)
+			notify 'Did not take screenshot'
+			;;
 	esac
+
 }
 
-imagemagick_screenshot(){
-	case $CMD in
+use_magick() {
+	read input
+
+	case "${input}" in
 		Full)
-			checkDir
-			sleep 0.5 && magick import -window root "$path" &&
-			herbe "$string"
+			sleep 0.5
+			magick import -window root "${IMG_PATH}" &&
+				(notify "${SUCCESS_MSG}"; true) ||
+				notify "${FAILED_MSG}"
 			;;
 
 		Partial)
-			checkDir
-			sleep 0.5 && magick import "$path" &&
-			herbe "$string"
+			sleep 0.5
+			magick import "${IMG_PATH}" &&
+				(notify "${SUCCESS_MSG}"; true) ||
+				notify "${FAILED_MSG}"
 			;;
-		*) herbe "Did not take screenshot";
+
+		*)
+			notify "Did not take screenshot"
+			;;
 	esac
 }
 
 
-if command -v scrot; then
-    scrot_screenshot
-elif command -v magick; then
-    imagemagick_screenshot
-else
-    herbe "You do not have either scrot or imagemagick installed"
-fi
+main() {
+	if [ -z "${DISPLAY}" ]; then
+		notify 'ERROR: Cannot open display, you are either running this in the tty or in wayland. Both are not yet supported...\n'
+	elif [ -n "$(command -v magick)" ]; then
+		picker | use_magick
+	elif [ -n "$(command -v scrot)" ]; then
+		picker | use_scrot
+	else
+		printf '`magick` and `scrot` are not installed, please install one of them...\n'
+	fi
+}
+main

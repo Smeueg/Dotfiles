@@ -1,0 +1,42 @@
+#!/bin/sh
+ToDecimal() {
+	num=${1}
+
+	# Add zeros if digit length is less than 4
+	while [ ${#num} -lt 4 ]; do
+		num=0${num}
+	done
+
+
+	# IF last digit is > 5, add 1 to second to last digit
+	if [ ${num#${num%?}} -gt 4 ]; then
+		num=$((num + 10))
+	fi
+
+	# Remove last digit
+	num=${num%?}
+
+	printf "${num%??}.${num#${num%??}}"
+
+}
+
+
+main() {
+	free -m | while read line; do
+		case "${line}" in
+			Mem*) ;;
+			*) continue ;;
+		esac
+
+		available="${line##* }"
+
+		total=${line#Mem: }
+		total=${total#${total%%[! ]*}}
+		total=${total%% *}
+
+		used=$((total - available))
+
+		printf ' %sG/%sG\n'  "$(ToDecimal ${used})" "$(ToDecimal ${total})"
+	done
+}
+main

@@ -8,6 +8,14 @@ video=true
 audio=false
 
 
+Kill() {
+	if printf '%s' "${arguments}" | grep kill >/dev/null; then
+		killall droidcam-cli
+		exit
+	fi
+}
+
+
 ModuleExists() {
 	moduleName="$1"
 	! modinfo $moduleName 2>&1 | grep "ERROR: Module $moduleName not found" >/dev/null
@@ -39,7 +47,10 @@ LoadModules() {
 		done
 
 		cmd="su -c '${cmd}'"
-		eval "${cmd}"
+		if ! eval "${cmd}"; then
+			printf "Wrong password"
+			exit
+		fi
 	fi
 
 
@@ -50,11 +61,11 @@ LoadPulseaudioModule() {
 	printf '\n-------------\n\n'
 	printf 'Loading pulseaudio module...\n'
 	if pactl list | grep droidcam_audio >/dev/null; then
-		printf 'Pulseaudio module is already loaded, skipping...\n'
+		printf 'Pulseaudio module is already loaded, skipping...'
 	else
 		pactl load-module module-alsa-source device=hw:Loopback,1,0 source_properties=device.description=droidcam_audio >/dev/null &&
-			printf 'Loaded pulseaudio module\n' ||
-			printf 'Failed to load pulseaudio module\n'
+			printf ' Loaded\n' ||
+			printf ' Failed\n'
 	fi
 
 	pactl list | grep droidcam_audio >/dev/null &&
@@ -92,6 +103,8 @@ main() {
 		exit
 	fi
 
+	Kill
+
 	if HandleArg '\-a' 'snd_aloop';    then audio=true; video=false; fi
 	if HandleArg '\-v' 'v4l2loopback'; then             video=true; fi
 
@@ -105,7 +118,7 @@ main() {
 	${audio} && sleep 2 && LoadPulseaudioModule
 
 	tput bold
-	printf 'Run `killall droidcam-cli` to stop droidcam\n'
+	printf 'Run `droidcam-start kill` or `killall droidcam-cli` to stop droidcam\n'
 	tput sgr0
 }
 main

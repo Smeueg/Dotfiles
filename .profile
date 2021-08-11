@@ -49,7 +49,7 @@ if [ "$(tty)" = "/dev/tty1" ]; then
 	printf "\033[1;32m:: \033[0m Start X Session \033[36m [Y/n] \033[0;0m"
 	read -t 3 OPT
 
-    case $(echo "$OPT" | grep -o "^.") in
+    case "${OPT%${OPT#?}}" in
 		[Yy]|"") startx $HOME/.config/X11/xinitrc ;;
 		*) echo "Will not run X server" ;;
 	esac

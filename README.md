@@ -39,8 +39,11 @@ These are all really optional, since without them, the "rice" would still be fun
 
 
 ## TODO
+### Important
 * TRY OUT ALPINE LINUX
+* GET CONNMAN TO WORK (also make a connmantui in shell script)
 
+### Less Important but still important
 - Create a better dotfiles management script
 - Add support for connman and iwd
 - Finish firefox theming (Add css for stackoverflow and it's siblings, gitlab, github, and reddit)
@@ -48,6 +51,16 @@ These are all really optional, since without them, the "rice" would still be fun
 - Add a license
 - Finish previewer
 
+
+## Random Information
+If you're using wayland and a chromium browser try this flag:
+```
+--enable-features=UseOzonePlatform --ozone-platform=wayland This works for any browser based on Chromium v87 (or more)
+```
+For firefox, add this environment variable:
+```
+MOZ_ENABLE_WAYLAND=1
+```
 
 ## Recommendations (from myself)
 1. Mount /tmp as tmpfs or zram. This reduces reads and writes to the HDD/SSD. (Keep in mind that on each reboot everything in /tmp will be deleted, if it hasn't already)

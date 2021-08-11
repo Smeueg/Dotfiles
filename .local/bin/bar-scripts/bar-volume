@@ -22,15 +22,23 @@ CheckProcess() {
 
 main() {
 	CheckProcess
-	sink_info=$(pactl list sinks)
-	volume=$(echo "$sink_info" | grep -Po "^\s+Volume.*\/ +\K\d*[%]" -m 1)
-	mute=$(echo "$sink_info" | grep -Po 'Mute: \K.*' -m 1)
+	pactl list sinks | while read line; do
+		case "${line}" in
+			Volume*)
+				vol="${line#*/}"
+				vol="${vol%%/*}"
+				vol="${vol%[%]*}"
+				printf '%b%%\n' "${vol#${vol%%[! ]*}}"
+				break
+				;;
+			Mute*no)
+				printf ' '
+				;;
 
-	[ "$mute" = "no" ] && icon="" || icon=""
+			Mute*yes)
+				printf ' '
+				;;
+		esac
+	done
 }
-
-case $BUTTON in
-	4) pactl set-sink-volume @DEFAULT_SINK@ +1%; kill -49 $(pidof dwmblocks) ;;
-	5) pactl set-sink-volume @DEFAULT_SINK@ -1%; kill -49 $(pidof dwmblocks) ;;
-	*) main
-esac
+main

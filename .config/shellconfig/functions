@@ -1,33 +1,11 @@
-#!/bin/bash
+#!/bin/sh
 colors(){
-	for i in {0..255} ; do
-	  printf "\033[38;5;${i}mcolour${i} "
-	done; echo
-}
-
-
-ff(){
-	if [ "$1" = '-h' ]; then
-		dir=$HOME
-	else
-		dir=.
-	fi
-
-
-    chosen="$(find $dir -type d \
-        \( -name 'BraveSoftware' -o -path '*/dots/*' -o -path '*/.git/*' -o -path '*/_cacache/*'  -o -path '*.cache*' \) \
-        -prune -false -o -name '*' |
-        fzf --preview '[ -d {} ] && ls -A --color --group-directories-first {}; [ -f {} ] && head -n 100 {}')"
-
-	if [ -f "$chosen" ]; then
-		opener "$chosen"
-
-	elif [ -d "$chosen" ]; then
-		cd "$chosen"
-	fi
-
-	unset chosen
-	unset orig_dir
+	i=0
+	while [ ${i} -ne 255 ]; do
+		printf "\033[38;5;${i}mcolour${i} "
+		i=$((i + 1))
+	done
+	printf '\n'
 }
 
 
@@ -52,7 +30,7 @@ saur(){
 
 
 pycalc(){
-  echo -e '#!/bin/python\nprint()' > /tmp/pycalc
+  printf '#!/bin/python\nprint()' > /tmp/pycalc
 	$EDITOR /tmp/pycalc
 	rm /tmp/pycalc
 }
@@ -60,17 +38,6 @@ pycalc(){
 
 cheat(){ curl cheat.sh/$1 | less -Srf ; }
 
-loadDroidCam(){
-    module=$(find /usr/lib/modules/$(uname -r) -type f | grep v4l2loopback)
-    if [ -n "$module" ]; then
-        sudo modprobe videodev
-        sudo insmod "$module" width=640 height=480
-    else
-        echo "Module for current kernel not found"
-    fi
-
-	unset module
-}
 
 # DotFile "alias"
 dit(){
@@ -83,7 +50,7 @@ dit(){
             [ ! -f $file ] && output="${output}\n~/${file}"
         done
 
-        [ -n "$output" ] && echo -e "Files that are present in the git repository but not locally:${output}"
+        [ -n "$output" ] && printf 'Files that are present in the git repository but not locally: %s\n' "${output}"
         cd $orig_dir
     else
         git --git-dir=$HOME/.local/dots/ --work-tree=$HOME "$@"
@@ -97,30 +64,11 @@ dit(){
 
 
 
-# Random Wallpaper
-RandWall(){
-    file=$(ls * | shuf -n1)
-    echo "$file"
-    hsetroot -cover $file
-	unset file
-}
-
-
 # TestDirectory in /tmp
 tt(){
   dir=/tmp/testdir
   [ ! -d $dir ] && mkdir $dir; cd $dir
   unset dir
-}
-
-
-man(){
-  if [ "$1" == "lf" ]; then
-	[ ! -f /tmp/lf.1 ] && curl -L https://github.com/gokcehan/lf/raw/master/lf.1 -o /tmp/lf.1
-    /usr/bin/man -l /tmp/lf.1
-  else
-    /usr/bin/man $@
-  fi
 }
 
 
@@ -144,16 +92,6 @@ exportgpg(){
 	gpg --export-ownertrust > $tmpdir/ownertrust.txt
 
 	unset tmpdir
-}
-
-
-backup(){
-	tar czf backup_$(date +'%d_%m_%Y').tar.gz $HOME/Documents/ &&
-	msg="Backup done" ||
-	msg="Backup failed"
-
-	(command -v herbe >/dev/null && (herbe "${msg}"; exit 0) || echo "${msg}")
-	unset msg
 }
 
 
@@ -216,20 +154,38 @@ record() {
 }
 
 
-cell() {
-	if mountpoint -q /tmp/cell; then
-		umount /tmp/cell &&
-			rmdir /tmp/cell &&
-			echo "Unmounted /tmp/cell"
-
+screenfetch() {
+	path="$(which screenfetch 2>/dev/null)"
+	if [ -z "${path}" ]; then
+		curl -Ls https://github.com/KittyKatt/screenFetch/raw/master/screenfetch-dev | bash -s ${@}
 	else
-		if command -v jmtpfs >/dev/null; then
-			[ ! -d /tmp/cell ] &&
-				mkdir /tmp/cell
-
-			jmtpfs /tmp/cell
-		else
-			echo "Jmtpfs is not installed"
-		fi
+		$(which screenfetch) ${@}
 	fi
+}
+
+
+neofetch() {
+	path="$(which neofetch 2>/dev/null)"
+	if [ -z "${path}" ]; then
+		curl -Ls https://github.com/dylanaraps/neofetch/raw/master/neofetch | bash -s ${@}
+	else
+		$(which screenfetch) ${@}
+	fi
+}
+
+
+pfetch() {
+	path="$(which screenfetch 2>/dev/null)"
+	if [ -z "${path}" ]; then
+		curl -Ls https://github.com/dylanaraps/pfetch/raw/master/pfetch | sh -s ${@}
+	else
+		$(which screenfetch) ${@}
+	fi
+}
+
+
+of() {
+	[ -z "$(command -v openf)" ] && printf 'ERROR: `openf` does not exists...\n' && return 1
+	openf $@
+	[ -f "/tmp/openftmp" ] && cd "$(< /tmp/openftmp)" && printf 'cd -> %s\n' "${PWD}"
 }

@@ -107,7 +107,7 @@ local function pairsConfig()
 		local cond = require('nvim-autopairs.conds')
 
 		require('nvim-autopairs').setup({
-			ignored_next_char = "[%w%$]" -- will ignore alphanumeric and `.` symbol
+			ignored_next_char = "[%w%$%\"%'%(%{%[]" -- will ignore alphanumeric and `.` symbol
 		})
 
 		require("nvim-autopairs.completion.compe").setup({
@@ -116,28 +116,18 @@ local function pairsConfig()
 			enable_check_bracket_line = false
 		})
 
-		npairs.add_rules {
-		Rule(' ', ' ')
-			:with_pair(function (opts)
-				local pair = opts.line:sub(opts.col, opts.col + 1)
-				return vim.tbl_contains({ '()', '[]', '{}', '**', '==' }, pair)
-			end)
-		}
 
 		npairs.add_rules {
-		Rule('=', '=', "vimwiki")
-			:with_pair(function (opts)
-				return string.find(opts.line, '[^= \t]') == nil
-			end)
-		}
+			Rule(' ', ' ')
+				:with_pair(function(opts)
+					local pair = opts.line:sub(opts.col - 1, opts.col)
+					return vim.tbl_contains({ '()', '[]', '{}', '**'}, pair)
+				end),
 
-		npairs.add_rules {
 			Rule("/*", "*/", {"css", "c", "cpp"})
-			-- don't move right when repeat character
-			:with_move(cond.none())
-			-- disable add newline when press <cr>
-			:with_cr(cond.none())
-		}
+				:with_move(cond.none())
+				:with_cr(cond.none()),
+			}
 	end)
 end
 -- ---------- --
@@ -165,10 +155,10 @@ return require("packer").startup({
 		use {'wbthomason/packer.nvim', config = vim.cmd[[autocmd BufWritePost plugconf.lua PackerCompile]]}
 
 		-- "Programming"
-		use {'neovim/nvim-lspconfig',     config = LspConfig()}
-		use {'kabouzeid/nvim-lspinstall', config = LspInstallInit()}  -- If it doesn't work, you may need to install npm
-		use {'hrsh7th/nvim-compe',        config = CompeConfig()}
-		use {'lukas-reineke/indent-blankline.nvim', branch = 'master', config = indentLineConfig()}
+		use {'neovim/nvim-lspconfig',               config = LspConfig()}
+		use {'kabouzeid/nvim-lspinstall',           config = LspInstallInit()}  -- If it doesn't work, you may need to install npm
+		use {'hrsh7th/nvim-compe',                  config = CompeConfig()}
+		use {'lukas-reineke/indent-blankline.nvim', config = indentLineConfig()}
 
 		-- Utilities
 		use 'ap/vim-css-color'
@@ -177,8 +167,8 @@ return require("packer").startup({
 
 		-- Colorschemes
 		use {
-			'https://gitlab.com/Smeueg/Salt.vim',
-			config = vim.cmd [[try | colorscheme Salt | catch /^Vim\%((\a\+)\)\=:E185/ | endtry ]]
+			'https://gitlab.com/Smeueg/Nebula.vim',
+			config = vim.cmd [[try | colorscheme Nebula | catch /^Vim\%((\a\+)\)\=:E185/ | endtry ]]
 		}
 	end,
 
