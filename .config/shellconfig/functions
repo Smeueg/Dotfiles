@@ -41,25 +41,19 @@ cheat(){ curl cheat.sh/$1 | less -Srf ; }
 
 # DotFile "alias"
 dit(){
-    if [ $1 == "files" ]; then
-        orig_dir=$(pwd) && cd
-        files=$(git --git-dir=$HOME/.local/dots/ --work-tree=$HOME ls-tree -r master --name-only)
-        output=""
-
-        for file in $files; do
-            [ ! -f $file ] && output="${output}\n~/${file}"
-        done
-
-        [ -n "$output" ] && printf 'Files that are present in the git repository but not locally: %s\n' "${output}"
-        cd $orig_dir
+    if [ "${1}" = "files" ]; then
+		printf 'Red means that the file exists in the repository however it does not exist in this machine\n'
+		for file in $(PWD="${HOME}" git --git-dir="${HOME}"/.local/dots/ --work-tree="${HOME}" ls-tree -r master --name-only); do
+			[ ! -f "$HOME/${file}" ] &&
+				printf '\033[38;5;1m~/%b\033[0m\n' "${file}" ||
+				printf '~/%b\n' "${file}"
+		done
     else
         git --git-dir=$HOME/.local/dots/ --work-tree=$HOME "$@"
     fi
 
 	unset orig_dir
 	unset files
-	unset output
-
 }
 
 

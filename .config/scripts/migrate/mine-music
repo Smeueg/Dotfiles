@@ -2,8 +2,8 @@
 # Downloads my personal favorite songs/albums
 # These songs take alot of space
 
-printf 'NOTICE: I DO NOT OWN ANY OF THIS MUSIC, CREDIT GOES TO THEIR RESPECTIVE ARTIST/BANDS/MUSICIANS\n'
 
+dir=${HOME}/Music
 urls="
 https://www.youtube.com/watch?v=QAOBbPnI5-g   Metallica - Master Of Puppets
 https://www.youtube.com/watch?v=QBJ1OzMtNwg   Metallica - Ride The Lightning
@@ -26,8 +26,6 @@ https://www.youtube.com/watch?v=JGv6gzImsfg   Cain's Offering - I Am Legion (Ins
 https://www.youtube.com/watch?v=r8n6j21UJMo   Dark Forest - Heart of the Rose
 "
 
-currentDir=${PWD}
-dir=${HOME}/Music
 
 GetYTDL() {
 	if ! command -v youtube-dl >/dev/null; then
@@ -47,33 +45,27 @@ GetYTDL() {
 
 
 main() {
+	printf 'NOTICE: I DO NOT OWN ANY OF THIS MUSIC, CREDIT GOES TO THEIR RESPECTIVE ARTIST/BANDS/MUSICIANS\n'
 	GetYTDL
 
-	[ ! -d "${dir}" ] && mkdir --parents "${dir}"
-	cd "${dir}"
-
-	for url in ${urls}; do
-
-		case ${url} in
-			https*) ;;
-			*) continue ;;
-		esac
+	[ ! -d "${dir}" ] &&
+		mkdir --parents "${dir}"
 
 
-		title=$(printf "${urls}" | grep -w "${url}")
-		title=${title##$url}
-		title=${title#${title%%[![:space:]]*}}
+	printf '%b\n' "${urls}" | while read line; do
+		[ -z "${line}" ] && continue
+
+		url=${line%% *}
+		title=${line#${url}}
+		title=${title#${title%%[! ]*}}
+
 
 		if [ ! -f "${dir}/${title}.mp3" ]; then
-			printf 'Downloading %s... ' "${title}"
-			python -c "${cmd}" --extract-audio --audio-format mp3 "${url}" -o "./${title}.mp3" &&
-				printf 'Success\n' ||
-				printf 'Failed\n'
+			printf 'Downloading %s....\n' "${title}"
+			python -c "${cmd}" --extract-audio --audio-format mp3 "${url}" -o "${dir}/${title}.mp3"
 		else
 			printf '%s.mp3 exists, skipping...\n' "${title}"
 		fi
 	done
-
-	cd "${currentDir}"
 }
 main

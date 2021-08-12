@@ -2,16 +2,17 @@
 ToDecimal() {
 	num=${1}
 
+	# IF last digit is > 5, add 1 to second to last digit
+	if [ ${num#${num%?}} -gt 4 ]; then
+		num=$((num + 10))
+	fi
+
+
 	# Add zeros if digit length is less than 4
 	while [ ${#num} -lt 4 ]; do
 		num=0${num}
 	done
 
-
-	# IF last digit is > 5, add 1 to second to last digit
-	if [ ${num#${num%?}} -gt 4 ]; then
-		num=$((num + 10))
-	fi
 
 	# Remove last digit
 	num=${num%?}

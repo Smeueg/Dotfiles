@@ -4,9 +4,10 @@ export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:="$HOME/.config"}
 
 
 # Add directories to PATH if they don't exist already
-for dir in $(find $HOME/.local/bin/ -maxdepth 1 -type d) $HOME/.local/share/npm/bin; do
-    echo "$PATH" | grep "$dir" >/dev/null || PATH="$PATH:$dir"
+for dir in "${HOME}"/.config/scripts/ "${HOME}"/.config/scripts/*/ "${HOME}"/.local/share/npm/bin; do
+	[ -n "${PATH##*${dir%/}*}" ] && PATH="${PATH}:${dir}"
 done
+
 export PATH
 
 export CCACHE_DIR=$HOME/.cache/ccache
@@ -23,11 +24,10 @@ export EDITOR="nvim"
 
 
 export GNUPGHOME="$XDG_DATA_HOME"/gnupg
-if [ ! -d "$GNUPGHOME" ]; then
+if [ ! -d "${GNUPGHOME}" ]; then
 	echo "Creating ${GNUPGHOME}..."
-	mkdir --parents "$GNUPGHOME"
-	find "$GNUPGHOME" -type f -exec chmod 600 {} \; # Set 600 for files
-	find "$GNUPGHOME" -type d -exec chmod 700 {} \; # Set 700 for directories
+	mkdir --parents "${GNUPGHOME}"
+	chmod 700 ${GNUPGHOME} \; # Set 700 for directories
 fi
 
 export _JAVA_AWT_WM_NONREPARENTING=1

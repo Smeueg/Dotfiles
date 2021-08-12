@@ -113,13 +113,14 @@ endfunction
 
 function! ShRun()
 	let basic_pattern = '#!/\(usr/\)\?bin/\(env \)\?'
-	let shells = ['bash', 'zsh', 'sh']
 
-	for shell in shells
-		if search(basic_pattern . shell, 'nc') != 0
-			return shell . ' ' . expand('%:p')
+	let line_num = search(basic_pattern, 'nc')
+	if line_num != 0
+		let cmd = substitute(getline(line_num)[2:], '\s\+$', '', '')
+		if executable(substitute(cmd, '\s.*$', '', ''))
+			return cmd . ' ' . expand('%:p')
 		endif
-	endfor
+	endif
 
 	return 'sh ' . expand('%:p')
 endfunction

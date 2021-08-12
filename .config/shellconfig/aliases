@@ -27,8 +27,7 @@ else
 fi
 
 # Bookmarks
-alias scr="cd ~/.local/bin/; ls"
-alias D="cd ~/Documents"
+alias scr="cd ~/.config/scripts/; ls"
 
 # Extra functionality
 alias makepkgmem="BUILDDIR=/tmp/makepkg makepkg"
