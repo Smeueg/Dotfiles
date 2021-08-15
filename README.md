@@ -25,7 +25,7 @@ Replace '*' with your profile directory if you don't want all of your profiles t
 ### Salt Mine
 This one liner:
 ```sh
-curl -L https://gitlab.com/Smeueg/dotfiles/-/raw/master/.local/bin/migrate/salt-mine | python
+curl -L https://gitlab.com/Smeueg/dotfiles/-/raw/master/.config/scripts/migrate/salt-mine | python
 ```
 This _should_ work on both python3 and python2.
 

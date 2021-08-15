@@ -1,6 +1,6 @@
 #!/bin/sh
-[ -d "${1}" ] DIRECTORY="${1}" || DIRECTORY="${$HOME}"/Pictures/Screenshots
-shift
+[ -d "${1}" ] && DIRECTORY="${1}" || DIRECTORY="${HOME}"/Pictures/Screenshots
+
 DMENU_ARGS=${@}
 IMG_PATH="${DIRECTORY%/}/Screenshot_$(date '+%Y-%m-%d-(%H:%M:%S)').png"
 SUCCESS_MSG="Saved screenshot in ${IMG_PATH}"

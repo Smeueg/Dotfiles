@@ -4,11 +4,19 @@
 # Variables
 DIR="${PWD}"
 ARGS="${@}"
+UI=false
 CMD=fzf
 
+SWALLOW=true
 HIDDEN=false
 ADJUST=false
 USETERM=true
+
+
+
+ARGS_STR=$(for arg in "${@}"; do
+	printf '%s\n' "${arg}"
+done)
 
 prune="
 *BraveSoftware/*
@@ -19,11 +27,11 @@ prune="
 "
 
 usage="\
-Usage: [--help] [--dir DIRECTORY] [--fzf] [--dmenu DMENU_ARGS]
-	h, --help,   Show usage
-	d, --dir     Change target directory to DIRECTORY
-	   --fzf,    Use fzf
-	   --dmenu,  Use dmenu instead of fzf and give arguments if present to dmenu (MUST BE THE LAST ARGUMENT)\
+Usage: [-h, --help] [[-d, --dir] DIRECTORY] [--fzf] [--dmenu DMENU_ARGS] [--file FILE]
+	-h,	--help,   Show usage
+	-d,	--dir,    Change use a ui and pick recursively from DIRECTORY
+	-f,	--fzf,    Use fzf
+		--dmenu,  Use dmenu instead of fzf and give arguments if present to dmenu (MUST BE THE LAST ARGUMENT)\
 "
 
 avoid_str="
@@ -74,9 +82,69 @@ list_files() {
 }
 
 
+open() {
+	[ -d "${1}" ] && printf "${1}" >/tmp/openftmp
+	[ ! -f "${1}" ] && exit
+	[ -f "/tmp/openftmp" ] && rm "/tmp/openftmp"
+
+	if [ -z "${DISPLAY}" ]; then
+		in_tty=true
+	else
+		in_tty=false
+	fi
+
+	case $(file --mime-type --brief "${1}") in
+		text/*)
+			if [ ! -t 0 ]; then
+				${TERMINAL} -e ${EDITOR} "${1}"
+			else
+				${EDITOR} "${1}"
+			fi
+			;;
+
+		*/pdf)
+			if ! ${in_tty}; then
+				if [ -n "$(command -v zathura)" ]; then
+					if [ -n "$(command -v devour)" ] && ${SWALLOW}; then
+						devour zathura "${1}"
+					else
+						zathura "${1}"
+					fi
+				fi
+			else
+				[ -n "$(command -v fbgs)" ] ||
+					printf 'Error `fbgs` is not installed, will not open pdf in tty...\n' ||
+					fbgs "${1}"
+			fi
+			;;
+
+		image/*)
+			if ! ${in_tty}; then
+				if [ -n "$(command -v sxiv)" ]; then
+					if [ -n "$(command -v devour)" ] && ${SWALLOW} ; then
+						devour sxiv "${1}"
+					else
+						sxiv "${1}"
+					fi
+				fi
+			else
+				[ -n "$(command -v fib)" ] ||
+					printf 'ERROR: `fib` is not installed, will not open image in tty\n' ||
+					fib "${1}"
+			fi
+			;;
+	esac
+}
+
+
 handle_args() {
-	while getopts 'd:h-:' opt; do
+	while getopts 'fd:h-:' opt; do
 		case "${opt}" in
+			f)
+				UI=true
+				CMD=fzf
+				;;
+
 			h)
 				printf '%s\n' "${usage}"
 				exit 0
@@ -88,23 +156,42 @@ handle_args() {
 
 			-)
 				case ${OPTARG} in
-					dmenu)
-						CMD=dmenu
-						tmp=${@}
-						DMENU_ARGS=${tmp#*--dmenu}
-						unset tmp
-						return
+					file)
+						IFS='
+						'
+
+						run=false
+						for arg in $ARGS_STR; do
+							if ! ${run} && [ "${arg}" = '--file' ]; then
+								run=true
+								continue
+							fi
+
+							open "${arg}"
+						done
+						exit
 						;;
 
-					dir)
-						tmp=${@}
-						handle_args -d ${tmp#*--dir}
-						unset tmp
+
+					noswallow)
+						SWALLOW=false
+						;;
+
+					dmenu)
+						UI=true
+						CMD=dmenu
+						DMENU_ARGS=${ARGS#*--dmenu}
 						return
 						;;
 
 					fzf)
+						UI=true
 						CMD=fzf
+						;;
+
+					dir)
+						handle_args -d ${ARGS#*--dir}
+						return
 						;;
 
 					help)
@@ -124,74 +211,27 @@ handle_args() {
 				;;
 		esac
 	done
-
-}
-
-
-open() {
-	[ -d "${1}" ] && printf "${1}" >/tmp/openftmp
-	[ ! -f "${1}" ] && exit
-	[ -f "/tmp/openftmp" ] && rm "/tmp/openftmp"
-
-	in_tty=$(tty)
-	[ -z ${tty##/dev/tty*} ] &&
-		in_tty=true || in_tty=false
-
-	case $(file --mime-type --brief "${1}") in
-		text/*)
-			if [ ! -t 0 ]; then
-				${TERMINAL} -e ${EDITOR} "${1}"
-			else
-				${EDITOR} "${1}"
-			fi
-			;;
-
-		*/pdf)
-			if ! ${in_tty}; then
-				if [ -n "$(command -v zathura)" ]; then
-					if [ -n "$(command -v devour)" ] && [ -n "${DISPLAY}" ]; then
-						devour zathura "${1}"
-					else
-						zathura "${1}"
-					fi
-				fi
-			else
-				[ -n "$(command -v fbgs)" ] ||
-					printf 'Error `fbgs` is not installed, will not open pdf in tty...\n' ||
-					fbgs "${1}"
-			fi
-			;;
-
-		image/*)
-			if ! ${in_tty}; then
-				if [ -n "$(command -v sxiv)" ]; then
-					if [ -n "$(command -v zathura)" ] devour && [ -n "${DISPLAY}" ]; then
-						devour sxiv "${1}"
-					else
-						sxiv "${1}"
-					fi
-				fi
-			else
-				[ -n "$(command -v fib)" ] ||
-					printf 'ERROR: `fib` is not installed, will not open image in tty\n' ||
-					fib "${1}"
-			fi
-			;;
-	esac
 }
 
 
 main() {
-	handle_args ${ARGS}
-	if [ "${CMD}" = "fzf" ] ; then
+	handle_args ${@}
 
-		# IF not running from the terminal, spawn new terminal
-		if [ ! -t 0 ]; then
-			$TERMINAL -e $0
-			exit
-		fi
+	if ${UI}; then
+		open "$(list_files ${DIR} | ${CMD} ${DMENU_ARGS})"
+	else
+		IFS='
+		'
+
+		run=false
+		for arg in $ARGS_STR; do
+			if ${run}; then
+				run=true
+				continue
+			fi
+
+			open "${arg}"
+		done
 	fi
-
-	open "$(list_files ${DIR} | ${CMD} ${DMENU_ARGS})"
 }
-main
+main ${@}
