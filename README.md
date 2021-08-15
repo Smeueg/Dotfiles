@@ -1,9 +1,9 @@
 # Salty Dotfiles for Linux Ricing and Seasoning
 These dotfiles are meant to also be used alongside my suckless forks:
-- (dwm)[https://gitlab.com/Smeueg/dwm]
-- (st)[https://gitlab.com/Smeueg/st]
-- (dwmblocks)[https://gitlab.com/Smeueg/dwmblocks]
-- (dmenu)[https://gitlab.com/Smeueg/dmenu]
+- [dwm](https://gitlab.com/Smeueg/dwm)
+- [st](https://gitlab.com/Smeueg/st)
+- [dwmblocks](https://gitlab.com/Smeueg/dwmblocks)
+- [dmenu](https://gitlab.com/Smeueg/dmenu)
 
 - Neovim as the text editor
 - Tmux as a terminal multiplexer
@@ -15,19 +15,20 @@ Refer to the arch wiki: https://wiki.archlinux.org/index.php/Dotfiles
 
 
 ## Installing/Migrating into a new system
-To enable the firefox theme, symlink ~/.config/browser/firefox to ~/.mozilla/firefox/xxxxxxxx.default-release/chrome:
+### Salt Mine
+This one liner:
+```sh
+python -c "$(curl -L https://gitlab.com/Smeueg/dotfiles/-/raw/master/.config/scripts/migrate/salt-mine)"
+```
+This _should_ work on both python3 and python2.
+
+### Firefox Theme
+To enable the firefox theme, symlink (soft link) ~/.config/browser/firefox to ~/.mozilla/firefox/xxxxxxxx.default-release/chrome:
 ```sh
 ln -s $HOME/.config/browser/firefox  $HOME/.mozilla/firefox/*.default-release/chrome
 ```
 Replace '*' with your profile directory if you don't want all of your profiles to have the theme
 
-
-### Salt Mine
-This one liner:
-```sh
-curl -L https://gitlab.com/Smeueg/dotfiles/-/raw/master/.config/scripts/migrate/salt-mine | python
-```
-This _should_ work on both python3 and python2.
 
 
 ### "Dependencies"
