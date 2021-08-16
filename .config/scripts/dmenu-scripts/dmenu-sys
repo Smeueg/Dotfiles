@@ -1,8 +1,9 @@
 #!/bin/sh
-if ! command -v loginctl >/dev/null; then
-	herbe "loginctl/elogind is not in this system... Will not run"
-	exit
-fi
+fail=false
+! command -v loginctl >/dev/null && printf '`loginctl`/elogind` is not in this system... Will not run\n' && fail=true
+! command -v dmenu >/dev/null    && printf '`dmenu` is not in this system... Will not run' && fail=true
+${fail} && exit
+
 
 OPTIONS="\
  Suspend           - loginctl suspend  & herbe Suspending
@@ -13,6 +14,24 @@ OPTIONS="\
  Cancel            - herbe Canceled\
 "
 
-Chosen=$(echo "$OPTIONS" | grep -Po "^. [A-Za-z( & )]*(?= *-)" | dmenu $@)
-[ -z "$Chosen" ] && Chosen="Cancel"
-eval "$(echo "$OPTIONS" | grep -Po "$Chosen *- \K.*")"
+
+
+chosen=$(
+	IFS='
+	'
+	for opt in $OPTIONS; do
+		opt="${opt% *-*}"
+		printf '%b\n' "${opt%${opt##*[! ]}}"
+	done | dmenu $@
+)
+
+[ -z "${chosen}" ] && chosen="Cancel"
+
+IFS='
+'
+for opt in ${OPTIONS}; do
+	if [ -z "${opt##$chosen*}" ]; then
+		eval "${opt##* - }"
+		exit
+	fi
+done

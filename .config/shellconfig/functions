@@ -41,9 +41,10 @@ cheat(){ curl cheat.sh/$1 | less -Srf ; }
 
 # DotFile "alias"
 dit(){
+	cd ${HOME}
     if [ "${1}" = "files" ]; then
 		printf 'Red means that the file exists in the repository however it does not exist in this machine\n'
-		for file in $(PWD="${HOME}" git --git-dir="${HOME}"/.local/dots/ --work-tree="${HOME}" ls-tree -r master --name-only); do
+		for file in $(git --git-dir="${HOME}"/.local/dots/ --work-tree="${HOME}" ls-tree -r master --name-only); do
 			[ ! -f "$HOME/${file}" ] &&
 				printf '\033[38;5;1m~/%b\033[0m\n' "${file}" ||
 				printf '~/%b\n' "${file}"
@@ -51,6 +52,7 @@ dit(){
     else
         git --git-dir=$HOME/.local/dots/ --work-tree=$HOME "$@"
     fi
+	cd - >/dev/null
 
 	unset orig_dir
 	unset files
@@ -141,7 +143,11 @@ n()
 
 record() {
 	if command -v ffmpeg >/dev/null; then
-		ffmpeg -f x11grab -i :0.0 $1
+		if [ $1 = "--audio" ]; then
+			ffmpeg -f pulse -i default -framerate 30 -f x11grab -i :0.0 $HOME/Recording.mkv
+		else
+			ffmpeg -framerate 30 -f x11grab -i :0.0 $HOME/Recording.mkv
+		fi
 	else
 		echo "! ffmpeg is not installed !"
 	fi
@@ -180,6 +186,6 @@ pfetch() {
 
 of() {
 	[ -z "$(command -v openf)" ] && printf 'ERROR: `openf` does not exists...\n' && return 1
-	openf $@
+	openf -f $@
 	[ -f "/tmp/openftmp" ] && cd "$(< /tmp/openftmp)" && printf 'cd -> %s\n' "${PWD}"
 }

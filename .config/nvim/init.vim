@@ -96,8 +96,9 @@ function! CCompile()
 	let cmd = 'cc '
 
 	let flags = {
-		\ 'ncurses.h' : 'ncurses',
-		\ 'magic.h'   : 'magic',
+		\ 'ncurses.h'  : 'ncurses',
+		\ 'X11/Xlib.h' : 'X11',
+		\ 'magic.h'    : 'magic',
 	\ }
 
 	for flag in keys(flags)
@@ -139,6 +140,7 @@ function! CompileAndOrRun()
 		\ 'awk'    : term_cmd.'awk -f '.file,
 		\ 'sh'     : term_cmd.ShRun(),
 		\ 'c'      : term_cmd.CCompile(),
+		\ 'nroff'  : 'w !groff - -mom -T pdf | zathura -',
 		\ 'html'   : '!$BROWSER "%"',
 		\ 'vim'    : 'source %'
 	\ }
