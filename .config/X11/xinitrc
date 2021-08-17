@@ -1,23 +1,23 @@
 #!/bin/sh
 WM="dwm"
 
-xrandr --output $(xrandr | grep -Po '.*(?= connected)') --mode 1360x768 --scale 1.2
+#xrandr --output $(xrandr | grep -Po '.*(?= connected)') --mode 1360x768 --scale 1.2
 xrandr --output DP-1 --mode 1280x1024 --scale 1.2
-setxkbmap -option keypad:pointerkeys
-xset r rate 250 50
-xrdb ~/.config/X11/Xresources
+setxkbmap -option keypad:pointerkeys &
+xset r rate 250 50 &
+xrdb ~/.config/X11/Xresources &
 
 export WINIT_X11_SCALE_FACTOR=1
 
 # Turn of screen saver and dpms
-xset s off -dpms
+xset s off -dpms &
 
 xcompmgr &
 
 
 case "$WM" in
 	"dwm")
-		hsetroot -cover ~/.local/rice/Wallpapers/"Red Space.jpg"
+		hsetroot -cover ~/.local/rice/Wallpapers/"Red Space.jpg" &
 
 		dwmblocks &
 		exec dwm

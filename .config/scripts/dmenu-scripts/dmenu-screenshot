@@ -1,10 +1,16 @@
 #!/bin/sh
-ARGS=${@}
 DIRECTORY="${HOME}"/Pictures/Screenshots
+
+getopts 't' opt
+[ ${opt} = t ] && DIRECTORY=/tmp/TMPScreenshots && shift
+
+ARGS=${@}
 DEP_INSTALLED=true
 IMG_PATH="${DIRECTORY%/}/Screenshot_$(date '+%Y-%m-%d-(%H:%M:%S)').png"
 SUCCESS_MSG="Saved screenshot in ${IMG_PATH}"
 FAILED_MSG="Failed to save screenshot in ${IMG_PATH}"
+
+
 
 
 notify() {
