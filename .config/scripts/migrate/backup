@@ -43,7 +43,7 @@ DIR=${DIR%/}
 if "${GPG_BACKUP}"; then
 	gpg --export --armor ${GPG_BACKUP} > "${DIR}"/public_keys.asc
 	gpg --export-secret-keys --armor ${GPG_BACKUP} > "${DIR}"/secret_keys.asc
-	gpg --export-ownertrust ${GPG_BACKUP} > "${DIR}"/ownertrust.txt
+	gpg --export-ownertrust > "${DIR}"/ownertrust.txt
 
 	printf '
 	To import gpg keys:
@@ -53,9 +53,9 @@ if "${GPG_BACKUP}"; then
 	'
 fi
 
-
 IFS='
 '
-for dir in BACKUP_DIRS; do
-	cp -i -r "${dir}" "${DIR}"
+for dir in ${BACKUP_DIRS}; do
+	printf 'Copying %s...\n' "${dir}"
+	cp -uir "${dir}" "${DIR}"
 done

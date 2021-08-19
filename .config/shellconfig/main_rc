@@ -1,0 +1,34 @@
+#!/bin/sh
+# Shell configuration to source all other shell configuration files
+set -o vi   # Vi mode, works on bash && zsh as well
+stty -ixon 	# Disable Ctrl-q and Ctrl-s
+export HISTFILE=/tmp/shell_history
+
+
+if [ -d "${HOME}"/.config/shellconfig ]; then
+	for file in "${HOME}"/.config/shellconfig/*; do
+		if [ "${file}" = "${HOME}/.config/shellconfig/main_rc" ] || [ "${file}" = "${HOME}/.config/shellconfig/main_profile" ]; then
+			continue
+		fi
+		source "${file}"
+	done
+fi
+
+
+if [ "${BASH}" ]; then
+	# Bash Specific configuration
+	complete -c man which
+	complete -cf sudo
+	shopt -s autocd
+	shopt -s checkwinsize
+
+	[ -f /usr/share/bash-completion/bash_completion ] &&
+		source /usr/share/bash-completion/bash_completion
+elif [ "${ZSH_NAME}" ]; then
+	# Zsh Specific configuration
+	setopt autocd
+
+	# Vi mode weird shenanigans
+	bindkey -v '^H' backward-delete-char
+	bindkey -v '^?' backward-delete-char
+fi

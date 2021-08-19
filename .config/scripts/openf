@@ -29,7 +29,7 @@ prune="
 usage="\
 Usage: [-h, --help] [[-d, --dir] DIRECTORY] [--fzf] [--dmenu DMENU_ARGS] [--file FILE]
 	-h,	--help,   Show usage
-	-d,	--dir,    Change use a ui and pick recursively from DIRECTORY
+	-d,	--dir,    Use a ui and pick recursively from DIRECTORY
 	-f,	--fzf,    Use fzf
 		--dmenu,  Use dmenu instead of fzf and give arguments if present to dmenu (MUST BE THE LAST ARGUMENT)\
 "
@@ -151,6 +151,8 @@ handle_args() {
 				;;
 
 			d)
+				UI=true
+				CMD=fzf
 				DIR=${OPTARG}
 				;;
 
