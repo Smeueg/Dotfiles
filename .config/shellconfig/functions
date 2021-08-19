@@ -30,8 +30,8 @@ saur(){
 
 
 pycalc(){
-  printf '#!/bin/python\nprint()' > /tmp/pycalc
-	$EDITOR /tmp/pycalc
+	printf '#!/bin/python\nprint()\n' > /tmp/pycalc
+	${EDITOR} /tmp/pycalc
 	rm /tmp/pycalc
 }
 
@@ -41,18 +41,18 @@ cheat(){ curl cheat.sh/$1 | less -Srf ; }
 
 # DotFile "alias"
 dit(){
-	cd ${HOME}
     if [ "${1}" = "files" ]; then
+		cd ${HOME}
 		printf 'Red means that the file exists in the repository however it does not exist in this machine\n'
 		for file in $(git --git-dir="${HOME}"/.local/dots/ --work-tree="${HOME}" ls-tree -r master --name-only); do
 			[ ! -f "$HOME/${file}" ] &&
 				printf '\033[38;5;1m~/%b\033[0m\n' "${file}" ||
 				printf '~/%b\n' "${file}"
 		done
+		cd - >/dev/null
     else
         git --git-dir=$HOME/.local/dots/ --work-tree=$HOME "$@"
     fi
-	cd - >/dev/null
 
 	unset orig_dir
 	unset files
@@ -150,36 +150,6 @@ record() {
 		fi
 	else
 		echo "! ffmpeg is not installed !"
-	fi
-}
-
-
-screenfetch() {
-	path="$(which screenfetch 2>/dev/null)"
-	if [ -z "${path}" ]; then
-		curl -Ls https://github.com/KittyKatt/screenFetch/raw/master/screenfetch-dev | bash -s ${@}
-	else
-		$(which screenfetch) ${@}
-	fi
-}
-
-
-neofetch() {
-	path="$(which neofetch 2>/dev/null)"
-	if [ -z "${path}" ]; then
-		curl -Ls https://github.com/dylanaraps/neofetch/raw/master/neofetch | bash -s ${@}
-	else
-		$(which screenfetch) ${@}
-	fi
-}
-
-
-pfetch() {
-	path="$(which screenfetch 2>/dev/null)"
-	if [ -z "${path}" ]; then
-		curl -Ls https://github.com/dylanaraps/pfetch/raw/master/pfetch | sh -s ${@}
-	else
-		$(which screenfetch) ${@}
 	fi
 }
 

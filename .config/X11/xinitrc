@@ -2,6 +2,7 @@
 WM="dwm"
 
 #xrandr --output $(xrandr | grep -Po '.*(?= connected)') --mode 1360x768 --scale 1.2
+xrandr --output HDMI-2 --mode 1360x768 --scale 1.2
 xrandr --output DP-1 --mode 1280x1024 --scale 1.2
 setxkbmap -option keypad:pointerkeys &
 xset r rate 250 50 &

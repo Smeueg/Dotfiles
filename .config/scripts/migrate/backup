@@ -1,0 +1,61 @@
+#!/bin/sh
+
+BACKUP_DIRS="
+${HOME}/Documents
+${HOME}/Music
+"
+
+GPG_BACKUP=false
+while [ $# -gt 0 ]; do
+	arg=${1}
+
+	case $arg in
+		--gpg)
+			GPG_BACKUP=true
+			GPG_KEY=${2}
+			shift
+			if [ -z "${GPG_KEY}" ]; then
+				printf 'ERROR: Please add a valid gpg key you want to backup\n' "${DIR}" >&2
+				exit
+			fi
+			;;
+
+		*)
+			DIR=${1}
+	esac
+	shift
+done
+
+
+if [ -z "${DIR}" ]; then
+	printf 'ERROR: Please provide a directory as an argument...\n' "${DIR}" >&2
+	exit
+fi
+
+if [ ! -d "${DIR}" ]; then
+	printf 'ERROR: %b is not a directory...\n' "${DIR}" >&2
+	exit
+fi
+
+DIR=${DIR%/}
+
+
+if "${GPG_BACKUP}"; then
+	gpg --export --armor ${GPG_BACKUP} > "${DIR}"/public_keys.asc
+	gpg --export-secret-keys --armor ${GPG_BACKUP} > "${DIR}"/secret_keys.asc
+	gpg --export-ownertrust ${GPG_BACKUP} > "${DIR}"/ownertrust.txt
+
+	printf '
+	To import gpg keys:
+	gpg —-import /path/to/secret_keys.asc
+	gpg —-import /path/to/public_keys.asc
+	gpg --import-ownertrust < /path/to/ownertrust.txt
+	'
+fi
+
+
+IFS='
+'
+for dir in BACKUP_DIRS; do
+	cp -i -r "${dir}" "${DIR}"
+done

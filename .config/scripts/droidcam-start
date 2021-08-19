@@ -108,7 +108,7 @@ main() {
 	if HandleArg '\-a' 'snd_aloop';    then audio=true; video=false; fi
 	if HandleArg '\-v' 'v4l2loopback'; then             video=true; fi
 
-	if ${audio} && ! pidof pulseaudio; then
+	if ${audio} && ! pidof pulseaudio >/dev/null; then
 		printf 'Pulseaudio is not running, exiting...\n'
 		exit
 	fi

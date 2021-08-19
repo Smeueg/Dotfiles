@@ -15,16 +15,7 @@ alias rm="rm -I"
 alias cp="cp -i"
 alias ip="ip --color=auto"
 
-# Devour terminal
-command -v devour >/dev/null && alias z="devour zathura"
-
-if command -v devour >/dev/null; then
-  alias sxiv="devour sxiv -o"
-  alias z="devour zathura"
-else
-  alias sxiv="sxiv -o"
-  alias z="zathura"
-fi
+alias sxiv="sxiv -o"
 
 # Bookmarks
 alias scr="cd ~/.config/scripts/; ls"
@@ -32,5 +23,4 @@ alias scr="cd ~/.config/scripts/; ls"
 # Extra functionality
 alias makepkgmem="BUILDDIR=/tmp/makepkg makepkg"
 alias parumem="paru --clonedir /tmp/makepkg"
-alias vifm='cd $($(which vifm) . --choose-dir -)'
 alias sx="startx ~/.config/X11/xinitrc"

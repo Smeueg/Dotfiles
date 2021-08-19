@@ -3,16 +3,20 @@
 # This script will NOT spawn a new terminal
 
 
-if [ "${1}" = "-t" ]; then
-	${TERMINAL} -e $0
+if [ "${1}" = '-t' ]; then
+	if command -v tmux >/dev/null; then
+		${TERMINAL} -e ${0} &
+		exit
+	else
+		${TERMINAL}
+	fi
 fi
 
-
 if command -v tmux >/dev/null; then
-	if tmux has-session >/dev/null 2>&1; then
-		tmux attach >/dev/null 2>&1
+	if tmux has-session 2>/dev/null; then
+		tmux attach
 	else
-		tmux new-session -s Default >/dev/null 2>&1
+		tmux new-session -s Default
 	fi
 else
 	${SHELL}

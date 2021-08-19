@@ -140,7 +140,7 @@ function! CompileAndOrRun()
 		\ 'awk'    : term_cmd.'awk -f '.file,
 		\ 'sh'     : term_cmd.ShRun(),
 		\ 'c'      : term_cmd.CCompile(),
-		\ 'nroff'  : 'w !groff - -mom -T pdf | zathura -',
+		\ 'nroff'  : 'w !groff - -ms -T pdf > "' . file_noext . '.pdf"; zathura "' . file_noext . '".pdf',
 		\ 'html'   : '!$BROWSER "%"',
 		\ 'vim'    : 'source %'
 	\ }
