@@ -1,6 +1,6 @@
 #!/bin/python
 
-# Salt-Mine: Mine, my salty dotfiles from salt rocks
+# smeueger: Become more smeueg with this script
 #
 # This script is basically just a migration script using
 # curses that makes migrating my *personal* dotfiles easier

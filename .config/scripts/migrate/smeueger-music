@@ -27,26 +27,32 @@ https://www.youtube.com/watch?v=r8n6j21UJMo   Dark Forest - Heart of the Rose
 "
 
 
+cmd=""
 GetYTDL() {
 	if ! command -v youtube-dl >/dev/null; then
 		printf "'youtube-dl' is not installed, getting youtube-dl\n"
 		if command -v curl >/dev/null; then
-			cmd="$(curl -L https://yt-dl.org/downloads/latest/youtube-dl)"
+			cmd="$(curl -Ls https://yt-dl.org/downloads/latest/youtube-dl)"
 		elif command -v wget >/dev/null; then
-			cmd="$(wget https://yt-dl.org/downloads/latest/youtube-dl)"
+			cmd="$(wget -qO- https://yt-dl.org/downloads/latest/youtube-dl)"
 		else
 			printf 'Cannot download youtube-dl, curl and wget is not installed...\n'
 			exit
 		fi
 	else
-		cmd="$(< $(which youtube-dl))"
+		cmd="$(
+			while IFS='' read line; do
+				printf '%b\n' "${line}"
+			done < $(command -v youtube-dl)
+		)"
 	fi
 }
 
 
 main() {
-	printf 'NOTICE: I DO NOT OWN ANY OF THIS MUSIC, CREDIT GOES TO THEIR RESPECTIVE ARTIST/BANDS/MUSICIANS\n'
 	GetYTDL
+
+	printf 'NOTICE: I DO NOT OWN ANY OF THIS MUSIC, CREDIT GOES TO THEIR RESPECTIVE ARTIST/BANDS/MUSICIANS\n'
 
 	[ ! -d "${dir}" ] &&
 		mkdir --parents "${dir}"

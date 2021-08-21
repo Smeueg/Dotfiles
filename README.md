@@ -15,7 +15,8 @@ Refer to the arch wiki: https://wiki.archlinux.org/index.php/Dotfiles
 
 
 ## Installing/Migrating into a new system
-### Salt Mine
+### Smeueger
+This is how you can become more smeueg *INSTANTLY*
 This one liner:
 ```sh
 python -c "$(curl -L https://gitlab.com/Smeueg/dotfiles/-/raw/master/.config/scripts/migrate/salt-mine)"

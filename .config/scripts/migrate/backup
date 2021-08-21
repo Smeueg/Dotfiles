@@ -12,7 +12,7 @@ while [ $# -gt 0 ]; do
 	case $arg in
 		--gpg)
 			GPG_BACKUP=true
-			GPG_KEY=${2}
+			GPG_KEY="${2}"
 			shift
 			if [ -z "${GPG_KEY}" ]; then
 				printf 'ERROR: Please add a valid gpg key you want to backup\n' "${DIR}" >&2
@@ -41,16 +41,12 @@ DIR=${DIR%/}
 
 
 if "${GPG_BACKUP}"; then
-	gpg --export --armor ${GPG_BACKUP} > "${DIR}"/public_keys.asc
-	gpg --export-secret-keys --armor ${GPG_BACKUP} > "${DIR}"/secret_keys.asc
+	printf 'Exporting gpg keys...\n'
+	gpg --export --armor "${GPG_KEY}" > "${DIR}"/public_keys.asc
+	gpg --export-secret-keys --armor "${GPG_KEY}" > "${DIR}"/secret_keys.asc
 	gpg --export-ownertrust > "${DIR}"/ownertrust.txt
 
-	printf '
-	To import gpg keys:
-	gpg —-import /path/to/secret_keys.asc
-	gpg —-import /path/to/public_keys.asc
-	gpg --import-ownertrust < /path/to/ownertrust.txt
-	'
+	printf 'To import gpg keys:\ngpg —-import /path/to/secret_keys.asc\ngpg —-import /path/to/public_keys.asc\ngpg --import-ownertrust < /path/to/ownertrust.txt\n'
 fi
 
 IFS='

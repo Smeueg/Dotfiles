@@ -1,5 +1,5 @@
 #!/bin/sh
-# Prompt should work in bash AND zsh
+# Prompt should work in bash, zsh, AND ksh
 
 print_prompt() {
 
@@ -7,7 +7,7 @@ print_prompt() {
 	ret=$?
 	dir_col=$'\033[38;5;3m'
 	success_col=$'\033[38;5;11m'
-	failed_col=$'\033[38;5;11m'
+	failed_col=$'\033[38;5;1m'
 	branch_col=$'\033[38;5;10m'
 	cur_dir=${PWD}
 	if [ -z "${cur_dir##${HOME}*}" ]; then
