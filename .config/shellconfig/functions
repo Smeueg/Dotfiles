@@ -101,7 +101,13 @@ n()
 			[Yy][Ee][Ss]|[Yy]|"")
 				dir=$HOME/.config/nnn/plugins
 				[ ! -d "$dir" ] && mkdir --verbose "$dir"
-				curl -L https://raw.githubusercontent.com/jarun/nnn/master/plugins/getplugs -o $HOME/.config/nnn/plugins/getplugs
+				if [ "$(command -v curl)" ]; then
+					curl -L https://raw.githubusercontent.com/jarun/nnn/master/plugins/getplugs -o $HOME/.config/nnn/plugins/getplugs
+				elif [ "$(command -v wget)" ]; then
+					wget https://raw.githubusercontent.com/jarun/nnn/master/plugins/getplugs -O $HOME/.config/nnn/plugins/getplugs
+				else
+					printf 'Both curl and wget is not installed... Please install one of them\n' >&2
+				fi
 				;;
 
 			*) echo "Will not download" ;;

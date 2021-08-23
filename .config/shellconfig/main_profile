@@ -23,8 +23,6 @@ export BROWSER="firefox"
 export EDITOR="nvim"
 
 
-# ZSH config directory so it won't clutter ${HOME}
-export ZDOTDIR="${HOME}"/.config/shellconfig
 
 
 # Fix some gnupg messed up permission or something, idk
@@ -62,3 +60,4 @@ if command -v startx >/dev/null && [ "$(tty)" = "/dev/tty1" ]; then
 fi
 
 source "${HOME}"/.config/shellconfig/main_rc
+export ENV="${HOME}"/.config/shellconfig/main_rc

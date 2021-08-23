@@ -618,7 +618,7 @@ fonts = (
         None),
 
     Choice("Material Icons", None, GetFonts, (
-            "https://github.com/google/material-design-icons/blob/master/font/MaterialIcons-Regular.ttf",
+            "https://github.com/google/material-design-icons/raw/master/font/MaterialIcons-Regular.ttf",
             None,
             None),
         None),

@@ -24,9 +24,9 @@ python -c "$(curl -L https://gitlab.com/Smeueg/dotfiles/-/raw/master/.config/scr
 This _should_ work on both python3 and python2.
 
 ### Firefox Theme
-To enable the firefox theme, symlink (soft link) ~/.config/browser/firefox to ~/.mozilla/firefox/xxxxxxxx.default-release/chrome:
+To enable the firefox theme, symlink (soft link) ~/.config/browser/firefox to ~/.mozilla/firefox/xxxxxxxx.default-something/chrome:
 ```sh
-ln -s $HOME/.config/browser/firefox  $HOME/.mozilla/firefox/*.default-release/chrome
+ln -s $HOME/.config/browser/firefox  $HOME/.mozilla/firefox/*.default-*/chrome
 ```
 Replace '*' with your profile directory if you don't want all of your profiles to have the theme
 
@@ -69,6 +69,10 @@ MOZ_ENABLE_WAYLAND=1
 2. Also read about [zram](https://www.kernel.org/doc/html/latest/admin-guide/blockdev/zram.html)/zswap/zcache which will also reduce reads and writes to the HDD/SSD
 3. For people that use github or gitlab, install [hub](https://github.com/profclems/glab) or [cli/gh](https://github.com/cli/cli), both of which are for github, or [lab](https://github.com/zaquestion/lab/) or [glab](https://github.com/profclems/glab) and both are for gitlab
 4. If you want a bitmap font, [scientifica](https://github.com/NerdyPepper/scientifica) and [cozette](https://github.com/slavfox/Cozette) seems interesting
+
+### Distro Specific:
+#### Alpine:
+Do not forget to install elogind, linux-firmware and add your normal user to the video and input group
 
 ### Dual Booting Windows:
 Don't... Windows is garbage

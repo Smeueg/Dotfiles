@@ -1,1 +1,0 @@
-/home/smeueg/.config/shellconfig/main_rc

@@ -3,8 +3,7 @@ set mouse=a
 set number
 set updatetime=1000
 set cursorline | highlight clear CursorLine
-set sidescrolloff=9999
-set nowrap
+set wrap
 
 syntax enable
 set noswapfile
