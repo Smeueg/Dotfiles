@@ -1,4 +1,4 @@
-[#](#) Salty Dotfiles for Linux Ricing and Seasoning
+# Salty Dotfiles for Linux Ricing and Seasoning
 These dotfiles are meant to also be used alongside my suckless forks:
 - [dwm](https://gitlab.com/Smeueg/dwm)
 - [st](https://gitlab.com/Smeueg/st)
@@ -42,8 +42,7 @@ These are all really optional, since without them, the "rice" would still be fun
 
 ## TODO
 ### Important
-* TRY OUT ALPINE LINUX
-* GET CONNMAN TO WORK (also make a connmantui in shell script)
+* make a connmantui in shell script
 
 ### Less Important but still important
 - Create a better dotfiles management script
@@ -55,6 +54,7 @@ These are all really optional, since without them, the "rice" would still be fun
 
 
 ## Random Information
+### Browsers in Wayland
 If you're using wayland and a chromium browser try this flag:
 ```
 --enable-features=UseOzonePlatform --ozone-platform=wayland This works for any browser based on Chromium v87 (or more)
@@ -64,7 +64,8 @@ For firefox, add this environment variable:
 MOZ_ENABLE_WAYLAND=1
 ```
 
-if you're having problems about alacritty with vim (alacritty -e vim somefile), the 'fix' is to launch alacritty, then wait a second (or a couple of miliseconds), then launch vim.
+### Alacritty with vim/nvim
+If you're having problems about alacritty with vim (alacritty -e vim somefile), the 'fix' is to launch alacritty, then wait a second (or a couple of miliseconds), then launch vim.
 
 for example:
 ```
