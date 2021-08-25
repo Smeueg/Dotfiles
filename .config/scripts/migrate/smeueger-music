@@ -68,7 +68,11 @@ main() {
 
 		if [ ! -f "${dir}/${title}.mp3" ]; then
 			printf 'Downloading %s....\n' "${title}"
-			python -c "${cmd}" --extract-audio --audio-format mp3 "${url}" -o "${dir}/${title}.mp3"
+			if command -v python >/dev/null; then
+				python -c "${cmd}" --extract-audio --audio-format mp3 "${url}" -o "${dir}/${title}.mp3"
+			elif command -v python3 >/dev/null; then
+				python3 -c "${cmd}" --extract-audio --audio-format mp3 "${url}" -o "${dir}/${title}.mp3"
+			fi
 		else
 			printf '%s.mp3 exists, skipping...\n' "${title}"
 		fi

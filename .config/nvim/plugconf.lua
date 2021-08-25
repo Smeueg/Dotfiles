@@ -136,13 +136,11 @@ end
 ---- Packer Setup --
 local function PackerBootstrap()
 	local execute = vim.api.nvim_command
-	local fn = vim.fn
+	local install_path = vim.fn.stdpath('config')..'/pack/packer/start/packer.nvim'
 
-	local install_path = fn.stdpath('config')..'/pack/packer/start/packer.nvim'
-
-	if fn.empty(fn.glob(install_path)) > 0 then
+	if vim.fn.empty(vim.fn.glob(install_path)) > 0 then
 		print("Packer is not installed... Installing...")
-		fn.system({'git', 'clone', 'https://github.com/wbthomason/packer.nvim', install_path})
+		vim.api.nvim_command('!git clone https://github.com/wbthomason/packer.nvim ' .. install_path)
 		print("Run ':PackerInstall' or ':PackerSync' to install plugins...")
 	end
 end

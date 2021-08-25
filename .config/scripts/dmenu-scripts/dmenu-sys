@@ -1,18 +1,45 @@
 #!/bin/sh
-fail=false
-! command -v loginctl >/dev/null && printf '`loginctl`/elogind` is not in this system... Will not run\n' && fail=true
-! command -v dmenu >/dev/null    && printf '`dmenu` is not in this system... Will not run' && fail=true
-${fail} && exit
+error_msg=''
+
+if [ ! "$(command -v loginctl)" ] && [ ! "$(command -v systemctl)" ]; then
+	error_msg="ERROR: 'loginctl'/'elogind' and 'systemctl' is not in this system... Please install one of them...\n"
+fi
+
+if [ ! "$(command -v dmenu)" ]; then
+	error_msg="${error_msg}ERROR: 'dmenu' is not in this system... Will not run"
+fi
+
+if [ "${error_msg}" ]; then
+	if [ "${DISPLAY}" ] && [ "$(command -v herbe)" ]; then
+		printf '%b' "${error_msg}" | while read line; do
+			herbe "${line}"
+		done
+	else
+		printf '%b' "${error_msg}" >&2
+	fi
+	exit
+fi
 
 
+if [ "$(command -v systemctl)" ]; then
+OPTIONS="\
+ Suspend           - systemctl suspend & herbe Suspending
+ Lock              - slock
+ Lock & Suspend    - slock & systemctl suspend
+ Reboot            - systemctl reboot & herbe Rebooting
+ Shutdown          - systemctl poweroff
+ Cancel            - herbe Canceled\
+"
+elif [ "$(command -v loginctl)" ]; then
 OPTIONS="\
  Suspend           - loginctl suspend  & herbe Suspending
  Lock              - slock
  Lock & Suspend    - slock & loginctl suspend
  Reboot            - loginctl reboot & herbe Rebooting
- Shutdown          - loginctl poweroff & herbe 'Shutting down'
+ Shutdown          - loginctl poweroff
  Cancel            - herbe Canceled\
 "
+fi
 
 
 

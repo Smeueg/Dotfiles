@@ -23,29 +23,36 @@ export BROWSER="firefox"
 export EDITOR="nvim"
 
 
-
-
 # Fix some gnupg messed up permission or something, idk
 export GNUPGHOME="$XDG_DATA_HOME"/gnupg
 if [ ! -d "${GNUPGHOME}" ]; then
-	echo "Creating ${GNUPGHOME}..."
+	printf 'Creating %s...' "${GNUPGHOME}"
 	mkdir --parents "${GNUPGHOME}"
-	chmod 700 ${GNUPGHOME} \; # Set 700 for directories
+	chmod 700 "${GNUPGHOME}" # Set 700 for directories
 fi
 
 export _JAVA_AWT_WM_NONREPARENTING=1
 export ANDROID_PREFS_ROOT="$XDG_CONFIG_HOME"/android
 export ANDROID_EMULATOR_HOME="$XDG_DATA_HOME"/android/emulator
 
+# Wine
 export WINEPREFIX="$XDG_DATA_HOME"/wineprefixes/default
+
+# Language/Locale
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
+
 
 # Pass
 export PASSWORD_STORE_DIR="$XDG_DATA_HOME"/pass
 
+
+# Gtk & Qt
 command -v qt5ct >/dev/null && export QT_QPA_PLATFORMTHEME=qt5ct # if qt5ct is installed
 export GTK2_RC_FILES="$XDG_CONFIG_HOME"/gtk-2.0/gtkrc
+
+# Shell
+export ENV="${HOME}"/.config/shellconfig/main_rc
 
 
 # Start xserver if in tty1
@@ -60,4 +67,23 @@ if command -v startx >/dev/null && [ "$(tty)" = "/dev/tty1" ]; then
 fi
 
 source "${HOME}"/.config/shellconfig/main_rc
-export ENV="${HOME}"/.config/shellconfig/main_rc
+
+if [ "${BASH}" ] && [ -f "${ENV}" ]; then
+	if [ -f "${HOME}/.bashrc" ] && [ ! -h "${HOME}/.bashrc" ]; then
+		printf '~/.bashrc exists as a file. Do you want to symlink %s to ~/.bashrc? [Y/n] ' "${ENV}"
+		read response
+		printf '\n'
+
+		case "${response}" in
+			[Yy]|[Yy][Ee][Ss])
+				mv "${HOME}/.bashrc" "${HOME}/.bashrc.orig"
+				ln -s "${ENV}" "${HOME}/.bashrc"
+				;;
+
+			*) printf 'Will not symlink %s to ~/.bashrc\n' "${ENV}"
+		esac
+		unset response
+	elif [ ! -h "${HOME}/.bashrc" ]; then
+		ln -s "${ENV}" "${HOME}/.bashrc"
+	fi
+fi

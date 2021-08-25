@@ -137,12 +137,24 @@ def CheckInternet():
         print("You do not have an internet connetion... Exiting")
         sys.exit(-1)
 
+
 def CheckOS():
     from sys import platform
     unsupportedOS = ("win32", "cygwin", "msys")
     if platform in unsupportedOS:
         print("No. Windows is garbage.")
         sys.exit(-1)
+
+
+def CheckCompiler():
+    for dir in os.environ['PATH'].split(':'):
+        if os.access("{}/cc".format(dir), os.X_OK):
+            return
+
+    print("WARNING: `cc`, usually symlinked to `gcc`, is not installed...")
+    if not Confirm("Do you want to continue?"):
+        sys.exit(1)
+
 
 
 # UI #
@@ -335,9 +347,23 @@ class Choice:
                     if not found:
                         self.missingDep["progs"].append(file)
 
+            found = False
             if libs != None:
                 if type(libs) == str:
                     libs = [libs]
+
+                for directory in path.split(":"):
+                    if directory[-1] != "/":
+                        directory += "/"
+
+                    if os.access(directory + file, os.X_OK):
+                        found = True
+
+                if not found:
+                    for lib in libs:
+                        self.missingDep["libs"].append("lib" + lib)
+
+                    return
 
                 cmd = ["cc"]
 
@@ -574,6 +600,7 @@ def GetFonts(arg):
 CheckInternet()
 CheckVersion()
 CheckOS()
+CheckCompiler()
 print("Checking dependencies...")
 
 suckless = (
@@ -633,7 +660,7 @@ fonts = (
 mainChoice = (
     Choice("Dotfiles",                None,     GetDot,          None, {"progs":"git"}),
     Choice("Wallpaper(s)",            None,     GetWallpapers,   None, None),
-    Choice("Suckless(-ish) Programs", suckless, CompileSuckless, None, {"progs":"make"}),
+    Choice("Suckless(-ish) Programs", suckless, CompileSuckless, None, {"progs":["make", "gcc"]}),
     Choice("Fonts",                   fonts,    None,            None, None),
 )
 

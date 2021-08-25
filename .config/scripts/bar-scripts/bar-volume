@@ -1,27 +1,57 @@
 #!/bin/sh
 
 # This script returns an $icon and $volume variable
-StartPulseaudio() {
-	pidof pulseaudio >/dev/null || setsid --fork pulseaudio --start --exit-idle-time=-1
-}
-
-
-StartPipewire() {
-	pidof pipewire >/dev/null               || setsid --fork pipewire
-	pidof pipewire-pulse >/dev/null         || setsid --fork pipewire-pulse
-	pidof pipewire-media-session >/dev/null || setsid --fork pipewire-media-session
-}
-
-CheckProcess() {
-	if command -v pipewire >/dev/null && command -v pipewire-pulse >/dev/null && command -v pipewire-media-session >/dev/null; then
-		StartPipewire
+check_process()
+{
+	if [ "$(command -v pipewire)" ] && [ "$(command -v pipewire-pulse)" ] && [ "$(command -v pipewire-media-session)" ]; then
+		pidof pulseaudio >/dev/null || setsid --fork pulseaudio --start --exit-idle-time=-1
 	elif command -v pulseaudio >/dev/null; then
-		StartPulseaudio
+		pidof pipewire >/dev/null               || setsid --fork pipewire
+		pidof pipewire-pulse >/dev/null         || setsid --fork pipewire-pulse
+		pidof pipewire-media-session >/dev/null || setsid --fork pipewire-media-session
 	fi
 }
 
-main() {
-	CheckProcess
+
+pulse_droidcam()
+{
+	if [ ! "$(pidof pulseaudio)" ] || [ ! "$(pgrep droidcam)" ]; then
+		return
+	fi
+
+	load_module=true
+
+	old_ifs=${IFS}
+	IFS='
+	'
+
+	for line in $(pactl list); do
+		if [ -z "${line##*droidcam_audio*}" ]; then
+			load_module=false
+			break
+		fi
+	done
+
+	if ${load_module}; then
+		pactl load-module module-alsa-source device=hw:Loopback,1,0 source_properties=device.description=droidcam_audio >/dev/null
+	fi
+
+	for line in $(pactl list); do
+		if [ -z "${line##*droidcam_audio*}" ]; then
+			pactl set-default-source 'alsa_input.hw_Loopback_1_0' >/dev/null
+			break
+		fi
+	done
+
+	IFS=${old_ifs}
+	unset load_module
+}
+
+
+main()
+{
+	check_process
+	pulse_droidcam
 	pactl list sinks | while read line; do
 		case "${line}" in
 			Volume*)

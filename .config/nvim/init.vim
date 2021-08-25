@@ -208,4 +208,6 @@ else
 	endif
 endif
 
-luafile ~/.config/nvim/plugconf.lua
+if has('nvim-0.5.0')
+	luafile ~/.config/nvim/plugconf.lua
+endif

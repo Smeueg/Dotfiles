@@ -10,7 +10,7 @@ audio=false
 
 Kill() {
 	if printf '%s' "${arguments}" | grep kill >/dev/null; then
-		killall droidcam-cli
+		pkill droidcam-cli
 		exit
 	fi
 }

@@ -1,4 +1,4 @@
-# Salty Dotfiles for Linux Ricing and Seasoning
+[#](#) Salty Dotfiles for Linux Ricing and Seasoning
 These dotfiles are meant to also be used alongside my suckless forks:
 - [dwm](https://gitlab.com/Smeueg/dwm)
 - [st](https://gitlab.com/Smeueg/st)
@@ -63,6 +63,17 @@ For firefox, add this environment variable:
 ```
 MOZ_ENABLE_WAYLAND=1
 ```
+
+if you're having problems about alacritty with vim (alacritty -e vim somefile), the 'fix' is to launch alacritty, then wait a second (or a couple of miliseconds), then launch vim.
+
+for example:
+```
+dir="${HOME}"/.config/scripts
+alacritty -e ${SHELL} -c "sleep 0.2; vim ${dir}/$(cd "${dir}"; find * -type f | dmenu)"
+```
+Notice the sleep 0.2, you might need to increase the time if there's still problems, or decrease it if you feel like the waiting/loading time is too slow.
+If you have $TERMINAL set or $EDITOR set, you could probably replace alacritty with $TERMINAl and vim with $EDITOR
+
 
 ## Recommendations (from myself)
 1. Mount /tmp as tmpfs or zram. This reduces reads and writes to the HDD/SSD. (Keep in mind that on each reboot everything in /tmp will be deleted, if it hasn't already)
