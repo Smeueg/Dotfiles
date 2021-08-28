@@ -6,6 +6,7 @@ alias e="$EDITOR"
 
 # Default options
 alias ytmp3="youtube-dl --extract-audio --audio-format mp3"
+alias emacs="emacs -nw"
 alias mkdir="mkdir -pv"
 alias diff="diff --color=always"
 alias grep="grep --color=auto"

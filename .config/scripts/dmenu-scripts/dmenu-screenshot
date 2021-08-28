@@ -1,21 +1,22 @@
 #!/bin/sh
 DIRECTORY="${HOME}"/Pictures/Screenshots
 
-getopts 't' opt
-[ ${opt} = t ] && DIRECTORY=/tmp/TMPScreenshots && shift
+for arg in ${@}; do
+	if [ "${arg}" = '-t' ]; then
+		DIRECTORY=/tmp/screenshot_tmp
+		break
+	fi
+done
 
-ARGS=${@}
-DEP_INSTALLED=true
+DMENU_ARGS=$@
 IMG_PATH="${DIRECTORY%/}/Screenshot_$(date '+%Y-%m-%d-(%H:%M:%S)').png"
 SUCCESS_MSG="Saved screenshot in ${IMG_PATH}"
 FAILED_MSG="Failed to save screenshot in ${IMG_PATH}"
 
 
-
-
 notify() {
-	if [ ! -t 0 ]; then
-		if [ -n "$(command -v herbe)" ]; then
+	if [ "${DISPLAY}" ]; then
+		if [ "$(command -v herbe)" ]; then
 			herbe "${1}"
 		else
 			printf 'ERROR: `herbe` is not installed\n'
@@ -27,27 +28,31 @@ notify() {
 }
 
 
-check_dep()
-{
-	! command -v $1 >/dev/null && notify 'ERROR: `%s` is not installed\n' "$1" >&2
-	DEP_INSTALLED=false
-}
-
-
 screenshot()
 {
-	read opt
-	case "${opt}" in
+	case "$(printf 'Full\nPartial\nCancel\n' | dmenu -p 'Type:' ${DMENU_ARGS})" in
 		Full)
-			sleep 0.5
-			magick import -window root "${IMG_PATH}" &&
+			sleep 0.2
+			if [ "$(command -v magick)" ]; then
+				magick import -window root "${IMG_PATH}"
+			elif [ "$(command -v scrot)" ]; then
+				scrot "${IMG_PATH}"
+			fi
+
+			[ $? -eq 0 ] &&
 				(notify "${SUCCESS_MSG}"; true) ||
 				notify "${FAILED_MSG}"
 			;;
 
 		Partial)
-			sleep 0.5
-			magick import "${IMG_PATH}" &&
+			sleep 0.2
+			if [ "$(command -v magick)" ]; then
+				magick import "${IMG_PATH}"
+			elif [ "$(command -v scrot)" ]; then
+				scrot --select "${IMG_PATH}"
+			fi
+
+			[ $? -eq 0 ] &&
 				(notify "${SUCCESS_MSG}"; true) ||
 				notify "${FAILED_MSG}"
 			;;
@@ -56,22 +61,23 @@ screenshot()
 			notify "Did not take screenshot"
 			;;
 	esac
-
 }
 
 
 main()
 {
-	check_dep dmenu
-	check_dep magick
-
-	${DEP_INSTALLED} && exit
-
-	if [ ! -d "${DIRECTORY}" ]; then
-		mkdir --parents "${DIRECTORY}" ||
-			(notify 'Screenshot directory does not exist and failed to create directory...'; exit)
+	if [ ! "$(command -v dmenu)" ]; then
+		notify 'ERROR: `dmenu` is not installed'
 	fi
 
-	printf 'Full\nPartial\nCancel\n' | dmenu ${ARGS} | screenshot
+	if [ ! "$(command -v magick)" ] && [ ! "$(command -v scrot)" ]; then
+		notify 'ERROR: `magick` and `scrot` is not installed, please install one of them'
+	fi
+
+	if [ ! -d "${DIRECTORY}" ]; then
+		mkdir --parents "${DIRECTORY}" && screenshot
+	else
+		screenshot
+	fi
 }
 main
