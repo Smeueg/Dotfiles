@@ -1,0 +1,240 @@
+" Move ~/.vim to $XDG_CONFIG_HOME/vim/vimrc "
+if empty($XDG_CACHE_HOME)  | let $XDG_CACHE_HOME  = $HOME."/.cache"       | endif
+if empty($XDG_CONFIG_HOME) | let $XDG_CONFIG_HOME = $HOME."/.config"      | endif
+if empty($XDG_DATA_HOME)   | let $XDG_DATA_HOME   = $HOME."/.local/share" | endif
+
+set runtimepath^=$XDG_CONFIG_HOME/vim
+set runtimepath+=$XDG_DATA_HOME/vim
+set runtimepath+=$XDG_CONFIG_HOME/vim/after
+
+set packpath^=$XDG_CONFIG_HOME/vim
+set packpath+=$XDG_CONFIG_HOME/vim/after
+
+call mkdir($XDG_DATA_HOME . "/vim/spell", 'p', 0700)
+
+if !has('nvim')
+  set viminfofile=$XDG_CACHE_HOME/vim/viminfo
+endif
+
+set viewdir=$XDG_DATA_HOME/vim/view | call mkdir(&viewdir, 'p', 0700)
+" ----------------------------------------- "
+
+
+" General Settings "
+if $TERM != 'linux'
+	set t_8f=[38;2;%lu;%lu;%lum
+	set t_8b=[48;2;%lu;%lu;%lum
+	set t_Co=256
+	set termguicolors
+endif
+
+set nocompatible
+set mouse=a
+set number
+set updatetime=1000
+set cursorline | highlight clear CursorLine
+set wrap
+
+set noswapfile
+set ignorecase
+set smartcase
+
+set tabstop=4
+set shiftwidth=4
+set softtabstop=4
+set smarttab
+
+set smartindent
+set breakindent
+set linebreak
+set formatoptions=1
+
+set autoindent
+
+syntax enable
+
+" ---------------- "
+
+
+" Status Line "
+function! SetStatus()
+	set statusline=%*\ %t
+	set statusline+=\ %{&modified?'+\ ':''}%*
+	set statusline+=%#StatusLineNC#
+	set statusline+=\ %{expand('%:p:~:h')}/
+	set statusline+=%=
+	set statusline+=%{&filetype}
+	if ('&fileencoding'!='') | set statusline+=\ \ %{&encoding}   | endif
+	if ('&fileformat'  !='') | set statusline+=\ \ %{&fileformat} | endif
+	set statusline+=\ \ %*\ \ %l/%L\ \ %*
+	set noshowmode
+endfunction
+call SetStatus()
+" ------------------------- "
+
+
+" Functions "
+function! CCompile()
+	let cmd = 'cc '
+
+	let flags = {
+		\ 'ncurses.h'  : 'ncurses',
+		\ 'X11/Xlib.h' : 'X11',
+		\ 'magic.h'    : 'magic',
+	\ }
+
+	for flag in keys(flags)
+		if search(flag, 'nc')
+			let cmd .= '-l' . flags[flag] . ' '
+		endif
+	endfor
+
+	let cmd .= expand('%:p') . ' -o ' . expand('%:p:r') . ' && ' . expand('%:p:r')
+	return cmd
+endfunction
+
+
+function! ShRun()
+	let basic_pattern = '#!/\(usr/\)\?bin/\(env \)\?'
+
+	let line_num = search(basic_pattern, 'nc')
+	if line_num != 0
+		let cmd = substitute(getline(line_num)[2:], '\s\+$', '', '')
+		if executable(substitute(cmd, '\s.*$', '', ''))
+			return cmd . ' ' . expand('%:p')
+		endif
+	endif
+
+	return 'sh ' . expand('%:p')
+endfunction
+
+
+function! CompileAndOrRun()
+	let term_cmd = 'split | set nonumber | cd %:p:h | term '
+	let file = expand('%:p')
+	let file_noext= expand('%:p:r')
+	w
+
+	let filetypes = {
+		\ 'python' : term_cmd.'python3 %',
+		\ 'cpp'    : term_cmd.'g++ "'.file.'" -o "'.file_noext.'" && "'.file_noext.'"',
+		\ 'lua'    : term_cmd.'lua '.file,
+		\ 'awk'    : term_cmd.'awk -f '.file,
+		\ 'sh'     : term_cmd.ShRun(),
+		\ 'c'      : term_cmd.CCompile(),
+		\ 'nroff'  : 'w !groff - -ms -T pdf > "' . file_noext . '.pdf"; zathura "' . file_noext . '".pdf',
+		\ 'html'   : '!$BROWSER "%"',
+		\ 'vim'    : 'source %'
+	\ }
+
+	if has_key(filetypes, &filetype)
+		execute filetypes[&filetype]
+		if &buftype == 'terminal'
+			startinsert
+		endif
+	else
+		echohl ErrorMsg | echo 'Unknown filetype' | echohl None
+	endif
+
+
+endfunction
+nnoremap <Space><Space> <cmd>call CompileAndOrRun()<CR>
+nnoremap <C-Space><C-Space> <cmd>call CompileAndOrRun()<CR><C-Bslash><C-n><C-w><S-t>a
+" --------- "
+
+
+" Mappings "
+	" Leader Key"
+let mapleader = " "
+
+	" Insert current date as text "
+nnoremap <C-s> <cmd>nohl<CR>
+inoremap <C-s> <cmd>nohl<CR>
+
+imap <C-h> <BS>
+
+nnoremap k gk
+nnoremap j gj
+vnoremap k gk
+nnoremap j gj
+
+nnoremap <leader>a ggVG
+nnoremap <leader>f :tabe<Space>
+
+nnoremap <M-p> gT
+nnoremap <M-n> gt
+
+vnoremap <leader>c "cy <cmd>call system('xclip -selection clipboard', @c) <Bar> echo 'Copied to clipboard' <CR>
+vnoremap < <gv
+vnoremap > >gv
+vnoremap <C-a> <C-a>gv
+vnoremap <C-x> <C-x>gv
+
+inoremap <C-f> <Right>
+inoremap <C-b> <Left>
+
+nnoremap <C-Down>  <C-w>-
+nnoremap <C-Up>    <C-w>+
+nnoremap <C-Left>  <C-w><
+nnoremap <C-Right> <C-w>>
+
+cnoremap <C-f> <Right>
+cnoremap <C-b> <Left>
+
+
+	" Vimrc Operations "
+nnoremap <leader>ei <cmd>e! $MYVIMRC<CR>
+nnoremap <leader>r <cmd>source $MYVIMRC <Bar> echo 'Refreshed'<CR>
+
+nnoremap <leader>t <cmd>split<bar>set nonumber<bar>term cd %:p:h; $SHELL<CR>10<C-w>-a
+nnoremap <leader>T <cmd>split<bar>set nonumber<bar>term cd %:p:h; $SHELL<CR>10<C-w>-a<C-Bslash><C-n><C-w><S-t>a
+
+	" Spell Checking
+nnoremap <leader>se <cmd>setlocal spell! spelllang=en_us<CR>
+nnoremap <leader>i <cmd>filetype detect<CR>
+" -------- "
+
+
+" Auto Commands "
+autocmd BufNewFile,BufRead *.h  set filetype=c
+autocmd BufWritePre * :%s/\s\+$//e " Remove trailing white space on write
+" ------------- "
+
+
+" Netrw "
+nnoremap <leader>l :Lexplore<CR>
+let g:netrw_browse_split = 4
+let g:netrw_winsize = 20
+let g:netrw_liststyle = 3
+let g:netrw_banner = 0
+let g:netrw_dirhistmax=0
+autocmd FileType netrw :execute 'setlocal fillchars=eob:\ | setlocal statusline=%3*\ '
+" ----- "
+
+
+" Plugins "
+if has('unix') && executable('git')
+	if ! isdirectory($HOME . '/.config/vim/pack/minpac/opt/minpac')
+		echo 'Plugin manager (minipac) is not installed... Attempting to install...'
+		call system('git clone https://github.com/k-takata/minpac.git ${HOME}/.config/vim/pack/minpac/opt/minpac')
+	endif
+
+	function! PackInit() abort
+		packadd minpac
+
+		call minpac#init()
+		call minpac#add('k-takata/minpac', {'type': 'opt'})
+		call minpac#add('https://gitlab.com/Smeueg/Nebula.vim.git')
+	endfunction
+
+	command! PackUpdate call PackInit() | call minpac#update()
+	command! PackClean  call PackInit() | call minpac#clean()
+	command! PackStatus packadd minpac | call minpac#status()
+endif
+
+
+try
+    colorscheme Nebula
+	catch /^Vim\%((\a\+)\)\=:E185/
+endtry
+" ------- "

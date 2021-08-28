@@ -20,8 +20,11 @@ export PYLINTHOME="$XDG_CACHE_HOME"/pylint
 export TERMINAL="st"
 export READER="zathura"
 export BROWSER="firefox"
-export EDITOR="nvim"
+export EDITOR="vim"
 
+
+# Vim in $XDG_CONFIG_HOME/vim/vimrc i.e ~/.config/vim/vimrc
+export VIMINIT='let $MYVIMRC = !has("nvim") ? "$XDG_CONFIG_HOME/vim/vimrc" : "$XDG_CONFIG_HOME/nvim/init.vim" | so $MYVIMRC'
 
 # Fix some gnupg messed up permission or something, idk
 export GNUPGHOME="$XDG_DATA_HOME"/gnupg
