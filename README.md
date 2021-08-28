@@ -5,9 +5,11 @@ These dotfiles are meant to also be used alongside my suckless forks:
 - [dwmblocks](https://gitlab.com/Smeueg/dwmblocks)
 - [dmenu](https://gitlab.com/Smeueg/dmenu)
 
-- Neovim as the text editor
+- Neovim (0.5+) as the text editor
 - Tmux as a terminal multiplexer
 And some other stuff
+
+![Screenshot](https://gitlab.com/Smeueg/Dotfiles/-/raw/master/.local/rice/misc/Screenshot.png)
 
 
 ## Using a git bare repository to manage your salty dotfiles
