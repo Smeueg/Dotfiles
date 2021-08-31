@@ -15,7 +15,7 @@ check_process()
 
 pulse_droidcam()
 {
-	if [ ! "$(pidof pulseaudio)" ] || [ ! "$(pgrep droidcam)" ]; then
+	if [ ! "$(ps -aux | grep 'droidcam-cli' | grep -E '[-]a')" ] || [ ! "$(pidof pulseaudio)" ]; then
 		return
 	fi
 

@@ -17,7 +17,7 @@ xcompmgr &
 
 case "$WM" in
 	"dwm")
-		hsetroot -cover ~/.local/rice/Wallpapers/"Red Space.jpg" &
+		hsetroot -cover "${HOME}"/.local/rice/Wallpapers/'Warm Debian.jpg' &
 
 		dwmblocks &
 		exec dwm
