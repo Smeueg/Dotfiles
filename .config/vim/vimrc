@@ -51,11 +51,9 @@ set smartcase
 set incsearch
 " ----------- "
 
-" Indentation "
+" Indentation Is weird"
 set tabstop=4
 set shiftwidth=4
-set autoindent
-"set smartindent
 set cindent
 " ----------- "
 
@@ -85,6 +83,7 @@ set splitright splitbelow
 " Highlighting "
 if has('syntax')
 	filetype plugin on
+	filetype indent on
 	syntax on
 endif
 " ------------ "
@@ -100,10 +99,13 @@ set shortmess+=c
 set belloff+=ctrlg
 " ----- "
 
-" Disable viminfo
+" Disable Viminfo "
 set viminfo=
 " ---------------- "
 
+" Change Vertical Split to │ "
+set fillchars=vert:│
+" -------------------------- "
 
 " Wild Menu "
 if has('wildmenu')
@@ -112,6 +114,9 @@ if has('wildmenu')
 endif
 " --------- "
 
+" Show 'Keypresses' "
+set showcmd
+" ----------------- "
 
 " Misc "
 set number
@@ -173,7 +178,7 @@ function! CCompile()
 endfunction
 
 
-function! ShRun()
+function! SheBangRun()
 	let basic_pattern = '#!/\(usr/\)\?bin/\(env \)\?'
 
 	let line_num = search(basic_pattern, 'nc')
@@ -185,7 +190,7 @@ function! ShRun()
 		endif
 	endif
 
-	call RunInTerminal('sh ' . expand('%:p'))
+	call RunInTerminal(&filetype . ' ' . expand('%:p'))
 endfunction
 
 
@@ -196,8 +201,9 @@ function! CompileAndOrRun()
 	w
 
 	let filetypes = {
-		\ 'sh'     : 'call ShRun()',
-		\ 'c'      : 'call CCompile()',
+		\ 'sh'     : 'call SheBangRun()',
+		\ 'python' : 'call SheBangRun()',
+		\ 'c'      : 'call CCompile("")',
 		\ 'nroff'  : 'w !groff - -ms -T pdf > "' . file_noext . '.pdf"; zathura "' . file_noext . '".pdf',
 		\ 'html'   : '!$BROWSER "%"',
 		\ 'vim'    : 'source %'
@@ -217,9 +223,10 @@ nnoremap <Space><Space> <cmd>call CompileAndOrRun()<CR>
 	" Leader Key"
 let mapleader = " "
 
-	" Insert current date as text "
 nnoremap <C-s> <cmd>nohl<CR>
 inoremap <C-s> <cmd>nohl<CR>
+
+imap <C-h> <BS>
 
 nnoremap k gk
 nnoremap j gj
@@ -233,6 +240,9 @@ nnoremap <M-p> gT
 nnoremap <M-n> gt
 
 vnoremap <leader>c :w !xclip -selection clipboard<CR><CR>
+vnoremap <leader>c "cy<cmd>call system('xclip -selection clipboard', @c)<CR>
+
+
 vnoremap < <gv
 vnoremap > >gv
 vnoremap <C-a> <C-a>gv
@@ -254,8 +264,7 @@ cnoremap <C-b> <Left>
 	" Vimrc Operations "
 nnoremap <leader>ei <cmd>e! $MYVIMRC<CR>
 nnoremap <leader>r <cmd>source $MYVIMRC <Bar> echo 'Refreshed'<CR>
-
-	" Spell Checking
+" Spell Checking
 nnoremap <leader>se <cmd>setlocal spell! spelllang=en_us<CR>
 nnoremap <leader>i <cmd>filetype detect<CR>
 " -------- "
@@ -293,7 +302,7 @@ if has('unix') && executable('git')
 		call minpac#add('https://github.com/Raimondi/delimitMate.git')
 		call minpac#add('https://github.com/lifepillar/vim-mucomplete.git')
 		call minpac#add('https://github.com/vimwiki/vimwiki.git')
-		call minpac#add('https://github.com/gko/vim-coloresque.git')
+		"call minpac#add('https://github.com/lilydjwg/colorizer')
 	endfunction
 
 	command! PackUpdate call PackInit() | call minpac#update()
@@ -317,9 +326,9 @@ let g:mucomplete#enable_auto_at_startup = 1
 let g:mucomplete#no_popup_mappings      = 1
 let g:mucomplete#no_mappings            = 1
 let g:mucomplete#cycle_with_trigger     = 0
-inoremap <C-h> <BS>
 " ------- "
 
 " Vim Wiki "
 let g:vimwiki_list = [{'path': '~/Documents/Notes', 'path_html': '~/Documents/Notes/NotesHTML'}]
 " -------- "
+

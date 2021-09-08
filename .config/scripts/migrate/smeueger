@@ -32,7 +32,7 @@ wallpaperDir = home + "/.local/rice/Wallpapers"
 wallpapers   = {
         "Rock Thing.png"  : "https://images2.alphacoders.com/950/950452.png",
         "Red Space.jpg"   : "https://cdna.artstation.com/p/assets/images/images/004/085/784/large/starkiteckt-designs-untitled-2.jpg?1480219852",
-        "Warm Debian.jpg" : "http://cdn.paperhi.com/2560x1600/20131002/debian%20operating%20systems_www.paperhi.com_80.jpg"
+        "Warm Mountain.jpg" : "https://i.redd.it/odrdq4yqtoz61.jpg"
 }
 
 sucklessDir = home + "/.local/rice"

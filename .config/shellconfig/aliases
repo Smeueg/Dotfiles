@@ -19,7 +19,8 @@ alias cp="cp -i"
 alias ip="ip --color=auto"
 
 # Bookmarks
-alias scr='cd ${HOME}/.config/scripts/; ls'
+alias gscr='cd "${HOME}"/.config/scripts/; ls'
+alias grice='cd "${HOME}"/.local/rice; ls'
 
 # Extra functionality
 alias makepkgmem="BUILDDIR=/tmp/makepkg makepkg"

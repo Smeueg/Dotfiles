@@ -2,24 +2,22 @@ set background=dark
 let g:colors_name='general'
 
 
-let black   = ['#20191C', '0']
-let red     = ['#8e312d', '1']
-let green   = ['#80A15C', '2']
-let yellow  = ['#CEA04E', '3']
-let blue    = ['#3A4F67', '4']
-let magenta = ['#563251', '5']
-let cyan    = ['#59938F', '6']
+let black   = ['#031216', '0']
+let red     = ['#813B3D', '1']
+let green   = ['#A7C275', '2']
+let yellow  = ['#E1D472', '11']
+let blue    = ['#2C4967', '4']
+let magenta = ['#6C3D73', '5']
+let cyan    = ['#2C8D9C', '6']
 let white   = ['#E2D2A8', '15']
 
-let gray    = ['#403B2F', '7']
-let brown   = ['#6B4B2F', '94']
-let orange  = ['#B56825', '3']
+let orange  = ['#C57D24', '3']
 
 let fg      = white
-let bg1     = ['#100B0D', '0']
-let bg2     = ['#20161A', '236']
-let bg3     = ['#35252b', '240']
-let bg4     = ['#452f38', '7']
+let bg1     = ['#031216', '0']
+let bg2     = ['#051F26', '8']
+let bg3     = ['#093844', '8']
+let bg4     = ['#0C4859', '8']
 
 
 function SetTerminalCol()
@@ -31,10 +29,10 @@ function SetTerminalCol()
 		\ 4  : g:blue,
 		\ 5  : g:magenta,
 		\ 6  : g:cyan,
-		\ 7  : g:gray,
+		\ 7  : g:white,
 		\ 8  : g:bg1,
 		\ 9  : g:red,
-		\ 10 : g:brown,
+		\ 10 : g:green,
 		\ 11 : g:yellow,
 		\ 12 : g:blue,
 		\ 13 : g:magenta,
@@ -55,10 +53,10 @@ function SetTerminalCol()
 			\ g:blue[0],
 			\ g:magenta[0],
 			\ g:cyan[0],
-			\ g:gray[0],
+			\ g:white[0],
 			\ g:bg1[0],
 			\ g:red[0],
-			\ g:brown[0],
+			\ g:green[0],
 			\ g:yellow[0],
 			\ g:blue[0],
 			\ g:magenta[0],
@@ -89,8 +87,9 @@ function SetCol(group, fg, bg, attr)
 		if type(value) == v:t_string
 			let value = [value, value]
 		endif
-		if value[!&termguicolors] != '' && key != 'group'
-			let cmd .= ' ' . (&termguicolors ? 'gui' : 'cterm') . key . '=' . value[!&termguicolors]
+		if value[0] != '' && key != 'group'
+			let cmd .= ' ' . 'gui'   . key . '=' . value[0]
+			let cmd .= ' ' . 'cterm' . key . '=' . value[1]
 		endif
 	endfor
 
@@ -112,7 +111,7 @@ call SetCol('SignColumn',   '',     bg1,     '')
 call SetCol('IncSearch',    bg1,     orange, 'Bold')
 call SetCol('Substitute',   bg1,     yellow, '')
 
-call SetCol('LineNr',       bg3,    bg1,     '')
+call SetCol('LineNr',       bg2,    bg1,     '')
 call SetCol('CursorLineNr', yellow, bg1,     'Bold')
 
 call SetCol('MatchParen',   red,   'NONE',   'Italic')
@@ -123,9 +122,9 @@ call SetCol('Question',     green,  '',     '')
 call SetCol('Normal',       white,  bg1,     'NONE')
 call SetCol('NormalFloat',  white,  bg3,    '')
 
-call SetCol('Pmenu',        '',     bg3,    '')
-call SetCol('PmenuSel',     bg3,    yellow,   'Bold')
-call SetCol('PmenuSbar',    bg3,    bg3,    '')
+call SetCol('Pmenu',        '',     bg2,    '')
+call SetCol('PmenuSel',     bg2,    yellow, 'Bold')
+call SetCol('PmenuSbar',    bg2,    bg2,    '')
 call SetCol('PmenuThumb',   white,  white,  '')
 
 call SetCol('Search',       bg1,     yellow, '')
@@ -133,12 +132,13 @@ call SetCol('Search',       bg1,     yellow, '')
 call SetCol('SpecialKey',   yellow,   '', '')
 
 
-call SetCol('StatusLine',   yellow, bg3,    'Bold')
-call SetCol('StatusLineNC', bg3,    bg2,    'Bold')
+call SetCol('StatusLineNC', yellow, bg2,    'Bold')
+call SetCol('StatusLine',   bg2,    yellow, 'Bold')
 
+highlight clear TabLine
 call SetCol('TabLine',      bg3,    bg2,    'Bold')
 call SetCol('TabLineFill',  bg1,    bg1,    '')
-call SetCol('TabLineSel',   bg4,    bg3,    'Bold')
+call SetCol('TabLineSel',   yellow, bg3,    'Bold')
 
 call SetCol('Title',        yellow, '',     'Bold')
 
@@ -146,16 +146,17 @@ call SetCol('Visual',       '',     bg1,    'Inverse,Bold')
 
 call SetCol('WarningMsg',   yellow, '',     '')
 
+call SetCol('WildMenu',     yellow, bg2, 'Bold')
 
 " Syntax Highlighting "
-call SetCol('Comment',      bg3,     '',     'Italic')
-call SetCol('Constant',     orange,  '',     '')
+call SetCol('Comment',      bg2,     '',     'Italic')
+call SetCol('Constant',     yellow,  '',     '')
 call SetCol('String',       green,   '',     '')
-call SetCol('Identifier',   yellow,  '',     '')
-call SetCol('Statement',    red,     '',     '')
-call SetCol('PreProc',      orange,  '',     '')
+call SetCol('Identifier',   orange,  '',     '')
+call SetCol('Statement',    cyan,    '',     '')
+call SetCol('PreProc',      yellow,  '',     '')
 call SetCol('Type',         yellow,  '',     'Bold')
-call SetCol('Special',      orange,  '',     '')
+call SetCol('Special',      red,     '',     '')
 call SetCol('Underlined',   green,   '',     '')
 call SetCol('Error',        red,     'NONE', 'Bold')
 call SetCol('Todo',         yellow,  'NONE', 'Bold')

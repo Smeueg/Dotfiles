@@ -10,7 +10,7 @@ if [ -d "${HOME}"/.config/shellconfig ]; then
 		if [ "${file}" = "${HOME}/.config/shellconfig/main_rc" ] || [ "${file}" = "${HOME}/.config/shellconfig/main_profile" ]; then
 			continue
 		fi
-		source "${file}"
+		. "${file}"
 	done
 fi
 
@@ -23,7 +23,7 @@ if [ "${BASH}" ]; then
 	shopt -s checkwinsize
 
 	[ -f /usr/share/bash-completion/bash_completion ] &&
-		source /usr/share/bash-completion/bash_completion
+		. /usr/share/bash-completion/bash_completion
 elif [ "${ZSH_NAME}" ]; then
 	# Zsh Specific configuration
 	setopt autocd
@@ -32,4 +32,6 @@ elif [ "${ZSH_NAME}" ]; then
 	bindkey -v '^H' backward-delete-char
 	bindkey -v '^?' backward-delete-char
 fi
-. "$HOME/.cargo/env"
+
+
+[ -f "${HOME}"/.cargo/env ] && . "$HOME/.cargo/env"

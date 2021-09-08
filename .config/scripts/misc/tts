@@ -1,3 +1,11 @@
+#!/bin/sh
+
+if [ ! "$(command -v pactl)" ]; then
+	printf 'ERROR: `pactl` is not installed\n' >&2
+	exit
+fi
+
+
 if [ "${1}" = "-k" ]; then
 	output="$(pactl list modules short)"
 	mic_modules=$(printf '%b\n' "${output}" | grep -Eo '.*mix-for-virtual-mic.*' | grep -Eo '^[0-9]+')

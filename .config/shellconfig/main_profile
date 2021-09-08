@@ -4,7 +4,7 @@ export XDG_CACHE_HOME=${XDG_CACHE_HOME:="$HOME/.cache"}
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:="$HOME/.config"}
 
 # Add directories to PATH if they don't exist already
-for dir in "${HOME}"/.config/scripts/ "${HOME}"/.config/scripts/*/ "${HOME}"/.local/share/npm/bin "${HOME}"/.local/bin/ "${HOME}"/.local/bin/*/; do
+for dir in "${HOME}"/.config/scripts/ "${HOME}"/.config/scripts/*/ "${HOME}"/.local/bin/ "${HOME}"/.local/bin/*/ /sbin/; do
 	[ -n "${PATH##*${dir%/}*}" ] && [ -d "${dir}" ] && PATH="${PATH}:${dir%/}"
 done
 export PATH

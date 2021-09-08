@@ -1,0 +1,25 @@
+#!/bin/sh
+# Fixes time not synced up.
+
+check_depend()
+{
+	if [ ! "$(command -v ${1})" ]; then
+		printf 'ERROR: command `%s` not found\n' "${1}" >&2
+		error="true"
+	fi
+}
+
+main()
+{
+	error="false"
+
+	check_depend "ntpd"
+	check_depend "hwclock"
+
+	${error} &&
+		exit -1
+
+	printf 'Syncing time...\n'
+	su -c 'ntpd -qg; hwclock --systohc'
+}
+main
