@@ -123,6 +123,7 @@ set number
 set nowrap
 set cursorline | highlight clear CursorLine
 set nomore
+set nopaste
 " ---- "
 " ================ "
 
@@ -225,6 +226,7 @@ let mapleader = " "
 
 nnoremap <C-s> <cmd>nohl<CR>
 inoremap <C-s> <cmd>nohl<CR>
+nnoremap <leader>p <cmd>set paste!<CR>
 
 imap <C-h> <BS>
 

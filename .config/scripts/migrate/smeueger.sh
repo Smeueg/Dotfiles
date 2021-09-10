@@ -24,13 +24,15 @@ main_choices='
 Dotfiles  (git)                                                                                              "get_dotfiles"
 Wallpaper (wget||curl)                                                                                       "get_wallpapers"
 Fonts     (wget||curl)                                                                                       "get_fonts"
-Suckless  (git||tar,make,gcc||clang)  {X11,Xinerama,fontconfig,Xft,Xrender,Xext}     [suckless_choice]     "compile_suckless"
+Suckless  (git||tar,make,gcc||clang)  {X11,Xinerama,fontconfig,Xft,Xrender,Xext}     [suckless_choice]       "compile_suckless"
 '
 
 suckless_choices='
 Dynamic-Window-Manager
+DwmBlocks
 Simple-Terminal
 D-Menu
+Slock
 External-X-Tools
 '
 
@@ -55,36 +57,25 @@ else
 fi
 
 
+if [ "${BASH}" ]; then
+	bourne_shell='false'
+	input_cmd='read -n1 input'
+elif [ "${ZSH_NAME}" ]; then
+	bourne_shell='false'
+	input_cmd='read -k1 input'
+else
+	bourne_shell='true'
+	input_cmd='input=$(dd bs=1 count=1 2>/dev/null)'
+fi
+
+
+tmp=$(stty size)
+lines="${tmp#* }"
+rows="${tmp% *}"
 old_ifs=${IFS}
 
 
 # Utilies
-array()
-{
-	arr="${1}"
-	delimiter=$(printf '%s' "${2}")
-	index="${3}"
-	IFS="${delimiter}"
-
-	if [ ! "${index}" ]; then
-		for element in ${arr}; do
-			printf '%s\n' "${element}"
-		done
-		return
-	fi
-
-	i=0
-	for obj in ${arr}; do
-		if [ "${i}" -eq ${index} ]; then
-			printf '%s' "${obj}"
-			return
-		fi
-
-		i=$(($i + 1))
-	done
-}
-
-
 sh_cat()
 {
 	while IFS= read -r line; do
@@ -107,12 +98,14 @@ get()
 
 get_input()
 {
-	stty -icanon -echo
-	input=$(dd bs=1 count=1 2>/dev/null)
+	"${bourne_shell}" &&
+		stty -icanon -echo
+
+	eval "${input_cmd}"
 
 	if [ "${input}" = "$(printf '\033')" ]; then
-		input=$(dd bs=1 count=1 2>&1)
-		input=$(dd bs=1 count=1 2>&1)
+		eval "${input_cmd}"
+		eval "${input_cmd}"
 		special=1
 	fi
 
@@ -181,6 +174,25 @@ get_wallpapers()
 
 
 # Main Functions
+check_depend()
+{
+	error='false'
+	if [ ! "$(command -v stty)" ]; then
+		printf 'ERROR: This script requires `stty` to be installed...\n' >&2
+		error='true'
+	fi
+
+	if [ ! "$(command -v dd)" ] && [ ! "${BASH}" ] && [ ! "${ZSH_NAME}" ]; then
+		printf "ERROR: This script requires \`dd\` to be installed if this script isn't executed using bash or zsh...\n" >&2
+		error='true'
+	fi
+
+	if "${error}"; then
+		exit -1
+	fi
+}
+
+
 choose()
 {
 	variable="${1}"
@@ -270,18 +282,21 @@ choose()
 		case "$(get_input)" in
 			'up')   [ "${selected}" -ne '0' ]        && selected=$((selected - 1)) ;;
 			'down') [ "${selected}" -ne "${index}" ] && selected=$((selected + 1)) ;;
-			'quit') return ;;
+			'quit')
+				eval "${variable}=''"
+				printf '\033[2J' >&2
+				printf '\033[0;0H' >&2
+				return
+				;;
+
 			'select')
 				if [ "${selected}" -eq "${index}" ]; then
-					for choice in ${choices}; do
-						printf '\033[A' >&2
-					done
-					printf '\033[J' >&2
+					printf '\033[2J' >&2
 
 					tmp=$(
 						for choice in ${choices}; do
 							[ ! "${choice%%0*}" ] && continue
-							printf '%s\n' "${choice#1}"
+							printf '%s\n' "${choice}"
 						done
 					)
 					eval "${variable}='${tmp}'"
@@ -304,14 +319,37 @@ choose()
 					done
 				)
 				;;
+
+			'all')
+				choices=$(
+					if [ "${choices%%1*}" ]; then
+						num='1'
+					else
+						num='0'
+					fi
+					for choice in ${choices}; do
+						[ ! "${choice##?Continue}" ] && continue
+						printf '%i' "${num}"
+						printf '%s\n' "${choice#?}"
+					done
+				)
+				;;
 		esac
 		printf '\033[u' >&2
 	done
 }
 
 
+setup()
+{
+	printf '\033[?1049h'
+}
+
+
 quit()
 {
+	printf '\033[?1049l'
+	stty echo
 	exit
 }
 
@@ -331,23 +369,38 @@ main()
 		esac
 	fi
 
-	if { [ ! "$(command -v dd)" ] || [ ! "$(command -v stty)" ]; } && [ ! "${BASH}" ] && [ ! "${ZSH_NAME}" ]; then
-		printf "ERROR: This script requires \`dd\` and \`stty\` to be installed if this script isn't executed using bash or zsh...\n" >&2
-		exit -1
-	fi
 
-	stty -echo
+	trap 'quit' INT
+	setup
 	choose 'main_choices'
-	echo "${main_choices}"
 
 	IFS='
 	'
 
+	subchoices=''
+	choice=''
 	for choice in ${main_choices}; do
 		if [ ! "${choice##*\[*\]*}" ]; then
-			echo "${choice}"
+			choice="${choice#*\[}"
+			choice="${choice%\]*}"
+			if [ "${subchoices}" ]; then
+				subchoices="${subchoices}:${choice}"
+			else
+				subchoices="${choice}"
+			fi
 		fi
 	done
+
+	return
+
+	IFS=:
+	for choice in ${subchoices}; do
+		echo "${choice}"
+		return
+		choose "${choice}"
+	done
+
 	IFS=${old_ifs}
+	quit
 }
 main
