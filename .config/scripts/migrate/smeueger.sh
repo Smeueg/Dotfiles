@@ -24,16 +24,16 @@ main_choices='
 Dotfiles  (git)                                                                                              "get_dotfiles"
 Wallpaper (wget||curl)                                                                                       "get_wallpapers"
 Fonts     (wget||curl)                                                                                       "get_fonts"
-Suckless  (git||tar,make,gcc||clang)  {X11,Xinerama,fontconfig,Xft,Xrender,Xext}     [suckless_choice]       "compile_suckless"
+Suckless  (git||tar,make,gcc||clang)  {X11,Xinerama,fontconfig,Xft,Xrender,Xext}     [suckless_choices]       "compile_suckless"
 '
 
 suckless_choices='
-Dynamic-Window-Manager
-DwmBlocks
-Simple-Terminal
-D-Menu
-Slock
-External-X-Tools
+Dynamic-Window-Manager (git||tar) {X11,Xinerama,fontconfig,Xft} "get_suckless dwm"
+DwmBlocks              (git||tar) {X11}
+Simple-Terminal        (git||tar) {fontconfig,freetype2,harfbuzz}
+D-Menu                 (git||tar) {fontconfig,xinerama,freetype2}
+Slock                  (git||tar) {Xext,Xrandr,Imlib2,c,crypt,xft,xinerama}
+External-X-Tools       (git||tar) {X11,Xft}
 '
 
 
@@ -69,9 +69,6 @@ else
 fi
 
 
-tmp=$(stty size)
-lines="${tmp#* }"
-rows="${tmp% *}"
 old_ifs=${IFS}
 
 
@@ -98,9 +95,6 @@ get()
 
 get_input()
 {
-	"${bourne_shell}" &&
-		stty -icanon -echo
-
 	eval "${input_cmd}"
 
 	if [ "${input}" = "$(printf '\033')" ]; then
@@ -196,6 +190,8 @@ check_depend()
 choose()
 {
 	variable="${1}"
+	subchoice="${2}"
+	message="${3}"
 	eval "array=\$${variable}"
 	IFS='
 	'
@@ -209,19 +205,27 @@ choose()
 			# Check if required programs are installed
 			IFS=,
 			for dep in ${dependencies}; do
-				display='false'
+				display='true'
 				if [ "${dep##*||*}" ]; then
-					[ "$(command -v ${dep})" ] &&
-						display='true'
-
+					if [ ! "$(command -v ${dep})" ]; then
+						display='false'
+						break
+					fi
 					continue
 				fi
 
+				display='false'
 				IFS='||'
 				for dep in ${dep}; do
-					[ "$(command -v ${dep})" ] &&
+					if [ "$(command -v ${dep})" ]; then
 						display='true'
+						break
+					fi
 				done
+
+				if ! "${display}"
+				then break
+				fi
 			done
 
 			# Check if libraries are installed
@@ -242,39 +246,54 @@ choose()
 				fi
 			fi
 
-			if "${display}"
-			then printf '0%s\n' "${element}"
-			else printf '2%s\n' "${element}"
+			if [ ! "${element##*\[*\]*}" ]; then
+				if "${display}"
+				then printf '2%s\n' "${element}"
+				else printf '4%s\n' "${element}"
+				fi
+			else
+				if "${display}"
+				then printf '0%s\n' "${element}"
+				else printf '3%s\n' "${element}"
+				fi
 			fi
 		done
 
-		printf '0Continue\n'
+		if "${subchoice}"
+		then printf '0Back\n'
+		else printf '0Continue\n'
+		fi
 	)
+
 
 	IFS='
 	'
 
 	selected=0
 	while true; do
-		printf '\033[s' >&2
-
 		index=0
 		for choice in ${choices}; do
 			choice="${choice%% *}"
+
 
 			if [ "${index}" -eq "${selected}" ]; then
 				printf '\033[7m' >&2
 			fi
 
-			if [ ! "${choice##*Continue}" ]; then
-				printf '  ' >&2
-			elif [ ! "${choice%%1*}" ]; then
-				printf '[X] ' >&2
-			else
-				printf '[ ] ' >&2
+			if [ ! "${choice%%3*}" ]; then
+				printf '\033[31m'
 			fi
 
-			printf '%s\033[0m\n' "${choice#[0-2]}" >&2
+			case "${choice}" in
+				*'Continue'*|*'Back'*) printf '  ' >&2   ;;
+				4*)           printf '\033[31m *  ' >&2 ;;
+				3*)           printf '\033[31m[ ] ' >&2 ;;
+				2*)           printf ' *  ' >&2 ;;
+				1*)           printf '[X] ' >&2 ;;
+				*)            printf '[ ] ' >&2 ;;
+			esac
+
+			printf '%s\033[0m\n' "${choice#[0-4]}" >&2
 			index=$((index + 1))
 		done
 		index=$((index - 1))
@@ -284,40 +303,67 @@ choose()
 			'down') [ "${selected}" -ne "${index}" ] && selected=$((selected + 1)) ;;
 			'quit')
 				eval "${variable}=''"
-				printf '\033[2J' >&2
-				printf '\033[0;0H' >&2
+				printf "\033[$((index + 1))A\033[J" >&2
 				return
 				;;
 
 			'select')
+				# If selected Continue or back
 				if [ "${selected}" -eq "${index}" ]; then
-					printf '\033[2J' >&2
+					printf "\033[$((index + 1))A\033[J" >&2
 
 					tmp=$(
 						for choice in ${choices}; do
-							[ ! "${choice%%0*}" ] && continue
+							if [ ! "${choice##*Continue*}" ] || [ ! "${choice##*Back*}" ]; then
+								continue
+							fi
+							herbe "${choice}" &
 							printf '%s\n' "${choice}"
 						done
 					)
-					eval "${variable}='${tmp}'"
+					eval "${variable}='${choices}'"
 					return
 				fi
-				choices=$(
-					index='0'
-					for choice in ${choices}; do
-						if [ "${index}" = "${selected}" ]; then
-							if [ ! "${choice%%0*}" ]; then
-								printf '1'
+
+				# If selected a submenu
+				chosen_submenu=''
+				index=0
+				for choice in ${choices}; do
+					if [ "${index}" -eq "${selected}" ] && [ ! "${choice##*\[*\]*}" ]; then
+						chosen_submenu="${choice##*\[}"
+						chosen_submenu="${chosen_submenu%%\]*}"
+						break
+					fi
+					index=$((index + 1))
+				done
+
+
+				if [ "${chosen_submenu}" ]; then
+					tmp_choices="${choices}"
+					tmp_selected="${selected}"
+					IFS='
+					'
+					printf "\033[$((index + 2))A\033[J" >&2
+					choose "${chosen_submenu}" 'true'
+					choices="${tmp_choices}"
+					selected="${tmp_selected}"
+					index=$((index + 1))
+				else
+					choices=$(
+						index=0
+						for choice in ${choices}; do
+							if [ "${index}" = "${selected}" ]; then
+								case "${choice}" in
+									0*) printf '1%s\n' "${choice#?}" ;;
+									1*) printf '0%s\n' "${choice#?}" ;;
+								esac
 							else
-								printf '0'
+								printf '%s\n' "${choice}"
 							fi
-							printf '%s\n' "${choice#?}"
-						else
-							printf '%s\n' "${choice}"
-						fi
-						index=$((index + 1))
-					done
-				)
+							index=$((index + 1))
+						done
+					)
+				fi
 				;;
 
 			'all')
@@ -328,28 +374,27 @@ choose()
 						num='0'
 					fi
 					for choice in ${choices}; do
-						[ ! "${choice##?Continue}" ] && continue
-						printf '%i' "${num}"
-						printf '%s\n' "${choice#?}"
+						if [ ! "${choice##?Continue}" ] || [ ! "${choice##?Back}" ] || [ ! "${choice##[234]*}" ]; then
+							printf '%s\n' "${choice}"
+						else
+							printf '%i%s\n' "${num}" "${choice#?}"
+						fi
 					done
 				)
 				;;
 		esac
-		printf '\033[u' >&2
+
+		index=$((index + 1))
+		printf "\033[${index}A"
+
 	done
-}
-
-
-setup()
-{
-	printf '\033[?1049h'
 }
 
 
 quit()
 {
-	printf '\033[?1049l'
 	stty echo
+	stty icanon
 	exit
 }
 
@@ -370,9 +415,12 @@ main()
 	fi
 
 
+	stty -echo
+	"${bourne_shell}" &&
+		stty -icanon
+
 	trap 'quit' INT
-	setup
-	choose 'main_choices'
+	choose 'main_choices' 'false'
 
 	IFS='
 	'

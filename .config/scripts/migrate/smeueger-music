@@ -2,12 +2,8 @@
 # Downloads my personal favorite songs/albums
 # These songs take alot of space
 
-
-dir=${HOME}/Music
+dir="${HOME}"/Music
 urls="
-https://www.youtube.com/watch?v=QAOBbPnI5-g   Metallica - Master Of Puppets
-https://www.youtube.com/watch?v=QBJ1OzMtNwg   Metallica - Ride The Lightning
-https://www.youtube.com/watch?v=aMH7yp1EXw8   Metallica - And Justice For All
 https://www.youtube.com/watch?v=a41bERTFBUI   Metallica - Ecstacy Of Gold
 https://www.youtube.com/watch?v=c8qrwON1-zE   Metallica - Orion
 https://www.youtube.com/watch?v=_t6-KdRwC_U   Equilibrium - Kurzes Epos
@@ -24,20 +20,25 @@ https://www.youtube.com/watch?v=4xAu2Ay15fs   Galneryus - Vetelgyus
 https://www.youtube.com/watch?v=9XlNbQv_Rg4   Warmen - Salieri Strikes Back
 https://www.youtube.com/watch?v=JGv6gzImsfg   Cain's Offering - I Am Legion (Instrumental)
 https://www.youtube.com/watch?v=r8n6j21UJMo   Dark Forest - Heart of the Rose
+https://www.youtube.com/watch?v=kDG8GfBQ0YY   Super Mario Galaxy - Buoy Base Galaxy [Metal Cover by RichaadEB]
+https://www.youtube.com/watch?v=XGppLlK8En0   Super Mario Galaxy: Battlerock Galaxy - Metal Cover
+https://www.youtube.com/watch?v=xc6ooJQHDPc   Melty Monster (Super Mario Galaxy 2) Metal Guitar Cover | Dacian Grada
+https://www.youtube.com/watch?v=WxZpVTZ6OME   Minecraft C418 - Aria Math (Metal Cover)
+https://www.youtube.com/watch?v=UW7EnixZVNI   Skyrim - Dovahkiin (Metal Cover)
 "
 
 
 cmd=""
 GetYTDL() {
-	if ! command -v youtube-dl >/dev/null; then
-		printf "'youtube-dl' is not installed, getting youtube-dl\n"
-		if command -v curl >/dev/null; then
-			cmd="$(curl -Ls https://yt-dl.org/downloads/latest/youtube-dl)"
-		elif command -v wget >/dev/null; then
-			cmd="$(wget -qO- https://yt-dl.org/downloads/latest/youtube-dl)"
+	if [ ! "$(command -v youtube-dl)" ]; then
+		printf "'youtube-dl' is not installed, getting youtube-dl...\n"
+		if [ "$(command -v curl)" ]; then
+			cmd="$(curl --user-agent 'Mozilla/5.0' -Ls https://yt-dl.org/downloads/latest/youtube-dl --output -)"
+		elif [ "$(command -v wget)" ]; then
+			cmd="$(wget --user-agent='Mozilla/5.0' -qO- https://yt-dl.org/downloads/latest/youtube-dl)"
 		else
-			printf 'Cannot download youtube-dl, curl and wget is not installed...\n'
-			exit
+			printf 'ERROR: Cannot download youtube-dl, `curl` and `wget` is not installed...\n' >&2
+			exit -1
 		fi
 	else
 		cmd="$(
@@ -50,6 +51,20 @@ GetYTDL() {
 
 
 main() {
+	printf 'Getting python binary...'
+	if [ "$(command -v python)" ]; then
+		python_cmd='python'
+	elif [ "$(command -v python3)" ]; then
+		python_cmd='python3'
+	elif [ "$(command -v python2)" ]; then
+		python_cmd='python2'
+	else
+		printf '\n'
+		printf 'ERROR: `python` is not installed...\n' >&2
+		exit -1
+	fi
+	printf ' Using %s\n' "${python_cmd}"
+
 	GetYTDL
 
 	printf 'NOTICE: I DO NOT OWN ANY OF THIS MUSIC, CREDIT GOES TO THEIR RESPECTIVE ARTIST/BANDS/MUSICIANS\n'
@@ -67,15 +82,11 @@ main() {
 
 
 		if [ ! -f "${dir}/${title}.mp3" ]; then
-			printf 'Downloading %s....\n' "${title}"
-			if command -v python >/dev/null; then
-				python -c "${cmd}" --extract-audio --audio-format mp3 "${url}" -o "${dir}/${title}.mp3"
-			elif command -v python3 >/dev/null; then
-				python3 -c "${cmd}" --extract-audio --audio-format mp3 "${url}" -o "${dir}/${title}.mp3"
-			fi
+			"${python_cmd}" -c "${cmd}" --extract-audio --audio-format mp3 "${url}" -o "${dir}/${title}.mp3"
 		else
 			printf '%s.mp3 exists, skipping...\n' "${title}"
 		fi
 	done
 }
 main
+

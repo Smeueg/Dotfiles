@@ -52,23 +52,44 @@ main()
 {
 	check_process
 	pulse_droidcam
-	pactl list sinks | while read line; do
+	while read line; do
 		case "${line}" in
-			Volume*)
-				vol="${line#*/}"
-				vol="${vol%%/*}"
-				vol="${vol%[%]*}"
-				printf '%b%%\n' "${vol#${vol%%[! ]*}}"
+			'Default Sink'*)
+				default_sink="${line#*: }"
 				break
 				;;
-			Mute*no)
-				printf ' '
-				;;
+		esac
+	done <<-EOF
+	$(pactl info)
+	EOF
 
-			Mute*yes)
-				printf ' '
+	while read line; do
+		case "${line}" in
+			*"${default_sink}")
+				while true; do
+					read line
+					case "${line}" in
+						*'Mute'*)
+							if [ ! "${line##*no}" ]; then
+								printf '%b ' ''
+							else
+								printf '%b ' ''
+							fi
+							;;
+						*'Volume'*)
+							volume="${line#*/}"
+							volume="${volume%% /*}"
+							volume="${volume#${volume%%[! ]*}}"
+							printf '%s\n' "${volume}"
+							break
+							;;
+					esac
+				done
+				break
 				;;
 		esac
-	done
+	done <<-EOF
+	$(pactl list sinks)
+	EOF
 }
 main
