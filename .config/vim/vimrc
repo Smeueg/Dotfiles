@@ -160,12 +160,13 @@ endfunction
 
 
 function! CCompile()
-	let cmd = 'cc '
+	let cmd = 'cc ' . expand('%:p') . ' '
 
 	let flags = {
 		\ 'ncurses.h'  : 'ncurses',
 		\ 'X11/Xlib.h' : 'X11',
 		\ 'magic.h'    : 'magic',
+		\ 'math.h'     : 'm',
 	\ }
 
 	for flag in keys(flags)
@@ -174,7 +175,7 @@ function! CCompile()
 		endif
 	endfor
 
-	let cmd .= expand('%:p') . ' -o ' . expand('%:p:r') . ' && ' . expand('%:p:r')
+	let cmd .= '-o ' . expand('%:p:r') . ' && ' . expand('%:p:r')
 	call RunInTerminal(cmd)
 endfunction
 
@@ -204,7 +205,7 @@ function! CompileAndOrRun()
 	let filetypes = {
 		\ 'sh'     : 'call SheBangRun()',
 		\ 'python' : 'call SheBangRun()',
-		\ 'c'      : 'call CCompile("")',
+		\ 'c'      : 'call CCompile()',
 		\ 'nroff'  : 'w !groff - -ms -T pdf > "' . file_noext . '.pdf"; zathura "' . file_noext . '".pdf',
 		\ 'html'   : '!$BROWSER "%"',
 		\ 'vim'    : 'source %'

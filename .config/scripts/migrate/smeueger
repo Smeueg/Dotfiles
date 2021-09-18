@@ -1,677 +1,598 @@
-#!/bin/python
+#!/bin/sh
+# Interactive migration to be more smeueg instantly.
+# If you call now, you can be more smeueg with just $0.00
+# Or you get 2 more smeueg with only $0.00
 
-# smeueger: Become more smeueg with this script
-#
-# This script is basically just a migration script using
-# curses that makes migrating my *personal* dotfiles easier
-# Python2 *should* be supported as well
+# Trying to imitate ncurses using pure shell and ansi escape sequences
+# I miss arrays, please help
 
-# TODO
-# - Add a are you sure menu
+# Variables
+DOTFILE_URL="https://gitlab.com/Smeueg/Dotfiles.git"
+DOTFILE_DIR="${HOME}/.local/dots"
+WALLPAPER_DIR="${HOME}/.local/rice/Wallpapers"
+FONT_DIR="${HOME}/.local/share/fonts"
+SUCKLESS_DIR="${HOME}/.loca/rice"
+SUCKLESS_URL="https://gitlab.com/Smeueg"
+SUCKLESS_PREFIX="${HOME}/.local/" # Where to puts binaries in i.e. ${PREFIX}/bin
 
-import sys
-import os
-try:
-    from urllib.request import Request, urlopen
-except:
-    from urllib2 import Request, urlopen
+wallpapers="\
+Geometry.jpg       https://images7.alphacoders.com/106/1065726.jpg
+Rock Thing.png     https://images2.alphacoders.com/950/950452.png
+Red Space.jpg      https://cdna.artstation.com/p/assets/images/images/004/085/784/large/starkiteckt-designs-untitled-2.jpg
+Warm Mountain.jpg  https://i.redd.it/odrdq4yqtoz61.jpg
+Warm Ruins.jpg     https://cdna.artstation.com/p/assets/images/images/024/821/702/large/fredrik-persson-worldonfire.jpg
+Blue Caverns.jpg   https://cdnb.artstation.com/p/assets/images/images/025/243/893/large/fredrik-persson-caverns.jpg
+"
 
-# Variables #
-message = (
-        "Underline means the dependency or dependencies are not meant.",
-        "k: UP  j: DOWN,  a: Select All or arrow keys",
-        "G: Go to bottom  g: Go to Top"
-    )
+fonts='
+https://github.com/google/material-design-icons/raw/master/font/MaterialIcons-Regular.ttf
+https://github.com/googlefonts/noto-emoji/raw/main/fonts/NotoColorEmoji.ttf
+https://github.com/JetBrains/JetBrainsMono/tree/master/fonts/otf
+'
 
-home      = os.environ["HOME"]
-dotDir    = home + "/.local/dots"
-dotBackup = home + "/dotBackup"
-dotURL    = "https://gitlab.com/Smeueg/Dotfiles.git"
+# Menu
+# Name        (dependencies) {c libraries}   [Submenu]    "function/program to execute"
+main_choices='
+Dotfiles  (gt,mv)                                            "get_dotfiles"
+Wallpaper (mkdir,wget|curl)                                  "get_wallpapers"
+Fonts     (mkdir,wget|curl)                                  "get_fonts"
+Suckless  (git,make,gcc|clang|cc)  {X11}  [suckless_choices] "compile_suckless"
+'
 
-wallpaperDir = home + "/.local/rice/Wallpapers"
-wallpapers   = {
-        "Rock Thing.png"  : "https://images2.alphacoders.com/950/950452.png",
-        "Red Space.jpg"   : "https://cdna.artstation.com/p/assets/images/images/004/085/784/large/starkiteckt-designs-untitled-2.jpg?1480219852",
-        "Warm Mountain.jpg" : "https://i.redd.it/odrdq4yqtoz61.jpg"
+suckless_choices='
+Dynamic-Window-Manager ()                    {X11,Xinerama,fontconfig,Xft}                            "get_suckless dwm"
+DwmBlocks              ()                    {X11}                                                    "get_suckless dwmblocks"
+Simple-Terminal        ()                    {m,rt,X11,util,Xft,Xrender,fontconfig,freetype,harfbuzz} "get_suckless st"
+D-Menu                 ()                    {fontconfig,Xinerama,freetype,X11}                       "get_suckless dmenu"
+External-X-Tools       (patch,wget|curl)     {X11,Xft}                                                "get_suckless misc"
+'
+
+
+if [ "$(command -v gcc)" ]; then
+	compiler='gcc'
+elif [ "$(command -v clang)" ]; then
+	compiler='clang'
+elif [ "$(command -v cc)" ]; then
+	compiler='cc'
+else
+	compiler=''
+fi
+
+
+if [ "${BASH}" ]; then
+	bourne_shell='false'
+	input_cmd='read -n1 input'
+elif [ "${ZSH_NAME}" ]; then
+	bourne_shell='false'
+	input_cmd='read -k1 input'
+else
+	bourne_shell='true'
+	input_cmd='input=$(dd bs=1 count=1 2>/dev/null)'
+fi
+
+
+old_ifs=${IFS}
+
+
+# Utilies
+sh_cat()
+{
+	while IFS= read -r line; do
+		echo "${line}"
+	done < "${1}"
 }
 
-sucklessDir = home + "/.local/rice"
-fontsDir    = home + "/.local/share/fonts"
 
-# Utilities #
-def DownloadFile(url, file):
-    if file[-1] == "/":
-        file += url.split("/")[-1]
+get()
+{
+	url="${1}"
+
+	if [ "$(command -v curl)" ]; then
+		curl -Ls "${url}" -A 'Mozilla/5.0'
+	elif [ "$(command -v wget)" ]; then
+		wget "${url}" -U 'Mozilla/5.0' -qO-
+	fi
+}
+
+
+get_input()
+{
+	eval "${input_cmd}"
+
+	if [ "${input}" = "$(printf '\033')" ]; then
+		eval "${input_cmd}"
+		eval "${input_cmd}"
+		special=1
+	fi
+
+	case "${input%%1+0*}${special}" in
+		h|D1) printf 'left'   ;;
+		k|A1) printf 'up'     ;;
+		j|B1) printf 'down'   ;;
+		l|C1) printf 'right'  ;;
+		a|A)  printf 'all'    ;;
+		q)    printf 'quit'   ;;
+		g)    printf 'top'    ;;
+		G)    printf 'bottom' ;;
+		' '|'') printf 'select' ;;
+	esac
+}
+
+
+prompt_yes_no()
+{
+	printf '%s [Y/n] ' "${1}"
+	read reply
+	case "${reply}" in
+		[Yy][Ee][Ss]|[Yy]) ;;
+		*)
+			printf 'Exiting...\n'
+			exit 1
+			;;
+	esac
+	printf '\n'
+}
+
+
+create_dir()
+{
+	if [ ! -d "${1}" ]; then
+		printf 'Directory %s does not exist, creating\n' "${1}"
+		mkdir "${1}"
+		if [ ! -d "${1}" ]; then
+			printf '\033[31mERROR: Failed to create directory %s\033[0m\n' "${1}" >&2
+			return -1
+		fi
+	fi
+	return 0
+}
+
+
+
+# Choice Functions #
+get_dotfiles()
+{
+	printf 'Getting Dotfiles:\n'
+	if ! git clone --bare "${DOTFILE_URL}" "${DOTFILE_DIR}"; then
+		printf '\033[31mERROR: Failed to run `git clone --bare "%s" "%s"`\033[0m\n' "${DOTFILE_URL}" "${DOTFILE_DIR}" >&2
+		return
+	fi
+
+	IFS='
+	'
+	for file in $(git --git-dir "${DOTFILE_DIR}" ls-tree -r HEAD | while read -r line; do printf '/%s\n' "${line##*$(printf '\t')}"; done); do
+		[ ! -f "${HOME}${file}" ] &&
+			continue
+
+		if [ ! -d "${HOME}/DotfilesBackup${file%/*}" ]; then
+			if ! mkdir --parents "${HOME}/DotfilesBackup${file%/*}"; then
+				printf "\033[31mERROR: Failed to create directory %s\n" "${HOME}/DotfilesBackup${file%/*}" >&2
+				return
+			fi
+		fi
+
+		mv "${HOME}${file}" "${HOME}/DotfilesBackup"
+	done
+
+	if ! git --git-dir="${DOTFILE_DIR}" --work-tree="${HOME}" checkout; then
+		printf '\033[31mERROR: Failed to run `git --git-dir="%s" --work-tree="%s"`\n' "${DOTFILE_DIR}" "${HOME}" >&2
+		return
+	fi
+
+    git --git-dir="${DOTFILE_DIR}" config status.showUntrackedFiles no ||
+		printf '\033[33mWARNING: Failed to run `git config --git-dir="%s" status.showUntrackedFiles no`\033[33m\n' "${DOTFILE_DIR}" >&2
+}
+
 
-    req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-
-    with open(file, 'wb') as f:
-        f.write(urlopen(req).read())
-
-
-def Confirm(string):
-    if not string.endswith("[Y/n] "):
-        if string[-1] != " ":
-            string += " "
-        string += "[Y/n] "
-
-    try:
-        inputFunc = raw_input
-    except:
-        inputFunc = input
-
-    confirmation = inputFunc(string).lower()
-
-    if confirmation == "" or confirmation == "y" or confirmation == "yes":
-        return True
-
-    return False
-
-
-# Get a file from the latest github release
-def GithubRegex(repoUrl, regex):
-    import re
-    if repoUrl[-1] != "/":
-        repoUrl += "/"
-
-    repoUrl = Request(repoUrl + "releases", headers={"User-Agent": "Mozilla/5.0"})
-    repoUrl = urlopen(repoUrl).read()
-
-    if type(repoUrl) != str:
-        repoUrl = repoUrl.decode()
-
-    latestTag = re.findall("(?<=/releases/tag/).*(?=\")", repoUrl)[0]
-
-    files = []
-    for file in re.findall('(?<=href="){}(?=")'.format(regex), repoUrl):
-        if latestTag in file:
-            files.append("https://github.com" + file)
-
-    return files
-
-
-# Capture/return a command
-def GetCmd(arr):
-    import subprocess
-    out = subprocess.Popen(arr, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out = out.communicate()
-    stdout = out[0]
-    stderr = out[1]
-
-    if type(stdout) == bytes:
-        stdout = stdout.decode()
-
-    if type(stderr) == bytes:
-        stderr = stderr.decode()
-
-    return {"stdout":stdout, "stderr":stderr}
-
-
-
-def CheckVersion():
-    print("Checking python version...")
-
-    version = sys.version_info
-    msg = "This version of python ({}.{}.{}) is not supported, please install a higher version (2.6 or above)".format(version.major, version.minor, version.micro)
-
-    if version.major == 3:
-        return
-    elif version.major == 2:
-        if version.minor < 6:
-            print(msg)
-            sys.exit(-1)
-        else:
-            return
-    else:
-        print(msg)
-        sys.exit(-1)
-
-
-def CheckInternet():
-    import socket
-
-    print("Checking internet connection")
-    try:
-        socket.create_connection(("1.1.1.1", 53))
-        return
-    except:
-        print("You do not have an internet connetion... Exiting")
-        sys.exit(-1)
-
-
-def CheckOS():
-    from sys import platform
-    unsupportedOS = ("win32", "cygwin", "msys")
-    if platform in unsupportedOS:
-        print("No. Windows is garbage.")
-        sys.exit(-1)
-
-
-def CheckCompiler():
-    for dir in os.environ['PATH'].split(':'):
-        if os.access("{}/cc".format(dir), os.X_OK):
-            return
-
-    print("WARNING: `cc`, usually symlinked to `gcc`, is not installed...")
-    if not Confirm("Do you want to continue?"):
-        sys.exit(1)
-
-
-
-# UI #
-import curses
-stdscr = None
-menu   = None
-
-def drawMsg(menuY):
-    global stdscr
-    if stdscr == None:
-        stdscr = curses.initscr()
-
-    msgAmount = len(message)
-    for i in range(msgAmount):
-        stdscr.addstr(int(menuY-msgAmount+i), int((stdscr.getmaxyx()[1] - len(message[i])) / 2), message[i])
-
-    stdscr.refresh()
-
-
-def drawMenu(choices, isSubmenu):
-    global stdscr
-    global menu
-
-    menuH = len(choices)
-    menuW = 0
-
-    for choice in choices:
-        if len(choice.name) > menuW:
-            menuW = len(choice.name)
-
-    if stdscr == None:
-        stdscr = curses.initscr()
-
-    menuH += 2
-    menuW += 7
-    menuY = (stdscr.getmaxyx()[0] - menuH) / 2
-    menuX = (stdscr.getmaxyx()[1] - menuW) / 2
-
-    if menu == None:
-        menu = curses.newwin(0, 0)
-        menu.keypad(True)
-
-    menu.resize(menuH, menuW)
-    menu.mvwin(int(menuY), int(menuX))
-    menu.box()
-    drawMsg(menuY)
-
-    highlighted = 0
-
-    # Main Loop
-    while True:
-        highlightedOffset = 1
-
-        # Draw choices
-        for index in range(menuH - 1):
-            attr = [curses.A_NORMAL, curses.A_REVERSE][highlighted == index]
-
-            if index != len(choices):
-                offset = 1
-                choice = choices[index]
-
-                if choice.missingDep["progs"] != [] or choice.missingDep["libs"] != []:
-                    attr = attr | curses.A_UNDERLINE
-
-                if choice.submenu == None:
-                    string = "[" + [" ", "X"][choices[index].toggled] + "]"
-                else:
-                    string = " * "
-
-                string += " " + choices[index].name + " "
-            else:
-                string = [" CONTINUE ", " BACK "][isSubmenu]
-                offset = int((menuW - len(string)) / 2)
-
-            if highlighted == index:
-                highlightedOffset = offset
-
-            menu.addstr(index + 1, offset, string, attr)
-
-        # Move cursor to a "hidden" place
-        menu.move(highlighted+1, highlightedOffset)
-
-        key = menu.getkey()
-
-
-        if key == "j" or key == "KEY_DOWN":
-            highlighted += (highlighted != menuH-2)
-
-        elif key == "k" or key == "KEY_UP":
-            highlighted -= (highlighted != 0)
-
-        elif key == "g":
-            highlighted = 0
-
-        elif key == "G":
-            highlighted = menuH - 2
-
-        elif key == "q" or ord(key) == 27: # Esc or q
-            curses.endwin()
-            sys.exit(1)
-
-        elif key == "a":
-            selectedAll = True
-            for choice in choices:
-                if not choice.toggled and not choice.submenu:
-                    selectedAll = False
-                    break
-
-            for choice in choices:
-                if choice.submenu == None:
-                    choice.toggled = not selectedAll
-
-        elif key == "\n" or key == " " or key == "KEY_RIGHT":
-            if highlighted == menuH-2:
-                menu.clear()
-                menu.refresh()
-                return True
-
-            if choices[highlighted].missingDep["progs"] != [] or choices[highlighted].missingDep["libs"]:
-                continue
-
-            if choices[highlighted].submenu == None:
-                choices[highlighted].toggled = not choices[highlighted].toggled
-            else:
-                # Clear the window
-                menu.clear()
-                menu.refresh()
-                stdscr.clear()
-                stdscr.refresh()
-                drawMenu(choices[highlighted].submenu, True)
-                stdscr.clear()
-                menu.clear()
-                # Redraw window
-                menu.resize(menuH, menuW)
-                menu.mvwin(int(menuY), int(menuX))
-                menu.box()
-                drawMsg(menuY)
-
-        elif key == "KEY_LEFT":
-            menu.clear()
-            menu.refresh()
-            return True
-
-def handleCtrlC(signal, frameType):
-    if not curses.isendwin():
-        curses.endwin()
-
-    sys.exit(signal)
-
-import signal
-signal.signal(signal.SIGINT, handleCtrlC)
-# -- #
-
-
-# Main Code #
-class Choice:
-    def __init__(self, name, submenu, func, arg, deps):
-        self.name    = name
-        self.submenu = submenu
-        self.func    = func
-        self.arg     = arg
-        self.deps    = deps
-        self.toggled = False
-
-
-        # Dependency Checking #
-        self.missingDep = {
-            "progs" : [],
-            "libs"  : []
-        }
-
-        if self.deps != None:
-            progs = self.deps.get("progs")
-            libs  = self.deps.get("libs")
-
-            path = os.environ["PATH"]
-            if progs != None:
-                if type(progs) == str:
-                    progs = [progs]
-
-                for file in progs:
-                    found = False
-                    for directory in path.split(":"):
-                        if directory[-1] != "/":
-                            directory += "/"
-
-                        if os.access(directory + file, os.X_OK):
-                            found = True
-
-                    if not found:
-                        self.missingDep["progs"].append(file)
-
-            found = False
-            if libs != None:
-                if type(libs) == str:
-                    libs = [libs]
-
-                for directory in path.split(":"):
-                    if directory[-1] != "/":
-                        directory += "/"
-
-                    if os.access(directory + file, os.X_OK):
-                        found = True
-
-                if not found:
-                    for lib in libs:
-                        self.missingDep["libs"].append("lib" + lib)
-
-                    return
-
-                cmd = ["cc"]
-
-                for lib in libs:
-                    cmd.append("-l" + lib)
-
-                err = GetCmd(cmd)["stderr"]
-                for lib in libs:
-                    if "cannot find -l" + lib in err:
-                        self.missingDep["libs"].append("lib" + lib)
-
-
-    def execute(self):
-        if self.func == None and self.submenu == None:
-            return
-
-        submenuExec = False
-        if self.submenu != None:
-            for choice in self.submenu:
-                if choice.toggled:
-                    choice.execute()
-                    submenuExec = True
-
-        if (self.toggled or submenuExec) and self.func != None:
-            if self.arg == None:
-                self.func()
-            else:
-                self.func(self.arg)
-
-
-def CheckDep(choices):
-    missing = {}
-
-    def CheckMenu(menu, prevMenu):
-        for choice in menu:
-            for depType in choice.missingDep:
-                for dep in choice.missingDep[depType]:
-                    string = choice.name
-
-                    if prevMenu != None:
-                        string += "\033[4m\033[1m\033[3m in \033[0m" + prevMenu.name
-
-                    if missing.get(dep) == None:
-                        missing[dep] = [string]
-                    else:
-                        missing[dep].append(string)
-
-            if choice.submenu != None:
-                CheckMenu(choice.submenu, choice)
-
-    CheckMenu(choices, None)
-
-    if missing == {}:
-        return True
-
-    print("!! WARNING !!")
-    for dep in missing:
-        print(dep + " is needed to install:")
-        for name in missing[dep]:
-            print("  - " + name)
-        print("")
-
-    return Confirm("Do you want to continue?")
-# --------- #
-
-
-# Dotfiles #
-def GetDot():
-    if os.path.isdir(dotDir):
-        print("Target directory exists, Will not install dotfiles...")
-        return
-
-    print("\n\nDownloading dotfiles...")
-    os.system("git clone --bare {} {}".format(dotURL, dotDir))
-
-    output = GetCmd(["git", "--git-dir=" + dotDir, "ls-tree", "-r", "HEAD"])["stdout"]
-    output = "{}".format(output)
-
-    for line in output.splitlines():
-        file = line.split("\t")[1]
-
-        if os.path.isfile(home + "/" + file):
-            import shutil
-
-            directory = dotBackup + "/" + "/".join(file.split("/")[:-1])
-            if not os.path.isdir(directory):
-                os.makedirs(directory)
-                print("Made directory: " + directory)
-
-            shutil.move(home + "/" + file, directory)
-
-    os.system("git --git-dir={} --work-tree={} checkout".format(dotDir, home))
-    os.system("git --git-dir={} config status.showUntrackedFiles no".format(dotDir))
-    print("Downloaded dotfiles!")
-# -------- #
-
-
-
-# Wallpapers #
-def GetWallpapers():
-    global wallpaperDir
-
-    print("NOTICE: I DO NOT OWN NOR HAVE MADE ANY OF THE WALLPAPERS NOR FONT, ALL CREDIT GOES TO THE RESPECTIVE ARTIST/CREATORS")
-    print("Getting wallpaper(s)...")
-    if not os.path.isdir(wallpaperDir):
-        print("Made directory: " + wallpaperDir)
-        os.makedirs(wallpaperDir)
-
-    if wallpaperDir[-1] != "/":
-        wallpaperDir += "/"
-
-    for file in wallpapers:
-        DownloadFile(wallpapers[file], wallpaperDir + file)
-        print("Downloaded " + file)
-# ---------- #
-
-
-# Suckless #
-def GetSuckless(arg):
-    if type(arg) == str:
-        url     = arg
-        regex   = None
-        patches = None
-    else:
-        url     = arg[0]
-        regex   = arg[1]
-        patches = arg[2]
-
-    if regex != None:
-        url = GithubRegex(url, regex)[0]
-
-
-    print("Downloading {}...".format(url.split("/")[-1]))
-    dest = url.split("/")[-1]
-    if url.endswith(".git"):
-        dest      = dest[:-4]
-        dest      = sucklessDir + "/" + dest
-
-        if os.path.isdir(dest):
-            print("Will not install {}, directory exists...".format(dest))
-            return
-
-        patchDest = dest
-        os.system("git clone {} {}".format(url, dest))
-
-    elif url.endswith(".tar.gz"):
-        from io import BytesIO
-        import tarfile
-        tar = Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        tar = urlopen(tar).read()
-        tar = tarfile.open(fileobj=BytesIO(tar))
-
-        dirAmount = 0
-        for member in tar.getmembers():
-            if member.isdir():
-                dirAmount += 1
-
-        if dirAmount == 1:
-            dest = sucklessDir
-            patchDest = sucklessDir + "/" + tar.getmembers()[0].name
-        else:
-            dest      = sucklessDir + dest[:-7]
-            patchDest = dest
-
-        if not os.path.isdir(dest):
-            os.makedirs(dest)
-
-        if not os.path.isdir(patchDest):
-            tar.extractall(dest)
-            tar.close()
-        else:
-            tar.close()
-            print("Will not install {}, directory exists...".format(patchDest))
-            return
-    else:
-        return
-
-    if patches == None:
-        return
-
-    if patchDest[-1] != "/":
-        patchDest += "/"
-
-    for patch in patches:
-        DownloadFile(patch, patchDest)
-        os.system("patch -d {} < {}".format(patchDest, patchDest + "/" + patch.split("/")[-1]))
-
-
-def CompileSuckless():
-    if Confirm("Do you with to compile all of your suckless Utilities (You need root privilages)?"):
-        import termios
-        import sys
-        fd = sys.stdin.fileno()
-        default = termios.tcgetattr(fd)
-        os.system("su -c 'for dir in {}/*/*[Mm]akefile; do make install -C $(dirname $dir); done'".format(sucklessDir))
-        termios.tcsetattr(fd, termios.TCSADRAIN, default)
-# -------- #
-
-
-# Fonts #
-def GetFonts(arg):
-    from zipfile import ZipFile
-    from io import BytesIO
-    url       = [arg[0]]
-    regex     = arg[1]
-    directory = arg[2]
-
-
-    if directory == None or directory == "":
-        directory = fontsDir
-    else:
-        directory = fontsDir + "/" + directory
-
-    if directory[-1] != "/":
-        directory += "/"
-
-    if not os.path.isdir(directory):
-        os.makedirs(directory)
-
-    if regex != "" and regex != None:
-        url = GithubRegex(url[0], regex)
-
-    for file in url:
-        print("Downloading {}...".format(file.split("/")[-1]))
-        if file.endswith(".zip"):
-            zipData = Request(file, headers={"User-Agent": "Mozilla/5.0"})
-            zipData = urlopen(zipData)
-            zipData = ZipFile(BytesIO(zipData.read()))
-            zipData.extractall(directory)
-        else:
-            DownloadFile(file, directory)
-
-
-CheckInternet()
-CheckVersion()
-CheckOS()
-CheckCompiler()
-print("Checking dependencies...")
-
-suckless = (
-    Choice("Dynamic Window Manager", None, GetSuckless, "https://gitlab.com/Smeueg/dwm.git",
-        {"progs":"git","libs":["X11", "Xinerama", "fontconfig", "Xft"]}),
-
-    Choice("Simple Terminal", None, GetSuckless, "https://gitlab.com/Smeueg/st.git",
-        {"progs":"git","libs":["X11", "Xft", "Xrender"]}),
-
-    Choice("DwmBlocks", None, GetSuckless, "https://gitlab.com/Smeueg/dwmblocks.git",
-        {"progs":"git","libs":"X11"}),
-
-    Choice("Herbe", None, GetSuckless, [
-            "https://github.com/dudik/herbe",
-            ".*.tar.gz",
-            (
-                "https://patch-diff.githubusercontent.com/raw/dudik/herbe/pull/11.diff",
-                "https://patch-diff.githubusercontent.com/raw/dudik/herbe/pull/19.diff"
-            )
-        ], {"progs":"patch","libs":["X11","Xft"]}),
-
-    Choice("Slock", None, GetSuckless, [
-            "https://dl.suckless.org/tools/slock-1.4.tar.gz",
-            None,
-            (
-                "https://tools.suckless.org/slock/patches/foreground-and-background/slock-foreground-and-background-20210611-35633d4.diff",
-                "https://gitlab.com/Smeueg/dotfiles/-/raw/master/.local/rice/misc/slockConfig.diff"
-            )
-        ], {"progs":"patch","libs":["X11", "Xinerama", "Xft", "Xext", "Xrandr", "Imlib2"]}),
-
-    Choice("Devour", None, GetSuckless,
-        ["https://github.com/salman-abedin/devour", ".*.tar.gz", None],
-        {"libs":"X11"})
-)
-
-fonts = (
-    Choice("JetBrains Mono", None, GetFonts, (
-            "https://github.com/JetBrains/JetBrainsMono",
-            ".*JetBrainsMono\\-.*.zip",
-            "JetBrainsMono"
-        ),
-        None),
-
-    Choice("Material Icons", None, GetFonts, (
-            "https://github.com/google/material-design-icons/raw/master/font/MaterialIcons-Regular.ttf",
-            None,
-            None),
-        None),
-    Choice("Noto Color Emoji", None, GetFonts, (
-            "https://noto-website-2.storage.googleapis.com/pkgs/NotoColorEmoji-unhinted.zip",
-            None,
-            "NotoColorEmoji"),
-        None)
-)
-
-
-mainChoice = (
-    Choice("Dotfiles",                None,     GetDot,          None, {"progs":"git"}),
-    Choice("Wallpaper(s)",            None,     GetWallpapers,   None, None),
-    Choice("Suckless(-ish) Programs", suckless, CompileSuckless, None, {"progs":["make", "gcc"]}),
-    Choice("Fonts",                   fonts,    None,            None, None),
-)
-
-
-if not CheckDep(mainChoice):
-    sys.exit(-1)
-
-execute = drawMenu(mainChoice, False)
-curses.endwin()
-
-if execute:
-    for choice in mainChoice:
-        choice.execute()
+get_wallpapers()
+{
+	printf 'Grabbing Wallpapers\n'
+	if ! create_dir "${WALLPAPER_DIR}"; then
+		return
+	fi
+
+	IFS='
+	'
+	for line in ${wallpapers}; do
+		file_name="${line%https:*}"
+		file_name="${file_name%${file_name##*[! ]}}"
+
+		url="${line##* }"
+		printf 'Downloading %s' "${file_name}"
+		get "${url}" > "${WALLPAPER_DIR%/}/${file_name}"
+	done
+}
+
+
+get_fonts()
+{
+	printf 'Grabbing Fonts:\n'
+	if ! create_dir "${FONT_DIR}"; then
+		return
+	fi
+
+	IFS='
+	'
+	for font in ${fonts}; do
+		case "${font}" in
+			*'/tree/'*)
+				while IFS= read -r line; do
+					if [ "${line##*[.]otf*}" ] || [ ! "${line}" ]; then
+						continue
+					fi
+					line="${line##*href=\"}"
+					line="${line%%\">*}"
+					line="${line%%blob*}raw${line##*blob}"
+					line="${font%/${font#https://*/}}${line}"
+					repo="${font#https://*/*/}"
+					repo="${repo%%/*}"
+					if [ ! -d "${FONT_DIR%/}/${repo}" ]; then
+						mkdir "${FONT_DIR%/}/${repo}"
+						printf 'Directory %s does not exist, creating\n' "${FONT_DIR%/}/${repo}"
+						if [ ! -d "${FONT_DIR%/}/${repo}" ]; then
+							printf '\033[31mERROR: Failed to create directory %s\033[0m\n' "${FONT_DIR%/}/${repo}" >&2
+							continue
+						fi
+					fi
+					printf 'Downloading %s\n' "${line##*/}"
+					get "${line}" > "${FONT_DIR%/}/${repo}/${line##*/}"
+				done <<-EOF
+				$(get "${font}")
+				EOF
+				;;
+
+			'') continue ;;
+			*)
+				printf 'Downloading %s\n' "${font##*/}"
+				get "${font}" > "${FONT_DIR%/}/${font##*/}"
+				;;
+		esac
+	done
+
+}
+
+
+get_suckless()
+{
+	if [ "${1}" = 'misc' ]; then
+		git clone 'https://github.com/salman-abedin/devour' "${SUCKLESS_DIR%/}/devour"
+		git clone 'https://github.com/dudik/herbe' "${SUCKLESS_DIR%/}/herbe"
+		get 'https://patch-diff.githubusercontent.com/raw/dudik/herbe/pull/11.diff' | patch -d "${SUCKLESS_DIR%/}/herbe" -i -
+		get 'https://patch-diff.githubusercontent.com/raw/dudik/herbe/pull/19.diff' | patch -d "${SUCKLESS_DIR%/}/herbe" -i -
+		return
+	fi
+
+	if ! git clone "${SUCKLESS_URL%/}/${1}" "${SUCKLESS_DIR%/}/${1}"; then
+		printf '\033[31mERROR: Failed to clone %s\033[0m\n' "${1}"
+	fi
+}
+
+
+compile_suckless()
+{
+	for dir in "${SUCKLESS_DIR%/}"/*/[Mm]akefile; do
+		PREFIX="${SUCKLESS_PREFIX}" make --directory="${dir}" install
+	done
+}
+
+
+# Main Functions
+msg_printed='false'
+check_depend()
+{
+	IFS='
+	'
+
+	has_dependencies='true'
+	tmp_choices=''
+	eval "choice=\$${1}"
+	eval "${1}=''"
+	for line in ${choice}; do
+		uninstalled=''
+		uninstalled_libs=''
+		dependencies="${line#*(}"
+		dependencies="${dependencies%)*}"
+		IFS=','
+		for dep in ${dependencies}; do
+			if [ ! "${dep##*|*}" ]; then
+				IFS='|'
+				display='false'
+				for d in ${dep}; do
+					if [ "$(command -v ${d# })" ]; then
+						display='true'
+						break
+					fi
+				done
+				IFS=','
+				! ${display} && uninstalled="${uninstalled};${dep}"
+			elif [ ! "$(command -v ${dep# })" ]; then
+				uninstalled="${uninstalled};${dep}"
+			fi
+		done
+
+		lib_deps="${line#*\{}"
+		lib_deps="${lib_deps%\}*}"
+		IFS=','
+
+		if [ "${compiler}" ]; then
+			cmd="${compiler}"
+			for dep in ${lib_deps}; do
+				cmd="${cmd} -l${dep}"
+			done
+
+		while IFS= read LINE; do
+			if [ ! "${LINE##*cannot find -l*}" ]; then
+				uninstalled_libs="${uninstalled_libs};${LINE#*-l}"
+			fi
+		done <<-EOF
+		$(eval "${cmd}" 2>&1)
+		EOF
+		else
+			uninstalled_libs='Unknown installed libraries, compiler not found'
+		fi
+
+		if [ "${uninstalled}" ] || [ "${uninstalled_libs}" ]; then
+			has_dependencies='false'
+			if ! "${msg_printed}"; then
+				while read -r LINE; do
+					printf '\033[33m%s\033[0m\n' "${LINE}"
+				done <<-EOF
+				WARNING: There are some dependencies that are not installed.
+				These dependencies are for necessary for installing and or compiling
+				EOF
+				msg_printed='true'
+			fi
+			IFS=';'
+			printf '%s requires:\n' "${line%% *}"
+
+			ran='false'
+			for prog in ${uninstalled}; do
+				[ ! "${prog}" ] && continue
+				if "${ran}"; then
+					printf ', %s' "${prog}"
+				else
+					printf '  Programs:  %s' "${prog}"
+					ran='true'
+				fi
+			done
+			[ "${uninstalled}" ] && printf '\n'
+
+			ran='false'
+			for libs in ${uninstalled_libs}; do
+				[ ! "${libs}" ] && continue
+				if "${ran}"; then
+					printf 'lib, %s' "${libs}"
+				else
+					printf '  Libraries: lib%s' "${libs}"
+					ran='true'
+				fi
+			done
+			[ "${uninstalled_libs}" ] && printf '\n'
+
+			tmp_choices=$(
+				printf '%s\n' "${tmp_choices}"
+				if [ "${line##*[*]*}" ]; then
+					printf '3%s\n' "${line}"
+				else
+					printf '4%s\n' "${line}"
+				fi
+			)
+		else
+			tmp_choices=$(
+				printf '%s\n' "${tmp_choices}"
+				if [ ! "${line##*\[*\]*}" ]; then
+					printf '2%s\n' "${line}"
+				else
+					printf '0%s\n' "${line}"
+				fi
+			)
+		fi
+	done
+
+	eval "${1}='${tmp_choices}'"
+
+	IFS='
+	'
+	for line in ${tmp_choices}; do
+		if [ ! "${line##*\[*\]*}" ]; then
+			line="${line#*\[}"
+			line="${line%\]*}"
+			check_depend "${line}" 'true'
+		fi
+	done
+
+	"${2}" && return
+	if ! "${has_dependencies}"; then
+		prompt_yes_no "Are you sure you want to continue?"
+	fi
+}
+
+
+choose()
+{
+	# First argument is the variable name
+	# Second argument is if it's in a submenu or not
+
+	eval "choices=\$${1}"
+	IFS='
+	'
+
+	selected=0
+	while true; do
+		index=0
+		for choice in ${choices}; do
+			choice="${choice%% *}"
+
+			if [ "${index}" -eq "${selected}" ]; then
+				printf '\033[7m'
+			fi
+
+			case "${choice}" in
+				*'Continue'*|*'Back'*) printf '  '  ;;
+				4*)           printf '\033[31m *  ' ;;
+				3*)           printf '\033[31m[ ] ' ;;
+				2*)           printf ' *  ' ;;
+				1*)           printf '[X] ' ;;
+				*)            printf '[ ] ' ;;
+			esac
+
+			printf '%s\033[0m\n' "${choice#?}"
+			index=$((index + 1))
+		done
+		index=$((index - 1))
+
+		case "$(get_input)" in
+			'up')   [ "${selected}" -ne '0' ]        && selected=$((selected - 1)) ;;
+			'down') [ "${selected}" -ne "${index}" ] && selected=$((selected + 1)) ;;
+			'top')    selected='0'        ;;
+			'bottom') selected="${index}" ;;
+			'quit')
+				eval "${1}=''"
+				printf "\033[$((index + 1))A\033[0J"
+				quit
+				;;
+
+			'select')
+				# If selected Continue or back
+				if [ "${selected}" -eq "${index}" ]; then
+					if ! "${2}"; then
+						printf "\033[$((index + 1))A\033[0J"
+					fi
+					eval "${1}='${choices}'"
+					return
+				fi
+
+				# If selected a submenu
+				chosen_submenu=''
+				index=0
+				for choice in ${choices}; do
+					if [ "${index}" -eq "${selected}" ] && [ ! "${choice##*\[*\]*}" ]; then
+						chosen_submenu="${choice##*\[}"
+						chosen_submenu="${chosen_submenu%%\]*}"
+						break
+					fi
+					index=$((index + 1))
+				done
+
+
+				if [ "${chosen_submenu}" ]; then
+					tmp_choices="${choices}"
+					tmp_selected="${selected}"
+					IFS='
+					'
+					printf "\033[$((index + 2))A\033[0J"
+					choose "${chosen_submenu}" 'true'
+					choices="${tmp_choices}"
+					selected="${tmp_selected}"
+				else
+					choices=$(
+						index=0
+						for choice in ${choices}; do
+							if [ "${index}" = "${selected}" ]; then
+								if [ ! "${choice%%0*}" ]; then
+									printf '1%s\n' "${choice#?}"
+								elif [ ! "${choice%%1*}" ]; then
+									printf '0%s\n' "${choice#?}"
+								else
+									printf '%s\n' "${choice}"
+								fi
+							else
+								printf '%s\n' "${choice}"
+							fi
+							index=$((index + 1))
+						done
+					)
+					index=$((index - 1))
+				fi
+				;;
+
+			'all')
+				choices=$(
+					if [ "${choices%%1*}" ]; then
+						num='1'
+					else
+						num='0'
+					fi
+					for choice in ${choices}; do
+						if [ ! "${choice##?Continue}" ] || [ ! "${choice##?Back}" ] || [ ! "${choice##[234]*}" ]; then
+							printf '%s\n' "${choice}"
+						else
+							printf '%i%s\n' "${num}" "${choice#?}"
+						fi
+					done
+				)
+				;;
+		esac
+
+		index=$((index + 1))
+		printf "\033[${index}A\033[0J"
+
+	done
+}
+
+
+execute_choices()
+{
+	eval "choices=\"\$${1}\""
+	for choice in ${choices}; do
+		if [ ! "${choice##1*}" ]; then
+			choice="${choice#*\"}"
+			choice="${choice%\"*}"
+			eval "${choice}"
+		fi
+	done
+
+	eval "choices=\"\$${1}\""
+	for choice in ${choices}; do
+		if [ "${choice##*\[*\]*}" ]; then
+			continue
+		fi
+		choice="${choice#*\[}"
+		choice="${choice%\]*}"
+		execute_choices "${choice}"
+	done
+}
+
+
+quit()
+{
+	stty echo
+	stty icanon
+	exit
+}
+
+
+# Main Function
+main()
+{
+	error='false'
+	if [ ! "$(command -v stty)" ]; then
+		printf '\033[31mERROR: `stty` is a dependency...\033[0m\n' >&2
+		error='true'
+	fi
+	if [ ! "$(command -v dd)" ] && [ ! "${BASH}" ] && [ ! "${ZSH_NAME}" ]; then
+		printf "\033[31mERROR: This script requires \`dd\` to be installed if this script isn't executed using bash or zsh...\033[0m\n" >&2
+		error='true'
+	fi
+	"${error}" && exit -1
+
+	printf '\r\033[38;5;3mWARNING: This script will create some directories, move files, and remove some files\033[0m\n'
+	if [ "${USER}" = "root" ]; then
+		prompt_yes_no 'Are you sure you would like to run this script as root (not recommended)? [Y/n] '
+	fi
+
+	check_depend "main_choices" 'false'
+
+	stty -echo
+	"${bourne_shell}" &&
+		stty -icanon
+
+	trap 'quit' INT
+	printf '\rUse vim keys or arrow keys, space or enter to select, q to quit\n'
+	choose 'main_choices' 'false'
+	execute_choices 'main_choices'
+	IFS=${old_ifs}
+
+	quit
+}
+main

@@ -25,6 +25,8 @@ https://www.youtube.com/watch?v=XGppLlK8En0   Super Mario Galaxy: Battlerock Gal
 https://www.youtube.com/watch?v=xc6ooJQHDPc   Melty Monster (Super Mario Galaxy 2) Metal Guitar Cover | Dacian Grada
 https://www.youtube.com/watch?v=WxZpVTZ6OME   Minecraft C418 - Aria Math (Metal Cover)
 https://www.youtube.com/watch?v=UW7EnixZVNI   Skyrim - Dovahkiin (Metal Cover)
+https://www.youtube.com/watch?v=7ol6rpgJGf8   Castlevania Meets Metal
+https://www.youtube.com/watch?v=9eNnmIam0uM   The Hobbit Meets Metal (Misty Mountains)
 "
 
 
@@ -84,7 +86,7 @@ main() {
 		if [ ! -f "${dir}/${title}.mp3" ]; then
 			"${python_cmd}" -c "${cmd}" --extract-audio --audio-format mp3 "${url}" -o "${dir}/${title}.mp3"
 		else
-			printf '%s.mp3 exists, skipping...\n' "${title}"
+			printf '%s.mp3 exists, skipping\n' "${title}"
 		fi
 	done
 }
