@@ -1,5 +1,5 @@
 #!/bin/sh
-WM="dwm"
+WM="awesome"
 
 #xrandr --output HDMI-2 --mode 1360x768 --scale 1.2x1.2
 xrandr --output DP-1 --mode 1280x1024 --scale 1.2x1.2
@@ -11,7 +11,7 @@ export WINIT_X11_SCALE_FACTOR=1
 
 # Turn of screen saver and dpms
 xset s off -dpms &
-
+pidof pulseaudio >/dev/null || setsid --fork pulseaudio --start --exit-idle-time=-1
 xcompmgr &
 
 

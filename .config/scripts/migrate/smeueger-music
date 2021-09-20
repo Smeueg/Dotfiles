@@ -35,19 +35,16 @@ GetYTDL() {
 	if [ ! "$(command -v youtube-dl)" ]; then
 		printf "'youtube-dl' is not installed, getting youtube-dl...\n"
 		if [ "$(command -v curl)" ]; then
-			cmd="$(curl --user-agent 'Mozilla/5.0' -Ls https://yt-dl.org/downloads/latest/youtube-dl --output -)"
+			curl --user-agent 'Mozilla/5.0' -Ls https://yt-dl.org/downloads/latest/youtube-dl --output /tmp/youtube-dl
 		elif [ "$(command -v wget)" ]; then
-			cmd="$(wget --user-agent='Mozilla/5.0' -qO- https://yt-dl.org/downloads/latest/youtube-dl)"
+			wget --user-agent='Mozilla/5.0' -q -O /tmp/youtube-dl https://yt-dl.org/downloads/latest/youtube-dl
 		else
 			printf 'ERROR: Cannot download youtube-dl, `curl` and `wget` is not installed...\n' >&2
 			exit -1
 		fi
+		cmd="/tmp/youtube-dl/"
 	else
-		cmd="$(
-			while IFS='' read line; do
-				printf '%b\n' "${line}"
-			done < $(command -v youtube-dl)
-		)"
+		cmd="$(which youtube-dl)"
 	fi
 }
 
@@ -84,7 +81,7 @@ main() {
 
 
 		if [ ! -f "${dir}/${title}.mp3" ]; then
-			"${python_cmd}" -c "${cmd}" --extract-audio --audio-format mp3 "${url}" -o "${dir}/${title}.mp3"
+			"${python_cmd}" "${cmd}" --extract-audio --audio-format mp3 "${url}" -o "${dir}/${title}.mp3"
 		else
 			printf '%s.mp3 exists, skipping\n' "${title}"
 		fi

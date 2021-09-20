@@ -33,18 +33,18 @@ https://github.com/JetBrains/JetBrainsMono/tree/master/fonts/otf
 # Menu
 # Name        (dependencies) {c libraries}   [Submenu]    "function/program to execute"
 main_choices='
-Dotfiles  (gt,mv)                                            "get_dotfiles"
-Wallpaper (mkdir,wget|curl)                                  "get_wallpapers"
-Fonts     (mkdir,wget|curl)                                  "get_fonts"
+Dotfiles  (git,mv)                 {}                        "get_dotfiles"
+Wallpaper (mkdir,wget|curl)        {}                        "get_wallpapers"
+Fonts     (mkdir,wget|curl)        {}                        "get_fonts"
 Suckless  (git,make,gcc|clang|cc)  {X11}  [suckless_choices] "compile_suckless"
 '
 
 suckless_choices='
-Dynamic-Window-Manager ()                    {X11,Xinerama,fontconfig,Xft}                            "get_suckless dwm"
-DwmBlocks              ()                    {X11}                                                    "get_suckless dwmblocks"
-Simple-Terminal        ()                    {m,rt,X11,util,Xft,Xrender,fontconfig,freetype,harfbuzz} "get_suckless st"
-D-Menu                 ()                    {fontconfig,Xinerama,freetype,X11}                       "get_suckless dmenu"
-External-X-Tools       (patch,wget|curl)     {X11,Xft}                                                "get_suckless misc"
+Dynamic-Window-Manager ()                    {Xinerama,fontconfig,Xft}                            "get_suckless dwm"
+DwmBlocks              ()                    {}                                                   "get_suckless dwmblocks"
+Simple-Terminal        ()                    {m,rt,util,Xft,Xrender,fontconfig,freetype,harfbuzz} "get_suckless st"
+D-Menu                 ()                    {fontconfig,Xinerama,freetype}                       "get_suckless dmenu"
+External-X-Tools       (patch,wget|curl)     {Xft}                                                "get_suckless misc"
 '
 
 
@@ -138,7 +138,7 @@ create_dir()
 {
 	if [ ! -d "${1}" ]; then
 		printf 'Directory %s does not exist, creating\n' "${1}"
-		mkdir "${1}"
+		mkdir --parents "${1}"
 		if [ ! -d "${1}" ]; then
 			printf '\033[31mERROR: Failed to create directory %s\033[0m\n' "${1}" >&2
 			return -1
@@ -198,9 +198,10 @@ get_wallpapers()
 		file_name="${file_name%${file_name##*[! ]}}"
 
 		url="${line##* }"
-		printf 'Downloading %s' "${file_name}"
+		printf 'Downloading %s\n' "${file_name}"
 		get "${url}" > "${WALLPAPER_DIR%/}/${file_name}"
 	done
+	printf '\n'
 }
 
 
@@ -249,6 +250,7 @@ get_fonts()
 		esac
 	done
 
+	printf '\n'
 }
 
 
@@ -270,6 +272,7 @@ get_suckless()
 
 compile_suckless()
 {
+    printf 'Compiling suckless utilities\n'
 	for dir in "${SUCKLESS_DIR%/}"/*/[Mm]akefile; do
 		PREFIX="${SUCKLESS_PREFIX}" make --directory="${dir}" install
 	done
@@ -314,21 +317,21 @@ check_depend()
 		lib_deps="${lib_deps%\}*}"
 		IFS=','
 
-		if [ "${compiler}" ]; then
+		if [ "${lib_deps}" ] && [ "${compiler}" ]; then
 			cmd="${compiler}"
 			for dep in ${lib_deps}; do
 				cmd="${cmd} -l${dep}"
 			done
 
-		while IFS= read LINE; do
-			if [ ! "${LINE##*cannot find -l*}" ]; then
+			while IFS= read LINE; do
+			    if [ ! "${LINE##*cannot find -l*}" ]; then
 				uninstalled_libs="${uninstalled_libs};${LINE#*-l}"
-			fi
-		done <<-EOF
-		$(eval "${cmd}" 2>&1)
-		EOF
-		else
-			uninstalled_libs='Unknown installed libraries, compiler not found'
+			    fi
+			done <<-EOF
+			$(eval "${cmd}" 2>&1)
+			EOF
+		elif [ "${lib_deps}" ]; then
+		    uninstalled_libs='Unknown installed libraries, compiler not found'
 		fi
 
 		if [ "${uninstalled}" ] || [ "${uninstalled_libs}" ]; then
@@ -389,6 +392,12 @@ check_depend()
 		fi
 	done
 
+	if "${2}"; then
+	    tmp_choices=$(printf '%s\n0Back' "${tmp_choices}")
+	else
+	    tmp_choices=$(printf '%s\n0Continue' "${tmp_choices}")
+	fi
+	
 	eval "${1}='${tmp_choices}'"
 
 	IFS='
