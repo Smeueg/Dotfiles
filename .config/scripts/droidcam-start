@@ -94,6 +94,10 @@ HandleArg() {
 
 
 main() {
+	if [ "$(pidof droidcam-cli)" ]; then
+		pkill droidcam-cli
+	fi
+	
 	if [ -z "${arguments}" ]; then
 		droidcam-cli
 		tput bold

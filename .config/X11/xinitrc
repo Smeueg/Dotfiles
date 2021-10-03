@@ -1,5 +1,5 @@
 #!/bin/sh
-WM="awesome"
+WM="dwm"
 
 #xrandr --output HDMI-2 --mode 1360x768 --scale 1.2x1.2
 xrandr --output DP-1 --mode 1280x1024 --scale 1.2x1.2

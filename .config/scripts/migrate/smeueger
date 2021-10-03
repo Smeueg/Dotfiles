@@ -11,7 +11,7 @@ DOTFILE_URL="https://gitlab.com/Smeueg/Dotfiles.git"
 DOTFILE_DIR="${HOME}/.local/dots"
 WALLPAPER_DIR="${HOME}/.local/rice/Wallpapers"
 FONT_DIR="${HOME}/.local/share/fonts"
-SUCKLESS_DIR="${HOME}/.loca/rice"
+SUCKLESS_DIR="${HOME}/.local/rice"
 SUCKLESS_URL="https://gitlab.com/Smeueg"
 SUCKLESS_PREFIX="${HOME}/.local/" # Where to puts binaries in i.e. ${PREFIX}/bin
 
@@ -364,7 +364,7 @@ check_depend()
 			for libs in ${uninstalled_libs}; do
 				[ ! "${libs}" ] && continue
 				if "${ran}"; then
-					printf 'lib, %s' "${libs}"
+					printf ', lib%s' "${libs}"
 				else
 					printf '  Libraries: lib%s' "${libs}"
 					ran='true'

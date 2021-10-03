@@ -236,6 +236,8 @@ nnoremap j gj
 vnoremap k gk
 nnoremap j gj
 
+nnoremap <leader>t <cmd>term<CR>
+
 nnoremap <leader>a ggVG
 nnoremap <leader>f :tabe<Space>
 
@@ -333,5 +335,7 @@ let g:mucomplete#cycle_with_trigger     = 0
 
 " Vim Wiki "
 let g:vimwiki_list = [{'path': '~/Documents/Notes', 'path_html': '~/Documents/Notes/NotesHTML'}]
+"let g:vimwiki_folding = 'syntax'
+set foldmethod=syntax
 " -------- "
 

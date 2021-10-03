@@ -32,6 +32,3 @@ elif [ "${ZSH_NAME}" ]; then
 	bindkey -v '^H' backward-delete-char
 	bindkey -v '^?' backward-delete-char
 fi
-
-
-[ -f "${HOME}"/.cargo/env ] && . "$HOME/.cargo/env"

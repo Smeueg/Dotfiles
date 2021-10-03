@@ -92,4 +92,3 @@ if [ "${BASH}" ] && [ -f "${ENV}" ]; then
 		ln -s "${ENV}" "${HOME}/.bashrc"
 	fi
 fi
-. "$HOME/.cargo/env"

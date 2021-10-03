@@ -22,11 +22,17 @@ https://www.youtube.com/watch?v=JGv6gzImsfg   Cain's Offering - I Am Legion (Ins
 https://www.youtube.com/watch?v=r8n6j21UJMo   Dark Forest - Heart of the Rose
 https://www.youtube.com/watch?v=kDG8GfBQ0YY   Super Mario Galaxy - Buoy Base Galaxy [Metal Cover by RichaadEB]
 https://www.youtube.com/watch?v=XGppLlK8En0   Super Mario Galaxy: Battlerock Galaxy - Metal Cover
-https://www.youtube.com/watch?v=xc6ooJQHDPc   Melty Monster (Super Mario Galaxy 2) Metal Guitar Cover | Dacian Grada
 https://www.youtube.com/watch?v=WxZpVTZ6OME   Minecraft C418 - Aria Math (Metal Cover)
 https://www.youtube.com/watch?v=UW7EnixZVNI   Skyrim - Dovahkiin (Metal Cover)
-https://www.youtube.com/watch?v=7ol6rpgJGf8   Castlevania Meets Metal
+https://www.youtube.com/watch?v=7ol6rpgJGf8   Castlevania Meets Metal - Bloody Tears
 https://www.youtube.com/watch?v=9eNnmIam0uM   The Hobbit Meets Metal (Misty Mountains)
+https://www.youtube.com/watch?v=-WeF0LY2tf4   Catarinth - Found Away
+https://www.youtube.com/watch?v=7L8F3X4mISg   Catarinth - Daedalus
+https://www.youtube.com/watch?v=sDtxHtyytz0   Catarinth - Recover
+https://www.youtube.com/watch?v=PwXl0F5VAvU   Catarinth - Cost of Judgement
+https://www.youtube.com/watch?v=mWQygSYBEBY   Castlevania Meets Metal - Dracula's Castle
+https://www.youtube.com/watch?v=4ZQu3p-qWF8   Beethoven's 5th (Movement 1) Meets Metal
+https://www.youtube.com/watch?v=Fv-s1NjPqHk   Mozart Meets Metal - Eine kleine Nacthmusik
 "
 
 
@@ -50,6 +56,11 @@ GetYTDL() {
 
 
 main() {
+	if [ ! "$(command -v ffmpeg)" ]; then
+		printf 'ERROR: `ffmpeg` not found\n' >&2
+		exit -1
+	fi
+
 	printf 'Getting python binary...'
 	if [ "$(command -v python)" ]; then
 		python_cmd='python'
