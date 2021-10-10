@@ -53,5 +53,5 @@ IFS='
 '
 for dir in ${BACKUP_DIRS}; do
 	printf 'Copying %s...\n' "${dir}"
-	cp -uir "${dir}" "${DIR}"
+	cp -uvr "${dir}" "${DIR}"
 done
