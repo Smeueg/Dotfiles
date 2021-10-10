@@ -8,7 +8,6 @@ ${HOME}/Music
 GPG_BACKUP=false
 while [ $# -gt 0 ]; do
 	arg=${1}
-
 	case $arg in
 		--gpg)
 			GPG_BACKUP=true
