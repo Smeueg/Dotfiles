@@ -2,39 +2,9 @@
 # Downloads my personal favorite songs/albums
 # These songs take alot of space
 
-dir="${HOME}"/Music
-urls="
-https://www.youtube.com/watch?v=a41bERTFBUI   Metallica - Ecstacy Of Gold
-https://www.youtube.com/watch?v=c8qrwON1-zE   Metallica - Orion
-https://www.youtube.com/watch?v=_t6-KdRwC_U   Equilibrium - Kurzes Epos
-https://www.youtube.com/watch?v=LJRf19VcwUU   Equilibrium - Aufbruch
-https://www.youtube.com/watch?v=qQU4vatuT6g   Equilibrium - Mana
-https://www.youtube.com/watch?v=7-i-LhRudP4   Stratovarius - Stratofortress
-https://www.youtube.com/watch?v=KHVP2anxbH8   Stratovarius - Holy Light
-https://www.youtube.com/watch?v=aJZJVtBPl_E   Tiluland - Axes Of The Universe
-https://www.youtube.com/watch?v=7elDoQMH48k   Savatage - The Storm
-https://www.youtube.com/watch?v=HOVQ2fkQI5A   Running Wild - Siberian Winter
-https://www.youtube.com/watch?v=-uRmn0aUMK4   Exmortus - Moonlight Sonata (Act 3)
-https://www.youtube.com/watch?v=tBdtJzeCkJ4   Ascension - Orb of the Moons
-https://www.youtube.com/watch?v=4xAu2Ay15fs   Galneryus - Vetelgyus
-https://www.youtube.com/watch?v=9XlNbQv_Rg4   Warmen - Salieri Strikes Back
-https://www.youtube.com/watch?v=JGv6gzImsfg   Cain's Offering - I Am Legion (Instrumental)
-https://www.youtube.com/watch?v=r8n6j21UJMo   Dark Forest - Heart of the Rose
-https://www.youtube.com/watch?v=kDG8GfBQ0YY   Super Mario Galaxy - Buoy Base Galaxy [Metal Cover by RichaadEB]
-https://www.youtube.com/watch?v=XGppLlK8En0   Super Mario Galaxy: Battlerock Galaxy - Metal Cover
-https://www.youtube.com/watch?v=WxZpVTZ6OME   Minecraft C418 - Aria Math (Metal Cover)
-https://www.youtube.com/watch?v=UW7EnixZVNI   Skyrim - Dovahkiin (Metal Cover)
-https://www.youtube.com/watch?v=7ol6rpgJGf8   Castlevania Meets Metal - Bloody Tears
-https://www.youtube.com/watch?v=9eNnmIam0uM   The Hobbit Meets Metal (Misty Mountains)
-https://www.youtube.com/watch?v=-WeF0LY2tf4   Catarinth - Found Away
-https://www.youtube.com/watch?v=7L8F3X4mISg   Catarinth - Daedalus
-https://www.youtube.com/watch?v=sDtxHtyytz0   Catarinth - Recover
-https://www.youtube.com/watch?v=PwXl0F5VAvU   Catarinth - Cost of Judgement
-https://www.youtube.com/watch?v=mWQygSYBEBY   Castlevania Meets Metal - Dracula's Castle
-https://www.youtube.com/watch?v=4ZQu3p-qWF8   Beethoven's 5th (Movement 1) Meets Metal
-https://www.youtube.com/watch?v=Fv-s1NjPqHk   Mozart Meets Metal - Eine kleine Nacthmusik
-https://www.youtube.com/watch?v=7icbmYKOSMw   Super Mario Galaxy Credits Theme Guitar Cover
-"
+DIR="${HOME}"/Music
+PLAYLIST_URL="https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc"
+TMP_FILE=/tmp/smeueger-music-downloaded.txt
 
 
 cmd=""
@@ -42,11 +12,15 @@ GetYTDL() {
 	if [ ! "$(command -v youtube-dl)" ]; then
 		printf "'youtube-dl' is not installed, getting youtube-dl...\n"
 		if [ "$(command -v curl)" ]; then
-			curl --user-agent 'Mozilla/5.0' -Ls https://yt-dl.org/downloads/latest/youtube-dl --output /tmp/youtube-dl
+			curl --user-agent 'Mozilla/5.0' \
+				 -Ls https://yt-dl.org/downloads/latest/youtube-dl \
+				 --output /tmp/youtube-dl
 		elif [ "$(command -v wget)" ]; then
-			wget --user-agent='Mozilla/5.0' -q -O /tmp/youtube-dl https://yt-dl.org/downloads/latest/youtube-dl
+			wget --user-agent='Mozilla/5.0' -q -O /tmp/youtube-dl \
+				 https://yt-dl.org/downloads/latest/youtube-dl
 		else
-			printf 'ERROR: Cannot download youtube-dl, `curl` and `wget` is not installed...\n' >&2
+			printf 'ERROR: Cannot download youtube-dl,'
+			printf '`curl` and `wget` is not installed...\n' >&2
 			exit -1
 		fi
 		cmd="/tmp/youtube-dl/"
@@ -59,7 +33,7 @@ GetYTDL() {
 main() {
 	if [ ! "$(command -v ffmpeg)" ]; then
 		printf 'ERROR: `ffmpeg` not found\n' >&2
-		exit -1
+		exit 1
 	fi
 
 	printf 'Getting python binary...'
@@ -70,33 +44,32 @@ main() {
 	elif [ "$(command -v python2)" ]; then
 		python_cmd='python2'
 	else
-		printf '\n'
-		printf 'ERROR: `python` is not installed...\n' >&2
+		printf '\nERROR: `python` is not installed...\n' >&2
 		exit -1
 	fi
 	printf ' Using %s\n' "${python_cmd}"
 
 	GetYTDL
 
-	printf 'NOTICE: I DO NOT OWN ANY OF THIS MUSIC, CREDIT GOES TO THEIR RESPECTIVE ARTIST/BANDS/MUSICIANS\n'
+	printf 'NOTICE: I DO NOT OWN ANY OF THIS MUSIC, '
+	printf 'CREDIT GOES TO THEIR RESPECTIVE ARTIST/BANDS/MUSICIANS\n'
 
-	[ ! -d "${dir}" ] &&
-		mkdir --parents "${dir}"
+	if [ ! -d "${DIR}" ]; then
+		mkdir --parents "${DIR}" ||
+		printf 'ERROR: Failed to create directory %s\n' "${DIR}" && exit 1
+	fi
 
+	for f in "${DIR}"/*; do
+		f="${f%%.*}"
+		f="${f##*\]}"
+		f="${f##*\[}"
+		f="${f#${f%???????????}}"
+		printf 'youtube %s\n' "${f}"
+	done > "${TMP_FILE}"
 
-	printf '%b\n' "${urls}" | while read line; do
-		[ -z "${line}" ] && continue
-
-		url=${line%% *}
-		title=${line#${url}}
-		title=${title#${title%%[! ]*}}
-
-
-		if [ ! -f "${dir}/${title}.mp3" ]; then
-			"${python_cmd}" "${cmd}" --extract-audio --audio-format mp3 "${url}" -o "${dir}/${title}.mp3"
-		else
-			printf '%s.mp3 exists, skipping\n' "${title}"
-		fi
-	done
+	"${python_cmd}" "${cmd}" --audio-format mp3 \
+					--download-archive "${TMP_FILE}" \
+					--no-post-overwrites -cwix \
+					"${PLAYLIST_URL}" -o "${DIR}/%(title)s-%(id)s.%(ext)s"
 }
 main

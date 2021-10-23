@@ -6,6 +6,16 @@ modulesToLoad='' # modules that will be loaded
 modulesError=''  # modules that needs to be loaded but doesn't exist
 video=true
 audio=false
+kill=false
+unload_module=false
+
+while [ ${#@} -gt 0 ]; do
+	case "${1}" in
+		"kill"|"-k") kill=true ;;
+		"unload-module"|"-u") unload_module=true ;;
+	esac
+	shift
+done
 
 
 Kill() {
@@ -57,6 +67,17 @@ LoadModules() {
 }
 
 
+UnloadPulseaudioModule() {
+	while read line; do
+		if [ ! "${line##*droidcam_audio*}" ]; then
+			pactl unload-module ${line%%[!0-9]*}
+		fi
+	done <<-EOF
+	$(pactl list modules short)
+	EOF
+}
+
+
 LoadPulseaudioModule() {
 	printf '\n-------------\n\n'
 	printf 'Loading pulseaudio module...\n'
@@ -97,7 +118,7 @@ main() {
 	if [ "$(pidof droidcam-cli)" ]; then
 		pkill droidcam-cli
 	fi
-	
+
 	if [ -z "${arguments}" ]; then
 		droidcam-cli
 		tput bold
@@ -107,7 +128,8 @@ main() {
 		exit
 	fi
 
-	Kill
+	${kill} && Kill
+	${unload_module} && UnloadPulseaudioModule && exit
 
 	if HandleArg '\-a' 'snd_aloop';    then audio=true; video=false; fi
 	if HandleArg '\-v' 'v4l2loopback'; then             video=true; fi
@@ -119,7 +141,7 @@ main() {
 
 	LoadModules
 	droidcam-cli ${arguments} &
-	${audio} && sleep 2 && LoadPulseaudioModule
+	${audio} && sleep 3 && LoadPulseaudioModule
 
 	tput bold
 	printf 'Run `droidcam-start kill` or `killall droidcam-cli` to stop droidcam\n'

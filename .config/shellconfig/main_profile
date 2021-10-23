@@ -19,7 +19,7 @@ export NPM_CONFIG_USERCONFIG="$XDG_CONFIG_HOME"/npm/npmrc
 export XAUTHORITY="$XDG_RUNTIME_DIR"/Xauthority
 export PYLINTHOME="$XDG_CACHE_HOME"/pylint
 
-export TERMINAL="st"
+export TERMINAL="emacs"
 export READER="zathura"
 export BROWSER="firefox"
 export EDITOR="vim"
