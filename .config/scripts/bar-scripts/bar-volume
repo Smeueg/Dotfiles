@@ -4,11 +4,11 @@
 check_process()
 {
 	if [ "$(command -v pipewire)" ] && [ "$(command -v pipewire-pulse)" ] && [ "$(command -v pipewire-media-session)" ]; then
-		pidof pulseaudio >/dev/null || setsid --fork pulseaudio --start --exit-idle-time=-1
-	elif command -v pulseaudio >/dev/null; then
 		pidof pipewire >/dev/null               || setsid --fork pipewire
 		pidof pipewire-pulse >/dev/null         || setsid --fork pipewire-pulse
 		pidof pipewire-media-session >/dev/null || setsid --fork pipewire-media-session
+	elif command -v pulseaudio >/dev/null; then
+		pidof pulseaudio >/dev/null || setsid --fork pulseaudio --start --exit-idle-time=-1
 	fi
 }
 

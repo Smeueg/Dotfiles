@@ -22,6 +22,7 @@ Red Space.jpg      https://cdna.artstation.com/p/assets/images/images/004/085/78
 Warm Mountain.jpg  https://i.redd.it/odrdq4yqtoz61.jpg
 Warm Ruins.jpg     https://cdna.artstation.com/p/assets/images/images/024/821/702/large/fredrik-persson-worldonfire.jpg
 Blue Caverns.jpg   https://cdnb.artstation.com/p/assets/images/images/025/243/893/large/fredrik-persson-caverns.jpg
+Retro Galaxy.jpg   https://drive.google.com/u/0/uc?id=1yHdTy9CSku8ngkw0ugdj6pNq2UDsiLP0&export=download
 "
 
 fonts='
@@ -397,7 +398,7 @@ check_depend()
 	else
 	    tmp_choices=$(printf '%s\n0Continue' "${tmp_choices}")
 	fi
-	
+
 	eval "${1}='${tmp_choices}'"
 
 	IFS='

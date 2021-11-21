@@ -70,6 +70,6 @@ main() {
 	"${python_cmd}" "${cmd}" --audio-format mp3 \
 					--download-archive "${TMP_FILE}" \
 					--no-post-overwrites -cwix \
-					"${PLAYLIST_URL}" -o "${DIR}/%(title)s-%(id)s.%(ext)s"
+					"${PLAYLIST_URL}" -o "${DIR}/%(title)s %(id)s.%(ext)s"
 }
 main
