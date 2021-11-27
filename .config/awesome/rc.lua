@@ -1,11 +1,3 @@
--- TODO (in order)
--- * Add necessary keybindings
--- * Customize statusbar
--- * Customize windowbar
--- * Theme
--- * WIDGETS WOO
-
-
 -- Libraries --
 -- Make sure LuaRocks packages is loaded if installed
 pcall(require, "luarocks.loader")
@@ -38,7 +30,6 @@ do
 end
 
 -- Variables --
-beautiful.init()
 local home          = os.getenv("HOME")
 local terminal      = os.getenv("TERMINAL") or "x-terminal-emulator"
 local editor        = os.getenv("EDITOR") or "editor"
@@ -48,15 +39,15 @@ local wallpaper_url = "https://drive.google.com/u/0/uc?id=1yHdTy9CSku8ngkw0ugdj6
 
 
 -- Aesthetic Variables (colors & fonts) --
-local yellow		= "#EBCB8B"
-local red			= "#BF616A"
-local green			= "#A3BE8C"
-local background	= "#2B303B"
-local background2	= "#333945"
-local foreground	= "#C0C5CE"
-local foreground2	= "#65737E"
-local font 			= "JetBrains Mono 11"
-local icon_color    = foreground2
+local yellow		  = "#EBCB8B"
+local red			  = "#BF616A"
+local green			  = "#A3BE8C"
+local background	  = "#212933"
+local background2	  = "#2D3846"
+local foreground	  = "#e7DEC7"
+local foreground2	  = "#3E4D60"
+local font 			  = "JetBrains Mono 11"
+local icon_color      = foreground2
 
 
 -- Shapes --
@@ -71,6 +62,7 @@ local button_minimize = gears.surface.load_from_shape(
 
 
 -- Theme Variables --
+beautiful.init()
 beautiful.fg_normal = foreground
 beautiful.fg_focus  = fg_normal
 beautiful.bg_normal	= background
@@ -98,7 +90,7 @@ beautiful.tasklist_bg_minimize	= beautiful.wibar_bg
 -- Borders & Gaps
 beautiful.border_normal = background
 beautiful.border_focus  = yellow
-beautiful.border_width  = dpi(3)
+beautiful.border_width  = dpi(4)
 beautiful.useless_gap   = 5
 -- Taglists
 beautiful.taglist_bg_focus		= beautiful.wibar_bg
@@ -188,8 +180,17 @@ gears.shape.transform(gears.shape.pie)
 	:translate(-1.5, 1.8)(cr, 20, 20, 1.25 * math.pi, 1.75* math.pi)
 cr:stroke()
 
-
-
+local menu_icon = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
+local cr = cairo.Context(menu_icon)
+cr:set_source(gears.color(icon_color))
+gears.shape.transform(gears.shape.losange)
+	:translate(6, 1)(cr, 8, 18)
+gears.shape.transform(gears.shape.losange)
+	:translate(1, 6)(cr, 18, 8)
+cr:fill()
+gears.shape.transform(gears.shape.losange)
+	:translate(1, 1)(cr, 18, 18)
+cr:stroke()
 
 
 -- Custom Functions --
@@ -231,6 +232,7 @@ local function find_or_spawn_emacs()
 	for _, c in ipairs(client.get()) do
 	  if (c.class == "Emacs") then
 		 c:move_to_tag(awful.screen.focused().selected_tag)
+		 c.hidden = false
 		 awful.client.focus.byidx(0, c)
 		 return
 	  end
@@ -266,6 +268,30 @@ end
 
 
 -- Custom Widgets --
+test_buttons = gears.table.join(
+	awful.button({ }, 1, function() naughty.notify({title = "foo"})end),
+	awful.button({ }, 3, function() naughty.notify({title = "foo"})end)
+)
+test_widget = wibox.widget {
+	{
+
+		{
+			image = menu_icon,
+			forced_height = 30,
+			forced_width = forced_height,
+			widget = wibox.widget.imagebox
+		},
+		left = 9,
+		right = 6,
+		top = 9,
+		bottom = 9,
+		widget = wibox.container.margin
+	},
+	buttons = test_buttons,
+	layout = wibox.layout.fixed.horizontal,
+	widget = wibox.container.background
+}
+
 date_widget = wibox.widget {
 	{
 		{
@@ -385,12 +411,12 @@ network_widget = wibox.widget {
 					awful.spawn.easy_async(
 						"connmanctl services", function(stdout)
 							local str = ""
-							for match in stdout:gmatch("A[A-Za-z] [^ ]* *[we][it][fh]") do
+							for match in stdout:gmatch("[*]A[A-Za-z] [^ ]*%s*...") do
 								if str == "" then
-									str = str .. match:match(".. [^ ]*"):match("[^ ]*$")
+									str = str .. match:match("^... [^ ]*"):match("[^ ]*$")
 								else
 									str = str .. " "
-									str = str .. match:match(".. [^ ]*"):match("[^ ]*$")
+									str = str .. match:match("^... [^ ]*"):match("[^ ]*$")
 								end
 								if match:match("wif") == "wif" then
 									self.icon_margin.icon.image = wifi_icon
@@ -618,15 +644,9 @@ clientbuttons = gears.table.join(
 
 local taglist_buttons = gears.table.join(
 	awful.button({ }, 1, function(t) t:view_only() end),
-	awful.button({ modkey }, 1, function(t)
+	awful.button({ }, 3, function(t)
 			if client.focus then
 				client.focus:move_to_tag(t)
-			end
-	end),
-	awful.button({ }, 3, awful.tag.viewtoggle),
-	awful.button({ modkey }, 3, function(t)
-			if client.focus then
-				client.focus:toggle_tag(t)
 			end
 	end),
 	awful.button({ }, 4, function(t) awful.tag.viewnext(t.screen) end),
@@ -763,9 +783,10 @@ awful.screen.connect_for_each_screen(
 		s.wibox:setup { -- Wibox widgets
 			layout = wibox.layout.align.horizontal,
 			{ -- Left Widgets
-				layout = wibox.layout.fixed.horizontal,
+				test_widget,
 				s.taglist,
-				s.mypromptbox
+				s.mypromptbox,
+				layout = wibox.layout.fixed.horizontal
 			},
 			{ -- Center Widgets
 				{widget = wibox.widget.textbox},
@@ -848,6 +869,11 @@ function(c)
 	end
 end)
 
+client.connect_signal("mouse::enter",
+-- Enable sloppy focus, so that focus follows mouse.
+function(c)
+	c:emit_signal("request::activate", "mouse_enter", {raise = false})
+end)
 
 client.connect_signal("manage",
 function(c)
@@ -857,6 +883,7 @@ function(c)
 		awful.titlebar.hide(c)
 	end
 end)
+
 
 -- Miscellaneous --
 gears.timer {

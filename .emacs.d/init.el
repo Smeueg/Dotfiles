@@ -1,13 +1,19 @@
-(electric-pair-mode 1) ; Auto close and delete parenthesis, brackets, etc...
-(setq x-select-enable-clipboard nil) ; Do no overwrite system clipboard
+
+(progn ;; Faces for custome mode-lines
+  (make-face 'ml/read-only-face)
+  (make-face 'ml/modified-face)
+  (make-face 'ml/normal-face))
 
 (progn ;; Set Variables
   (setq-default make-backup-files nil) ;; No backup files i.e. file~
   (setq-default auto-save-default nil) ;; No autosaving i.e.     #file#
   (setq-default create-lockfiles nil) ;; No lockfiles i.e.   .#file
-  (tool-bar-mode -1) ;; Disable the toolbar
-  (tooltip-mode -1)  ;; Disable tooltips
-  (fringe-mode -1)   ;; Disable fringes
+  (setq-default x-select-enable-clipboard nil) ;Do no overwrite system clipboard
+  (electric-pair-mode 1) ;; Auto close and delete parenthesis, brackets, etc...
+  (tool-bar-mode -1)     ;; Disable the toolbar
+  (tooltip-mode -1)      ;; Disable tooltips
+  (fringe-mode 0)        ;; Disable fringes
+  (scroll-bar-mode -1)   ;; Disable scroll bar
   (setq-default require-final-newline t)
   (setq custom-file
         ;; Don't add custom-set-variable in this file
@@ -28,7 +34,7 @@
 
 
 (progn ;; Visuals
-  (load-theme 'misterioso)
+  (load-theme 'warmspace 1)
   (set-frame-font "JetBrains Mono-10")
   (menu-bar-mode 0)
   (blink-cursor-mode 0) ; Disable cursor blinking
@@ -53,6 +59,7 @@
   (global-set-key (kbd "C-S-l") (lambda() (interactive) (text-scale-adjust 0)))
   (global-set-key (kbd "<mouse-5>") 'scroll-up-line)
   (global-set-key (kbd "<mouse-4>") 'scroll-down-line)
+  (global-set-key (kbd "<mouse-3>") 'mouse-major-mode-menu)
   (define-key prog-mode-map [return] 'newline-and-indent))
 
 ;; Custom Functions
@@ -64,7 +71,7 @@
     (package-initialize)
     (package-refresh-contents)
     (dolist (package package-list)
-        (unless (package-installed-p package)
+      (unless (package-installed-p package)
         (package-install package))))
 
 
@@ -104,16 +111,6 @@ program"
         (evil-insert-state 1)))))
 
 ;;; Custom Mode-Line
-(make-face 'ml/read-only-face)
-(make-face 'ml/modified-face)
-(make-face 'ml/normal-face)
-(set-face-attribute 'ml/read-only-face nil
-                    :foreground "white" :background "red")
-(set-face-attribute 'ml/modified-face nil
-                    :foreground "black" :background "yellow")
-(set-face-attribute 'ml/normal-face nil
-                    :foreground "black" :background "white")
-
 (defun ml/align(left center right)
   "Add padding to mode line with arguments being left, center, and right"
   (let ((total-width nil) (center-width nil) (right-width nil))
@@ -164,6 +161,7 @@ program"
 
   (add-hook 'after-save-hook
             'executable-make-buffer-file-executable-if-script-p)
+  (add-hook 'completion-list-mode-hook (lambda() (display-line-numbers-mode 0)))
 
   (add-hook 'emacs-lisp-mode-hook
             (lambda() (setq-local indent-tabs-mode nil))))
@@ -182,7 +180,9 @@ program"
           eglot
           undo-fu
           bongo
-          aggressive-indent))
+          aggressive-indent
+          eterm-256color
+          rainbow-mode))
   (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
   (add-to-list 'package-archives '("gnu" . "https://elpa.gnu.org/packages/") t))
 
@@ -254,6 +254,10 @@ program"
 (if (require 'aggressive-indent nil 'noerror)
     (global-aggressive-indent-mode 1)
   (electric-indent-mode 1))
+(when (require 'rainbow-mode nil 'noerror)
+  (add-hook 'prog-mode-hook 'rainbow-mode))
+(when (require 'eterm-256color nil 'noerror)
+  (add-hook 'term-mode-hook #'eterm-256color-mode))
 ;;;; Org-Bullets
 (when (require 'org-bullets nil 'noerror)
   (add-hook 'org-mode-hook 'org-bullets-mode))
@@ -276,7 +280,7 @@ program"
             (lambda()
               (evil-mode 1)
 
-              ; Undo/Redo ;
+                                        ; Undo/Redo ;
               (when (require 'undo-fu nil 'noerror)
                 (progn
                   (setq evil-undo-system 'undo-fu)
@@ -284,7 +288,7 @@ program"
                   (define-key evil-normal-state-map "\C-r" 'undo-fu-only-redo)))
 
 
-              ; For ansi-term ;
+                                        ; For ansi-term ;
               (define-key term-raw-map (kbd "C-c C-n")
                 (lambda()
                   (interactive)
@@ -303,7 +307,7 @@ program"
                               (setq cursor-type 'box)))))
 
 
-              ; Custom Mappings ;
+                                        ; Custom Mappings ;
               (define-key evil-motion-state-map " " nil)
               (when (fboundp 'run) (evil-define-key 'normal 'global "  " 'run))
               (evil-define-key 'visual 'global " c"
@@ -364,6 +368,11 @@ program"
                         (interactive)
                         (find-file
                          (concat (getenv "HOME") "/Documents/Notes/Notes.org")))
+                " et"  (lambda()
+                         (interactive)
+                         (find-file
+                          (concat (getenv "HOME")
+                                  "/.emacs.d/warmspace-theme.el")))
                 " ei" (lambda()
                         (interactive)
                         (find-file
