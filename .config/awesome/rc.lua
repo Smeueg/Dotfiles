@@ -877,10 +877,15 @@ end)
 
 client.connect_signal("manage",
 function(c)
-	if c.floating or c.first_tag.layout == awful.layout.suit.floating then
+	local layout = awful.screen.focused().selected_tag.layout
+	if c.floating or layout == awful.layout.suit.floating then
 		awful.titlebar.show(c)
 	else
 		awful.titlebar.hide(c)
+	end
+
+	if layout == awful.layout.suit.max then
+		c.border_width = dpi(0)
 	end
 end)
 

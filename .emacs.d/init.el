@@ -1,5 +1,5 @@
-
 (progn ;; Faces for custome mode-lines
+  (make-face 'ml/fill)
   (make-face 'ml/read-only-face)
   (make-face 'ml/modified-face)
   (make-face 'ml/normal-face))
@@ -9,10 +9,13 @@
   (setq-default auto-save-default nil) ;; No autosaving i.e.     #file#
   (setq-default create-lockfiles nil) ;; No lockfiles i.e.   .#file
   (setq-default x-select-enable-clipboard nil) ;Do no overwrite system clipboard
+  (add-to-list 'default-frame-alist '(internal-border-width . 20))
+  (add-to-list 'default-frame-alist '(left-fringe . 2))
+  (add-to-list 'default-frame-alist '(right-fringe . 2))
   (electric-pair-mode 1) ;; Auto close and delete parenthesis, brackets, etc...
   (tool-bar-mode -1)     ;; Disable the toolbar
   (tooltip-mode -1)      ;; Disable tooltips
-  (fringe-mode 0)        ;; Disable fringes
+  (fringe-mode 3)        ;; Disable fringes
   (scroll-bar-mode -1)   ;; Disable scroll bar
   (setq-default require-final-newline t)
   (setq custom-file
@@ -39,8 +42,6 @@
   (menu-bar-mode 0)
   (blink-cursor-mode 0) ; Disable cursor blinking
   (show-paren-mode 1) ; Show parentheses pairs
-  (setq-default left-margin-width 1 right-margin-width 1)
-  (global-display-line-numbers-mode 1)
   (set-window-buffer nil (current-buffer)))
 
 
@@ -116,12 +117,13 @@ program"
   (let ((total-width nil) (center-width nil) (right-width nil))
     (setq total-width (window-total-width))
     (setq center-width (- (/ total-width 2) (length (format-mode-line center))))
-    (setq right-width  (- (- total-width 1) (length (format-mode-line right))))
-    (append left
-            `(,(propertize " " 'display `(space :align-to ,center-width)))
-            center
-            `(,(propertize " " 'display `(space :align-to ,right-width)))
-            right)))
+    (setq right-width  (- total-width (length (format-mode-line right))))
+    (append
+     left
+     `(,(propertize " " 'display `(space :align-to ,center-width)))
+     center
+     `(,(propertize " " 'display `(space :align-to ,right-width)))
+     right)))
 (defun ml/update-variables()
   (cond
    ((equal (boundp 'evil-state) nil) (setq-local ml/evil-state ""))
@@ -145,15 +147,16 @@ program"
  '((:eval (ml/update-variables))
    (:eval
     (ml/align
-                                        ; Left (buffer name and major mode)
+     ;; Left
      `(,(propertize " %b " 'face ml/main-face)
        " %m")
-                                        ; Center (evil mode state)
+     ;; Center
      `(,(propertize ml/evil-state 'face ml/main-face))
-                                        ; Right (minor modes, and current line / total lines)
+     ;; Right
      `(,minor-mode-alist
        " "
-       ,(propertize (concat " %l/" ml/total-line " ") 'face ml/main-face))))))
+       ,(propertize (concat " %l/" ml/total-line " ") 'face ml/main-face)
+       )))))
 
 (progn ;; Hooks
   (add-hook 'before-save-hook
@@ -182,6 +185,7 @@ program"
           bongo
           aggressive-indent
           eterm-256color
+          default-text-scale
           rainbow-mode))
   (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
   (add-to-list 'package-archives '("gnu" . "https://elpa.gnu.org/packages/") t))
@@ -350,6 +354,14 @@ program"
                 " b"  'switch-to-buffer
                 " f"  'find-file
                 " h"  'help
+                " l"  (lambda()
+                        (interactive)
+                        (if global-display-line-numbers-mode
+                            (global-display-line-numbers-mode 0)
+                          (global-display-line-numbers-mode 1)))
+                " r"  (lambda()
+                        (interactive)
+                        (load-theme 'warmspace 1))
                 " T"  (lambda()
                         (interactive)
                         (split-window-below)

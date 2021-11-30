@@ -6,7 +6,7 @@
 (setq bg3     "#3E4D60")
 (setq fg      "#E7DEC7")
 (setq green   "#3D6F46")
-(setq blue    "#2E305A")
+(setq blue    "#3D4077")
 (setq cyan    "#346F7C")
 (setq yellow  "#ECBA48")
 (setq red     "#AB4132")
@@ -21,12 +21,19 @@
 	          (,class
 	           (:background "#3a3a3a" :foreground ,fg))))
    `(cursor ((,class (:background ,fg :foreground ,bg))))
-   ;; Mode line faces
-   `(mode-line          ((,class (:background ,bg2 :foreground ,fg))))
-   `(mode-line-inactive ((,class (:background ,bg :foreground ,fg))))
+   ;; Emacs Stuff
+   `(line-number-current-line ((,class (:background ,bg :foreground ,orange))))
+   `(line-number ((,class (:background ,bg :foreground ,bg3))))
+   `(show-paren-match ((,class (:foreground ,orange :weight bold))))
+   `(show-paren-mismatch ((,class (:foreground ,red :weight bold))))
+   `(scroll-bar ((,class (:background ,bg))))
+   `(region ((,class (:background ,bg2))))
+   `(vertical-border ((,class (:background ,bg2 :foreground ,bg2))))
+   `(fringe ((,class (:background ,bg :foreground ,bg))))
    ;; Escape and prompt faces
-   `(minibuffer-prompt ((,class (:background ,bg :foreground ,orange :weight bold))))
-   ;; Font lock faces
+   `(minibuffer-prompt
+     ((,class (:background ,bg :foreground ,orange :weight bold))))
+   ;; Syntax
    `(font-lock-variable-name-face ((,class (:foreground ,red))))
    `(font-lock-builtin-face       ((,class (:foreground ,orange))))
    `(font-lock-constant-face      ((,class (:foreground ,red))))
@@ -37,47 +44,48 @@
    `(font-lock-comment-face ((,class (:foreground ,bg3 :slant italic))))
    `(font-lock-function-name-face
      ((,class (:foreground ,red :weight bold))))
-   `(line-number-current-line ((,class (:background ,bg :foreground ,orange))))
-   `(line-number ((,class (:background ,bg :foreground ,bg3))))
-   `(show-paren-match ((,class (:foreground ,red))))
-   `(show-paren-mismatch ((,class (:foreground ,magenta))))
-   `(scroll-bar ((,class (:background ,bg))))
-   `(region ((,class (:background ,bg2))))
+   ;; Search
+   `(isearch ((,class (:background ,orange :foreground ,bg :weight bold))))
+   `(isearch-fail ((,class (:background ,red :foreground ,bg :weight bold))))
+   `(lazy-highlight ((,class (:background, bg2 :foreground ,orange))))
+   ;; (Custom) Mode Line
+   `(mode-line          ((,class (:background ,bg2 :foreground ,fg))))
+   `(mode-line-inactive ((,class (:background ,bg :foreground ,fg))))
    `(ml/modified-face ((,class (:background ,yellow :foreground ,bg :weight bold))))
    `(ml/normal-face ((,class (:background ,fg :foreground ,bg :weight bold))))
    `(ml/read-only-face ((,class (:background ,red :foreground ,bg :weight bold))))
-   `(vertical-border ((,class (:background ,bg2 :foreground ,bg2))))
-   `(org-hide ((,class (:background ,fg :foreground ,fg))))
-   `(company-preview ((,class (:background ,bg2 :foreground ,fg))))
-   `(company-tooltip ((,class (:background ,bg2 :foreground ,fg))))
-   `(company-tooltip-common
-     ((,class (:background ,bg2 :foreground ,orange :weight bold))))
-   `(company-tooltip-common-selection
-     ((,class (:background ,bg3 :foreground ,orange :weight bold))))
-   `(company-tooltip-selection ((,class (:background ,bg3 :foreground ,fg))))
-   `(company-scrollbar-bg ((,class (:background ,bg3 :foreground ,bg3))))
-   `(company-scrollbar-fg ((,class (:background ,fg :foreground ,fg))))
-   `(isearch ((,class (:background ,orange :foreground ,bg :weight bold))))
-   `(isearch-fail ((,class (:background ,red :foreground ,bg :weight bold))))
    ;; Buttons and links
    `(button ((,class (:underline t))))
    `(link ((,class (:foreground ,cyan :underline t))))
    `(link-visited ((,class (:foreground ,magenta :underline t))))
-   ;; Ediff
-   `(ediff-even-diff-A ((,class (:background "#1d2430"))))
-   `(ediff-even-diff-B ((,class (:background "#1d2430"))))
-   `(ediff-even-diff-C ((,class (:background "#1d2430"))))
-   `(ediff-odd-diff-A ((,class (:background "#415160"))))
-   `(ediff-odd-diff-B ((,class (:background "#415160"))))
-   `(ediff-odd-diff-C ((,class (:background "#415160"))))
-   ;; Message faces
-   `(message-header-name ((,class (:foreground "#ffad29" :weight bold))))
-   `(message-header-cc ((,class (:foreground "#e67128"))))
-   `(message-header-other ((,class (:foreground "#e67128"))))
-   `(message-header-subject ((,class (:foreground "#dbdb95"))))
-   `(message-header-to ((,class (:foreground "#00ede1"))))
-   `(message-cited-text ((,class (:foreground "#74af68"))))
-   `(message-separator ((,class (:foreground "#23d7d7"))))))
+   ;;; External Packages
+   ;; Company-mode
+   `(company-preview ((,class (:background ,bg2 :foreground ,fg))))
+   `(company-tooltip ((,class (:background ,bg2 :foreground ,fg))))
+   `(company-tooltip-selection ((,class (:background ,bg3 :foreground ,fg))))
+   `(company-scrollbar-bg ((,class (:background ,bg3 :foreground ,bg3))))
+   `(company-scrollbar-fg ((,class (:background ,fg :foreground ,fg))))
+   `(company-tooltip-common
+     ((,class (:background ,bg2 :foreground ,orange :weight bold))))
+   `(company-tooltip-common-selection
+     ((,class (:background ,bg3 :foreground ,orange :weight bold))))
+   ;; eterm
+   `(eterm-256color-black          ((,class (:foreground ,bg3))))
+   `(eterm-256color-red            ((,class (:foreground ,red))))
+   `(eterm-256color-green          ((,class (:foreground ,green))))
+   `(eterm-256color-yellow         ((,class (:foreground ,yellow))))
+   `(eterm-256color-blue           ((,class (:foreground ,blue))))
+   `(eterm-256color-magenta        ((,class (:foreground ,magenta))))
+   `(eterm-256color-cyan           ((,class (:foreground ,cyan))))
+   `(eterm-256color-white          ((,class (:foreground ,fg))))
+   `(eterm-256color-bright-black   ((,class (:foreground ,bg3))))
+   `(eterm-256color-bright-red     ((,class (:foreground ,red))))
+   `(eterm-256color-bright-green   ((,class (:foreground ,green))))
+   `(eterm-256color-bright-yellow  ((,class (:foreground ,yellow))))
+   `(eterm-256color-bright-blue    ((,class (:foreground ,blue))))
+   `(eterm-256color-bright-magenta ((,class (:foreground ,magenta))))
+   `(eterm-256color-bright-cyan    ((,class (:foreground ,cyan))))
+   `(eterm-256color-bright-white   ((,class (:foreground ,fg))))))
 
 (custom-theme-set-variables
  'warmspace
