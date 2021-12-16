@@ -14,6 +14,7 @@ local hotkeys_popup	= awful.hotkeys_popup
 local cairo			= require("lgi").cairo
 local dpi			= beautiful.xresources.apply_dpi
 
+
 -- Handle errors if there are any --
 do
 	local in_error = false
@@ -34,20 +35,22 @@ local home          = os.getenv("HOME")
 local terminal      = os.getenv("TERMINAL") or "x-terminal-emulator"
 local editor        = os.getenv("EDITOR") or "editor"
 local modkey        = "Mod4"
-local wallpaper     = home .. "/.local/rice/Wallpapers/Retro Galaxy.jpg"
-local wallpaper_url = "https://drive.google.com/u/0/uc?id=1yHdTy9CSku8ngkw0ugdj6pNq2UDsiLP0&export=download"
+local wallpaper     = home .. "/.config/awesome/Shark Space.png"
+local wallpaper_url = "https://i.imgur.com/DVJsvfN.png"
 
 
 -- Aesthetic Variables (colors & fonts) --
-local yellow		  = "#EBCB8B"
-local red			  = "#BF616A"
-local green			  = "#A3BE8C"
-local background	  = "#212933"
-local background2	  = "#2D3846"
-local foreground	  = "#e7DEC7"
-local foreground2	  = "#3E4D60"
-local font 			  = "JetBrains Mono 11"
-local icon_color      = foreground2
+local yellow      = "#FEA34B"
+local red         = "#C5483F"
+local green       = "#819013"
+local background  = "#322638"
+local background2 = "#35283b"
+local background3 = "#382B3F"
+local foreground  = "#E7DEC7"
+local foreground2 = "#493751"
+local font        = "JetBrains Mono 11"
+local icon_color  = foreground2
+local menu_color  = red
 
 
 -- Shapes --
@@ -64,7 +67,7 @@ local button_minimize = gears.surface.load_from_shape(
 -- Theme Variables --
 beautiful.init()
 beautiful.fg_normal = foreground
-beautiful.fg_focus  = fg_normal
+beautiful.fg_focus  = beautiful.fg_normal
 beautiful.bg_normal	= background
 beautiful.font		= font
 -- Wibar
@@ -83,13 +86,16 @@ beautiful.titlebar_minimize_button_normal			= button_minimize
 beautiful.titlebar_minimize_button_focus			= button_minimize
 beautiful.titlebar_bg  = background
 beautiful.titlebar_fg  = foreground
+-- Menu Bar
+beautiful.menubar_fg_focus = red
+beautiful.menubar_bg_focus = background3
 -- Tasklist
-beautiful.tasklist_bg_focus		= background2
+beautiful.tasklist_bg_focus		= background3
 beautiful.tasklist_bg_normal	= beautiful.wibar_bg
 beautiful.tasklist_bg_minimize	= beautiful.wibar_bg
 -- Borders & Gaps
 beautiful.border_normal = background
-beautiful.border_focus  = yellow
+beautiful.border_focus  = red
 beautiful.border_width  = dpi(4)
 beautiful.useless_gap   = 5
 -- Taglists
@@ -182,7 +188,7 @@ cr:stroke()
 
 local menu_icon = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
 local cr = cairo.Context(menu_icon)
-cr:set_source(gears.color(icon_color))
+cr:set_source(gears.color(menu_color))
 gears.shape.transform(gears.shape.losange)
 	:translate(6, 1)(cr, 8, 18)
 gears.shape.transform(gears.shape.losange)
@@ -253,7 +259,7 @@ end
 
 local function set_wallpaper(s)
 	if gears.filesystem.file_readable(wallpaper) then
-		gears.wallpaper.maximized(wallpaper, s, true)
+		gears.wallpaper.maximized(wallpaper, s, false)
 	else
 		if beautiful.wallpaper then
 			local wallpaper = beautiful.wallpaper
@@ -261,7 +267,7 @@ local function set_wallpaper(s)
 			if type(wallpaper) == "function" then
 				wallpaper = wallpaper(s)
 			end
-			gears.wallpaper.maximized(wallpaper, s, true)
+			gears.wallpaper.maximized(wallpaper, s, false)
 		end
 	end
 end

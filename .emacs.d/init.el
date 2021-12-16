@@ -1,23 +1,27 @@
-(progn ;; Faces for custome mode-lines
+(progn ;; Faces for custom stuff
+  ;; Mode Line
   (make-face 'ml/fill)
   (make-face 'ml/read-only-face)
   (make-face 'ml/modified-face)
-  (make-face 'ml/normal-face))
+  (make-face 'ml/normal-face)
+  ;; Custom Splash Screen
+  (make-face 'splash-text)
+  (make-face 'splash-text-special))
 
 (progn ;; Set Variables
   (setq-default make-backup-files nil) ;; No backup files i.e. file~
   (setq-default auto-save-default nil) ;; No autosaving i.e.     #file#
   (setq-default create-lockfiles nil) ;; No lockfiles i.e.   .#file
   (setq-default x-select-enable-clipboard nil) ;Do no overwrite system clipboard
+  (setq-default inhibit-startup-screen t)
+  (setq-default message-log-max nil) ;; Disable messages [buffer]
   (add-to-list 'default-frame-alist '(internal-border-width . 20))
   (add-to-list 'default-frame-alist '(left-fringe . 2))
   (add-to-list 'default-frame-alist '(right-fringe . 2))
-  (electric-pair-mode 1) ;; Auto close and delete parenthesis, brackets, etc...
-  (tool-bar-mode -1)     ;; Disable the toolbar
-  (tooltip-mode -1)      ;; Disable tooltips
-  (fringe-mode 3)        ;; Disable fringes
-  (scroll-bar-mode -1)   ;; Disable scroll bar
-  (setq-default require-final-newline t)
+  (setq-default initial-scratch-message "") ;; Make *Scratch* empty
+  (setq-default require-final-newline t) ;; Automatically add newline at the end
+  (setq-default initial-major-mode (quote fundamental-mode))
+  (fset 'yes-or-no-p 'y-or-n-p) ;; Change prompt from yes/no to y/n
   (setq custom-file
         ;; Don't add custom-set-variable in this file
         (expand-file-name "custom.el" user-emacs-directory))
@@ -38,10 +42,14 @@
 
 (progn ;; Visuals
   (load-theme 'warmspace 1)
-  (set-frame-font "JetBrains Mono-10")
+  (set-frame-font "JetBrains Mono-12")
   (menu-bar-mode 0)
   (blink-cursor-mode 0) ; Disable cursor blinking
   (show-paren-mode 1) ; Show parentheses pairs
+  (tool-bar-mode -1)     ;; Disable the toolbar
+  (tooltip-mode -1)      ;; Disable tooltips
+  (fringe-mode 3)        ;; Disable fringes
+  (scroll-bar-mode -1)   ;; Disable scroll bar
   (set-window-buffer nil (current-buffer)))
 
 
@@ -63,6 +71,11 @@
   (global-set-key (kbd "<mouse-3>") 'mouse-major-mode-menu)
   (define-key prog-mode-map [return] 'newline-and-indent))
 
+(progn ;; Functionality
+  (electric-pair-mode 1) ;; Auto close and delete parenthesis, brackets, etc...
+  (global-eldoc-mode -1)
+  (kill-buffer "*Messages*"))
+
 ;; Custom Functions
 (progn
   (defun auto-install()
@@ -77,8 +90,10 @@
 
 
   (defun run()
-    "Automatically execute the current script or compile and run the current
-program"
+    "
+    Automatically execute the current script or
+    compile and run the current program
+    "
     (interactive)
     (cond ((file-executable-p buffer-file-name)
            (let (filename)
@@ -127,13 +142,13 @@ program"
 (defun ml/update-variables()
   (cond
    ((equal (boundp 'evil-state) nil) (setq-local ml/evil-state ""))
-   ((equal evil-state 'normal)       (setq-local ml/evil-state " Normal "))
-   ((equal evil-state 'visual)       (setq-local ml/evil-state " Visual "))
-   ((equal evil-state 'insert)       (setq-local ml/evil-state " Insert "))
-   ((equal evil-state 'replace)      (setq-local ml/evil-state " Replace "))
-   ((equal evil-state 'operator)     (setq-local ml/evil-state " O-Pending "))
-   ((equal evil-state 'motion)       (setq-local ml/evil-state " Motion "))
-   ((equal evil-state 'emacs)        (setq-local ml/evil-state " Emacs ")))
+   ((equal evil-state 'normal)       (setq-local ml/evil-state "Normal "))
+   ((equal evil-state 'visual)       (setq-local ml/evil-state "Visual "))
+   ((equal evil-state 'insert)       (setq-local ml/evil-state "Insert "))
+   ((equal evil-state 'replace)      (setq-local ml/evil-state "Replace "))
+   ((equal evil-state 'operator)     (setq-local ml/evil-state "O-Pending "))
+   ((equal evil-state 'motion)       (setq-local ml/evil-state "Motion "))
+   ((equal evil-state 'emacs)        (setq-local ml/evil-state "Emacs ")))
   (cond
    (buffer-read-only    (setq-local ml/main-face 'ml/read-only-face))
    ((buffer-modified-p) (setq-local ml/main-face 'ml/modified-face))
@@ -149,25 +164,74 @@ program"
     (ml/align
      ;; Left
      `(,(propertize " %b " 'face ml/main-face)
-       " %m")
+       " %m"
+       )
      ;; Center
-     `(,(propertize ml/evil-state 'face ml/main-face))
+     `("")
      ;; Right
-     `(,minor-mode-alist
-       " "
+     `(
+       ,ml/evil-state
        ,(propertize (concat " %l/" ml/total-line " ") 'face ml/main-face)
        )))))
 
 (progn ;; Hooks
   (add-hook 'before-save-hook
             'delete-trailing-whitespace)
-
   (add-hook 'after-save-hook
             'executable-make-buffer-file-executable-if-script-p)
   (add-hook 'completion-list-mode-hook (lambda() (display-line-numbers-mode 0)))
-
+  (add-hook 'minibuffer-exit-hook
+            (lambda()
+              (let ((buffer "*Completions*")) ;; Disable "*Completions*" buffer
+                (and (get-buffer buffer)
+                     (kill-buffer buffer)))))
+  (add-hook 'find-file-hook
+            (lambda()
+              (when (get-buffer "*min-splash*")
+                (kill-buffer "*min-splash*"))
+              ))
   (add-hook 'emacs-lisp-mode-hook
             (lambda() (setq-local indent-tabs-mode nil))))
+
+
+;;; Custom Splash Screen
+(defun min-splash()
+  "A custom minimal emacs splash screen"
+  (interactive)
+  (let ((splash-buffer nil) (margin-size nil))
+    (setq splash-buffer (get-buffer-create "*min-splash*"))
+    (setq margin-size (/ (- (frame-width) 20) 2))
+    (with-current-buffer splash-buffer
+      (insert (propertize "Welcome to " 'face 'splash-text))
+      (insert (propertize "GNU Emacs\n" 'face  'splash-text-special))
+      (insert (propertize "  Enjoy Your Stay\n" 'face 'splash-text)))
+    (switch-to-buffer splash-buffer)
+    (min-splash-align)
+    (add-hook 'post-command-hook #'min-splash-align)))
+
+(defun min-splash-align()
+  (if (get-buffer "*min-splash*")
+      (with-current-buffer "*min-splash*"
+        (let ((current-point (point))
+              (lines (count-lines (point-min) (point-max))))
+          (when (not (eq lines (window-body-height nil)))
+            (progn
+              (read-only-mode 0)
+              (mark-whole-buffer)
+              (delete-blank-lines)
+              (deactivate-mark)
+              (goto-char 0)
+              (insert-char ?\n (/ (- (window-body-height nil) 2) 2))
+              (read-only-mode 1)
+              (goto-char current-point)
+              ))))
+    (remove-hook 'post-command-hook #'min-splash-align)))
+
+(when (and (not (member "-no-splash"  command-line-args))
+           (not (member "--file"      command-line-args))
+           (not (member "--find-file" command-line-args))
+           (not (member "--insert"    command-line-args)))
+  (add-hook 'window-setup-hook 'min-splash))
 
 
 ;;; External packages
@@ -176,11 +240,11 @@ program"
   (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
   (setq package-list
         '(company
+          eglot
           lua-mode
           org-bullets
           ox-reveal
           evil
-          eglot
           undo-fu
           bongo
           aggressive-indent
@@ -273,6 +337,7 @@ program"
   (progn
     (add-hook 'c-mode-common-hook 'eglot-ensure)
     (add-hook 'python-mode-hook 'eglot-ensure)))
+;;;; Lua Mode
 (when (require 'lua-mode nil 'noerror)
   (progn
     (setq-default lua-indent-level 4)
@@ -389,3 +454,5 @@ program"
                         (interactive)
                         (find-file
                          (concat (getenv "HOME") "/.emacs.d/init.el")))))))
+
+(kill-buffer "*scratch*")

@@ -1,16 +1,16 @@
 (deftheme warmspace
   "Predominantly blue/cyan faces on a dark cyan background.")
 
-(setq bg      "#212933")
-(setq bg2     "#2D3846")
-(setq bg3     "#3E4D60")
+(setq bg      "#322638")
+(setq bg2     "#382B3F")
+(setq bg3     "#493751")
 (setq fg      "#E7DEC7")
-(setq green   "#3D6F46")
-(setq blue    "#3D4077")
-(setq cyan    "#346F7C")
-(setq yellow  "#ECBA48")
-(setq red     "#AB4132")
-(setq magenta "#75307C")
+(setq green   "#819013")
+(setq blue    "#4573A8")
+(setq cyan    "#459EA8")
+(setq yellow  "#FEA34B")
+(setq red     "#C5483F")
+(setq magenta "#953C9B")
 (setq orange  "#EAA651")
 (let ((class '((class color) (min-colors 89))))
   (custom-theme-set-faces
@@ -30,6 +30,8 @@
    `(region ((,class (:background ,bg2))))
    `(vertical-border ((,class (:background ,bg2 :foreground ,bg2))))
    `(fringe ((,class (:background ,bg :foreground ,bg))))
+   `(header-line ((,class (:background ,bg))))
+   `(whitespace-line ((,class (:background ,bg2 :foreground ,magenta :weight bold))))
    ;; Escape and prompt faces
    `(minibuffer-prompt
      ((,class (:background ,bg :foreground ,orange :weight bold))))
@@ -49,11 +51,19 @@
    `(isearch-fail ((,class (:background ,red :foreground ,bg :weight bold))))
    `(lazy-highlight ((,class (:background, bg2 :foreground ,orange))))
    ;; (Custom) Mode Line
-   `(mode-line          ((,class (:background ,bg2 :foreground ,fg))))
-   `(mode-line-inactive ((,class (:background ,bg :foreground ,fg))))
-   `(ml/modified-face ((,class (:background ,yellow :foreground ,bg :weight bold))))
-   `(ml/normal-face ((,class (:background ,fg :foreground ,bg :weight bold))))
-   `(ml/read-only-face ((,class (:background ,red :foreground ,bg :weight bold))))
+   `(mode-line
+     ((,class (:background ,bg2 :foreground ,bg3 :weight bold))))
+   `(mode-line-inactive
+     ((,class (:background ,bg :foreground ,bg3 :weight bold))))
+   `(ml/modified-face
+     ((,class (:background ,yellow :foreground ,bg :weight bold))))
+   `(ml/normal-face
+     ((,class (:background ,fg :foreground ,bg :weight bold))))
+   `(ml/read-only-face
+     ((,class (:background ,red :foreground ,bg :weight bold))))
+   ;; (Custom Splash Screen)
+   `(splash-text         ((,class (:foreground ,fg  :weight bold))))
+   `(splash-text-special ((,class (:foreground ,bg3 :weight bold))))
    ;; Buttons and links
    `(button ((,class (:underline t))))
    `(link ((,class (:foreground ,cyan :underline t))))
@@ -89,7 +99,6 @@
 
 (custom-theme-set-variables
  'warmspace
- '(ansi-color-names-vector ["#2d3743" "#ff4242" "#74af68" "#dbdb95"
-			                "#34cae2" "#008b8b" "#00ede1" "#e1e1e0"]))
+ '(ansi-color-names-vector [,bg3 ,red ,green ,yellow ,blue ,magenta ,cyan ,fg]))
 
 (provide-theme 'warmspace)
