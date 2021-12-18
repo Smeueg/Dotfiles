@@ -71,7 +71,7 @@
   (global-set-key (kbd "<mouse-3>") 'mouse-major-mode-menu)
   (define-key prog-mode-map [return] 'newline-and-indent))
 
-(progn ;; Functionality
+(progn ;; Functionality / Random Modes
   (electric-pair-mode 1) ;; Auto close and delete parenthesis, brackets, etc...
   (global-eldoc-mode -1)
   (kill-buffer "*Messages*"))
@@ -87,7 +87,6 @@
     (dolist (package package-list)
       (unless (package-installed-p package)
         (package-install package))))
-
 
   (defun run()
     "
@@ -174,25 +173,6 @@
        ,(propertize (concat " %l/" ml/total-line " ") 'face ml/main-face)
        )))))
 
-(progn ;; Hooks
-  (add-hook 'before-save-hook
-            'delete-trailing-whitespace)
-  (add-hook 'after-save-hook
-            'executable-make-buffer-file-executable-if-script-p)
-  (add-hook 'completion-list-mode-hook (lambda() (display-line-numbers-mode 0)))
-  (add-hook 'minibuffer-exit-hook
-            (lambda()
-              (let ((buffer "*Completions*")) ;; Disable "*Completions*" buffer
-                (and (get-buffer buffer)
-                     (kill-buffer buffer)))))
-  (add-hook 'find-file-hook
-            (lambda()
-              (when (get-buffer "*min-splash*")
-                (kill-buffer "*min-splash*"))
-              ))
-  (add-hook 'emacs-lisp-mode-hook
-            (lambda() (setq-local indent-tabs-mode nil))))
-
 
 ;;; Custom Splash Screen
 (defun min-splash()
@@ -204,11 +184,11 @@
     (with-current-buffer splash-buffer
       (insert (propertize "Welcome to " 'face 'splash-text))
       (insert (propertize "GNU Emacs\n" 'face  'splash-text-special))
-      (insert (propertize "  Enjoy Your Stay\n" 'face 'splash-text)))
+      (insert (propertize "Enjoy Your Stay\n" 'face 'splash-text)))
     (switch-to-buffer splash-buffer)
-    (min-splash-align)
-    (add-hook 'post-command-hook #'min-splash-align)))
-
+    (add-hook 'post-command-hook #'min-splash-align 0 t)
+    (add-hook 'window-state-change-hook #'min-splash-align 0 t)
+    (kill-buffer "*scratch*")))
 (defun min-splash-align()
   (if (get-buffer "*min-splash*")
       (with-current-buffer "*min-splash*"
@@ -216,22 +196,47 @@
               (lines (count-lines (point-min) (point-max))))
           (when (not (eq lines (window-body-height nil)))
             (progn
+              (setq-local fill-column (- (window-body-width nil) 2))
               (read-only-mode 0)
               (mark-whole-buffer)
               (delete-blank-lines)
               (deactivate-mark)
               (goto-char 0)
               (insert-char ?\n (/ (- (window-body-height nil) 2) 2))
+              (previous-line 4)
+              (center-line 10)
               (read-only-mode 1)
-              (goto-char current-point)
-              ))))
-    (remove-hook 'post-command-hook #'min-splash-align)))
+              (goto-char current-point)))))
+    (progn
+      (remove-hook 'post-command-hook #'min-splash-align)
+      (remove-hook 'window-state-change-hook #'min-splash-align))))
+(defun kill-min-splash()
+  "Kills the *min-splash* buffer when switched to another buffer"
+  (when (get-buffer "*min-splash*")
+    (progn
+      (kill-buffer "*min-splash*")
+      (remove-hook 'buffer-list-update-hook 'kill-min-splash))))
 
 (when (and (not (member "-no-splash"  command-line-args))
            (not (member "--file"      command-line-args))
            (not (member "--find-file" command-line-args))
            (not (member "--insert"    command-line-args)))
   (add-hook 'window-setup-hook 'min-splash))
+
+
+(progn ;; Hooks
+  (add-hook 'before-save-hook
+            'delete-trailing-whitespace)
+  (add-hook 'after-save-hook
+            'executable-make-buffer-file-executable-if-script-p)
+  (add-hook 'completion-list-mode-hook (lambda() (display-line-numbers-mode 0)))
+  (add-hook 'minibuffer-exit-hook
+            (lambda()
+              (let ((buffer "*Completions*")) ;; Disable "*Completions*" buffer
+                (and (get-buffer buffer)
+                     (kill-buffer buffer)))))
+  (add-hook 'emacs-lisp-mode-hook
+            (lambda() (setq-local indent-tabs-mode nil))))
 
 
 ;;; External packages
@@ -454,5 +459,3 @@
                         (interactive)
                         (find-file
                          (concat (getenv "HOME") "/.emacs.d/init.el")))))))
-
-(kill-buffer "*scratch*")
