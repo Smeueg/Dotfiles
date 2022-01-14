@@ -20,7 +20,6 @@
   (add-to-list 'default-frame-alist '(right-fringe . 2))
   (setq-default initial-scratch-message "") ;; Make *Scratch* empty
   (setq-default require-final-newline t) ;; Automatically add newline at the end
-  (setq-default initial-major-mode (quote fundamental-mode))
   (fset 'yes-or-no-p 'y-or-n-p) ;; Change prompt from yes/no to y/n
   (setq custom-file
         ;; Don't add custom-set-variable in this file
@@ -50,6 +49,7 @@
   (tooltip-mode -1)      ;; Disable tooltips
   (fringe-mode 3)        ;; Disable fringes
   (scroll-bar-mode -1)   ;; Disable scroll bar
+  (visual-line-mode 0)
   (set-window-buffer nil (current-buffer)))
 
 
@@ -292,6 +292,7 @@
     (define-key org-mode-map [return] 'org-return-indent)
     (setq org-hide-emphasis-markers t)
     (setq org-log-done t)
+    (setq-default org-image-actual-width (list 500))
     (add-hook 'org-mode-hook
               (lambda()
                 (setq-local indent-tabs-mode nil)
@@ -354,16 +355,35 @@
             (lambda()
               (evil-mode 1)
 
-                                        ; Undo/Redo ;
+              (when (require 'org nil 'noerror)
+                (add-hook 'org-mode-hook
+                          (lambda()
+                            (define-key evil-normal-state-local-map "\M-L"
+                              'org-shiftmetaright)
+                            (define-key evil-normal-state-local-map "\M-J"
+                              'org-shiftmetadown)
+                            (define-key evil-normal-state-local-map "\M-K"
+                              'org-shiftmetaup)
+                            (define-key evil-normal-state-local-map "\M-H"
+                              'org-shiftmetaleft))))
+              (add-hook 'buffer-menu-mode-hook
+                        (lambda()
+                          (define-key evil-motion-state-local-map [return]
+                            (lambda()
+                              (interactive)
+                              (Buffer-menu-select)
+                              (kill-buffer "*Buffer List*")))))
+              (define-key dired-mode-map " " nil)
+
+              ;; Undo/Redo ;
               (when (require 'undo-fu nil 'noerror)
                 (progn
                   (setq evil-undo-system 'undo-fu)
                   (define-key evil-normal-state-map "u" 'undo-fu-only-undo)
                   (define-key evil-normal-state-map "\C-r" 'undo-fu-only-redo)))
 
-
-                                        ; For ansi-term ;
-              (define-key term-raw-map (kbd "C-c C-n")
+              ;; For ansi-term ;
+              (define-key term-raw-map "\C-c\C-n"
                 (lambda()
                   (interactive)
                   (turn-on-evil-mode)
@@ -380,8 +400,14 @@
                               (when (term-in-line-mode) (term-char-mode))
                               (setq cursor-type 'box)))))
 
+              (add-hook 'org-mode-hook
+                        (lambda()
+                          (interactive)
+                          (evil-define-key 'normal 'local
+                            " i" 'org-display-inline-images
+                            [return] 'org-open-at-point)))
 
-                                        ; Custom Mappings ;
+              ;; Custom Mappings ;;
               (define-key evil-motion-state-map " " nil)
               (when (fboundp 'run) (evil-define-key 'normal 'global "  " 'run))
               (evil-define-key 'visual 'global " c"
@@ -398,7 +424,8 @@
 
               (evil-define-key '(normal motion visual) 'global
                 "j" 'evil-next-visual-line
-                "k" 'evil-previous-visual-line)
+                "k" 'evil-previous-visual-line
+                [return] (lambda() (interactive)))
 
               (evil-define-key '(insert normal visual operator motion) 'global
                 (kbd "M-h") (lambda()
@@ -414,6 +441,10 @@
                               (interactive)
                               (evil-normal-state 1) (evil-forward-char)))
 
+              (add-hook 'dired-mode-hook
+                        (lambda()
+                          (interactive)
+                          (define-key dired-mode-map "G" nil)))
               (add-hook 'after-init-hook
                         (lambda()
                           (when (featurep 'bongo)
@@ -421,9 +452,12 @@
                               " m" 'bongo-playlist))))
               (evil-define-key '(normal motion) 'global
                 " a"  'mark-whole-buffer
-                " b"  'switch-to-buffer
+                " b"  'buffer-menu-other-window
                 " f"  'find-file
                 " h"  'help
+                " s"  (lambda()
+                        (interactive)
+                        (switch-to-buffer "*scratch*"))
                 " l"  (lambda()
                         (interactive)
                         (if global-display-line-numbers-mode

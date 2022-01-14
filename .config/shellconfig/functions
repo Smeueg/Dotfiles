@@ -165,3 +165,8 @@ of() {
 	openf -f $@
 	[ -f "/tmp/openftmp" ] && cd "$(< /tmp/openftmp)" && printf 'cd -> %s\n' "${PWD}"
 }
+
+
+doar() {
+	eval "su -c '$@'"
+}

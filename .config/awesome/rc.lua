@@ -8,6 +8,7 @@ local awful			= require("awful")
 local wibox			= require("wibox")
 local naughty		= require("naughty")
 local menubar		= require("menubar")
+
 local hotkeys_popup	= require("awful.hotkeys_popup")
 local hotkeys_popup	= require("awful.hotkeys_popup")
 local hotkeys_popup	= awful.hotkeys_popup
@@ -31,13 +32,26 @@ do
 end
 
 -- Variables --
+local function command_exists(cmd)
+	-- Check if a command can be ran
+	for dir in string.gmatch(os.getenv("PATH"), "([^:]+)") do
+		if gears.filesystem.file_executable(dir .. "/" .. cmd) then
+			return cmd
+		end
+	end
+	return false
+end
+
 local home          = os.getenv("HOME")
 local terminal      = os.getenv("TERMINAL") or "x-terminal-emulator"
 local editor        = os.getenv("EDITOR") or "editor"
 local modkey        = "Mod4"
 local wallpaper     = home .. "/.config/awesome/Shark Space.png"
 local wallpaper_url = "https://i.imgur.com/DVJsvfN.png"
-
+local browser       = command_exists(os.getenv("BROWSER"))
+	or command_exists("brave-browser")
+	or command_exists("brave")
+	or nil
 
 -- Aesthetic Variables (colors & fonts) --
 local yellow      = "#FEA34B"
@@ -102,6 +116,9 @@ beautiful.useless_gap   = 5
 beautiful.taglist_bg_focus		= beautiful.wibar_bg
 beautiful.taglist_squares_sel	= nil
 beautiful.taglist_squares_unsel = nil
+-- Notification
+beautiful.notification_border_color = red
+beautiful.notification_border_width = 3
 
 
 -- Custom Images/Icons --
@@ -213,9 +230,11 @@ local function set_layout_all(layout)
 		end
 	else
 		for _, c in pairs(client.get()) do
-			awful.titlebar.hide(c)
-			c.minimized = false
-			c.maximized = false
+			if not c.floating then
+				awful.titlebar.hide(c)
+				c.minimized = false
+				c.maximized = false
+			end
 		end
 	end
 
@@ -236,25 +255,15 @@ local function find_or_spawn_emacs()
 	-- Find emacs if found, move it to the current tag and focus.
 	-- Else, spawn emacs
 	for _, c in ipairs(client.get()) do
-	  if (c.class == "Emacs") then
-		 c:move_to_tag(awful.screen.focused().selected_tag)
-		 c.hidden = false
-		 awful.client.focus.byidx(0, c)
-		 return
-	  end
-   end
-
-   awful.spawn("emacs")
-end
-
-local function command_exists(cmd)
-	-- Check if a command can be ran
-	for dir in string.gmatch(os.getenv("PATH"), "([^:]+)") do
-		if gears.filesystem.file_executable(dir .. "/" .. cmd) then
-			return true
+		if (c.class == "Emacs") then
+			c:move_to_tag(awful.screen.focused().selected_tag)
+			c.hidden = false
+			awful.client.focus.byidx(0, c)
+			return
 		end
 	end
-	return false
+	naughty.notify({title = "Opening emacs"})
+	awful.spawn("emacs")
 end
 
 local function set_wallpaper(s)
@@ -272,32 +281,51 @@ local function set_wallpaper(s)
 	end
 end
 
+local function volume_ctl(cmd)
+	local cmds = {
+		["+1"]     = "pactl set-sink-volume @DEFAULT_SINK@ +1%",
+		["-1"]     = "pactl set-sink-volume @DEFAULT_SINK@ -1%",
+		["+5"]     = "pactl set-sink-volume @DEFAULT_SINK@ +5%",
+		["-5"]     = "pactl set-sink-volume @DEFAULT_SINK@ -5%",
+		["toggle"] = "pactl set-sink-mute   @DEFAULT_SINK@ toggle"
+	}
+
+	if cmds[cmd] then
+		awful.spawn.with_line_callback(
+			cmds[cmd],
+			{exit = function() volume_timer:emit_signal("timeout") end}
+		)
+	else
+		naughty.notify({title = "Error 'volume_ctl': Invalid command"})
+	end
+end
+
+local function show_popup()
+	if not popup then
+		popup = awful.popup {
+			widget = {
+				text = "foobar",
+				widget = wibox.widget.textbox
+			},
+			visible = true,
+		}
+	else
+		popup.visible = not popup.visible
+	end
+end
+
+local function run(cmd)
+	local str = cmd:match("^[A-Za-z0-9_-]+")
+	if command_exists(str) then
+		awful.spawn(cmd)
+	else
+		local str = "Error: " .. str .. " is not installed"
+		naughty.notify({title = str})
+	end
+end
+
 
 -- Custom Widgets --
-test_buttons = gears.table.join(
-	awful.button({ }, 1, function() naughty.notify({title = "foo"})end),
-	awful.button({ }, 3, function() naughty.notify({title = "foo"})end)
-)
-test_widget = wibox.widget {
-	{
-
-		{
-			image = menu_icon,
-			forced_height = 30,
-			forced_width = forced_height,
-			widget = wibox.widget.imagebox
-		},
-		left = 9,
-		right = 6,
-		top = 9,
-		bottom = 9,
-		widget = wibox.container.margin
-	},
-	buttons = test_buttons,
-	layout = wibox.layout.fixed.horizontal,
-	widget = wibox.container.background
-}
-
 date_widget = wibox.widget {
 	{
 		{
@@ -321,115 +349,139 @@ date_widget = wibox.widget {
 	widget = wibox.container.background
 }
 
-time_widget = wibox.widget {
-	{
-
+	time_widget = wibox.widget {
 		{
-			image = clock_icon,
-			forced_height = 30,
-			forced_width = forced_height,
-			widget = wibox.widget.imagebox
-		},
-		left = 9,
-		right = 6,
-		top = 9,
-		bottom = 9,
-		widget = wibox.container.margin
-	},
-	{
-		format = "%H:%M",
-		refresh = 10,
-		widget = wibox.widget.textclock
-	},
-	layout = wibox.layout.fixed.horizontal,
-	widget = wibox.container.background
-}
 
-volume_widget = wibox.widget {
-	{
-		{
-			id = "icon",
-			forced_height = 30,
-			forced_width = forced_height,
-			widget = wibox.widget.imagebox
+			{
+				image = clock_icon,
+				forced_height = 30,
+				forced_width = forced_height,
+				widget = wibox.widget.imagebox
+			},
+			left = 9,
+			right = 6,
+			top = 9,
+			bottom = 9,
+			widget = wibox.container.margin
 		},
-		id = "icon_margin",
-		top = 9,
-		bottom = 9,
-		left = 9,
-		right = 6,
-		widget = wibox.container.margin
-	},
-	{
-		id = "vol",
-		widget = wibox.widget.textbox
-	},
+		{
+			format = "%H:%M",
+			refresh = 10,
+			widget = wibox.widget.textclock
+		},
+		layout = wibox.layout.fixed.horizontal,
+		widget = wibox.container.background
+	}
+
+	volume_widget = wibox.widget {
+		{
+			{
+				id = "icon",
+				forced_height = 30,
+				forced_width = forced_height,
+				widget = wibox.widget.imagebox
+			},
+			id = "icon_margin",
+			top = 9,
+			bottom = 9,
+			left = 9,
+			right = 6,
+			widget = wibox.container.margin
+		},
+		{
+			id = "vol",
+			widget = wibox.widget.textbox
+		},
+		buttons = gears.table.join(
+		awful.button({ }, 3, function() volume_ctl("toggle") end),
+		awful.button({ }, 4, function() volume_ctl("+1") end),
+		awful.button({ }, 5, function() volume_ctl("-1") end)
+	),
 	layout = wibox.layout.fixed.horizontal,
 	widget = wibox.container.background,
 	update = function(self)
-		awful.spawn.easy_async(
-			"pactl list sinks", function(stdout)
-				str = stdout:match("Mute: [noyes]+%s+Volume:[^\n]*%d+**")
-				if str:match("Mute: no") == "Mute: no" then
-					self.icon_margin.icon.image = volume_icon
-				else
-					self.icon_margin.icon.image = mute_icon
-				end
+			awful.spawn.easy_async(
+				"pactl get-sink-volume @DEFAULT_SINK@", function(stdout)
+					self.vol.text = stdout:match("%d+%%")
+			end)
 
-				self.vol.text = str:match("%d+%%")
-			end
-		)
+			awful.spawn.easy_async(
+				"pactl get-sink-mute @DEFAULT_SINK@", function(stdout)
+					if stdout:match("no") == "no" then
+						self.icon_margin.icon.image = volume_icon
+					else
+						self.icon_margin.icon.image = mute_icon
+					end
+			end)
+
+			awful.spawn.easy_async(
+				"ps -C droidcam-cli --no-header -o 'cmd'", function(stdout)
+					if stdout:match("-a") == "-a" then
+						awful.spawn.easy_async("pactl list short", function(stdout)
+						   if stdout:match("droidcam_audio") ~= "droidcam_audio" then
+							   cmd = "pactl load-module module-alsa-source device=hw:Loopback,1,0 source_properties=device.description=droidcam_audio >/dev/null"
+							   awful.spawn.easy_async(cmd, function(stdout)
+								  awful.spawn.easy_async("pactl list", function(stdout)
+									 if stdout:match("droidcam_audio") then
+										 awful.spawn("pactl set-default-source 'alsa_input.hw_Loopback_1_0'")
+									 end
+								  end)
+							   end)
+						   end
+						end)
+					end
+			end)
 	end
-}
+	}
 
-volume_timer = gears.timer {
-	timeout = 5,
-	call_now = true,
-	autostart = true,
-	callback = function() volume_widget:update() end
-}
+	volume_timer = gears.timer {
+		timeout = 5,
+		call_now = true,
+		autostart = true,
+		callback = function() volume_widget:update() end
+	}
 
-network_widget = wibox.widget {
-	{
+	network_widget = wibox.widget {
 		{
-			id = "icon",
-			forced_height = 30,
-			forced_width = forced_height,
-			widget = wibox.widget.imagebox
+			{
+				id = "icon",
+				forced_height = 30,
+				forced_width = forced_height,
+				widget = wibox.widget.imagebox
+			},
+			id = "icon_margin",
+			top = 9,
+			bottom = 9,
+			left = 9,
+			right = 6,
+			widget = wibox.container.margin
 		},
-		id = "icon_margin",
-		top = 9,
-		bottom = 9,
-		left = 9,
-		right = 6,
-		widget = wibox.container.margin
-	},
-	{
-		id = "network",
-		widget = wibox.widget.textbox
-	},
-	layout = wibox.layout.fixed.horizontal,
-	widget = wibox.container.background,
-	update = function(self)
-		awful.spawn.easy_async(
-			"pidof connmand", function(stdout)
-				if stdout ~= "" then
-					awful.spawn.easy_async(
-						"connmanctl services", function(stdout)
-							local str = ""
-							for match in stdout:gmatch("[*]A[A-Za-z] [^ ]*%s*...") do
-								if str == "" then
-									str = str .. match:match("^... [^ ]*"):match("[^ ]*$")
-								else
-									str = str .. " "
-									str = str .. match:match("^... [^ ]*"):match("[^ ]*$")
+		{
+			id = "network",
+			widget = wibox.widget.textbox
+		},
+		layout = wibox.layout.fixed.horizontal,
+		widget = wibox.container.background,
+		update = function(self)
+			awful.spawn.easy_async(
+				"pidof connmand", function(stdout)
+					if stdout ~= "" then
+						awful.spawn.easy_async(
+							"connmanctl services", function(stdout)
+								local str = ""
+								for match in stdout:gmatch("[*]A[A-Za-z] [^ ]*%s*...") do
+									if str == "" then
+										str = str .. match:match("^... [^ ]*") :match("[^ ]*$")
+									else
+										str = str .. " "
+										str = str .. match:match("^... [^ ]*"):match("[^ ]*$")
+									end
+									if match:match("wif") == "wif" then
+										self.icon_margin.icon.image = wifi_icon
+									elseif match:match("eth") == "eth" then
+										self.icon_margin.icon.image = ethernet_icon
+									end
 								end
-								if match:match("wif") == "wif" then
-									self.icon_margin.icon.image = wifi_icon
-								elseif match:match("eth") == "eth" then
-									self.icon_margin.icon.image = ethernet_icon
-								end
-							end
 
 							if str == "" then
 								self.network.text = "Not Connected"
@@ -439,10 +491,10 @@ network_widget = wibox.widget {
 							end
 						end
 					)
-				end
-		end)
-	end
-}
+					end
+			end)
+		end
+	}
 
 network_timer = gears.timer {
 	timeout = 10,
@@ -455,82 +507,89 @@ network_timer = gears.timer {
 -- Key and Mouse Bindings --
 globalkeys = gears.table.join( -- Key Bindings
 	-- Pulse audio volume control
-	awful.key({ modkey }, "[", function()
-			awful.spawn.with_line_callback(
-				"pactl set-sink-volume @DEFAULT_SINK@ -5%",
-				{exit = function() volume_timer:emit_signal("timeout") end})
-	end, {description = "Decrease volume by 5%", group = "volume"}),
-	awful.key({ modkey }, "]", function()
-			awful.spawn.with_line_callback(
-				"pactl set-sink-volume @DEFAULT_SINK@ +5%",
-				{exit = function() volume_timer:emit_signal("timeout") end})
-	end, {description = "Increase volume by 5%", group = "volume"}),
-	awful.key({ modkey, "Control" }, "[", function()
-			awful.spawn.with_line_callback(
-				"pactl set-sink-volume @DEFAULT_SINK@ -1%",
-				{exit = function() volume_timer:emit_signal("timeout") end})
-	end, {description = "Lower volume by 1%", group = "volume"}),
-	awful.key({ modkey, "Control" }, "]", function()
-			awful.spawn.with_line_callback(
-				"pactl set-sink-volume @DEFAULT_SINK@ +1%",
-				{exit = function() volume_timer:emit_signal("timeout") end})
-	end, {description = "Increase volume by 1%", group = "volume"}),
-	awful.key({ modkey }, "\\", function()
-			awful.spawn.with_line_callback(
-				"pactl set-sink-mute @DEFAULT_SINK@ toggle",
-				{exit = function() volume_timer:emit_signal("timeout") end})
-	end, {description = "Toggle mute", group = "volume"}),
+	awful.key({ modkey }, "[",
+		function() volume_ctl("-5") end,
+		{description = "Decrease volume by 5%", group = "volume"}),
+	awful.key({ modkey }, "]",
+		function() volume_ctl("+5") end,
+		{description = "Increase volume by 5%", group = "volume"}),
+	awful.key({ modkey, "Control" }, "[",
+		function() volume_ctl("-1") end,
+		{description = "Lower volume by 1%", group = "volume"}),
+	awful.key({ modkey, "Control" }, "]",
+		function() volume_ctl("+1") end,
+		{description = "Increase volume by 1%", group = "volume"}),
+	awful.key({ modkey }, "\\",
+		function() volume_ctl("toggle") end,
+		{description = "Toggle mute", group = "volume"}),
 	-- Clients
-	awful.key({ modkey }, "j", function() awful.client.focus.byidx(-1) end,
+	awful.key({ modkey }, "j",
+		function() awful.client.focus.byidx(-1) end,
 		{description = "focus next by index", group = "client"}),
-	awful.key({ modkey }, "k", function() awful.client.focus.byidx(1) end,
-		{description = "focus previous by index", group = "client"}),
-	awful.key({ modkey, "Shift" }, "j", function()
-			awful.client.swap.byidx(-1) end,
-		{description = "swap with previous client by index", group = "client"}),
-	awful.key({ modkey, "Shift" }, "k", function()
-			awful.client.swap.byidx(1) end,
-		{description = "swap with next client by index", group = "client"}),
+	awful.key({ modkey }, "k",
+			function() awful.client.focus.byidx(1) end,
+			{description = "focus previous by index", group = "client"}),
+	awful.key({ modkey, "Shift" }, "j",
+		function() awful.client.swap.byidx(-1) end,
+		{description = "Swap with previous window", group = "client"}),
+	awful.key({ modkey, "Shift" }, "k",
+		function() awful.client.swap.byidx(1) end,
+		{description = "Swap with next window", group = "client"}),
 	-- Screens
 	awful.key({ modkey, "Control" }, "j", function()
 			awful.screen.focus_relative(-1) end,
 		{description = "focus the previous screen", group = "screen"}),
-	awful.key({ modkey, "Control" }, "k", function()
-			awful.screen.focus_relative(1) end,
+	awful.key({ modkey, "Control" }, "k",
+		function() awful.screen.focus_relative(1) end,
 		{description = "focus the next screen", group = "screen"}),
 	-- Layout
-	awful.key({ modkey }, "l", function() awful.tag.incmwfact(0.05) end,
-	  {description = "Increase master width factor", group = "layout"}),
-   awful.key({ modkey }, "h", function() awful.tag.incmwfact(-0.05) end,
-	  {description = "Decrease master width factor", group = "layout"}),
-   awful.key({ modkey }, "t", function()
-		 set_layout_all(awful.layout.suit.tile.right) end,
-	  {description = "Set to tiling layout for all tags", group = "layout"}),
-   awful.key({ modkey }, "m", function()
-		 set_layout_all(awful.layout.suit.max) end,
-	  {description = "Set to monocle layout for all tags", group = "layout"}),
-   awful.key({ modkey }, "f", function()
-		 set_layout_all(awful.layout.suit.floating) end,
-	  {description = "Set to floating layout for all tags", group = "layout"}),
-   -- Standard program
-   awful.key({ modkey, "Control" }, "r", awesome.restart,
-	  {description = "reload awesome", group = "awesome"}),
-   awful.key({ modkey, "Shift" }, "q", awesome.quit,
-	  {description = "quit awesome", group = "awesome"}),
-   -- Prompt
-   awful.key({ modkey }, "r", function()
-		 awful.screen.focused().mypromptbox:run() end,
-	  {description = "run prompt", group = "launcher"}),
-   -- Menubar
-   awful.key({ modkey }, "p", function() menubar.show() end,
-              {description = "show the menubar", group = "launcher"})
+	awful.key({ modkey }, "l",
+		function() awful.tag.incmwfact(0.05) end,
+		{description = "Increase master width factor", group = "layout"}),
+	awful.key({ modkey }, "h",
+		function() awful.tag.incmwfact(-0.05) end,
+		{description = "Decrease master width factor", group = "layout"}),
+	awful.key({ modkey }, "t",
+		function() set_layout_all(awful.layout.suit.tile.right) end,
+		{description = "Set to tiling layout for all tags", group = "layout"}),
+	awful.key({ modkey }, "m",
+		function() set_layout_all(awful.layout.suit.max) end,
+		{description = "Set to monocle layout for all tags", group = "layout"}),
+	awful.key({ modkey }, "f",
+		function() set_layout_all(awful.layout.suit.floating) end,
+		{description = "Set to floating layout for all tags", group = "layout"}),
+	-- Awesome Functions
+	awful.key({ modkey, "Control" }, "r", awesome.restart,
+		{description = "Reload Awesome", group = "awesome"}),
+	awful.key({ modkey, "Shift" }, "q", awesome.quit,
+		{description = "Quit Awesome", group = "awesome"}),
+	-- Prompt
+	awful.key({ modkey }, "r", function()
+			awful.screen.focused().mypromptbox:run() end,
+		{description = "Run prompt", group = "launcher"}),
+	-- Menubar
+	awful.key({ modkey }, "p", function() menubar.show() end,
+		{description = "Show the menubar", group = "launcher"}),
+	-- Standard programs
+	awful.key({ modkey }, "b", function()
+			if browser then
+				awful.spawn(browser)
+				naughty.notify({title = "Opening " .. browser})
+				else
+					naughty.notify({title = "Error: browser is not installed"})
+				end
+	end, {description = "Open the browser", group = "Programs"}),
+	awful.key({ modkey }, "a", spawn_popup)
 )
+
+
 if (terminal == "emacs") then
-   globalkeys = gears.table.join(
-	  globalkeys,
-	  awful.key({ modkey }, "Return", find_or_spawn_emacs,
-		 {description = "Move emacs to the current tag or launch emacs",
-		  group = "programs"}))
+	globalkeys = gears.table.join(
+		globalkeys,
+		awful.key({ modkey }, "Return", find_or_spawn_emacs,
+			{description = "Move emacs to the current tag or launch emacs",
+			 group = "programs"})
+	)
 else
    globalkeys = gears.table.join(
 	  globalkeys,
@@ -904,3 +963,10 @@ gears.timer {
 	autostart = true,
 	callback = function() collectgarbage() end
 }
+
+
+-- Commands to execute in startup
+run("pactl set-sink-volume @DEFAULT_SINK@ 40%")
+run("xrdb ~/.config/X11/Xresources")
+run("xrandr --output DP-1 --mode 1280x1024 --scale 1.2x1.2")
+run("xset r rate 250 50")

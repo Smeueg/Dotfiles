@@ -44,7 +44,7 @@ LoadModules() {
 	if [ ! -z "${modulesError}" ]; then
 		printf 'The following modules are required, however does not exist in this system:\n'
 		printf '%s' "${modulesError}" | xargs -I {} printf '    {}\n'
-		exit -1
+		exit 1
 	fi
 
 
