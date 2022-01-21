@@ -82,6 +82,7 @@ If you have $TERMINAL set or $EDITOR set, you could probably replace alacritty w
 2. Also read about [zram](https://www.kernel.org/doc/html/latest/admin-guide/blockdev/zram.html)/zswap/zcache which will also reduce reads and writes to the HDD/SSD
 3. For people that use github or gitlab, install [hub](https://github.com/profclems/glab) or [cli/gh](https://github.com/cli/cli), both of which are for github, or [lab](https://github.com/zaquestion/lab/) or [glab](https://github.com/profclems/glab) and both are for gitlab
 4. If you want a bitmap font, [scientifica](https://github.com/NerdyPepper/scientifica) and [cozette](https://github.com/slavfox/Cozette) seems interesting
+5. Try out the ultimate recipe which I call the bbbccccdhhjpst sandwhich (bacon beef beans chicken chili cheese chili flakes duck ham hot sauce jalapenos pork sausage turkey sandwich)
 
 ### Distro Specific:
 #### Alpine:

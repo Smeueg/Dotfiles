@@ -1,17 +1,18 @@
 (deftheme warmspace
   "Predominantly blue/cyan faces on a dark cyan background.")
 
-(setq bg      "#322638")
-(setq bg2     "#382B3F")
-(setq bg3     "#493751")
-(setq fg      "#E7DEC7")
-(setq green   "#819013")
-(setq blue    "#4573A8")
-(setq cyan    "#459EA8")
-(setq yellow  "#FEA34B")
-(setq red     "#C5483F")
-(setq magenta "#953C9B")
-(setq orange  "#EAA651")
+(setq bg      "#322638"
+      bg2     "#382B3F"
+      bg3     "#503C58"
+      fg      "#E7DEC7"
+      green   "#819013"
+      blue    "#4573A8"
+      cyan    "#459EA8"
+      yellow  "#FEA34B"
+      red     "#C5483F"
+      magenta "#953C9B"
+      orange  "#EAA651"
+      box-width 7)
 (let ((class '((class color) (min-colors 89))))
   (custom-theme-set-faces
    'warmspace
@@ -32,6 +33,7 @@
    `(fringe ((,class (:background ,bg :foreground ,bg))))
    `(header-line ((,class (:background ,bg))))
    `(whitespace-line ((,class (:background ,bg2 :foreground ,magenta :weight bold))))
+   `(completions-common-part ((,class (:foreground ,orange :weight bold))))
    ;; Escape and prompt faces
    `(minibuffer-prompt
      ((,class (:background ,bg :foreground ,orange :weight bold))))
@@ -50,17 +52,26 @@
    `(isearch ((,class (:background ,orange :foreground ,bg :weight bold))))
    `(isearch-fail ((,class (:background ,red :foreground ,bg :weight bold))))
    `(lazy-highlight ((,class (:background, bg2 :foreground ,orange))))
+   ;; Flymake
+   `(flymake-error   ((,class (:underline ,red))))
+   `(flymake-note    ((,class (:underline ,green))))
+   `(flymake-warning ((,class (:underline ,orange))))
    ;; (Custom) Mode Line
    `(mode-line
-     ((,class (:background ,bg2 :foreground ,bg3 :weight bold))))
+     ((,class (:background ,bg2 :foreground ,bg3 :weight bold
+                           :box (:line-width ,box-width :color ,bg2)))))
    `(mode-line-inactive
-     ((,class (:background ,bg :foreground ,bg3 :weight bold))))
+     ((,class (:background ,bg :foreground ,bg3 :weight bold
+                           :box (:line-width ,box-width :color ,bg2)))))
    `(ml/modified-face
-     ((,class (:background ,yellow :foreground ,bg :weight bold))))
+     ((,class (:background ,yellow :foreground ,bg :weight bold
+                           :box (:line-width ,box-width :color ,bg2)))))
    `(ml/normal-face
-     ((,class (:background ,fg :foreground ,bg :weight bold))))
+     ((,class (:background ,fg :foreground ,bg :weight bold
+                           :box (:line-width ,box-width :color ,bg2)))))
    `(ml/read-only-face
-     ((,class (:background ,red :foreground ,bg :weight bold))))
+     ((,class (:background ,red :foreground ,bg :weight bold
+                           :box (:line-width ,box-width :color ,bg2)))))
    ;; (Custom Splash Screen)
    `(splash-text         ((,class (:foreground ,fg  :weight bold))))
    `(splash-text-special ((,class (:foreground ,bg3 :weight bold))))
@@ -68,6 +79,21 @@
    `(button ((,class (:underline t))))
    `(link ((,class (:foreground ,cyan :underline t))))
    `(link-visited ((,class (:foreground ,magenta :underline t))))
+   ;; Org-Mode
+   `(org-ellipsis ((,class (:foreground ,red :underline nil))))
+   `(org-level-1 ((,class (:foreground ,red :weight bold))))
+   `(org-level-2 ((,class (:foreground ,orange :weight bold))))
+   `(org-level-3 ((,class (:foreground ,yellow :weight bold))))
+   `(org-level-4 ((,class (:foreground ,red :weight bold :slant italic))))
+   `(org-level-5 ((,class (:foreground ,orange :weight bold :slant italic))))
+   `(org-level-6 ((,class (:foreground ,yellow :weight bold :slant italic))))
+   `(org-level-7 ((,class (:foreground ,red :weight bold :underline t))))
+   `(org-level-8 ((,class (:foreground ,orange :weight bold :underline t))))
+   `(org-table ((,class (:foreground ,yellow :background ,bg2))))
+   `(org-date ((,class (:foreground ,red :underline t))))
+   `(org-todo
+     ((,class (:foreground ,cyan :background ,bg2 :weight bold
+                           :box (:line-width ,box-width :color ,bg2)))))
    ;;; External Packages
    ;; Company-mode
    `(company-preview ((,class (:background ,bg2 :foreground ,fg))))
@@ -79,6 +105,8 @@
      ((,class (:background ,bg2 :foreground ,orange :weight bold))))
    `(company-tooltip-common-selection
      ((,class (:background ,bg3 :foreground ,orange :weight bold))))
+   ;; Vertico
+   `(vertico-current ((,class (:background ,bg2 :foreground ,fg))))
    ;; eterm
    `(eterm-256color-black          ((,class (:foreground ,bg3))))
    `(eterm-256color-red            ((,class (:foreground ,red))))

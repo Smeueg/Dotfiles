@@ -1,4 +1,71 @@
-(progn ;; Faces for custom stuff
+;;      ▓█████  ███▄ ▄███▓▓█████  █    ██   ▄████   ██████
+;;      ▓█   ▀ ▓██▒▀█▀ ██▒▓█   ▀  ██  ▓██▒ ██▒ ▀█▒▒██    ▒
+;;      ▒███   ▓██    ▓██░▒███   ▓██  ▒██░▒██░▄▄▄░░ ▓██▄
+;;      ▒▓█  ▄ ▒██    ▒██ ▒▓█  ▄ ▓▓█  ░██░░▓█  ██▓  ▒   ██▒
+;;      ░▒████▒▒██▒   ░██▒░▒████▒▒▒█████▓ ░▒▓███▀▒▒██████▒▒
+;;      ░░ ▒░ ░░ ▒░   ░  ░░░ ▒░ ░░▒▓▒ ▒ ▒  ░▒   ▒ ▒ ▒▓▒ ▒ ░
+;;      ░ ░  ░░  ░      ░ ░ ░  ░░░▒░ ░ ░   ░   ░ ░ ░▒  ░ ░
+;;      ░   ░      ░      ░    ░░░ ░ ░ ░ ░   ░ ░  ░  ░
+;;      ░  ░       ░      ░  ░   ░           ░       ░
+;;
+;; Emeugs, Emacs with some Smeueg added on to it.
+;; This configuration is obviously for personal use but can also be used as
+;; reference to other people on what other people use. This configuration should
+;; be able to run without a problem in other systems other than my current one,
+;; although I haven't tested it yet.
+
+
+(progn ;; Set Basic Variables
+  (setq-default
+   ;; Do not create backup file i.e. file~
+   make-backup-files nil
+   ;; Do not create autosave file i.e. #file#
+   auto-save-default nil
+   ;; Do not open emacs startup buffer
+   inhibit-startup-screen t
+   ;; Do noto create lockfiles i.e. .#file
+   create-lockfiles nil
+   ;; Do not overwrite system clipboard
+   x-select-enable-clipboard nil
+   ;; Enable every command
+   disabled-command-function nil
+   ;; Disable "*messages*" buffer
+   message-log-max nil
+   ;; Scratch Buffer will be empty by default
+   initial-scratch-message ""
+   ;; Disable line wrapping
+   truncate-lines t
+   ;; Automatically add newline at the end
+   require-final-newline t
+   ;; Always center cursor horizontally
+   hscroll-margin 1000
+   ;; A "smoother" scrolling experience
+   scroll-conservatively 101
+   scroll-margin 5
+   ;; Always use emacs's minibuffer instead of a gui window
+   use-dialog-box nil
+   ;; Don't add custom-set-variable in this file
+   custom-file (expand-file-name "custom.el" user-emacs-directory)
+   custom-file (make-temp-file "")
+   ;; Categorize every theme to be safe
+   custom-safe-themes t
+   ;; Fix tramp prompt error nonsense
+   tramp-shell-prompt-pattern
+   "\\(?:^\\|\r\\)[^]#$%>\n]*#?[]#$%>].* *\\(^[\\[[0-9;]*[a-zA-Z] *\\)*"))
+
+
+(progn ;; Indentation
+  (setq-default
+   ;; Use Tabs
+   indent-tabs-mode t
+   tab-always-indent nil
+   tab-width 4
+   ;; Make backspace actually delete \t instead of one by one
+   backward-delete-char-untabify-method 'hungry)
+  (defvaralias 'c-basic-offset 'tab-width))
+
+
+(progn ;; Visuals
   ;; Mode Line
   (make-face 'ml/fill)
   (make-face 'ml/read-only-face)
@@ -6,69 +73,42 @@
   (make-face 'ml/normal-face)
   ;; Custom Splash Screen
   (make-face 'splash-text)
-  (make-face 'splash-text-special))
+  (make-face 'splash-text-special)
 
-(progn ;; Set Variables
-  (setq-default make-backup-files nil) ;; No backup files i.e. file~
-  (setq-default auto-save-default nil) ;; No autosaving i.e.     #file#
-  (setq-default create-lockfiles nil) ;; No lockfiles i.e.   .#file
-  (setq-default x-select-enable-clipboard nil) ;Do no overwrite system clipboard
-  (setq-default inhibit-startup-screen t)
-  (setq-default message-log-max nil) ;; Disable messages [buffer]
-  (add-to-list 'default-frame-alist '(internal-border-width . 20))
-  (add-to-list 'default-frame-alist '(left-fringe . 2))
-  (add-to-list 'default-frame-alist '(right-fringe . 2))
-  (setq-default initial-scratch-message "") ;; Make *Scratch* empty
-  (setq-default require-final-newline t) ;; Automatically add newline at the end
-  (fset 'yes-or-no-p 'y-or-n-p) ;; Change prompt from yes/no to y/n
-  (setq custom-file
-        ;; Don't add custom-set-variable in this file
-        (expand-file-name "custom.el" user-emacs-directory))
-  (if (file-exists-p custom-file)
-      (load custom-file) (write-region "" "" custom-file))
-  (setq tramp-shell-prompt-pattern
-        ;; Fix TRAMP issue regarding freezing because of prompt
-        "\\(?:^\\|\r\\)[^]#$%>\n]*#?[]#$%>].* *\\(^[\\[[0-9;]*[a-zA-Z] *\\)*"))
+  ;; Add Paddings
+  (add-to-list 'default-frame-alist
+               '(internal-boder-width . 20))
 
-(progn ;; Indentation
-  (setq-default indent-tabs-mode t)
-  (setq-default tab-always-indent nil)
-  (setq-default tab-width 4)
-  ;;;; Make backspace actually delete \t instead of one by one
-  (setq backward-delete-char-untabify-method 'hungry)
-  (defvaralias 'c-basic-offset 'tab-width))
-
-
-(progn ;; Visuals
   (load-theme 'warmspace 1)
   (set-frame-font "JetBrains Mono-12")
-  (menu-bar-mode 0)
-  (blink-cursor-mode 0) ; Disable cursor blinking
-  (show-paren-mode 1) ; Show parentheses pairs
-  (tool-bar-mode -1)     ;; Disable the toolbar
-  (tooltip-mode -1)      ;; Disable tooltips
-  (fringe-mode 3)        ;; Disable fringes
-  (scroll-bar-mode -1)   ;; Disable scroll bar
-  (visual-line-mode 0)
+  (menu-bar-mode 0)           ;; Disable menu bar
+  (blink-cursor-mode 0)       ;; Disable cursor blinking
+  (show-paren-mode 1)         ;; Show parentheses pairs
+  (tool-bar-mode -1)          ;; Disable the toolbar
+  (tooltip-mode -1)           ;; Disable tooltips
+  (fringe-mode 3)             ;; Disable fringes
+  (scroll-bar-mode -1)        ;; Disable scroll bar
+  (global-visual-line-mode 0) ;; Disable wrap
   (set-window-buffer nil (current-buffer)))
 
-
 (progn ;; Whitespace-mode
-  (setq-default whitespace-style '(face trailing lines-tail))
-  (setq-default whitespace-line-column 80)
-  (add-hook 'after-init-hook (global-whitespace-mode 1)))
-
+  (setq-default whitespace-style '(face trailing lines-tail)
+                whitespace-line-column 80)
+  (global-whitespace-mode 1))
 
 (progn ;; Keybindings
   (keyboard-translate ?\C-h ?\C-?)
   (keyboard-translate ?\C-\\ ?\C-c)
-  (global-set-key (kbd "C-S-v") 'clipboard-yank)
-  (global-set-key (kbd "C-S-k") 'text-scale-increase)
-  (global-set-key (kbd "C-S-j") 'text-scale-decrease)
-  (global-set-key (kbd "C-S-l") (lambda() (interactive) (text-scale-adjust 0)))
-  (global-set-key (kbd "<mouse-5>") 'scroll-up-line)
-  (global-set-key (kbd "<mouse-4>") 'scroll-down-line)
-  (global-set-key (kbd "<mouse-3>") 'mouse-major-mode-menu)
+  (global-set-key [mouse-5] 'scroll-up-line)
+  (global-set-key [mouse-4] 'scroll-down-line)
+  (global-set-key [mouse-3] 'mouse-major-mode-menu)
+  (global-set-key (kbd "C-S-v")
+                  (lambda()
+                    (interactive)
+                    (insert (or (gui-get-selection
+                                 'CLIPBOARD
+                                 (or x-select-request-type 'UTF8_STRING))
+                                ""))))
   (define-key prog-mode-map [return] 'newline-and-indent))
 
 (progn ;; Functionality / Random Modes
@@ -76,103 +116,120 @@
   (global-eldoc-mode -1)
   (kill-buffer "*Messages*"))
 
-;; Custom Functions
-(progn
-  (defun auto-install()
-    "Automatically install the current packages/plugins that are needed"
+(progn ;; Custom Functions
+  ;; Change prompt from yes/no to y/n
+  (fset 'yes-or-no-p 'y-or-n-p)
+
+  ;; Aliases
+  (defalias 'w 'save-buffer)
+  (defalias 'hs 'split-window-horizontally)
+  (defalias 'vs 'split-window-vertically)
+
+  (defun get-system-clipboard ()
+    "Get value of the system clipboard"
     (interactive)
-    (require 'package)
-    (package-initialize)
-    (package-refresh-contents)
-    (dolist (package package-list)
-      (unless (package-installed-p package)
-        (package-install package))))
+    (or (gui-get-selection
+         'CLIPBOARD
+         (or x-select-request-type
+             'UTF8_STRING)) ""))
+
+  (defun close ()
+    "Kill buffer when there's only one window displaying the buffer. Delete window when the current window has no previous buffers"
+    (interactive)
+    (let ((count 0) (del nil) (kill t))
+      (when (or (= 0 (length (window-prev-buffers)))
+                (and (equal (current-buffer) (car (car (window-prev-buffers))))
+                     (= 1 (length (window-prev-buffers)))))
+        (setq del t))
+
+      (catch 'break
+        (unless (= 1 (length (get-buffer-window-list)))
+          (setq kill nil)
+          (throw 'break nil))
+        (dolist (window (delete (selected-window) (window-list)))
+          (dolist (buffer (window-prev-buffers window))
+            (when (equal (current-buffer) (car buffer))
+              (setq kill nil)
+              (throw 'break nil)))))
+      (if kill (kill-buffer) (switch-to-prev-buffer))
+      (when del (delete-window))))
+
+  (defun executable(cmd)
+    "Return nil if executable does not exist"
+    (locate-file cmd exec-path exec-suffixes 1))
 
   (defun run()
-    "
-    Automatically execute the current script or
-    compile and run the current program
-    "
+    "Automatically compile (if needed) and execute the current program "
     (interactive)
-    (cond ((file-executable-p buffer-file-name)
-           (let (filename)
-             (setq filename buffer-file-name)
-             (save-buffer)
-             (split-window-below)
-             (other-window 1)
-             (ansi-term (getenv "SHELL"))
-             (term-send-raw-string (concat filename "\n"))))
-          ((member major-mode '(c-mode c++mode))
-           (progn
-             (split-window-below)
-             (other-window 1)
-             (ansi-term (getenv "SHELL"))))))
-
-  (defun terminal-clipboard-paste()
-    "Paste the system clipboard to emacs's ansi-term"
-    (interactive)
-    (switch-to-buffer "*TerminalClipboard*")
-    (clipboard-yank)
-    (if (= (buffer-size) 0)
-        (kill-buffer "*TerminalClipboard*")
-      (progn
-        (kill-ring-save 1 (point-max))
-        (kill-buffer "*TerminalClipboard*")
-        (term-paste)
-        (pop kill-ring)))
-    (when (bound-and-true-p evil-mode)
-      (progn
-        (evil-normal-state 1)
-        (evil-insert-state 1)))))
+    (save-buffer)
+    (let ((command nil))
+      (cond ((member major-mode '(c-mode c++mode)) ;; C & C++
+             (setq command (concat "cc " buffer-file-name " -o /tmp/"
+                                   (file-name-base buffer-file-name) " && /tmp/"
+                                   (file-name-base buffer-file-name))))
+            ((derived-mode-p 'sh-mode) ;; Shell
+             (executable-make-buffer-file-executable-if-script-p)
+             (setq command (concat buffer-file-name "\n")))
+            ((derived-mode-p 'lua-mode) ;; Lua
+             (setq command (concat "lua" buffer-file-name "\n")))
+            ((derived-mode-p 'python-mode) ;; Python
+             (setq command (concat "python3 " buffer-file-name "\n")))
+            ((derived-mode-p 'java-mode)
+             (setq command
+                   (concat "java " buffer-file-name "\n")))
+            ((= 1 1)
+             (message "Unknown filetype")
+             (setq command nil)))
+      (when command
+        (progn
+          (split-window-below)
+          (other-window 1)
+          (ansi-term (getenv "SHELL"))
+          (term-send-raw-string
+           (concat "clear; printf 'Output:\n';" command)))))))
 
 ;;; Custom Mode-Line
-(defun ml/align(left center right)
-  "Add padding to mode line with arguments being left, center, and right"
-  (let ((total-width nil) (center-width nil) (right-width nil))
-    (setq total-width (window-total-width))
-    (setq center-width (- (/ total-width 2) (length (format-mode-line center))))
-    (setq right-width  (- total-width (length (format-mode-line right))))
+(defun ml/align(left right)
+  "Add padding to mode line with arguments being LEFT, and RIGHT."
+  (let ((space (- (window-total-width)
+                  (+ (length (format-mode-line right))
+                     (length (format-mode-line left))
+                     2))))
     (append
+     (list (propertize " " 'display '((space :width 0.5))))
      left
-     `(,(propertize " " 'display `(space :align-to ,center-width)))
-     center
-     `(,(propertize " " 'display `(space :align-to ,right-width)))
-     right)))
-(defun ml/update-variables()
-  (cond
-   ((equal (boundp 'evil-state) nil) (setq-local ml/evil-state ""))
-   ((equal evil-state 'normal)       (setq-local ml/evil-state "Normal "))
-   ((equal evil-state 'visual)       (setq-local ml/evil-state "Visual "))
-   ((equal evil-state 'insert)       (setq-local ml/evil-state "Insert "))
-   ((equal evil-state 'replace)      (setq-local ml/evil-state "Replace "))
-   ((equal evil-state 'operator)     (setq-local ml/evil-state "O-Pending "))
-   ((equal evil-state 'motion)       (setq-local ml/evil-state "Motion "))
-   ((equal evil-state 'emacs)        (setq-local ml/evil-state "Emacs ")))
-  (cond
-   (buffer-read-only    (setq-local ml/main-face 'ml/read-only-face))
-   ((buffer-modified-p) (setq-local ml/main-face 'ml/modified-face))
-   (t                   (setq-local ml/main-face 'ml/normal-face)))
-  (setq-local ml/total-line
-              (int-to-string (count-lines (point-min) (point-max))))
-  (concat ""))
+     (list (make-string space ?\ ))
+     right
+     (list (propertize "  " 'display '((space :width 0.5)))))))
+
 
 (setq-default
  mode-line-format
- '((:eval (ml/update-variables))
-   (:eval
+ '((:eval
     (ml/align
      ;; Left
-     `(,(propertize " %b " 'face ml/main-face)
-       " %m"
-       )
-     ;; Center
-     `("")
+     `(,(propertize (concat " " (buffer-name) " ") 'face
+                    (progn
+                      (setq-local
+                       main-face
+                       (cond (buffer-read-only (quote 'ml/read-only-face))
+                             ((buffer-modified-p) (quote 'ml/modified-face))
+                             ((= 1 1) (quote 'ml/normal-face))))))
+       " %m")
      ;; Right
-     `(
-       ,ml/evil-state
-       ,(propertize (concat " %l/" ml/total-line " ") 'face ml/main-face)
-       )))))
+     `(,(cdr (assoc (or (and (boundp 'evil-state) (symbol-value 'evil-state)) t)
+                    '((normal   . "Normal ")
+                      (visual   . "Visual ")
+                      (insert   . "Insert ")
+                      (replace  . "Replace ")
+                      (operator . "O-Pending ")
+                      (motion   . "Motion ")
+                      (emacs    . "Emacs "))))
 
+       ,(propertize
+         (concat " %l/"
+                 (int-to-string (count-lines (point-min) (point-max))) " ")
+         'face main-face))))))
 
 ;;; Custom Splash Screen
 (defun min-splash()
@@ -182,40 +239,74 @@
     (setq splash-buffer (get-buffer-create "*min-splash*"))
     (setq margin-size (/ (- (frame-width) 20) 2))
     (with-current-buffer splash-buffer
-      (insert (propertize "Welcome to " 'face 'splash-text))
-      (insert (propertize "GNU Emacs\n" 'face  'splash-text-special))
+      (insert "▓█████  ███▄ ▄███▓▓█████  █    ██   ▄████   ██████ \n")
+      (insert "▓█   ▀ ▓██▒▀█▀ ██▒▓█   ▀  ██  ▓██▒ ██▒ ▀█▒▒██    ▒ \n")
+      (insert "▒███   ▓██    ▓██░▒███   ▓██  ▒██░▒██░▄▄▄░░ ▓██▄   \n")
+      (insert "▒▓█  ▄ ▒██    ▒██ ▒▓█  ▄ ▓▓█  ░██░░▓█  ██▓  ▒   ██▒\n")
+      (insert "░▒████▒▒██▒   ░██▒░▒████▒▒▒█████▓ ░▒▓███▀▒▒██████▒▒\n")
+      (insert "░░ ▒░ ░░ ▒░   ░  ░░░ ▒░ ░░▒▓▒ ▒ ▒  ░▒   ▒ ▒ ▒▓▒ ▒ ░\n")
+      (insert "░ ░  ░░  ░      ░ ░ ░  ░░░▒░ ░ ░   ░   ░ ░ ░▒  ░ ░ \n")
+      (insert "░   ░      ░      ░    ░░░ ░ ░ ░ ░   ░ ░  ░  ░     \n")
+      (insert "░  ░       ░      ░  ░   ░           ░       ░     \n")
+      (insert (propertize "\n\n\nWelcome to " 'face 'splash-text))
+      (insert (propertize "Emeugs" 'face  'splash-text-special))
+      (insert-char ?\n 2)
+      (insert (propertize "Emacs" 'face  'splash-text-special))
+      (insert (propertize " with some " 'face 'splash-text))
+      (insert (propertize "Smeueg. " 'face  'splash-text-special))
       (insert (propertize "Enjoy Your Stay\n" 'face 'splash-text)))
     (switch-to-buffer splash-buffer)
     (add-hook 'post-command-hook #'min-splash-align 0 t)
     (add-hook 'window-state-change-hook #'min-splash-align 0 t)
     (kill-buffer "*scratch*")))
+
+
 (defun min-splash-align()
   (if (get-buffer "*min-splash*")
       (with-current-buffer "*min-splash*"
         (let ((current-point (point))
               (lines (count-lines (point-min) (point-max))))
-          (when (not (eq lines (window-body-height nil)))
-            (progn
-              (setq-local fill-column (- (window-body-width nil) 2))
-              (read-only-mode 0)
-              (mark-whole-buffer)
-              (delete-blank-lines)
-              (deactivate-mark)
-              (goto-char 0)
-              (insert-char ?\n (/ (- (window-body-height nil) 2) 2))
-              (previous-line 4)
-              (center-line 10)
-              (read-only-mode 1)
-              (goto-char current-point)))))
+          (setq-local fill-column (- (window-body-width nil) 2))
+          (read-only-mode 0)
+          (with-temp-message "" (mark-whole-buffer))
+          (delete-blank-lines)
+          (deactivate-mark)
+          (goto-char 0)
+          (insert-char ?\n (/ (- (window-body-height nil) 15) 2))
+          (center-line 16)
+          (read-only-mode 1)
+          (goto-char current-point)))
     (progn
       (remove-hook 'post-command-hook #'min-splash-align)
       (remove-hook 'window-state-change-hook #'min-splash-align))))
+
 (defun kill-min-splash()
-  "Kills the *min-splash* buffer when switched to another buffer"
-  (when (get-buffer "*min-splash*")
+  (when (catch 'p
+          (dolist (buffer (buffer-list))
+            (unless (string-match
+                     (concat
+                      "\\*Echo Area.*\\*\\|"
+                      "\\*Minibuf.*\\*\\|"
+                      "\\*DOC\\*\\|"
+                      "\\*Buffer List\\*\\|"
+                      "\\*Backtrace\\*\\|"
+                      "\\*WoMan-Log\\*\\|"
+                      "\\*min-splash\\*\\|"
+                      "\\*scratch\\*\\|"
+                      "\\*Metahelp\\*\\|"
+                      "\\*code-conversion-work\\*\\|"
+                      "\\*Backtrace\\*\\|"
+                      "\\*Metahelp*\\*\\|"
+                      "\\*Help*\\*\\|"
+                      "\\*Completions*\\*"
+                      )
+                     (buffer-name buffer))
+              (throw 'p t)))
+          (throw 'p nil))
     (progn
       (kill-buffer "*min-splash*")
-      (remove-hook 'buffer-list-update-hook 'kill-min-splash))))
+      (remove-hook 'post-command-hook #'kill-min-splash))))
+(add-hook 'post-command-hook #'kill-min-splash)
 
 (when (and (not (member "-no-splash"  command-line-args))
            (not (member "--file"      command-line-args))
@@ -242,47 +333,66 @@
 ;;; External packages
 (progn
   (require 'package)
-  (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
-  (setq package-list
-        '(company
-          eglot
-          lua-mode
-          org-bullets
-          ox-reveal
-          evil
-          undo-fu
-          bongo
-          aggressive-indent
-          eterm-256color
-          default-text-scale
-          rainbow-mode))
   (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
-  (add-to-list 'package-archives '("gnu" . "https://elpa.gnu.org/packages/") t))
+  (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
+  (defun auto-install()
+    "Automatically install required packages"
+    (interactive)
+    (package-initialize)
+    (package-refresh-contents)
+    (let (package-list)
+      (setq package-list
+            '(
+              ;; Colors
+              rainbow-mode eterm-256color
 
-;;;; Dired
-(require 'dired)
-(put 'dired-find-alternate-file 'disabled nil)
-(add-hook 'dired-mode-hook
-          (lambda()
-            (define-key dired-mode-map (kbd "^")
+              ;; Quality of Life Improvements
+              company aggressive-indent evil undo-fu
+              vertico restart-emacs
+
+              ;; Programming
+              eglot lua-mode yasnippet yasnippet-snippets
+
+              ;; Org-mode
+              org-bullets
+
+              ;; Extra Apps
+              bongo))
+
+      (dolist (package package-list)
+        (unless
+            (package-installed-p package) (package-install package))))))
+
+
+(when (require 'dired nil 'noerror) ;; Dired
+  (progn
+    (put 'dired-find-alternate-file 'disabled nil)
+    (define-key dired-mode-map "^"
+      (lambda()
+        (interactive)
+        (find-alternate-file "..")))
+    (define-key dired-mode-map "n" (lambda () (interactive))) ;; Disable "n" key
+    (define-key dired-mode-map (kbd "<return>") 'dired-find-alternate-file)))
+
+
+(when (require 'term nil 'noerror) ;; Terminals (ansi-term, term, and others)·
+  (progn
+    (define-key term-raw-map "\C-c\C-n" 'term-line-mode)
+    (define-key term-raw-map (kbd "C-S-v")
+      (lambda()
+        (interactive)
+        (term-send-raw-string (gui-get-selection
+                               'CLIPBOARD
+                               (or x-select-request-type 'UTF8_STRING)))))
+    (add-hook 'term-mode-hook
               (lambda()
                 (interactive)
-                (find-alternate-file "..")))))
-(define-key dired-mode-map (kbd "<return>") 'dired-find-alternate-file)
-;;;; Terminals (ansi-term, term, and others)
-(require 'term)
-(define-key term-raw-map (kbd "C-c C-n") 'term-line-mode)
-(define-key term-raw-map (kbd "C-S-v") 'terminal-clipboard-paste)
-(add-hook 'term-mode-hook
-          (lambda()
-            (interactive)
-            (display-line-numbers-mode 0)))
+                (display-line-numbers-mode 0)))
 
-(defadvice term-handle-exit (after term-kill-buffer-on-exit activate)
-  (progn
-    (kill-buffer)
-    (unless (equal 1 (length (window-list))) (delete-window))))
-
+    (defadvice term-handle-exit (after term-kill-buffer-on-exit activate)
+      (progn
+        (kill-buffer)
+        (unless (equal 1 (length (window-list))) (delete-window))))))
 
 (when (require 'org nil 'noerror) ;;; Org-mode
   (progn
@@ -290,33 +400,30 @@
     (define-key global-map "\C-ca" 'org-agenda)
     (define-key org-mode-map "\M-h" nil)
     (define-key org-mode-map [return] 'org-return-indent)
-    (setq org-hide-emphasis-markers t)
-    (setq org-log-done t)
-    (setq-default org-image-actual-width (list 500))
+    (setq org-ellipsis "  ▼")
+    (setq org-src-fontify-natively t) ;; Syntax highlighting in org src blocks
+    (setq org-startup-folded t)       ;; Org files start up folded by default
+    (setq-default org-hide-emphasis-markers t
+                  org-log-done t
+                  org-image-actual-width (list 500))
     (add-hook 'org-mode-hook
               (lambda()
                 (setq-local indent-tabs-mode nil)
                 (display-line-numbers-mode -1)
                 (setq-local fill-column 80)
+                (org-indent-mode 1)
                 (turn-on-auto-fill)))))
 
+(when (require 'vertico nil 'noerror)
+  (progn (vertico-mode 1)))
 
 (when (require 'bongo nil 'noerror) ;;; Bongo
   (progn
-    (setq-default bongo-mode-line-indicator-mode nil)
-    (setq-default bongo-insert-whole-directory-trees t)
-    (setq-default bongo-logo nil)
-    (setq-default bongo-enabled-backends '(mpg123))
-    (add-hook 'after-init-hook
-              (lambda()
-                (when (bound-and-true-p evil-mode)
-                  (add-hook 'bongo-playlist-mode-hook
-                            (lambda()
-                              (define-key evil-normal-state-local-map
-                                [return] 'bongo-dwim)
-                              (define-key evil-normal-state-local-map
-                                "c" 'bongo-pause/resume))))))
-    (add-hook 'bongo-playlist-mode-hook
+    (setq-default bongo-mode-line-indicator-mode nil
+                  bongo-insert-whole-directory-trees t
+                  bongo-logo nil
+                  bongo-enabled-backends '(mpg123))
+    (add-hook 'bongo-playlist-mode-hook ;; Automatically insert music dir
               (lambda()
                 (let (music_dir)
                   (setq music_dir (concat (getenv "HOME") "/Music"))
@@ -332,55 +439,95 @@
   (add-hook 'prog-mode-hook 'rainbow-mode))
 (when (require 'eterm-256color nil 'noerror)
   (add-hook 'term-mode-hook #'eterm-256color-mode))
-;;;; Org-Bullets
 (when (require 'org-bullets nil 'noerror)
-  (add-hook 'org-mode-hook 'org-bullets-mode))
-;;;; Company-mode
-(when (require 'company nil 'noerror)
-  (add-hook 'after-init-hook 'global-company-mode))
-;;;; Eglot
-(when (require 'eglot nil 'noerror)
   (progn
-    (add-hook 'c-mode-common-hook 'eglot-ensure)
-    (add-hook 'python-mode-hook 'eglot-ensure)))
+    (setq-default org-bullets-bullet-list '("ζ" "◉" "✸" ))
+    (add-hook 'org-mode-hook 'org-bullets-mode)))
+;; ;;;; Company-mode
+(when (require 'company nil 'noerror)
+  (progn
+    (when (require 'yasnippet nil 'noerror)
+      (setq-default company-backends
+                    '((company-semantic :with company-yasnippet)
+                      (company-cmake    :with company-yasnippet)
+                      (company-capf     :with company-yasnippet)
+                      (company-clang    :with company-yasnippet)
+                      (company-dabbrev-code company-gtags company-etags
+                                            company-keywords)
+                      company-files
+                      company-dabbrev))
+      (setq-default company-minimum-prefix-length 2
+                    company-idle-delay 0
+                    company-selection-wrap-around t
+                    company-require-match nil
+                    company-tooltip-align-annotations t)
+      (add-hook 'after-init-hook 'global-company-mode))))
+
+(when (require 'flymake nil 'noerror)
+  (progn
+    (define-key flymake-mode-map (kbd "M-n") 'flymake-goto-next-error)
+    (define-key flymake-mode-map (kbd "M-p") 'flymake-goto-prev-error)))
+
+(when (require 'yasnippet nil 'noerror)
+  (add-hook 'after-init-hook 'yas-global-mode))
+(when (require 'eglot nil 'noerror) ;; Eglot
+  (progn
+    ;; Performace Stuff
+    (setq gc-cons-threshold 100000000)
+    (setq read-process-output-max (* 4 1024 1024))
+
+    (let ((java-ls-dir ;; Find java lsp in "~/.emacs.d/language-servers/jdtls"
+           (concat user-emacs-directory "language-servers/jdtls/plugins"))
+          (java-ls-file nil))
+      (when (file-directory-p java-ls-dir)
+        (progn
+          (setq java-ls-file
+                (directory-files
+                 java-ls-dir
+                 nil "org[.]eclipse[.]equinox[.]launcher_.*[.]jar" nil))
+          (when java-ls-file
+            (setenv "CLASSPATH"
+                    (expand-file-name
+                     (concat java-ls-dir "/"
+                             (car java-ls-file))))))))
+    (setenv "CLASSPATH" "/home/smeueg/.emacs.d/language-servers/jdtls/plugins/org.eclipse.equinox.launcher_1.6.300.v20210813-1054.jar")
+
+    (if (or (executable "clangd") (executable "ccls"))
+        (add-hook 'c-mode-common-hook 'eglot-ensure)
+      (add-hook 'c-mode-common-hook
+                (lambda() (message "clangd or ccls is not installed"))))
+    (if (or (executable "pyls") (executable "pylsp") (executable "pyright"))
+        (add-hook 'python-mode-hook 'eglot-ensure)
+      (add-hook 'python-mode-hook
+                (lambda()
+                  (message "pyls, pylsp, or pyright is not installed"))))))
 ;;;; Lua Mode
 (when (require 'lua-mode nil 'noerror)
   (progn
     (setq-default lua-indent-level 4)
     (setq-default lua-indent-string-contents t)))
-;;;; Evil-Mode
+;; ;;;; Evil-Mode
 (setq-default evil-auto-indent t)
 (when (require 'evil nil 'noerror)
   (add-hook 'after-init-hook
             (lambda()
               (evil-mode 1)
+              (setq-default evil-insert-state-cursor 'bar)
 
-              (when (require 'org nil 'noerror)
-                (add-hook 'org-mode-hook
-                          (lambda()
-                            (define-key evil-normal-state-local-map "\M-L"
-                              'org-shiftmetaright)
-                            (define-key evil-normal-state-local-map "\M-J"
-                              'org-shiftmetadown)
-                            (define-key evil-normal-state-local-map "\M-K"
-                              'org-shiftmetaup)
-                            (define-key evil-normal-state-local-map "\M-H"
-                              'org-shiftmetaleft))))
-              (add-hook 'buffer-menu-mode-hook
-                        (lambda()
-                          (define-key evil-motion-state-local-map [return]
-                            (lambda()
-                              (interactive)
-                              (Buffer-menu-select)
-                              (kill-buffer "*Buffer List*")))))
+              ;; Space as "leader" in dired
               (define-key dired-mode-map " " nil)
+
+              ;; Org-mode
+              (evil-define-key 'normal org-mode-map
+                " i" 'org-display-inline-images
+                [return] 'org-open-at-point)
 
               ;; Undo/Redo ;
               (when (require 'undo-fu nil 'noerror)
-                (progn
-                  (setq evil-undo-system 'undo-fu)
-                  (define-key evil-normal-state-map "u" 'undo-fu-only-undo)
-                  (define-key evil-normal-state-map "\C-r" 'undo-fu-only-redo)))
+                (setq evil-undo-system 'undo-fu)
+                (evil-define-key 'normal 'global
+                  "u" 'undo-fu-only-undo
+                  "\C-r" 'undo-fu-only-redo))
 
               ;; For ansi-term ;
               (define-key term-raw-map "\C-c\C-n"
@@ -393,103 +540,99 @@
               (add-hook 'term-mode-hook 'turn-off-evil-mode)
               (add-hook 'evil-insert-state-entry-hook
                         (lambda()
-                          (interactive)
                           (when (equal major-mode 'term-mode)
-                            (progn
-                              (turn-off-evil-mode)
-                              (when (term-in-line-mode) (term-char-mode))
-                              (setq cursor-type 'box)))))
+                            (turn-off-evil-mode)
+                            (when (term-in-line-mode) (term-char-mode)))))
 
-              (add-hook 'org-mode-hook
-                        (lambda()
-                          (interactive)
-                          (evil-define-key 'normal 'local
-                            " i" 'org-display-inline-images
-                            [return] 'org-open-at-point)))
-
-              ;; Custom Mappings ;;
               (define-key evil-motion-state-map " " nil)
               (when (fboundp 'run) (evil-define-key 'normal 'global "  " 'run))
               (evil-define-key 'visual 'global " c"
-                (lambda()
-                  (interactive)
-                  (let ((evil-this-register ?+))
-                    (call-interactively #'evil-yank))))
+                (lambda (beg end)
+                  (interactive "r")
+                  (gui-set-selection
+                   'CLIPBOARD
+                   (substring-no-properties (filter-buffer-substring beg end)))
+                  (evil-normal-state 1)))
 
-              (evil-define-key '(emacs motion normal) 'global " k"
-                (lambda()
-                  (interactive)
-                  (unless (and (kill-buffer) (equal 1 (length (window-list))))
-                    (delete-window))))
+              (evil-define-key '(emacs motion normal) 'global
+                " k" 'close
+                " K" 'kill-buffer
+                " D" 'delete-window
+                " q" (lambda ()
+                       (interactive)
+                       (when (y-or-n-p "Quit Emacs?")
+                         (kill-emacs))))
 
+              (evil-define-key 'normal 'global "gc" 'comment-line)
+              (evil-define-key 'visual 'global "gc" 'comment-region)
               (evil-define-key '(normal motion visual) 'global
                 "j" 'evil-next-visual-line
                 "k" 'evil-previous-visual-line
-                [return] (lambda() (interactive)))
+                [return] 'push-button)
 
-              (evil-define-key '(insert normal visual operator motion) 'global
-                (kbd "M-h") (lambda()
+              (when (fboundp 'bongo-playlist)
+                (evil-define-key 'normal 'global " m" 'bongo-playlist)
+                (evil-define-key 'normal bongo-mode-map
+                  [return] 'bongo-dwim
+                  "c" 'bongo-pause/resume))
+
+
+              (evil-define-key
+                '(insert normal visual operator motion replace) 'global
+                (kbd "M-h") (lambda ()
                               (interactive)
-                              (evil-normal-state 1) (evil-backward-char))
-                (kbd "M-j") (lambda()
+                              (evil-normal-state 1)
+                              (evil-backward-char))
+                (kbd "M-j") (lambda ()
                               (interactive)
                               (evil-normal-state 1) (next-line))
-                (kbd "M-k") (lambda()
+                (kbd "M-k") (lambda ()
                               (interactive)
-                              (evil-normal-state 1) (previous-line))
-                (kbd "M-l") (lambda()
+                              (evil-normal-state 1)
+                              (previous-line))
+                (kbd "M-l") (lambda ()
                               (interactive)
-                              (evil-normal-state 1) (evil-forward-char)))
+                              (evil-normal-state 1)
+                              (evil-forward-char))
+                "\C-k" 'evil-insert-digraph
+                (kbd "C-S-k")'text-scale-increase
+                (kbd "C-S-j")'text-scale-decrease
+                (kbd "C-S-l")(lambda () (interactive) (text-scale-adjust 0)))
 
-              (add-hook 'dired-mode-hook
-                        (lambda()
-                          (interactive)
-                          (define-key dired-mode-map "G" nil)))
-              (add-hook 'after-init-hook
-                        (lambda()
-                          (when (featurep 'bongo)
-                            (evil-define-key 'normal 'global
-                              " m" 'bongo-playlist))))
+
+              (evil-define-key 'insert 'global
+                (kbd "C-S-v") (lambda ()
+                                (interactive)
+                                (insert (get-system-clipboard))))
+
+              (when (fboundp 'restart-emacs)
+                (evil-define-key '(normal motion) 'global
+                  " R" (lambda () (interactive)
+                         (when (y-or-n-p "Restart Emacs?") (restart-emacs)))))
+
               (evil-define-key '(normal motion) 'global
+                ":"   (lambda () (interactive) (execute-extended-command nil))
                 " a"  'mark-whole-buffer
-                " b"  'buffer-menu-other-window
+                " b"  'switch-to-buffer
                 " f"  'find-file
                 " h"  'help
-                " s"  (lambda()
-                        (interactive)
-                        (switch-to-buffer "*scratch*"))
-                " l"  (lambda()
-                        (interactive)
-                        (if global-display-line-numbers-mode
-                            (global-display-line-numbers-mode 0)
-                          (global-display-line-numbers-mode 1)))
-                " r"  (lambda()
-                        (interactive)
-                        (load-theme 'warmspace 1))
-                " T"  (lambda()
-                        (interactive)
+                " l"  'global-display-line-numbers-mode
+                " s"  (lambda () (interactive) (switch-to-buffer "*scratch*"))
+                " r"  (lambda () (interactive) (load-theme 'warmspace 1))
+                " T"  (lambda () (interactive)
                         (split-window-below)
                         (other-window 1)
                         (ansi-term (getenv "SHELL")))
-                " 80" (lambda()
-                        (interactive)
-                        (move-to-column 80))
-                " t"  (lambda()
-                        (interactive)
-                        (ansi-term (getenv "SHELL")))
-                " D"  (lambda()
-                        (interactive)
-                        (dired "."))
-                " d"  (lambda()
-                        (interactive)
+                " 80" (lambda () (interactive) (move-to-column 80))
+                " t"  (lambda () (interactive) (ansi-term (getenv "SHELL")))
+                " F"  (lambda () (interactive) (dired "."))
+                " d"  (lambda () (interactive)
                         (find-file
                          (concat (getenv "HOME") "/Documents/Notes/Notes.org")))
                 " et"  (lambda()
                          (interactive)
                          (find-file
-                          (concat (getenv "HOME")
-                                  "/.emacs.d/warmspace-theme.el")))
+                          (locate-user-emacs-file "warmspace-theme.el")))
                 " ei" (lambda()
                         (interactive)
-                        (find-file
-                         (concat (getenv "HOME") "/.emacs.d/init.el")))))))
+                        (find-file (concat user-emacs-directory "init.el")))))))
