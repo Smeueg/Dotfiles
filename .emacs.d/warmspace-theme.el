@@ -72,6 +72,16 @@
    `(ml/read-only-face
      ((,class (:background ,red :foreground ,bg :weight bold
                            :box (:line-width ,box-width :color ,bg2)))))
+   ;; Regular Term (Ansi-term)
+   `(term               ((,class (:foreground ,fg))))
+   `(term-color-black   ((,class (:foreground ,bg3))))
+   `(term-color-blue    ((,class (:foreground ,blue))))
+   `(term-color-cyan    ((,class (:foreground ,cyan))))
+   `(term-color-green   ((,class (:foreground ,green))))
+   `(term-color-magenta ((,class (:foreground ,magenta))))
+   `(term-color-red     ((,class (:foreground ,red))))
+   `(term-color-white   ((,class (:foreground ,fg))))
+   `(term-color-yellow  ((,class (:foreground ,yellow))))
    ;; (Custom Splash Screen)
    `(splash-text         ((,class (:foreground ,fg  :weight bold))))
    `(splash-text-special ((,class (:foreground ,bg3 :weight bold))))

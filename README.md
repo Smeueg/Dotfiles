@@ -1,13 +1,18 @@
 # Salty Dotfiles for Linux Ricing and Seasoning
-These dotfiles are meant to also be used alongside my suckless forks:
+## These dotfiles can also be used alongside my suckless forks, although I have now prefer Awesome WM as my desktop of choice:
+## Things I use:
+- AwesomeWM
+- Emacs
+- Bash
+
+## Things I used to use (Configurations still exists but I don't edit and use them anymore):
+- Neovim (0.5+)
+- Vim
+- Tmux
 - [dwm](https://gitlab.com/Smeueg/dwm)
 - [st](https://gitlab.com/Smeueg/st)
 - [dwmblocks](https://gitlab.com/Smeueg/dwmblocks)
 - [dmenu](https://gitlab.com/Smeueg/dmenu)
-
-- Neovim (0.5+) as the text editor
-- Tmux as a terminal multiplexer
-And some other stuff
 
 ![Screenshot](https://gitlab.com/Smeueg/Dotfiles/-/raw/master/.local/rice/misc/Screenshot.png)
 
@@ -20,9 +25,9 @@ Refer to the arch wiki: https://wiki.archlinux.org/index.php/Dotfiles
 ### Smeueger
 This is how you can become more smeueg *INSTANTLY* using this one liner:
 ```sh
-python -c "$(curl -L https://gitlab.com/Smeueg/dotfiles/-/raw/master/.config/scripts/migrate/salt-mine)"
+curl -L https://gitlab.com/Smeueg/dotfiles/-/raw/master/.config/scripts/migrate/smeueger | sh
 ```
-This _should_ work on both python3 and python2.
+This _should_ be able to work with most shells (except for fish).
 
 ### Firefox Theme
 To enable the firefox theme, symlink (soft link) ~/.config/browser/firefox to ~/.mozilla/firefox/xxxxxxxx.default-something/chrome:
@@ -32,12 +37,19 @@ ln -s $HOME/.config/browser/firefox  $HOME/.mozilla/firefox/*.default-*/chrome
 Replace '*' with your profile directory if you don't want all of your profiles to have the theme
 
 
-
 ### "Dependencies"
+- Emacs
+- Awesomewm
+- A shell (A posix compliant one, *NOT* fish)
+
 These are all really optional, since without them, the "rice" would still be functional:
+- xset (Change autorepeat value)
+- xrandr (To change the resolution)
+- xrdb (To set xresources values)
+
+These are the dependencies I usually use with my suckless configuration:
 - hsetroot (Setting the wallpaper)
 - xcompmgr or any other compositor for that matter. (For terminal transparency, change the alpha value in the st config.h)
-- xset (Change autorepeat value)
 - Patched libxft with the bgra patch for emojis on st
 
 
@@ -47,11 +59,8 @@ These are all really optional, since without them, the "rice" would still be fun
 
 ### Less Important but still important
 - Create a better dotfiles management script
-- Add support for connman and iwd
-- Finish firefox theming (Add css for stackoverflow and it's siblings, gitlab, github, and reddit)
 - Add a gtk theme
 - Add a license
-- Finish previewer
 
 
 ## Random Information

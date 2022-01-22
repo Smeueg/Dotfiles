@@ -133,8 +133,23 @@
          (or x-select-request-type
              'UTF8_STRING)) ""))
 
+
+  (defun mv-line-up ()
+    "Move the current line up one line."
+    (interactive)
+    (transpose-lines 1)
+    (previous-line 2))
+
+  (defun mv-line-down ()
+    "Move the current line down one line."
+    (interactive)
+    (next-line)
+    (transpose-lines 1)
+    (previous-line 1))
+
   (defun close ()
-    "Kill buffer when there's only one window displaying the buffer. Delete window when the current window has no previous buffers"
+    " Kill buffer when there's only one window displaying the buffer.
+      Delete window when the current window has no previous buffers"
     (interactive)
     (let ((count 0) (del nil) (kill t))
       (when (or (= 0 (length (window-prev-buffers)))
@@ -305,6 +320,7 @@
           (throw 'p nil))
     (progn
       (kill-buffer "*min-splash*")
+      (unless (= 1 (length (window-list))) (delete-window))
       (remove-hook 'post-command-hook #'kill-min-splash))))
 (add-hook 'post-command-hook #'kill-min-splash)
 
@@ -358,7 +374,6 @@
 
               ;; Extra Apps
               bongo))
-
       (dolist (package package-list)
         (unless
             (package-installed-p package) (package-install package))))))
@@ -394,113 +409,106 @@
         (kill-buffer)
         (unless (equal 1 (length (window-list))) (delete-window))))))
 
+
 (when (require 'org nil 'noerror) ;;; Org-mode
-  (progn
-    (define-key global-map "\C-cl" 'org-store-link)
-    (define-key global-map "\C-ca" 'org-agenda)
-    (define-key org-mode-map "\M-h" nil)
-    (define-key org-mode-map [return] 'org-return-indent)
-    (setq org-ellipsis "  ▼")
-    (setq org-src-fontify-natively t) ;; Syntax highlighting in org src blocks
-    (setq org-startup-folded t)       ;; Org files start up folded by default
-    (setq-default org-hide-emphasis-markers t
-                  org-log-done t
-                  org-image-actual-width (list 500))
-    (add-hook 'org-mode-hook
-              (lambda()
-                (setq-local indent-tabs-mode nil)
-                (display-line-numbers-mode -1)
-                (setq-local fill-column 80)
-                (org-indent-mode 1)
-                (turn-on-auto-fill)))))
+  (define-key global-map "\C-cl" 'org-store-link)
+  (define-key global-map "\C-ca" 'org-agenda)
+  (define-key org-mode-map "\M-h" nil)
+  (define-key org-mode-map [return] 'org-return-indent)
+  (setq org-ellipsis "  ▼")
+  (setq org-src-fontify-natively t) ;; Syntax highlighting in org src blocks
+  (setq org-startup-folded t)       ;; Org files start up folded by default
+  (setq-default org-hide-emphasis-markers t
+                org-log-done t
+                org-image-actual-width (list 500))
+  (add-hook 'org-mode-hook
+            (lambda()
+              (setq-local indent-tabs-mode nil)
+              (display-line-numbers-mode -1)
+              (setq-local fill-column 80)
+              (org-indent-mode 1)
+              (turn-on-auto-fill))))
+
 
 (when (require 'vertico nil 'noerror)
-  (progn (vertico-mode 1)))
+  (vertico-mode 1))
+
 
 (when (require 'bongo nil 'noerror) ;;; Bongo
-  (progn
-    (setq-default bongo-mode-line-indicator-mode nil
-                  bongo-insert-whole-directory-trees t
-                  bongo-logo nil
-                  bongo-enabled-backends '(mpg123))
-    (add-hook 'bongo-playlist-mode-hook ;; Automatically insert music dir
-              (lambda()
-                (let (music_dir)
-                  (setq music_dir (concat (getenv "HOME") "/Music"))
-                  (when (file-directory-p music_dir)
-                    (bongo-insert-file music_dir))
-                  (display-line-numbers-mode 0)
-                  (goto-char 1))))))
+  (setq-default bongo-mode-line-indicator-mode nil
+                bongo-insert-whole-directory-trees t
+                bongo-logo nil
+                bongo-enabled-backends '(mpg123))
+  (add-hook 'bongo-playlist-mode-hook ;; Automatically insert music dir
+            (lambda()
+              (let (music_dir)
+                (setq music_dir (concat (getenv "HOME") "/Music"))
+                (when (file-directory-p music_dir)
+                  (bongo-insert-file music_dir))
+                (display-line-numbers-mode 0)
+                (goto-char 1)))))
 
 (if (require 'aggressive-indent nil 'noerror)
     (global-aggressive-indent-mode 1)
   (electric-indent-mode 1))
+
 (when (require 'rainbow-mode nil 'noerror)
   (add-hook 'prog-mode-hook 'rainbow-mode))
+
 (when (require 'eterm-256color nil 'noerror)
   (add-hook 'term-mode-hook #'eterm-256color-mode))
+
 (when (require 'org-bullets nil 'noerror)
   (progn
     (setq-default org-bullets-bullet-list '("ζ" "◉" "✸" ))
     (add-hook 'org-mode-hook 'org-bullets-mode)))
 ;; ;;;; Company-mode
 (when (require 'company nil 'noerror)
-  (progn
-    (when (require 'yasnippet nil 'noerror)
-      (setq-default company-backends
-                    '((company-semantic :with company-yasnippet)
-                      (company-cmake    :with company-yasnippet)
-                      (company-capf     :with company-yasnippet)
-                      (company-clang    :with company-yasnippet)
-                      (company-dabbrev-code company-gtags company-etags
-                                            company-keywords)
-                      company-files
-                      company-dabbrev))
-      (setq-default company-minimum-prefix-length 2
-                    company-idle-delay 0
-                    company-selection-wrap-around t
-                    company-require-match nil
-                    company-tooltip-align-annotations t)
-      (add-hook 'after-init-hook 'global-company-mode))))
+  (when (require 'yasnippet nil 'noerror)
+    (setq-default company-backends
+                  '((company-semantic :with company-yasnippet)
+                    (company-cmake    :with company-yasnippet)
+                    (company-capf     :with company-yasnippet)
+                    (company-clang    :with company-yasnippet)
+                    (company-dabbrev-code company-gtags company-etags
+                                          company-keywords)
+                    company-files
+                    company-dabbrev))
+    (setq-default company-minimum-prefix-length 2
+                  company-idle-delay 0
+                  company-selection-wrap-around t
+                  company-require-match nil
+                  company-tooltip-align-annotations t)
+    (add-hook 'after-init-hook 'global-company-mode)))
 
 (when (require 'flymake nil 'noerror)
-  (progn
-    (define-key flymake-mode-map (kbd "M-n") 'flymake-goto-next-error)
-    (define-key flymake-mode-map (kbd "M-p") 'flymake-goto-prev-error)))
+  (define-key flymake-mode-map (kbd "M-n") 'flymake-goto-next-error)
+  (define-key flymake-mode-map (kbd "M-p") 'flymake-goto-prev-error))
 
 (when (require 'yasnippet nil 'noerror)
   (add-hook 'after-init-hook 'yas-global-mode))
+
 (when (require 'eglot nil 'noerror) ;; Eglot
-  (progn
-    ;; Performace Stuff
-    (setq gc-cons-threshold 100000000)
-    (setq read-process-output-max (* 4 1024 1024))
+  ;; Performace Stuff
+  (setq gc-cons-threshold 100000000)
+  (setq read-process-output-max (* 4 1024 1024))
 
-    (let ((java-ls-dir ;; Find java lsp in "~/.emacs.d/language-servers/jdtls"
-           (concat user-emacs-directory "language-servers/jdtls/plugins"))
-          (java-ls-file nil))
-      (when (file-directory-p java-ls-dir)
-        (progn
-          (setq java-ls-file
-                (directory-files
-                 java-ls-dir
-                 nil "org[.]eclipse[.]equinox[.]launcher_.*[.]jar" nil))
-          (when java-ls-file
-            (setenv "CLASSPATH"
-                    (expand-file-name
-                     (concat java-ls-dir "/"
-                             (car java-ls-file))))))))
-    (setenv "CLASSPATH" "/home/smeueg/.emacs.d/language-servers/jdtls/plugins/org.eclipse.equinox.launcher_1.6.300.v20210813-1054.jar")
+  (let ((dir (concat user-emacs-directory "language-servers/jdtls/plugins/"))
+        (file nil))
+    (when (file-directory-p dir)
+      (setq file (directory-files dir nil ".*[.]launcher_.*[.]jar" nil))
+      (when file
+        (setenv "CLASSPATH" (expand-file-name (concat dir (car file)))))))
 
-    (if (or (executable "clangd") (executable "ccls"))
-        (add-hook 'c-mode-common-hook 'eglot-ensure)
-      (add-hook 'c-mode-common-hook
-                (lambda() (message "clangd or ccls is not installed"))))
-    (if (or (executable "pyls") (executable "pylsp") (executable "pyright"))
-        (add-hook 'python-mode-hook 'eglot-ensure)
-      (add-hook 'python-mode-hook
-                (lambda()
-                  (message "pyls, pylsp, or pyright is not installed"))))))
+  (if (or (executable "clangd") (executable "ccls"))
+      (add-hook 'c-mode-common-hook 'eglot-ensure)
+    (add-hook 'c-mode-common-hook
+              (lambda() (message "clangd or ccls is not installed"))))
+  (if (or (executable "pyls") (executable "pylsp") (executable "pyright"))
+      (add-hook 'python-mode-hook 'eglot-ensure)
+    (add-hook 'python-mode-hook
+              (lambda()
+                (message "pyls, pylsp, or pyright is not installed")))))
 ;;;; Lua Mode
 (when (require 'lua-mode nil 'noerror)
   (progn
@@ -512,7 +520,6 @@
   (add-hook 'after-init-hook
             (lambda()
               (evil-mode 1)
-              (setq-default evil-insert-state-cursor 'bar)
 
               ;; Space as "leader" in dired
               (define-key dired-mode-map " " nil)
@@ -542,7 +549,9 @@
                         (lambda()
                           (when (equal major-mode 'term-mode)
                             (turn-off-evil-mode)
-                            (when (term-in-line-mode) (term-char-mode)))))
+                            (when (term-in-line-mode)
+                              (term-char-mode))
+                            (setq-local cursor-type 'box))))
 
               (define-key evil-motion-state-map " " nil)
               (when (fboundp 'run) (evil-define-key 'normal 'global "  " 'run))
@@ -609,6 +618,12 @@
                 (evil-define-key '(normal motion) 'global
                   " R" (lambda () (interactive)
                          (when (y-or-n-p "Restart Emacs?") (restart-emacs)))))
+
+              (when (fboundp 'mv-line-up)
+                (evil-define-key 'normal 'global (kbd "M-p") 'mv-line-up))
+
+              (when (fboundp 'mv-line-down)
+                (evil-define-key 'normal 'global (kbd "M-n") 'mv-line-down))
 
               (evil-define-key '(normal motion) 'global
                 ":"   (lambda () (interactive) (execute-extended-command nil))
