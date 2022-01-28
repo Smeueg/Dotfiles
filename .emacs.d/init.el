@@ -21,6 +21,8 @@
    make-backup-files nil
    ;; Do not create autosave file i.e. #file#
    auto-save-default nil
+   ;; Do not create autosave directory i.e. ~/.emacs.d/auto-save-list
+   auto-save-list-file-prefix nil
    ;; Do not open emacs startup buffer
    inhibit-startup-screen t
    ;; Do noto create lockfiles i.e. .#file
@@ -45,7 +47,6 @@
    ;; Always use emacs's minibuffer instead of a gui window
    use-dialog-box nil
    ;; Don't add custom-set-variable in this file
-   custom-file (expand-file-name "custom.el" user-emacs-directory)
    custom-file (make-temp-file "")
    ;; Categorize every theme to be safe
    custom-safe-themes t
@@ -79,7 +80,12 @@
   (add-to-list 'default-frame-alist
                '(internal-boder-width . 20))
 
-  (load-theme 'warmspace 1)
+  ;; My custom theme
+  (when (member 'warmspace (custom-available-themes))
+    (load-theme 'warmspace 1))
+
+  ;; Disable cursor when window isn't focused
+  (setq-default cursor-in-non-selected-windows nil)
   (set-frame-font "JetBrains Mono-12")
   (menu-bar-mode 0)           ;; Disable menu bar
   (blink-cursor-mode 0)       ;; Disable cursor blinking
@@ -124,6 +130,57 @@
   (defalias 'w 'save-buffer)
   (defalias 'hs 'split-window-horizontally)
   (defalias 'vs 'split-window-vertically)
+  (defalias 's 'replace-regexp)
+
+
+  (defun lsp-install-java ()
+    (let ((url nil)
+          (buffer nil)
+          (dir (expand-file-name
+                (locate-user-emacs-file "language-servers/jdtls/"))))
+
+      (setq tar-file (concat dir "jdtls.tar.gz"))
+      (unless (file-directory-p dir)
+        (make-directory dir))
+
+      (when (file-directory-p dir)
+        (setq url "https://download.eclipse.org/jdtls/milestones/?d")
+        (setq url
+              (concat
+               "https://download.eclipse.org"
+               (with-current-buffer (url-retrieve-synchronously url)
+                 (goto-char (point-max))
+                 (goto-char (re-search-backward "jdtls[/]milestones[/][1-9.]+"))
+                 (thing-at-point 'filename t))))
+        (unless url (user-error "Failed to retrieve url"))
+        (setq url
+              (concat
+               "https://download.eclipse.org"
+               (with-current-buffer (url-retrieve-synchronously url)
+                 (goto-char 0)
+                 (goto-char (re-search-forward "tar[.]gz"))
+                 (thing-at-point 'filename t))))
+        (unless url (user-error "Failed to retrieve url"))
+        (setq buffer (url-retrieve-synchronously url))
+        (unless buffer (user-error "Failed to retrieve url"))
+        (with-current-buffer buffer
+          (re-search-forward "\r?\n\r?\n")
+          (write-region (point) (point-max) tar-file))
+        (let ((warning-minimum-level :error)))
+        (with-current-buffer (find-file tar-file)
+          (cd dir)
+          (tar-untar-buffer)
+          (delete-file tar-file)
+          (kill-buffer (current-buffer))))))
+
+  (defun lsp-install (server)
+    "Install a language server (for eglot)"
+    (interactive (list (completing-read "Language server to install:"
+                                        '("eclipse jdtls" "pyright"))))
+    (let (func)
+      (setq func (cdr (assoc server '(("eclipse jdtls" . lsp-install-java)
+                                      ("pyright" . lsp-install-pyright)))))
+      (if func (funcall func) (message "Unknown language server"))))
 
   (defun get-system-clipboard ()
     "Get value of the system clipboard"
@@ -153,7 +210,7 @@
     (interactive)
     (let ((count 0) (del nil) (kill t))
       (when (or (= 0 (length (window-prev-buffers)))
-                (and (equal (current-buffer) (car (car (window-prev-buffers))))
+                (and (equal (current-buffer) (caar (window-prev-buffers)))
                      (= 1 (length (window-prev-buffers)))))
         (setq del t))
 
@@ -166,7 +223,13 @@
             (when (equal (current-buffer) (car buffer))
               (setq kill nil)
               (throw 'break nil)))))
-      (if kill (kill-buffer) (switch-to-prev-buffer))
+      (if kill (kill-buffer)
+        (let ((var '()) (cur (current-buffer)))
+          (switch-to-prev-buffer)
+          (dolist (buffer (window-prev-buffers))
+            (unless (eq cur (car buffer))
+              (push buffer var)))
+          (set-window-prev-buffers (selected-window) var)))
       (when del (delete-window))))
 
   (defun executable(cmd)
@@ -358,8 +421,7 @@
     (package-refresh-contents)
     (let (package-list)
       (setq package-list
-            '(
-              ;; Colors
+            '(;; Colors
               rainbow-mode eterm-256color
 
               ;; Quality of Life Improvements
@@ -373,54 +435,54 @@
               org-bullets
 
               ;; Extra Apps
-              bongo))
+              bongo fireplace))
       (dolist (package package-list)
         (unless
             (package-installed-p package) (package-install package))))))
 
 
 (when (require 'dired nil 'noerror) ;; Dired
-  (progn
-    (put 'dired-find-alternate-file 'disabled nil)
-    (define-key dired-mode-map "^"
-      (lambda()
-        (interactive)
-        (find-alternate-file "..")))
-    (define-key dired-mode-map "n" (lambda () (interactive))) ;; Disable "n" key
-    (define-key dired-mode-map (kbd "<return>") 'dired-find-alternate-file)))
+  (put 'dired-find-alternate-file 'disabled nil)
+  (define-key dired-mode-map "^"
+    (lambda()
+      (interactive)
+      (find-alternate-file "..")))
+  (define-key dired-mode-map (kbd "<return>") 'dired-find-alternate-file))
+
+
+(when (require 'tramp nil 'noerror)
+  (setq-default tramp-persistency-file-name "/tmp/tramp"))
 
 
 (when (require 'term nil 'noerror) ;; Terminals (ansi-term, term, and others)·
-  (progn
-    (define-key term-raw-map "\C-c\C-n" 'term-line-mode)
-    (define-key term-raw-map (kbd "C-S-v")
-      (lambda()
-        (interactive)
-        (term-send-raw-string (gui-get-selection
-                               'CLIPBOARD
-                               (or x-select-request-type 'UTF8_STRING)))))
-    (add-hook 'term-mode-hook
-              (lambda()
-                (interactive)
-                (display-line-numbers-mode 0)))
+  (define-key term-raw-map "\C-c\C-n" 'term-line-mode)
+  (define-key term-raw-map (kbd "C-S-v")
+    (lambda()
+      (interactive)
+      (term-send-raw-string (gui-get-selection
+                             'CLIPBOARD
+                             (or x-select-request-type 'UTF8_STRING)))))
+  (add-hook 'term-mode-hook
+            (lambda()
+              (interactive)
+              (display-line-numbers-mode 0)))
 
-    (defadvice term-handle-exit (after term-kill-buffer-on-exit activate)
-      (progn
-        (kill-buffer)
-        (unless (equal 1 (length (window-list))) (delete-window))))))
+  (defadvice term-handle-exit (after term-kill-buffer-on-exit activate)
+    (close)))
 
 
 (when (require 'org nil 'noerror) ;;; Org-mode
   (define-key global-map "\C-cl" 'org-store-link)
-  (define-key global-map "\C-ca" 'org-agenda)
   (define-key org-mode-map "\M-h" nil)
   (define-key org-mode-map [return] 'org-return-indent)
   (setq org-ellipsis "  ▼")
   (setq org-src-fontify-natively t) ;; Syntax highlighting in org src blocks
   (setq org-startup-folded t)       ;; Org files start up folded by default
+  (setq note-file "~/Documents/Notes/Notes.org")
   (setq-default org-hide-emphasis-markers t
                 org-log-done t
-                org-image-actual-width (list 500))
+                org-image-actual-width (list 500)
+                org-agenda-files `(,note-file))
   (add-hook 'org-mode-hook
             (lambda()
               (setq-local indent-tabs-mode nil)
@@ -459,11 +521,16 @@
   (add-hook 'term-mode-hook #'eterm-256color-mode))
 
 (when (require 'org-bullets nil 'noerror)
-  (progn
-    (setq-default org-bullets-bullet-list '("ζ" "◉" "✸" ))
-    (add-hook 'org-mode-hook 'org-bullets-mode)))
+  (setq-default org-bullets-bullet-list '("ζ" "◉" "✸" ))
+  (add-hook 'org-mode-hook 'org-bullets-mode))
 ;; ;;;; Company-mode
 (when (require 'company nil 'noerror)
+  (add-hook 'after-init-hook 'global-company-mode)
+  (setq-default company-minimum-prefix-length 2
+                company-idle-delay 0
+                company-selection-wrap-around t
+                company-require-match nil
+                company-tooltip-align-annotations t)
   (when (require 'yasnippet nil 'noerror)
     (setq-default company-backends
                   '((company-semantic :with company-yasnippet)
@@ -473,27 +540,22 @@
                     (company-dabbrev-code company-gtags company-etags
                                           company-keywords)
                     company-files
-                    company-dabbrev))
-    (setq-default company-minimum-prefix-length 2
-                  company-idle-delay 0
-                  company-selection-wrap-around t
-                  company-require-match nil
-                  company-tooltip-align-annotations t)
-    (add-hook 'after-init-hook 'global-company-mode)))
+                    company-dabbrev))))
 
 (when (require 'flymake nil 'noerror)
   (define-key flymake-mode-map (kbd "M-n") 'flymake-goto-next-error)
   (define-key flymake-mode-map (kbd "M-p") 'flymake-goto-prev-error))
 
-(when (require 'yasnippet nil 'noerror)
-  (add-hook 'after-init-hook 'yas-global-mode))
+(when (require 'yasnippet nil 'noerror) ;; Yasnippet
+  (add-hook 'after-init-hook 'yas-global-mode)
+  (setq-default yas-snippet-dirs '("/tmp/yasnippet")))
 
 (when (require 'eglot nil 'noerror) ;; Eglot
   ;; Performace Stuff
   (setq gc-cons-threshold 100000000)
   (setq read-process-output-max (* 4 1024 1024))
 
-  (let ((dir (concat user-emacs-directory "language-servers/jdtls/plugins/"))
+  (let ((dir (locate-user-emacs-file "language-servers/jdtls/plugins"))
         (file nil))
     (when (file-directory-p dir)
       (setq file (directory-files dir nil ".*[.]launcher_.*[.]jar" nil))
@@ -509,27 +571,30 @@
     (add-hook 'python-mode-hook
               (lambda()
                 (message "pyls, pylsp, or pyright is not installed")))))
-;;;; Lua Mode
-(when (require 'lua-mode nil 'noerror)
-  (progn
-    (setq-default lua-indent-level 4)
-    (setq-default lua-indent-string-contents t)))
-;; ;;;; Evil-Mode
+
+(when (require 'lua-mode nil 'noerror) ;; Lua Mode
+  (setq-default lua-indent-level 4)
+  (setq-default lua-indent-string-contents t))
+
+(when (require 'fireplace nil 'noerror)
+  (define-key fireplace-mode-map "q" 'fireplace-off))
+
+;; Evil-Mode
 (setq-default evil-auto-indent t)
 (when (require 'evil nil 'noerror)
   (add-hook 'after-init-hook
             (lambda()
               (evil-mode 1)
 
-              ;; Space as "leader" in dired
-              (define-key dired-mode-map " " nil)
 
               ;; Org-mode
               (evil-define-key 'normal org-mode-map
                 " i" 'org-display-inline-images
+                (kbd "M-C-h") 'org-shiftmetaleft
+                (kbd "M-C-l") 'org-shiftmetaright
                 [return] 'org-open-at-point)
 
-              ;; Undo/Redo ;
+              ;; Undo/Redo with undo-fu
               (when (require 'undo-fu nil 'noerror)
                 (setq evil-undo-system 'undo-fu)
                 (evil-define-key 'normal 'global
@@ -555,13 +620,6 @@
 
               (define-key evil-motion-state-map " " nil)
               (when (fboundp 'run) (evil-define-key 'normal 'global "  " 'run))
-              (evil-define-key 'visual 'global " c"
-                (lambda (beg end)
-                  (interactive "r")
-                  (gui-set-selection
-                   'CLIPBOARD
-                   (substring-no-properties (filter-buffer-substring beg end)))
-                  (evil-normal-state 1)))
 
               (evil-define-key '(emacs motion normal) 'global
                 " k" 'close
@@ -579,7 +637,7 @@
                 "k" 'evil-previous-visual-line
                 [return] 'push-button)
 
-              (when (fboundp 'bongo-playlist)
+              (when (require 'bongo nil 'noerror)
                 (evil-define-key 'normal 'global " m" 'bongo-playlist)
                 (evil-define-key 'normal bongo-mode-map
                   [return] 'bongo-dwim
@@ -608,22 +666,35 @@
                 (kbd "C-S-j")'text-scale-decrease
                 (kbd "C-S-l")(lambda () (interactive) (text-scale-adjust 0)))
 
-
+              ;; Clipboard/Copy/Paste
               (evil-define-key 'insert 'global
                 (kbd "C-S-v") (lambda ()
                                 (interactive)
                                 (insert (get-system-clipboard))))
+              (evil-define-key 'visual 'global " c"
+                (lambda (beg end)
+                  (interactive "r")
+                  (gui-set-selection
+                   'CLIPBOARD (substring-no-properties
+                               (filter-buffer-substring beg end)))
+                  (evil-normal-state 1)))
 
               (when (fboundp 'restart-emacs)
                 (evil-define-key '(normal motion) 'global
                   " R" (lambda () (interactive)
                          (when (y-or-n-p "Restart Emacs?") (restart-emacs)))))
 
+              ;; Move line up and down
               (when (fboundp 'mv-line-up)
                 (evil-define-key 'normal 'global (kbd "M-p") 'mv-line-up))
-
               (when (fboundp 'mv-line-down)
                 (evil-define-key 'normal 'global (kbd "M-n") 'mv-line-down))
+
+              ;; Dired Shenanigans
+              (when (require 'dired nil 'noerror)
+                (define-key dired-mode-map "n" 'evil-search-next)
+                ;; Space as leader key in dired
+                (define-key dired-mode-map " " nil))
 
               (evil-define-key '(normal motion) 'global
                 ":"   (lambda () (interactive) (execute-extended-command nil))
@@ -641,13 +712,11 @@
                 " 80" (lambda () (interactive) (move-to-column 80))
                 " t"  (lambda () (interactive) (ansi-term (getenv "SHELL")))
                 " F"  (lambda () (interactive) (dired "."))
-                " d"  (lambda () (interactive)
-                        (find-file
-                         (concat (getenv "HOME") "/Documents/Notes/Notes.org")))
+                " d"  (lambda () (interactive) (find-file note-file))
                 " et"  (lambda()
                          (interactive)
                          (find-file
                           (locate-user-emacs-file "warmspace-theme.el")))
                 " ei" (lambda()
                         (interactive)
-                        (find-file (concat user-emacs-directory "init.el")))))))
+                        (find-file (locate-user-emacs-file "init.el")))))))

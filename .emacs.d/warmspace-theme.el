@@ -21,19 +21,21 @@
 	           (:background ,bg :foreground ,fg))
 	          (,class
 	           (:background "#3a3a3a" :foreground ,fg))))
-   `(cursor ((,class (:background ,fg :foreground ,bg))))
    ;; Emacs Stuff
+   `(cursor                   ((,class (:background ,fg :foreground ,bg))))
    `(line-number-current-line ((,class (:background ,bg :foreground ,orange))))
-   `(line-number ((,class (:background ,bg :foreground ,bg3))))
-   `(show-paren-match ((,class (:foreground ,orange :weight bold))))
-   `(show-paren-mismatch ((,class (:foreground ,red :weight bold))))
-   `(scroll-bar ((,class (:background ,bg))))
-   `(region ((,class (:background ,bg2))))
-   `(vertical-border ((,class (:background ,bg2 :foreground ,bg2))))
-   `(fringe ((,class (:background ,bg :foreground ,bg))))
-   `(header-line ((,class (:background ,bg))))
-   `(whitespace-line ((,class (:background ,bg2 :foreground ,magenta :weight bold))))
-   `(completions-common-part ((,class (:foreground ,orange :weight bold))))
+   `(line-number              ((,class (:background ,bg :foreground ,bg3))))
+   `(show-paren-match         ((,class (:foreground ,orange :weight bold))))
+   `(show-paren-mismatch      ((,class (:foreground ,red :weight bold))))
+   `(scroll-bar               ((,class (:background ,bg))))
+   `(region                   ((,class (:background ,bg2))))
+   `(vertical-border          ((,class (:background ,bg2 :foreground ,bg2))))
+   `(fringe                   ((,class (:background ,bg :foreground ,bg))))
+   `(header-line              ((,class (:background ,bg))))
+   `(completions-common-part  ((,class (:foreground ,orange :weight bold))))
+   `(highlight                ((,class (:foreground ,orange :background ,bg3))))
+   `(whitespace-line
+     ((,class (:background ,bg2 :foreground ,magenta :weight bold))))
    ;; Escape and prompt faces
    `(minibuffer-prompt
      ((,class (:background ,bg :foreground ,orange :weight bold))))
@@ -45,12 +47,12 @@
    `(font-lock-string-face        ((,class (:foreground ,orange))))
    `(font-lock-type-face          ((,class (:foreground ,orange))))
    `(font-lock-warning-face       ((,class (:foreground ,red :weight bold))))
-   `(font-lock-comment-face ((,class (:foreground ,bg3 :slant italic))))
+   `(font-lock-comment-face       ((,class (:foreground ,bg3 :slant italic))))
    `(font-lock-function-name-face
      ((,class (:foreground ,red :weight bold))))
    ;; Search
-   `(isearch ((,class (:background ,orange :foreground ,bg :weight bold))))
-   `(isearch-fail ((,class (:background ,red :foreground ,bg :weight bold))))
+   `(isearch        ((,class (:background ,orange :foreground ,bg :weight bold))))
+   `(isearch-fail   ((,class (:background ,red :foreground ,bg :weight bold))))
    `(lazy-highlight ((,class (:background, bg2 :foreground ,orange))))
    ;; Flymake
    `(flymake-error   ((,class (:underline ,red))))
@@ -86,31 +88,34 @@
    `(splash-text         ((,class (:foreground ,fg  :weight bold))))
    `(splash-text-special ((,class (:foreground ,bg3 :weight bold))))
    ;; Buttons and links
-   `(button ((,class (:underline t))))
-   `(link ((,class (:foreground ,cyan :underline t))))
+   `(button       ((,class (:underline t))))
+   `(link         ((,class (:foreground ,cyan :underline t))))
    `(link-visited ((,class (:foreground ,magenta :underline t))))
    ;; Org-Mode
    `(org-ellipsis ((,class (:foreground ,red :underline nil))))
-   `(org-level-1 ((,class (:foreground ,red :weight bold))))
-   `(org-level-2 ((,class (:foreground ,orange :weight bold))))
-   `(org-level-3 ((,class (:foreground ,yellow :weight bold))))
-   `(org-level-4 ((,class (:foreground ,red :weight bold :slant italic))))
-   `(org-level-5 ((,class (:foreground ,orange :weight bold :slant italic))))
-   `(org-level-6 ((,class (:foreground ,yellow :weight bold :slant italic))))
-   `(org-level-7 ((,class (:foreground ,red :weight bold :underline t))))
-   `(org-level-8 ((,class (:foreground ,orange :weight bold :underline t))))
-   `(org-table ((,class (:foreground ,yellow :background ,bg2))))
-   `(org-date ((,class (:foreground ,red :underline t))))
+   `(org-level-1  ((,class (:foreground ,red :weight bold))))
+   `(org-level-2  ((,class (:foreground ,orange :weight bold))))
+   `(org-level-3  ((,class (:foreground ,yellow :weight bold))))
+   `(org-level-4  ((,class (:foreground ,red :weight bold :slant italic))))
+   `(org-level-5  ((,class (:foreground ,orange :weight bold :slant italic))))
+   `(org-level-6  ((,class (:foreground ,yellow :weight bold :slant italic))))
+   `(org-level-7  ((,class (:foreground ,red :weight bold :underline t))))
+   `(org-level-8  ((,class (:foreground ,orange :weight bold :underline t))))
+   `(org-table    ((,class (:foreground ,yellow :background ,bg2))))
+   `(org-date     ((,class (:foreground ,red :underline t))))
    `(org-todo
      ((,class (:foreground ,cyan :background ,bg2 :weight bold
                            :box (:line-width ,box-width :color ,bg2)))))
    ;;; External Packages
+   ;; Fireplace
+   `(fireplace-inner-flame-face ((,class (:background ,orange))))
+   `(fireplace-outter-flame-face ((,class (:background ,red))))
    ;; Company-mode
-   `(company-preview ((,class (:background ,bg2 :foreground ,fg))))
-   `(company-tooltip ((,class (:background ,bg2 :foreground ,fg))))
+   `(company-preview           ((,class (:background ,bg2 :foreground ,fg))))
+   `(company-tooltip           ((,class (:background ,bg2 :foreground ,fg))))
    `(company-tooltip-selection ((,class (:background ,bg3 :foreground ,fg))))
-   `(company-scrollbar-bg ((,class (:background ,bg3 :foreground ,bg3))))
-   `(company-scrollbar-fg ((,class (:background ,fg :foreground ,fg))))
+   `(company-scrollbar-bg      ((,class (:background ,bg3 :foreground ,bg3))))
+   `(company-scrollbar-fg      ((,class (:background ,fg :foreground ,fg))))
    `(company-tooltip-common
      ((,class (:background ,bg2 :foreground ,orange :weight bold))))
    `(company-tooltip-common-selection
