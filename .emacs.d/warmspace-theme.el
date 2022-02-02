@@ -28,7 +28,7 @@
    `(show-paren-match         ((,class (:foreground ,orange :weight bold))))
    `(show-paren-mismatch      ((,class (:foreground ,red :weight bold))))
    `(scroll-bar               ((,class (:background ,bg))))
-   `(region                   ((,class (:background ,bg2))))
+   `(region                   ((,class (:foreground ,bg :background ,yellow :weight bold))))
    `(vertical-border          ((,class (:background ,bg2 :foreground ,bg2))))
    `(fringe                   ((,class (:background ,bg :foreground ,bg))))
    `(header-line              ((,class (:background ,bg))))
@@ -50,6 +50,7 @@
    `(font-lock-comment-face       ((,class (:foreground ,bg3 :slant italic))))
    `(font-lock-function-name-face
      ((,class (:foreground ,red :weight bold))))
+   `(sh-heredoc ((,class (:foreground ,fg))))
    ;; Search
    `(isearch        ((,class (:background ,orange :foreground ,bg :weight bold))))
    `(isearch-fail   ((,class (:background ,red :foreground ,bg :weight bold))))

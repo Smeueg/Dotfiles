@@ -173,6 +173,9 @@
           (delete-file tar-file)
           (kill-buffer (current-buffer))))))
 
+  (defun lsp-install-pyright ()
+    (message "no"))
+
   (defun lsp-install (server)
     "Install a language server (for eglot)"
     (interactive (list (completing-read "Language server to install:"
@@ -263,6 +266,7 @@
           (split-window-below)
           (other-window 1)
           (ansi-term (getenv "SHELL"))
+          (set-window-prev-buffers (selected-window) '())
           (term-send-raw-string
            (concat "clear; printf 'Output:\n';" command)))))))
 
@@ -523,7 +527,7 @@
 (when (require 'org-bullets nil 'noerror)
   (setq-default org-bullets-bullet-list '("ζ" "◉" "✸" ))
   (add-hook 'org-mode-hook 'org-bullets-mode))
-;; ;;;; Company-mode
+
 (when (require 'company nil 'noerror)
   (add-hook 'after-init-hook 'global-company-mode)
   (setq-default company-minimum-prefix-length 2
@@ -531,16 +535,25 @@
                 company-selection-wrap-around t
                 company-require-match nil
                 company-tooltip-align-annotations t)
+
   (when (require 'yasnippet nil 'noerror)
+    (defvar company-mode/enable-yas t
+      "Enable yasnippet for all backends.")
+
+    (defun company-mode/backend-with-yas (backend)
+      (if (or (not company-mode/enable-yas)
+              (and (listp backend)
+                   (member 'company-yasnippet backend)))
+          backend
+        (append (if (consp backend) backend (list backend))
+                '(:with company-yasnippet))))
+
     (setq-default company-backends
-                  '((company-semantic :with company-yasnippet)
-                    (company-cmake    :with company-yasnippet)
-                    (company-capf     :with company-yasnippet)
-                    (company-clang    :with company-yasnippet)
-                    (company-dabbrev-code company-gtags company-etags
-                                          company-keywords)
-                    company-files
-                    company-dabbrev))))
+                  (mapcar #'company-mode/backend-with-yas company-backends))
+    (when (require 'eglot nil 'noerror)
+      (add-hook 'eglot-managed-mode-hook
+                (lambda()
+                  (setq company-backends (default-value 'company-backends)))))))
 
 (when (require 'flymake nil 'noerror)
   (define-key flymake-mode-map (kbd "M-n") 'flymake-goto-next-error)
@@ -548,7 +561,8 @@
 
 (when (require 'yasnippet nil 'noerror) ;; Yasnippet
   (add-hook 'after-init-hook 'yas-global-mode)
-  (setq-default yas-snippet-dirs '("/tmp/yasnippet")))
+  ;;(setq-default yas-snippet-dirs '("/tmp"))
+  )
 
 (when (require 'eglot nil 'noerror) ;; Eglot
   ;; Performace Stuff
@@ -560,7 +574,7 @@
     (when (file-directory-p dir)
       (setq file (directory-files dir nil ".*[.]launcher_.*[.]jar" nil))
       (when file
-        (setenv "CLASSPATH" (expand-file-name (concat dir (car file)))))))
+        (setenv "CLASSPATH" (expand-file-name (concat dir "/" (car file)))))))
 
   (if (or (executable "clangd") (executable "ccls"))
       (add-hook 'c-mode-common-hook 'eglot-ensure)
@@ -703,6 +717,7 @@
                 " f"  'find-file
                 " h"  'help
                 " l"  'global-display-line-numbers-mode
+                " w"  'global-whitespace-mode
                 " s"  (lambda () (interactive) (switch-to-buffer "*scratch*"))
                 " r"  (lambda () (interactive) (load-theme 'warmspace 1))
                 " T"  (lambda () (interactive)
@@ -713,10 +728,15 @@
                 " t"  (lambda () (interactive) (ansi-term (getenv "SHELL")))
                 " F"  (lambda () (interactive) (dired "."))
                 " d"  (lambda () (interactive) (find-file note-file))
-                " et"  (lambda()
-                         (interactive)
-                         (find-file
-                          (locate-user-emacs-file "warmspace-theme.el")))
-                " ei" (lambda()
+                " ea" (lambda ()
+                        (interactive)
+                        (let ((file "~/.config/awesome/rc.lua"))
+                          (when (file-exists-p file)
+                            (find-file file))))
+                " et" (lambda ()
+                        (interactive)
+                        (find-file
+                         (locate-user-emacs-file "warmspace-theme.el")))
+                " ei" (lambda ()
                         (interactive)
                         (find-file (locate-user-emacs-file "init.el")))))))

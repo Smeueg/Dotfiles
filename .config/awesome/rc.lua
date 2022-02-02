@@ -215,6 +215,13 @@ gears.shape.transform(gears.shape.losange)
 	:translate(1, 1)(cr, 18, 18)
 cr:stroke()
 
+local shutdown_icon = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
+local cr = cairo.Context(shutdown_icon)
+cr:set_source(gears.color("#FFFFFF"))
+gears.shape.transform(gears.shape.arc)
+	:scale(0.6, 0.6)
+	:translate(10, 7)(cr, 20, 20, 10, nil, nil, true, true)
+
 
 -- Custom Functions --
 local saved_gap          = beautiful.useless_gap
@@ -300,14 +307,64 @@ local function volume_ctl(cmd)
 	end
 end
 
-local function show_popup()
+local function toggle_popup()
 	if not popup then
 		popup = awful.popup {
 			widget = {
-				text = "foobar",
-				widget = wibox.widget.textbox
+				{
+					{
+						{
+							{
+								{
+									text   = "Suspend",
+									widget = wibox.widget.textbox
+								},
+								widget = wibox.layout.align.horizontal
+							},
+							margins = 7,
+							widget	= wibox.container.margin
+						},
+						shape	= gears.shape.rectangle,
+						bg		= background3,
+						widget	= wibox.container.background
+					},
+					{
+						{
+							{
+								text   = "Reboot",
+								widget = wibox.widget.textbox
+							},
+							margins = 7,
+							widget	= wibox.container.margin
+						},
+						shape	= gears.shape.rectangle,
+						bg		= background3,
+						widget	= wibox.container.background
+					},
+					{
+						{
+							{
+								text   = "Shutdown",
+								widget = wibox.widget.textbox
+							},
+							margins = 7,
+							widget	= wibox.container.margin
+						},
+						shape	= gears.shape.rectangle,
+						bg		= background3,
+						widget	= wibox.container.background
+					},
+					layout = wibox.layout.align.vertical,
+					widget = wibox.container.background
+				},
+				margins = 10,
+				widget = wibox.container.margin
 			},
+			border_width = beautiful.border_width,
+			border_color = beautiful.border_focus,
+			placement = awful.placement.centered,
 			visible = true,
+			ontop = true
 		}
 	else
 		popup.visible = not popup.visible
@@ -326,10 +383,21 @@ end
 
 
 -- Custom Widgets --
-date_widget = wibox.widget {
-	{
+test_widget = wibox.widget {
 		{
-			image = calendar_icon,
+			image = shutdown_icon,
+			forced_height = 30,
+			forced_width = forced_height,
+			widget = wibox.widget.imagebox
+		},
+		margins = 10,
+		widget = wibox.container.margin
+}
+
+	date_widget = wibox.widget {
+		{
+			{
+				image = calendar_icon,
 			forced_height = 30,
 			forced_width = forced_height,
 			widget = wibox.widget.imagebox
@@ -349,44 +417,44 @@ date_widget = wibox.widget {
 	widget = wibox.container.background
 }
 
-	time_widget = wibox.widget {
-		{
+time_widget = wibox.widget {
+	{
 
-			{
-				image = clock_icon,
-				forced_height = 30,
-				forced_width = forced_height,
-				widget = wibox.widget.imagebox
-			},
-			left = 9,
-			right = 6,
-			top = 9,
-			bottom = 9,
-			widget = wibox.container.margin
-		},
 		{
-			format = "%H:%M",
-			refresh = 10,
-			widget = wibox.widget.textclock
+			image = clock_icon,
+			forced_height = 30,
+			forced_width = forced_height,
+			widget = wibox.widget.imagebox
 		},
-		layout = wibox.layout.fixed.horizontal,
-		widget = wibox.container.background
-	}
+		left = 9,
+		right = 6,
+		top = 9,
+		bottom = 9,
+		widget = wibox.container.margin
+	},
+	{
+		format = "%H:%M",
+		refresh = 10,
+		widget = wibox.widget.textclock
+	},
+	layout = wibox.layout.fixed.horizontal,
+	widget = wibox.container.background
+}
 
-	volume_widget = wibox.widget {
+volume_widget = wibox.widget {
+	{
 		{
-			{
-				id = "icon",
-				forced_height = 30,
-				forced_width = forced_height,
-				widget = wibox.widget.imagebox
-			},
-			id = "icon_margin",
-			top = 9,
-			bottom = 9,
-			left = 9,
-			right = 6,
-			widget = wibox.container.margin
+			id = "icon",
+			forced_height = 30,
+			forced_width = forced_height,
+			widget = wibox.widget.imagebox
+		},
+		id = "icon_margin",
+		top = 9,
+		bottom = 9,
+		left = 9,
+		right = 6,
+		widget = wibox.container.margin
 		},
 		{
 			id = "vol",
@@ -505,7 +573,7 @@ network_timer = gears.timer {
 
 
 -- Key and Mouse Bindings --
-globalkeys = gears.table.join( -- Key Bindings
+globalkeys = gears.table.join( -- Keybindings
 	-- Pulse audio volume control
 	awful.key({ modkey }, "[",
 		function() volume_ctl("-5") end,
@@ -579,7 +647,8 @@ globalkeys = gears.table.join( -- Key Bindings
 					naughty.notify({title = "Error: browser is not installed"})
 				end
 	end, {description = "Open the browser", group = "Programs"}),
-	awful.key({ modkey }, "a", spawn_popup)
+	awful.key({ modkey }, "a", spawn_popup),
+	awful.key({ modkey }, "s", toggle_popup, {description = "Test", group = "Test"})
 )
 
 
@@ -848,7 +917,6 @@ awful.screen.connect_for_each_screen(
 		s.wibox:setup { -- Wibox widgets
 			layout = wibox.layout.align.horizontal,
 			{ -- Left Widgets
-				test_widget,
 				s.taglist,
 				s.mypromptbox,
 				layout = wibox.layout.fixed.horizontal
@@ -859,6 +927,7 @@ awful.screen.connect_for_each_screen(
 				layout = wibox.layout.flex.horizontal
 			},
 			{ -- Right Widgets
+				test_widget,
 				network_widget,
 				volume_widget,
 				date_widget,

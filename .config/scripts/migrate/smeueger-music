@@ -1,75 +1,30 @@
 #!/bin/sh
-# Downloads my personal favorite songs/albums
-# These songs take alot of space
+music_dir="${HOME}/Music"
+pl_url="https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc"
 
-DIR="${HOME}"/Music
-PLAYLIST_URL="https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc"
-TMP_FILE=/tmp/smeueger-music-downloaded.txt
-
-
-cmd=""
-GetYTDL() {
-	if [ ! "$(command -v youtube-dl)" ]; then
-		printf "'youtube-dl' is not installed, getting youtube-dl...\n"
-		if [ "$(command -v curl)" ]; then
-			curl --user-agent 'Mozilla/5.0' \
-				 -Ls https://yt-dl.org/downloads/latest/youtube-dl \
-				 --output /tmp/youtube-dl
-		elif [ "$(command -v wget)" ]; then
-			wget --user-agent='Mozilla/5.0' -q -O /tmp/youtube-dl \
-				 https://yt-dl.org/downloads/latest/youtube-dl
-		else
-			printf 'ERROR: Cannot download youtube-dl,'
-			printf '`curl` and `wget` is not installed...\n' >&2
-			exit -1
-		fi
-		cmd="/tmp/youtube-dl/"
-	else
-		cmd="$(which youtube-dl)"
-	fi
+# Check if youtube-dl is installed
+[ "$(command -v youtube-dl)" ] || {
+	printf 'ERROR: `youtube-dl` is not installed\n' >&2
+	exit 1
 }
 
-
-main() {
-	if [ ! "$(command -v ffmpeg)" ]; then
-		printf 'ERROR: `ffmpeg` not found\n' >&2
-		exit 1
-	fi
-
-	printf 'Getting python binary...'
-	if [ "$(command -v python)" ]; then
-		python_cmd='python'
-	elif [ "$(command -v python3)" ]; then
-		python_cmd='python3'
-	elif [ "$(command -v python2)" ]; then
-		python_cmd='python2'
-	else
-		printf '\nERROR: `python` is not installed...\n' >&2
-		exit -1
-	fi
-	printf ' Using %s\n' "${python_cmd}"
-
-	GetYTDL
-
-	printf 'NOTICE: I DO NOT OWN ANY OF THIS MUSIC, '
-	printf 'CREDIT GOES TO THEIR RESPECTIVE ARTIST/BANDS/MUSICIANS\n'
-
-	if [ ! -d "${DIR}" ]; then
-		mkdir --parents "${DIR}" ||
-		printf 'ERROR: Failed to create directory %s\n' "${DIR}" && exit 1
-	fi
-
-	for f in "${DIR}"/*; do
-		f="${f%%.*}"
-		f="${f##*\]}"
-		f="${f##*\[}"
-		f="${f#${f%???????????}}"
-		printf 'youtube %s\n' "${f}"
-	done > "${TMP_FILE}"
-
-	"${python_cmd}" "${cmd}" --audio-format mp3 \
-					--download-archive "${TMP_FILE}" \
-					--no-post-overwrites -cwix \
-					"${PLAYLIST_URL}" -o "${DIR}/%(title)s %(id)s.%(ext)s"
+# Check if ${music_dir} exist as a directory
+[ -d "${music_dir}" ] || {
+	printf 'Warning: `%s` does not exist, create [Y\\n] ' "${music_dir}"
+	read input
+	case "${input}" in
+		[Yy][Ee][Ss]|[Yy]|"") ;;
+		*) printf 'Exiting...\n' && exit 1 ;;
+	esac
 }
-main
+
+printf 'Getting urls...\n'
+while read title; do
+	read id
+	url="https://www.youtube.com/watch?v=${id}"
+	file="${music_dir%/}/${title}.mp3"
+	[ -f "${file}" ] ||
+		youtube-dl "${url}" --extract-audio --audio-format mp3 -o "${file}"
+done << EOF
+$(youtube-dl ${pl_url} --flat-playlist  --get-id -e)
+EOF
