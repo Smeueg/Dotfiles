@@ -63,7 +63,11 @@
    tab-width 4
    ;; Make backspace actually delete \t instead of one by one
    backward-delete-char-untabify-method 'hungry)
-  (defvaralias 'c-basic-offset 'tab-width))
+  (defvaralias 'c-basic-offset 'tab-width)
+  ;; Use spaces when aligning with align-regexp
+  (defadvice align-regexp (around align-regexp-with-spaces activate)
+    (let ((indent-tabs-mode nil))
+      ad-do-it)))
 
 
 (progn ;; Visuals
@@ -103,8 +107,8 @@
   (global-whitespace-mode 1))
 
 (progn ;; Keybindings
-  (keyboard-translate ?\C-h ?\C-?)
-  (keyboard-translate ?\C-\\ ?\C-c)
+  (define-key key-translation-map [?\C-h] [?\C-?])
+  (define-key key-translation-map [?\C-\\] [?\C-c])
   (global-set-key [mouse-5] 'scroll-up-line)
   (global-set-key [mouse-4] 'scroll-down-line)
   (global-set-key [mouse-3] 'mouse-major-mode-menu)
@@ -243,21 +247,25 @@
     "Automatically compile (if needed) and execute the current program "
     (interactive)
     (save-buffer)
+    (when (derived-mode-p 'org-mode)
+      (org-export-dispatch)
+      (user-error ""))
     (let ((command nil))
       (cond ((member major-mode '(c-mode c++mode)) ;; C & C++
-             (setq command (concat "cc " buffer-file-name " -o /tmp/"
-                                   (file-name-base buffer-file-name) " && /tmp/"
-                                   (file-name-base buffer-file-name))))
-            ((derived-mode-p 'sh-mode) ;; Shell
+             (setq command (concat "cc \"" buffer-file-name "\" -o /tmp/\""
+                                   "\"" (file-name-base buffer-file-name)
+                                   "\" && \"/tmp/"
+                                   (file-name-base buffer-file-name) "\"\n")))
+            ((or (derived-mode-p 'sh-mode))
              (executable-make-buffer-file-executable-if-script-p)
-             (setq command (concat buffer-file-name "\n")))
-            ((derived-mode-p 'lua-mode) ;; Lua
-             (setq command (concat "lua" buffer-file-name "\n")))
+             (setq command (concat "\"" buffer-file-name "\"\n")))
+            ((derived-mode-p 'lua-mode)
+             (setq command (concat "lua \"" buffer-file-name "\"\n")))
             ((derived-mode-p 'python-mode) ;; Python
-             (setq command (concat "python3 " buffer-file-name "\n")))
+             (setq command (concat "python3 \"" buffer-file-name "\"\n")))
             ((derived-mode-p 'java-mode)
              (setq command
-                   (concat "java " buffer-file-name "\n")))
+                   (concat "java \"" buffer-file-name "\"\n")))
             ((= 1 1)
              (message "Unknown filetype")
              (setq command nil)))
@@ -486,7 +494,8 @@
   (setq-default org-hide-emphasis-markers t
                 org-log-done t
                 org-image-actual-width (list 500)
-                org-agenda-files `(,note-file))
+                org-agenda-files `(,note-file)
+                org-export-with-toc nil)
   (add-hook 'org-mode-hook
             (lambda()
               (setq-local indent-tabs-mode nil)
@@ -504,6 +513,7 @@
   (setq-default bongo-mode-line-indicator-mode nil
                 bongo-insert-whole-directory-trees t
                 bongo-logo nil
+                bongo-played-track-icon t
                 bongo-enabled-backends '(mpg123))
   (add-hook 'bongo-playlist-mode-hook ;; Automatically insert music dir
             (lambda()
@@ -594,19 +604,36 @@
   (define-key fireplace-mode-map "q" 'fireplace-off))
 
 ;; Evil-Mode
-(setq-default evil-auto-indent t)
+(setq-default evil-auto-indent t
+              evil-want-keybinding nil)
 (when (require 'evil nil 'noerror)
   (add-hook 'after-init-hook
             (lambda()
               (evil-mode 1)
 
-
               ;; Org-mode
               (evil-define-key 'normal org-mode-map
                 " i" 'org-display-inline-images
-                (kbd "M-C-h") 'org-shiftmetaleft
-                (kbd "M-C-l") 'org-shiftmetaright
-                [return] 'org-open-at-point)
+                [return] 'org-open-at-point
+                (kbd "M-h") (lambda ()
+                              (interactive)
+                              (evil-normal-state 1)
+                              (evil-backward-char))
+                (kbd "M-j") (lambda ()
+                              (interactive)
+                              (evil-normal-state 1) (next-line))
+                (kbd "M-k") (lambda ()
+                              (interactive)
+                              (evil-normal-state 1)
+                              (previous-line))
+                (kbd "M-l") (lambda ()
+                              (interactive)
+                              (evil-normal-state 1)
+                              (evil-forward-char))
+                (kbd "M-C-h") 'org-promote-subtree
+                (kbd "M-C-j") 'outline-move-subtree-down
+                (kbd "M-C-k") 'outline-move-subtree-up
+                (kbd "M-C-l") 'org-demote-subtree)
 
               ;; Undo/Redo with undo-fu
               (when (require 'undo-fu nil 'noerror)
@@ -657,6 +684,9 @@
                   [return] 'bongo-dwim
                   "c" 'bongo-pause/resume))
 
+              (evil-define-key 'normal help-mode-map
+                " " (lambda() (interactive)))
+
 
               (evil-define-key
                 '(insert normal visual operator motion replace) 'global
@@ -705,10 +735,10 @@
                 (evil-define-key 'normal 'global (kbd "M-n") 'mv-line-down))
 
               ;; Dired Shenanigans
-              (when (require 'dired nil 'noerror)
-                (define-key dired-mode-map "n" 'evil-search-next)
-                ;; Space as leader key in dired
-                (define-key dired-mode-map " " nil))
+              (evil-define-key 'normal dired-mode-map
+                " " nil ;; Space as leader key in dired
+                [return] 'dired-find-alternate-file)
+
 
               (evil-define-key '(normal motion) 'global
                 ":"   (lambda () (interactive) (execute-extended-command nil))
@@ -723,7 +753,8 @@
                 " T"  (lambda () (interactive)
                         (split-window-below)
                         (other-window 1)
-                        (ansi-term (getenv "SHELL")))
+                        (ansi-term (getenv "SHELL"))
+                        (set-window-prev-buffers (selected-window) '()))
                 " 80" (lambda () (interactive) (move-to-column 80))
                 " t"  (lambda () (interactive) (ansi-term (getenv "SHELL")))
                 " F"  (lambda () (interactive) (dired "."))

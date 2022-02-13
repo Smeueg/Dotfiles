@@ -1,4 +1,6 @@
 #!/bin/sh
+# Download the mp3 of videos in a playlist
+# Change the value `pl_url` to the playlist url that you want
 music_dir="${HOME}/Music"
 pl_url="https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc"
 
@@ -6,6 +8,18 @@ pl_url="https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc
 [ "$(command -v youtube-dl)" ] || {
 	printf 'ERROR: `youtube-dl` is not installed\n' >&2
 	exit 1
+}
+
+# A replacement for `sed`
+replace() {
+	string="${1}"
+	query="${2}"
+	substitution="${3}"
+
+	while ! [ "${string%%*${query}*}" ]; do
+		string="${string%%${query}*}${substitution}${string#*${query}}"
+	done
+	echo "${string}"
 }
 
 # Check if ${music_dir} exist as a directory
@@ -16,15 +30,25 @@ pl_url="https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc
 		[Yy][Ee][Ss]|[Yy]|"") ;;
 		*) printf 'Exiting...\n' && exit 1 ;;
 	esac
+	mkdir "${music_dir}"
 }
 
+
 printf 'Getting urls...\n'
+cd "${music_dir}"
 while read title; do
 	read id
+	title=$(replace "${title}" "/" "\\")
+
 	url="https://www.youtube.com/watch?v=${id}"
-	file="${music_dir%/}/${title}.mp3"
-	[ -f "${file}" ] ||
-		youtube-dl "${url}" --extract-audio --audio-format mp3 -o "${file}"
+	[ -f "${title}.mp3" ] ||
+		youtube-dl "${url}" \
+		 		   -x \
+		 		   --audio-format mp3 \
+		 		   --add-metadata --metadata-from-title "%(title)s" \
+		 		   --postprocessor-args \
+		 		   "-acodec libmp3lame" \
+		 		   -o "${title}.%(ext)s"
 done << EOF
 $(youtube-dl ${pl_url} --flat-playlist  --get-id -e)
 EOF
