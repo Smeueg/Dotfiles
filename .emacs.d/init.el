@@ -70,7 +70,8 @@
       ad-do-it)))
 
 
-(progn ;; Visuals
+;;; VISUALS ;;;
+(progn
   ;; Mode Line
   (make-face 'ml/fill)
   (make-face 'ml/read-only-face)
@@ -108,7 +109,6 @@
 
 (progn ;; Keybindings
   (define-key key-translation-map [?\C-h] [?\C-?])
-  (define-key key-translation-map [?\C-\\] [?\C-c])
   (global-set-key [mouse-5] 'scroll-up-line)
   (global-set-key [mouse-4] 'scroll-down-line)
   (global-set-key [mouse-3] 'mouse-major-mode-menu)
@@ -198,18 +198,6 @@
              'UTF8_STRING)) ""))
 
 
-  (defun mv-line-up ()
-    "Move the current line up one line."
-    (interactive)
-    (transpose-lines 1)
-    (previous-line 2))
-
-  (defun mv-line-down ()
-    "Move the current line down one line."
-    (interactive)
-    (next-line)
-    (transpose-lines 1)
-    (previous-line 1))
 
   (defun close ()
     " Kill buffer when there's only one window displaying the buffer.
@@ -321,6 +309,8 @@
                  (int-to-string (count-lines (point-min) (point-max))) " ")
          'face main-face))))))
 
+
+
 ;;; Custom Splash Screen
 (defun min-splash()
   "A custom minimal emacs splash screen"
@@ -406,178 +396,198 @@
   (add-hook 'window-setup-hook 'min-splash))
 
 
-(progn ;; Hooks
-  (add-hook 'before-save-hook
-            'delete-trailing-whitespace)
-  (add-hook 'after-save-hook
-            'executable-make-buffer-file-executable-if-script-p)
-  (add-hook 'completion-list-mode-hook (lambda() (display-line-numbers-mode 0)))
-  (add-hook 'minibuffer-exit-hook
-            (lambda()
-              (let ((buffer "*Completions*")) ;; Disable "*Completions*" buffer
-                (and (get-buffer buffer)
-                     (kill-buffer buffer)))))
-  (add-hook 'emacs-lisp-mode-hook
-            (lambda() (setq-local indent-tabs-mode nil))))
 
-
-;;; External packages
+;;; HOOKS ;;;
 (progn
-  (require 'package)
-  (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
-  (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
-  (defun auto-install()
-    "Automatically install required packages"
-    (interactive)
-    (package-initialize)
-    (package-refresh-contents)
-    (let (package-list)
-      (setq package-list
-            '(;; Colors
-              rainbow-mode eterm-256color
+  (add-hook 'before-save-hook 'delete-trailing-whitespace)
+  (add-hook 'emacs-lisp-mode-hook (lambda() (setq-local indent-tabs-mode nil)))
 
-              ;; Quality of Life Improvements
-              company aggressive-indent evil undo-fu
-              vertico restart-emacs
-
-              ;; Programming
-              eglot lua-mode yasnippet yasnippet-snippets
-
-              ;; Org-mode
-              org-bullets
-
-              ;; Extra Apps
-              bongo fireplace))
-      (dolist (package package-list)
-        (unless
-            (package-installed-p package) (package-install package))))))
+  (add-hook 'completion-list-mode-hook
+            (lambda() (display-line-numbers-mode 0)))
+  (add-hook 'minibuffer-exit-hook
+            (lambda() (and (get-buffer "*Completions*")
+                           (kill-buffer "*Completions*")))))
 
 
-(when (require 'dired nil 'noerror) ;; Dired
+
+
+;; PACKAGES ;;
+(require 'package nil 'noerror)
+(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+(setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
+
+(setq-default use-package-always-defer t
+              use-package-always-ensure t)
+
+
+(use-package yasnippet
+  :config (yas-global-mode))
+
+
+(use-package tramp
+  :init (setq-default tramp-persistency-file-name "/tmp/tramp"))
+
+
+(use-package tab-bar
+  :init (setq-default tab-bar-close-button-show nil
+                      tab-bar-new-button-show nil))
+
+
+(use-package aggressive-indent
+  :init (global-aggressive-indent-mode 1))
+
+
+(use-package rainbow-mode
+  :init (add-hook 'prog-mode-hook 'rainbow-mode))
+
+
+(use-package eterm-256color
+  :hook (term-mode . eterm-256color-mode))
+
+
+(use-package lua-mode
+  :init (setq-default lua-indent-level 4
+                      lua-indent-string-contents t))
+
+
+(use-package server
+  :commands ansi-term
+  :config (unless (server-running-p) (server-start)))
+
+
+(use-package vertico
+  :init
+  (vertico-mode)
+  (define-key vertico-map "\C-n" 'vertico-next))
+
+
+(use-package org-bullets
+  :hook (org-mode . org-bullets-mode)
+  :init
+  (setq-default org-bullets-bullet-list '("ζ" "◉" "✸" )))
+
+
+(use-package ranger
+  :commands (ranger dired)
+  :config
+  (ranger-override-dired-mode t)
+  :init (setq-default ranger-show-hidden t
+                      ranger-parent-depth 1
+                      ranger-dont-show-binary t))
+
+
+(use-package dired
+  :config
   (put 'dired-find-alternate-file 'disabled nil)
+  (define-key dired-mode-map [return] 'dired-find-alternate-file)
   (define-key dired-mode-map "^"
     (lambda()
       (interactive)
-      (find-alternate-file "..")))
-  (define-key dired-mode-map (kbd "<return>") 'dired-find-alternate-file))
+      (find-alternate-file ".."))))
 
 
-(when (require 'tramp nil 'noerror)
-  (setq-default tramp-persistency-file-name "/tmp/tramp"))
-
-
-(when (require 'term nil 'noerror) ;; Terminals (ansi-term, term, and others)·
-  (define-key term-raw-map "\C-c\C-n" 'term-line-mode)
-  (define-key term-raw-map (kbd "C-S-v")
-    (lambda()
-      (interactive)
-      (term-send-raw-string (gui-get-selection
-                             'CLIPBOARD
-                             (or x-select-request-type 'UTF8_STRING)))))
-  (add-hook 'term-mode-hook
-            (lambda()
-              (interactive)
-              (display-line-numbers-mode 0)))
-
-  (defadvice term-handle-exit (after term-kill-buffer-on-exit activate)
-    (close)))
-
-
-(when (require 'org nil 'noerror) ;;; Org-mode
-  (define-key global-map "\C-cl" 'org-store-link)
+(use-package org
+  :init
+  (setq-default org-ellipsis              "  ▼"
+                org-src-fontify-natively  t
+                org-startup-folded        t
+                org-hide-emphasis-markers t
+                note-file                 "~/Documents/Notes/Notes.org"
+                org-log-done              t
+                org-image-actual-width    (list 500)
+                org-agenda-files          `(,note-file)
+                org-export-with-toc       nil)
+  :config
   (define-key org-mode-map "\M-h" nil)
   (define-key org-mode-map [return] 'org-return-indent)
-  (setq org-ellipsis "  ▼")
-  (setq org-src-fontify-natively t) ;; Syntax highlighting in org src blocks
-  (setq org-startup-folded t)       ;; Org files start up folded by default
-  (setq note-file "~/Documents/Notes/Notes.org")
-  (setq-default org-hide-emphasis-markers t
-                org-log-done t
-                org-image-actual-width (list 500)
-                org-agenda-files `(,note-file)
-                org-export-with-toc nil)
   (add-hook 'org-mode-hook
             (lambda()
-              (setq-local indent-tabs-mode nil)
-              (display-line-numbers-mode -1)
-              (setq-local fill-column 80)
+              (setq-local indent-tabs-mode nil
+                          fill-column 80)
               (org-indent-mode 1)
+              (display-line-numbers-mode -1)
               (turn-on-auto-fill))))
 
 
-(when (require 'vertico nil 'noerror)
-  (vertico-mode 1))
+(use-package term
+  :commands ansi-term
+  :init
+  (define-prefix-command 'term-esc-map)
+  (define-key global-map "\C-\\" 'term-esc-map)
+  (define-key global-map "\C-n" nil)
+  :config
+  (defadvice term-handle-exit (after term-kill-buffer-on-exit activate) (close))
+  (add-hook 'term-mode-hook (lambda() (display-line-numbers-mode 0)))
+  (define-key term-raw-map "\C-\\" 'term-esc-map)
+  (if (package-installed-p 'evil)
+      (define-key term-raw-map "\C-\\\C-n"
+        (lambda()
+          (interactive)
+          (turn-on-evil-mode)
+          (evil-normal-state 1)
+          (term-line-mode)))
+    (define-key term-raw-map "\C-\\\C-n" 'term-line-mode))
+  (define-key term-raw-map (kbd "C-S-v")
+    (lambda()
+      (interactive)
+      (term-send-raw-string
+       (gui-get-selection
+        'CLIPBOARD
+        (or x-select-request-type 'UTF8_STRING))))))
 
 
-(when (require 'bongo nil 'noerror) ;;; Bongo
+(use-package bongo
+  :commands bongo-playlist
+  :init
   (setq-default bongo-mode-line-indicator-mode nil
                 bongo-insert-whole-directory-trees t
                 bongo-logo nil
                 bongo-played-track-icon t
                 bongo-enabled-backends '(mpg123))
   (add-hook 'bongo-playlist-mode-hook ;; Automatically insert music dir
-            (lambda()
-              (let (music_dir)
-                (setq music_dir (concat (getenv "HOME") "/Music"))
+            (lambda ()
+              (let ((music_dir (concat (getenv "HOME") "/Music")))
                 (when (file-directory-p music_dir)
                   (bongo-insert-file music_dir))
                 (display-line-numbers-mode 0)
                 (goto-char 1)))))
 
-(if (require 'aggressive-indent nil 'noerror)
-    (global-aggressive-indent-mode 1)
-  (electric-indent-mode 1))
 
-(when (require 'rainbow-mode nil 'noerror)
-  (add-hook 'prog-mode-hook 'rainbow-mode))
-
-(when (require 'eterm-256color nil 'noerror)
-  (add-hook 'term-mode-hook #'eterm-256color-mode))
-
-(when (require 'org-bullets nil 'noerror)
-  (setq-default org-bullets-bullet-list '("ζ" "◉" "✸" ))
-  (add-hook 'org-mode-hook 'org-bullets-mode))
-
-(when (require 'company nil 'noerror)
-  (add-hook 'after-init-hook 'global-company-mode)
+(use-package company
+  :demand t
+  :hook (prog-mode . global-company-mode)
+  :init
   (setq-default company-minimum-prefix-length 2
                 company-idle-delay 0
                 company-selection-wrap-around t
                 company-require-match nil
                 company-tooltip-align-annotations t)
-
-  (when (require 'yasnippet nil 'noerror)
-    (defvar company-mode/enable-yas t
-      "Enable yasnippet for all backends.")
-
-    (defun company-mode/backend-with-yas (backend)
-      (if (or (not company-mode/enable-yas)
-              (and (listp backend)
-                   (member 'company-yasnippet backend)))
-          backend
-        (append (if (consp backend) backend (list backend))
-                '(:with company-yasnippet))))
-
+  :config
+  (when (package-installed-p 'yasnippet)
     (setq-default company-backends
-                  (mapcar #'company-mode/backend-with-yas company-backends))
-    (when (require 'eglot nil 'noerror)
-      (add-hook 'eglot-managed-mode-hook
-                (lambda()
-                  (setq company-backends (default-value 'company-backends)))))))
+                  (mapcar
+                   (lambda (backend)
+                     (if (and (listp backend)
+                              (member 'company-yasnippet backend))
+                         backend
+                       (append (if (consp backend) backend (list backend))
+                               '(:with company-yasnippet))))
+                   company-backends))))
 
-(when (require 'flymake nil 'noerror)
-  (define-key flymake-mode-map (kbd "M-n") 'flymake-goto-next-error)
-  (define-key flymake-mode-map (kbd "M-p") 'flymake-goto-prev-error))
 
-(when (require 'yasnippet nil 'noerror) ;; Yasnippet
-  (add-hook 'after-init-hook 'yas-global-mode)
-  ;;(setq-default yas-snippet-dirs '("/tmp"))
-  )
+(use-package eglot
+  :commands eglot-ensure
+  :init
+  (setq-default gc-cons-threshold 100000000
+                read-process-output-max (* 4 1024 1024))
 
-(when (require 'eglot nil 'noerror) ;; Eglot
-  ;; Performace Stuff
-  (setq gc-cons-threshold 100000000)
-  (setq read-process-output-max (* 4 1024 1024))
+  (add-hook 'eglot-managed-mode-hook
+            (lambda ()
+              (when (package-installed-p 'company)
+                (setq company-backends (default-value 'company-backends)))))
 
   (let ((dir (locate-user-emacs-file "language-servers/jdtls/plugins"))
         (file nil))
@@ -590,184 +600,139 @@
       (add-hook 'c-mode-common-hook 'eglot-ensure)
     (add-hook 'c-mode-common-hook
               (lambda() (message "clangd or ccls is not installed"))))
+
   (if (or (executable "pyls") (executable "pylsp") (executable "pyright"))
       (add-hook 'python-mode-hook 'eglot-ensure)
     (add-hook 'python-mode-hook
               (lambda()
                 (message "pyls, pylsp, or pyright is not installed")))))
 
-(when (require 'lua-mode nil 'noerror) ;; Lua Mode
-  (setq-default lua-indent-level 4)
-  (setq-default lua-indent-string-contents t))
 
-(when (require 'fireplace nil 'noerror)
-  (define-key fireplace-mode-map "q" 'fireplace-off))
+(use-package evil
+  :demand t
+  :init
+  (use-package undo-fu :commands (undo-fu-only-undo undo-fu-only-redo))
+  (use-package restart-emacs :commands restart-emacs)
+  :config
+  (evil-mode 1)
+  (evil-define-key '(normal motion visual) 'global " " nil)
 
-;; Evil-Mode
-(setq-default evil-auto-indent t
-              evil-want-keybinding nil)
-(when (require 'evil nil 'noerror)
-  (add-hook 'after-init-hook
-            (lambda()
-              (evil-mode 1)
+  ;; External Packages
+  (when (locate-library "org") ;; org-mode
+    (evil-define-key 'normal org-mode-map
+      " i" 'org-display-inline-images
+      [return] 'org-open-at-point
+      (kbd "M-C-h") 'org-promote-subtree
+      (kbd "M-C-j") 'outline-move-subtree-down
+      (kbd "M-C-k") 'outline-move-subtree-up
+      (kbd "M-C-l") 'org-demote-subtree))
 
-              ;; Org-mode
-              (evil-define-key 'normal org-mode-map
-                " i" 'org-display-inline-images
-                [return] 'org-open-at-point
-                (kbd "M-h") (lambda ()
-                              (interactive)
-                              (evil-normal-state 1)
-                              (evil-backward-char))
-                (kbd "M-j") (lambda ()
-                              (interactive)
-                              (evil-normal-state 1) (next-line))
-                (kbd "M-k") (lambda ()
-                              (interactive)
-                              (evil-normal-state 1)
-                              (previous-line))
-                (kbd "M-l") (lambda ()
-                              (interactive)
-                              (evil-normal-state 1)
-                              (evil-forward-char))
-                (kbd "M-C-h") 'org-promote-subtree
-                (kbd "M-C-j") 'outline-move-subtree-down
-                (kbd "M-C-k") 'outline-move-subtree-up
-                (kbd "M-C-l") 'org-demote-subtree)
+  (when (package-installed-p 'bongo) ;; Bongo
+    (evil-define-key 'normal 'global " m" 'bongo-playlist)
+    (evil-define-key 'normal bongo-mode-map
+      [return] 'bongo-dwim
+      "c" 'bongo-pause/resume))
 
-              ;; Undo/Redo with undo-fu
-              (when (require 'undo-fu nil 'noerror)
-                (setq evil-undo-system 'undo-fu)
-                (evil-define-key 'normal 'global
-                  "u" 'undo-fu-only-undo
-                  "\C-r" 'undo-fu-only-redo))
+  (if (package-installed-p 'ranger) ;; Ranger / Dired
+      (evil-define-key 'normal 'global " F" 'ranger)
+    (evil-define-key 'normal 'global " F"
+      (lambda() (interactive) (dired "."))))
 
-              ;; For ansi-term ;
-              (define-key term-raw-map "\C-c\C-n"
-                (lambda()
-                  (interactive)
-                  (turn-on-evil-mode)
-                  (evil-normal-state 1)
-                  (term-line-mode)))
+  (when (package-installed-p 'flymake) ;; Flymake
+    (evil-define-key 'normal flymake-mode-map
+      "\C-n" 'flymake-goto-next-error
+      "\C-p" 'flymake-goto-prev-error))
 
-              (add-hook 'term-mode-hook 'turn-off-evil-mode)
-              (add-hook 'evil-insert-state-entry-hook
-                        (lambda()
-                          (when (equal major-mode 'term-mode)
-                            (turn-off-evil-mode)
-                            (when (term-in-line-mode)
-                              (term-char-mode))
-                            (setq-local cursor-type 'box))))
+  (when (package-installed-p 'undo-fu) ;; Undo-fu
+    (setq evil-undo-system 'undo-fu)
+    (evil-define-key 'normal 'global
+      "u" 'undo-fu-only-undo
+      "\C-r" 'undo-fu-only-redo))
 
-              (define-key evil-motion-state-map " " nil)
-              (when (fboundp 'run) (evil-define-key 'normal 'global "  " 'run))
+  (when (package-installed-p 'restart-emacs) ;; Restart Emacs
+    (evil-define-key '(normal motion) 'global
+      " R" (lambda () (interactive)
+             (when (y-or-n-p "Restart Emacs?") (restart-emacs)))))
 
-              (evil-define-key '(emacs motion normal) 'global
-                " k" 'close
-                " K" 'kill-buffer
-                " D" 'delete-window
-                " q" (lambda ()
-                       (interactive)
-                       (when (y-or-n-p "Quit Emacs?")
-                         (kill-emacs))))
+  (when (locate-library "term")
+    (add-hook 'evil-insert-state-entry-hook
+              (lambda()
+                (when (equal major-mode 'term-mode)
+                  (turn-off-evil-mode)
+                  (setq-local cursor-type 'box)
+                  (term-char-mode))))
+    (add-hook 'term-mode-hook 'turn-off-evil-mode))
 
-              (evil-define-key 'normal 'global "gc" 'comment-line)
-              (evil-define-key 'visual 'global "gc" 'comment-region)
-              (evil-define-key '(normal motion visual) 'global
-                "j" 'evil-next-visual-line
-                "k" 'evil-previous-visual-line
-                [return] 'push-button)
-
-              (when (require 'bongo nil 'noerror)
-                (evil-define-key 'normal 'global " m" 'bongo-playlist)
-                (evil-define-key 'normal bongo-mode-map
-                  [return] 'bongo-dwim
-                  "c" 'bongo-pause/resume))
-
-              (evil-define-key 'normal help-mode-map
-                " " (lambda() (interactive)))
+  (when (fboundp 'run)
+    (evil-define-key 'normal 'global "  " 'run))
 
 
-              (evil-define-key
-                '(insert normal visual operator motion replace) 'global
-                (kbd "M-h") (lambda ()
-                              (interactive)
-                              (evil-normal-state 1)
-                              (evil-backward-char))
-                (kbd "M-j") (lambda ()
-                              (interactive)
-                              (evil-normal-state 1) (next-line))
-                (kbd "M-k") (lambda ()
-                              (interactive)
-                              (evil-normal-state 1)
-                              (previous-line))
-                (kbd "M-l") (lambda ()
-                              (interactive)
-                              (evil-normal-state 1)
-                              (evil-forward-char))
-                "\C-k" 'evil-insert-digraph
-                (kbd "C-S-k")'text-scale-increase
-                (kbd "C-S-j")'text-scale-decrease
-                (kbd "C-S-l")(lambda () (interactive) (text-scale-adjust 0)))
+    ;;; Basic Keybindings ;;;
+  (fset 'evil-next-line     'evil-next-visual-line)
+  (fset 'evil-previous-line 'evil-previous-visual-line)
+  (evil-define-key 'normal 'global "gc" 'comment-line)
+  (evil-define-key 'visual 'global "gc" 'comment-region)
 
-              ;; Clipboard/Copy/Paste
-              (evil-define-key 'insert 'global
-                (kbd "C-S-v") (lambda ()
-                                (interactive)
-                                (insert (get-system-clipboard))))
-              (evil-define-key 'visual 'global " c"
-                (lambda (beg end)
-                  (interactive "r")
-                  (gui-set-selection
-                   'CLIPBOARD (substring-no-properties
-                               (filter-buffer-substring beg end)))
-                  (evil-normal-state 1)))
+  ;; Re-add the alt-hjkl keys
+  (evil-define-key
+    '(insert normal visual operator motion replace) 'global
+    (kbd "M-h") (lambda () (interactive) (evil-normal-state 1) (evil-backward-char))
+    (kbd "M-j") (lambda () (interactive) (evil-normal-state 1) (evil-next-line))
+    (kbd "M-k") (lambda () (interactive) (evil-normal-state 1) (evil-previous-line))
+    (kbd "M-l") (lambda () (interactive) (evil-normal-state 1) (evil-forward-char)))
 
-              (when (fboundp 'restart-emacs)
-                (evil-define-key '(normal motion) 'global
-                  " R" (lambda () (interactive)
-                         (when (y-or-n-p "Restart Emacs?") (restart-emacs)))))
+  ;; Clipboard/Copy/Paste
+  (evil-define-key 'insert 'global
+    "\C-k" 'evil-insert-digraph
+    (kbd "C-S-v") (lambda ()
+                    (interactive)
+                    (insert (get-system-clipboard))))
+  (evil-define-key 'visual 'global " c"
+    (lambda (beg end)
+      (interactive "r")
+      (gui-set-selection
+       'CLIPBOARD (substring-no-properties (filter-buffer-substring beg end)))
+      (evil-normal-state 1)))
 
-              ;; Move line up and down
-              (when (fboundp 'mv-line-up)
-                (evil-define-key 'normal 'global (kbd "M-p") 'mv-line-up))
-              (when (fboundp 'mv-line-down)
-                (evil-define-key 'normal 'global (kbd "M-n") 'mv-line-down))
+  ;; Move line up and down
+  (evil-define-key 'normal 'global "\M-p"
+    (lambda () (interactive) (transpose-lines 1) (evil-previous-line 2)))
+  (evil-define-key 'normal 'global "\M-n"
+    (lambda () (interactive) (evil-next-line) (transpose-lines 1) (evil-previous-line 2)))
 
-              ;; Dired Shenanigans
-              (evil-define-key 'normal dired-mode-map
-                " " nil ;; Space as leader key in dired
-                [return] 'dired-find-alternate-file)
-
-
-              (evil-define-key '(normal motion) 'global
-                ":"   (lambda () (interactive) (execute-extended-command nil))
-                " a"  'mark-whole-buffer
-                " b"  'switch-to-buffer
-                " f"  'find-file
-                " h"  'help
-                " l"  'global-display-line-numbers-mode
-                " w"  'global-whitespace-mode
-                " s"  (lambda () (interactive) (switch-to-buffer "*scratch*"))
-                " r"  (lambda () (interactive) (load-theme 'warmspace 1))
-                " T"  (lambda () (interactive)
-                        (split-window-below)
-                        (other-window 1)
-                        (ansi-term (getenv "SHELL"))
-                        (set-window-prev-buffers (selected-window) '()))
-                " 80" (lambda () (interactive) (move-to-column 80))
-                " t"  (lambda () (interactive) (ansi-term (getenv "SHELL")))
-                " F"  (lambda () (interactive) (dired "."))
-                " d"  (lambda () (interactive) (find-file note-file))
-                " ea" (lambda ()
-                        (interactive)
-                        (let ((file "~/.config/awesome/rc.lua"))
-                          (when (file-exists-p file)
-                            (find-file file))))
-                " et" (lambda ()
-                        (interactive)
-                        (find-file
-                         (locate-user-emacs-file "warmspace-theme.el")))
-                " ei" (lambda ()
-                        (interactive)
-                        (find-file (locate-user-emacs-file "init.el")))))))
+  (evil-define-key '(emacs normal motion) 'global
+    [return] 'push-button
+    (kbd "C-S-k") 'text-scale-increase
+    (kbd "C-S-j") 'text-scale-decrease
+    (kbd "C-S-l") (lambda () (interactive) (text-scale-adjust 0))
+    " k" 'close
+    " K" 'kill-buffer
+    " D" 'delete-window
+    " a"  'mark-whole-buffer
+    " b"  'switch-to-buffer
+    " f"  'find-file
+    " h"  'help
+    " l"  'global-display-line-numbers-mode
+    " w"  'global-whitespace-mode
+    ":"   (lambda () (interactive) (execute-extended-command nil))
+    " t"  (lambda () (interactive) (ansi-term (getenv "SHELL")))
+    " d"  (lambda () (interactive) (find-file note-file))
+    " i"  (lambda () (interactive) (set-auto-mode))
+    " s"  (lambda () (interactive) (switch-to-buffer "*scratch*"))
+    " r"  (lambda () (interactive) (load-theme 'warmspace 1))
+    " 80" (lambda () (interactive) (move-to-column 80))
+    " T"  (lambda () (interactive)
+            (split-window-below) (other-window 1) (ansi-term (getenv "SHELL"))
+            (set-window-prev-buffers (selected-window) '()))
+    " q" (lambda ()
+           (interactive)
+           (when (y-or-n-p "Quit Emacs?")
+             (kill-emacs)))
+    " ea" (lambda () (interactive)
+            (let ((file "~/.config/awesome/rc.lua"))
+              (when (file-exists-p file)
+                (find-file file))))
+    " et" (lambda () (interactive)
+            (find-file (locate-user-emacs-file "warmspace-theme.el")))
+    " ei" (lambda () (interactive)
+            (find-file (locate-user-emacs-file "init.el")))))

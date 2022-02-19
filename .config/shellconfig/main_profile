@@ -65,6 +65,28 @@ export GTK2_RC_FILES="$XDG_CONFIG_HOME"/gtk-2.0/gtkrc
 
 # Shell
 export ENV="${HOME}"/.config/shellconfig/main_rc
+export ZDOTDIR="${HOME}/.config/shellconfig"
+
+
+
+
+
+# Symlink / remove bash config file if needed
+if [ "${BASH}" ] && [ -f "${ENV}" ] && ! [ -L "${HOME}/.bashrc" ]; then
+	if [ -f "${HOME}/.bashrc" ] && ! [ -L "${HOME}/.bashrc" ]; then
+		mv "${HOME}/.bashrc" "${HOME}/.bashrc_old"
+	fi
+	ln -s "${ENV}" "${HOME}/.bashrc"
+elif ! [ "${BASH}" ] && [ -L "${HOME}/.bashrc" ]; then
+	rm "${HOME}/.bashrc"
+fi
+
+# Symlink / remove zsh config file if needed
+if [ "${ZSH_NAME}" ] && [ -f "${ENV}" ] && ! [ -L "${ZDOTDIR}/.bashrc"]; then
+	ln -s "${ENV}" "${ZDOTDIR}/.zshrc"
+elif ! [ "${ZSH_NAME}" ] && [ -L "${ZDOTDIR}/.zshrc" ]; then
+	rm "${ZDOTDIR}/.zshrc"
+fi
 
 
 # Start xserver if in tty1
@@ -79,22 +101,3 @@ if command -v startx >/dev/null && [ "$(tty)" = "/dev/tty1" ]; then
 fi
 
 source "${HOME}"/.config/shellconfig/main_rc
-
-if [ "${BASH}" ] && [ -f "${ENV}" ]; then
-	if [ -f "${HOME}/.bashrc" ] && [ ! -h "${HOME}/.bashrc" ]; then
-		printf '~/.bashrc exists as a file. Do you want to symlink %s to ~/.bashrc? [Y/n] ' "${ENV}"
-		read response
-		printf '\n'
-
-		case "${response}" in
-			[Yy]|[Yy][Ee][Ss]|"")
-				mv "${HOME}/.bashrc" "${HOME}/.bashrc.orig"
-				ln -s "${ENV}" "${HOME}/.bashrc"
-				;;
-
-			*) printf 'Will not symlink %s to ~/.bashrc\n' "${ENV}"
-		esac
-	elif [ ! -h "${HOME}/.bashrc" ]; then
-		ln -s "${ENV}" "${HOME}/.bashrc"
-	fi
-fi

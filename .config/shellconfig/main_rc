@@ -108,13 +108,15 @@ colors() {
 dit() {
 	if [ "${1}" = "files" ]; then
 		printf "Red means that the file exists in the repo but doesn't in this machine.\n"
-		for file in $(cd "${HOME}"; git --git-dir="${HOME}"/.local/dots/ --work-tree="${HOME}" ls-tree -r master --name-only); do
-			if [ -f "$HOME/${file}" ]; then
-				printf '~/%b\n' "${file}"
+		while read line; do
+			if [ -f "$HOME/${line}" ]; then
+				printf '~/%b\n' "${line}"
 			else
-				printf '\033[38;5;1m~/%b\033[0m\n' "${file}"
+				printf '\033[38;5;1m~/%b\033[0m\n' "${line}"
 			fi
-		done
+		done <<-EOF
+		$(cd "${HOME}"; git --git-dir="${HOME}"/.local/dots/ --work-tree="${HOME}" ls-tree -r master --name-only)
+		EOF
 	else
 		git --git-dir=$HOME/.local/dots/ --work-tree=$HOME "$@"
 	fi

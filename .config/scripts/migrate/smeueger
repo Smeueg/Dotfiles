@@ -26,8 +26,6 @@ Retro Galaxy.jpg   https://drive.google.com/u/0/uc?id=1yHdTy9CSku8ngkw0ugdj6pNq2
 "
 
 fonts='
-https://github.com/google/material-design-icons/raw/master/font/MaterialIcons-Regular.ttf
-https://github.com/googlefonts/noto-emoji/raw/main/fonts/NotoColorEmoji.ttf
 https://github.com/JetBrains/JetBrainsMono/tree/master/fonts/otf
 '
 
@@ -41,11 +39,11 @@ Suckless  (git,make,gcc|clang|cc)  {X11}  [suckless_choices] "compile_suckless"
 '
 
 suckless_choices='
-Dynamic-Window-Manager ()                    {Xinerama,fontconfig,Xft}                            "get_suckless dwm"
-DwmBlocks              ()                    {}                                                   "get_suckless dwmblocks"
-Simple-Terminal        ()                    {m,rt,util,Xft,Xrender,fontconfig,freetype,harfbuzz} "get_suckless st"
-D-Menu                 ()                    {fontconfig,Xinerama,freetype}                       "get_suckless dmenu"
-External-X-Tools       (patch,wget|curl)     {Xft}                                                "get_suckless misc"
+Dynamic-Window-Manager ()                    {} "get_suckless dwm"
+DwmBlocks              ()                    {} "get_suckless dwmblocks"
+Simple-Terminal        ()                    {} "get_suckless st"
+D-Menu                 ()                    {} "get_suckless dmenu"
+External-X-Tools       (patch,wget|curl)     {} "get_suckless misc"
 '
 
 

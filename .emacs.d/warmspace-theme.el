@@ -75,6 +75,16 @@
    `(ml/read-only-face
      ((,class (:background ,red :foreground ,bg :weight bold
                            :box (:line-width ,box-width :color ,bg2)))))
+   ;; Tab-bar
+   `(tab-bar ((,class (:foreground ,fg :background ,bg))))
+   `(tab-bar-tab
+     ((,class (:foreground ,yellow :background ,bg3 :weight bold
+                           :box (:line-width 5 :color ,bg3)))))
+   `(tab-bar-tab-inactive
+     ((,class (:foreground ,bg3 :background ,bg2 :weight bold
+                           :box (:line-width 5 :color ,bg2)))))
+   `(widget-button ((,class (:foreground ,yellow :background ,red))))
+
    ;; Regular Term (Ansi-term)
    `(term               ((,class (:foreground ,fg))))
    `(term-color-black   ((,class (:foreground ,bg3))))
