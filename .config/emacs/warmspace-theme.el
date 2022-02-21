@@ -50,7 +50,7 @@
    `(font-lock-comment-face       ((,class (:foreground ,bg3 :slant italic))))
    `(font-lock-function-name-face
      ((,class (:foreground ,red :weight bold))))
-   `(sh-heredoc ((,class (:foreground ,fg))))
+   `(sh-heredoc ((,class (:foreground ,orange))))
    ;; Search
    `(isearch        ((,class (:background ,orange :foreground ,bg :weight bold))))
    `(isearch-fail   ((,class (:background ,red :foreground ,bg :weight bold))))
@@ -118,9 +118,6 @@
      ((,class (:foreground ,cyan :background ,bg2 :weight bold
                            :box (:line-width ,box-width :color ,bg2)))))
    ;;; External Packages
-   ;; Fireplace
-   `(fireplace-inner-flame-face ((,class (:background ,orange))))
-   `(fireplace-outter-flame-face ((,class (:background ,red))))
    ;; Company-mode
    `(company-preview           ((,class (:background ,bg2 :foreground ,fg))))
    `(company-tooltip           ((,class (:background ,bg2 :foreground ,fg))))

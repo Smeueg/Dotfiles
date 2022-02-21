@@ -419,12 +419,16 @@
   (package-refresh-contents)
   (package-install 'use-package))
 
-(setq-default use-package-always-defer t
-              use-package-always-ensure t)
-
 
 (use-package yasnippet
+  :defer t
+  :ensure t
   :config (yas-global-mode))
+
+
+(use-package nix-mode
+  :ensure t
+  :mode "\\.nix\\'")
 
 
 (use-package tramp
@@ -437,18 +441,22 @@
 
 
 (use-package aggressive-indent
+  :ensure t
   :init (global-aggressive-indent-mode 1))
 
 
 (use-package rainbow-mode
+  :ensure t
   :init (add-hook 'prog-mode-hook 'rainbow-mode))
 
 
 (use-package eterm-256color
+  :ensure t
   :hook (term-mode . eterm-256color-mode))
 
 
 (use-package lua-mode
+  :ensure t
   :init (setq-default lua-indent-level 4
                       lua-indent-string-contents t))
 
@@ -459,18 +467,21 @@
 
 
 (use-package vertico
+  :ensure t
   :init
   (vertico-mode)
   (define-key vertico-map "\C-n" 'vertico-next))
 
 
 (use-package org-bullets
+  :ensure t
   :hook (org-mode . org-bullets-mode)
   :init
   (setq-default org-bullets-bullet-list '("ζ" "◉" "✸" )))
 
 
 (use-package ranger
+  :ensure t
   :commands (ranger dired)
   :config
   (ranger-override-dired-mode t)
@@ -480,6 +491,7 @@
 
 
 (use-package dired
+  :defer t
   :config
   (put 'dired-find-alternate-file 'disabled nil)
   (define-key dired-mode-map [return] 'dired-find-alternate-file)
@@ -490,6 +502,7 @@
 
 
 (use-package org
+  :defer t
   :init
   (setq-default org-ellipsis              "  ▼"
                 org-src-fontify-natively  t
@@ -540,6 +553,7 @@
 
 
 (use-package bongo
+  :ensure t
   :commands bongo-playlist
   :init
   (setq-default bongo-mode-line-indicator-mode nil
@@ -557,6 +571,7 @@
 
 
 (use-package company
+  :ensure t
   :demand t
   :hook (prog-mode . global-company-mode)
   :init
@@ -579,6 +594,7 @@
 
 
 (use-package eglot
+  :ensure t
   :commands eglot-ensure
   :init
   (setq-default gc-cons-threshold 100000000
@@ -609,6 +625,7 @@
 
 
 (use-package evil
+  :ensure t
   :demand t
   :init
   (use-package undo-fu :commands (undo-fu-only-undo undo-fu-only-redo))
@@ -630,7 +647,8 @@
   (when (package-installed-p 'bongo) ;; Bongo
     (evil-define-key 'normal 'global " m" 'bongo-playlist)
     (evil-define-key 'normal bongo-mode-map
-      [return] 'bongo-dwim
+      [double-mouse-1] 'bongo-dwim
+      [return]  'bongo-dwim
       "c" 'bongo-pause/resume))
 
   (if (package-installed-p 'ranger) ;; Ranger / Dired
