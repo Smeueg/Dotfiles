@@ -1,5 +1,16 @@
 #!/bin/sh
-# TODO: trap Ctrl-c to restore stty echo
+# ------------------------------------------------
+# Script Name    - smeueger-new
+# Author Name    - Smeueg
+# Author Email   - Smeueg@gmail.com
+# Author Gitlab  - https://gitlab.com/Smeueg
+# Last Updated   - Tue  1 Mar 19:02:03 WIB 2022
+# ------------------------------------------------
+# The bootstraping script that makes you more Smeueg INSTANTLY
+#
+# TODO: Clean Up
+# TODO: Remove the uneeded echo in line 371
+# TODO: Test out full install in another system
 
 # Variables
 WALLPAPER_DIR="${HOME}/.config/rice/"
@@ -20,12 +31,11 @@ TFL's Simplify Ubuntu {wget||curl} | install_SU
 "
 
 # Utility functions
-# Use /dev/null if possible, else use a subshell
 error() { printf "\033[31mERROR: ${1}\033[0m\n" >&2; }
 warning() { printf "\033[33mWARNING: ${1}\033[0m\n" >&2; }
 
 
-# Check if /dev/null exists, if it does use that, else use a subshell
+# Check if /dev/null exists, if it does then use it, else use a subshell
 # To capture stdout
 if [ -c /dev/null ] && [ -w /dev/null ]; then
 	check_depend() { command -v "${1}" >/dev/null; }
@@ -295,8 +305,7 @@ while true; do
 	while read line; do
 		line="${line%%\{*}"
 		line="${line%${line##*[! ]}} "
-
-
+		# Highlight Chosen Line
 		if [ ${i} -eq ${chosen} ]; then
 			printf '\033[7m %s\033[0m\n' "${line}"
 		else
@@ -321,14 +330,13 @@ EOF
 	case "${input}" in
 		"k") [ ${chosen} -ne 0 ] && chosen=$((chosen-1));;
 		"j") [ ${chosen} -ne $((i-1)) ] && chosen=$((chosen+1));;
-		"q")
-			choice_out=""
-			return ;;
+		"q") break ;;
 		"${newline}"|" ")
 			if [ ${chosen} -eq $((i-1)) ]; then
 				printf "\033[${i}A\033[J"
 				break
 			else
+				# Toggle chosen option
 				choices="$(
 				i=0
 				while read line; do
@@ -357,9 +365,11 @@ EOF
 done
 stty echo
 
+
+# Run selected functions
 while read line; do
 	[ "${line%%\[X*}" ] && continue
-	# !! Replace echo with eval once ready !!
+	# !! Remove echo once ready !!
 	echo "${line#*| }"
 done <<EOF
 ${choices}

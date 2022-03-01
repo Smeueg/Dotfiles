@@ -1,6 +1,15 @@
 #!/bin/sh
+# ------------------------------------------------
+# Script Name    - smeueger-music
+# Author Name    - Smeueg
+# Author Email   - Smeueg@gmail.com
+# Author Gitlab  - https://gitlab.com/Smeueg
+# Last Updated   - Tue  1 Mar 19:04:18 WIB 2022
+# ------------------------------------------------
 # Download the mp3 of videos in a playlist
 # Change the value `pl_url` to the playlist url that you want
+
+
 music_dir="${HOME}/Music"
 pl_url="https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc"
 
