@@ -285,6 +285,7 @@ choices=$(printf "${tmp}\nContinue\n")
 unset tmp
 
 
+printf 'j/↓:Down  k/↑:Up  q:quit  Enter/Space:Toggle Selection/Continue'
 chosen=0
 trap 'stty echo; exit 1' INT
 stty -echo
