@@ -74,14 +74,6 @@ old_ifs=${IFS}
 
 
 # Utilies
-sh_cat()
-{
-	while IFS= read -r line; do
-		echo "${line}"
-	done < "${1}"
-}
-
-
 get()
 {
 	url="${1}"

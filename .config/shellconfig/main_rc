@@ -31,16 +31,16 @@ print_prompt() {
 	dir_col=$'\033[38;5;11m'
 	success_col=$'\033[38;5;6m'
 	failed_col=$'\033[38;5;1m'
-	branch_col=$'\033[38;5;3m'
-	cur_dir=${PWD}
-	[ -z "${cur_dir##${HOME}*}" ] &&
-		cur_dir="~${cur_dir##${HOME}}"
+	branch_col=$'\033[38;5;8m'
+	if [ -z "${PWD##${HOME}*}" ]; then
+		printf '\001\033[1m\002\001%b\002%s' "${dir_col}" "~${PWD##${HOME}}"
+	else
+		printf '\001\033[1m\002\001%b\002%s' "${dir_col}" "${PWD}"
+	fi
 
-	printf '\001\033[1m\002\001%b\002%s' "${dir_col}" "${cur_dir}"
 
-	if command -v git >/dev/null; then
-		branch="$(git branch 2>/dev/null)"
-		old_ifs=${IFS}
+	if [ "$(command -v git)" ]; then
+		branch="$(git branch 2>&-)"
 		IFS='
 		'
 		for line in "${branch}"; do
@@ -52,22 +52,12 @@ print_prompt() {
 			fi
 		done
 	fi
-	IFS=${old_ifs}
 
 	if [ ${ret} -eq 0 ]; then
 		printf '\n\001%b\002>\001\033[0m\002 ' "${success_col}"
 	else
 		printf '\n\001%b\002>\001\033[0m\002 ' "${failed_col}"
 	fi
-
-	unset branch
-	unset old_ifs
-	unset cur_dir
-	unset ret
-	unset dir_col
-	unset success_col
-	unset failed_col
-	unset branch_col
 }
 export PS1="\$(print_prompt)"
 
@@ -124,7 +114,7 @@ dit() {
 
 
 e() {
-	if [ "$(command -v emacsclient)" ]; then
+	if [ "${EDITOR}" = "emacs" ] && [ "$(command -v emacsclient)" ]; then
 		emacsclient -a ${EDITOR} "$@"
 	else
 		${EDITOR} "$@"
@@ -138,7 +128,7 @@ doar() { eval "su -c '$@'"; }
 # Misc ENV Variable Exporting
 export UEBERZUG_FIFO=/tmp/ueberzug-fifo
 
-# LESS
+# LESS (for man pages)
 export LESS_TERMCAP_mb=$'\033[1;32m'
 export LESS_TERMCAP_md=$'\033[1;32m'
 export LESS_TERMCAP_me=$'\033[0m'

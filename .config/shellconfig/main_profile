@@ -60,7 +60,7 @@ export LANG=en_US.UTF-8
 export PASSWORD_STORE_DIR="$XDG_DATA_HOME"/pass
 
 # Gtk & Qt
-command -v qt5ct >/dev/null && export QT_QPA_PLATFORMTHEME=qt5ct # if qt5ct is installed
+type -p qt5ct && export QT_QPA_PLATFORMTHEME=qt5ct # if qt5ct is installed
 export GTK2_RC_FILES="$XDG_CONFIG_HOME"/gtk-2.0/gtkrc
 
 # Shell
@@ -69,24 +69,22 @@ export ZDOTDIR="${HOME}/.config/shellconfig"
 
 
 
-
-
 # Symlink / remove bash config file if needed
 if [ "${BASH}" ] && [ -f "${ENV}" ] && ! [ -L "${HOME}/.bashrc" ]; then
-	if [ -f "${HOME}/.bashrc" ] && ! [ -L "${HOME}/.bashrc" ]; then
-		mv "${HOME}/.bashrc" "${HOME}/.bashrc_old"
-	fi
-	ln -s "${ENV}" "${HOME}/.bashrc"
-elif ! [ "${BASH}" ] && [ -L "${HOME}/.bashrc" ]; then
-	rm "${HOME}/.bashrc"
-fi
+	 if [ -f "${HOME}/.bashrc" ] && ! [ -L "${HOME}/.bashrc" ]; then
+		 mv "${HOME}/.bashrc" "${HOME}/.bashrc_old"
+	 fi
+	 ln -s "${ENV}" "${HOME}/.bashrc"
+ elif ! [ "${BASH}" ] && [ -L "${HOME}/.bashrc" ]; then
+	 rm "${HOME}/.bashrc"
+ fi
 
-# Symlink / remove zsh config file if needed
-if [ "${ZSH_NAME}" ] && [ -f "${ENV}" ] && ! [ -L "${ZDOTDIR}/.bashrc"]; then
-	ln -s "${ENV}" "${ZDOTDIR}/.zshrc"
-elif ! [ "${ZSH_NAME}" ] && [ -L "${ZDOTDIR}/.zshrc" ]; then
-	rm "${ZDOTDIR}/.zshrc"
-fi
+ # Symlink / remove zsh config file if needed
+ if [ "${ZSH_NAME}" ] && [ -f "${ENV}" ] && ! [ -L "${ZDOTDIR}/.bashrc"]; then
+	 ln -s "${ENV}" "${ZDOTDIR}/.zshrc"
+ elif ! [ "${ZSH_NAME}" ] && [ -L "${ZDOTDIR}/.zshrc" ]; then
+	 rm "${ZDOTDIR}/.zshrc"
+ fi
 
 
 # Start xserver if in tty1
@@ -101,3 +99,7 @@ if command -v startx >/dev/null && [ "$(tty)" = "/dev/tty1" ]; then
 fi
 
 source "${HOME}"/.config/shellconfig/main_rc
+
+if [ -e "${HOME}"/.nix-profile/etc/profile.d/nix.sh ]; then . "${HOME}"/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer
+
+if [ -e /home/smeueg/.nix-profile/etc/profile.d/nix.sh ]; then . /home/smeueg/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer

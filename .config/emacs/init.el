@@ -85,12 +85,13 @@
   (add-to-list 'default-frame-alist
                '(internal-boder-width . 20))
 
-  ;; My custom theme
+  ;; Custom theme
   (when (member 'warmspace (custom-available-themes))
     (load-theme 'warmspace 1))
 
-  ;; Disable cursor when window isn't focused
-  (setq-default cursor-in-non-selected-windows nil)
+  (setq-default cursor-in-non-selected-windows nil
+                left-fringe-width 10
+                )
   (set-frame-font "JetBrains Mono-12")
   (menu-bar-mode 0)           ;; Disable menu bar
   (blink-cursor-mode 0)       ;; Disable cursor blinking
@@ -121,9 +122,14 @@
                                 ""))))
   (define-key prog-mode-map [return] 'newline-and-indent))
 
-(progn ;; Functionality / Random Modes
+(progn ;; Functionality / Misc Modes
   (electric-pair-mode 1) ;; Auto close and delete parenthesis, brackets, etc...
   (global-eldoc-mode -1)
+  (global-auto-revert-mode 1) ;; Automatically refresh buffer
+  (when (fboundp 'save-place-mode)
+    (setq-default save-place-file "/tmp/emacs_places"
+                  save-place-forget-unreadable-files nil)
+    (save-place-mode 1))
   (kill-buffer "*Messages*"))
 
 (progn ;; Custom Functions
@@ -136,58 +142,37 @@
   (defalias 'vs 'split-window-vertically)
   (defalias 's 'replace-regexp)
 
+  (defun edit-config (config)
+    "Edit a configuration file. Supports emacs's init-file and enabled theme,
+awesomewm, and the users shell's"
+    (interactive
+     (list
+      (completing-read
+       "Config File: "
+       (let ((files '())
+             (shell (file-name-base (getenv "SHELL")))
+             (home (or (getenv "HOME") ""))
+             (config-dir (getenv "XDG_CONFIG_HOME"))
+             (check-file nil))
+         (setq check-file (lambda (f)
+                            (when (file-exists-p f)
+                              (push (abbreviate-file-name f) files))))
+         ;; Shell
+         (cond ((string= shell "bash")
+                (funcall check-file "~/.bashrc")
+                (funcall check-file "~/.profile")))
+         ;; Awesomewm
+         (funcall check-file (concat config-dir "/awesome/rc.lua"))
+         ;; Emacs
+         (funcall check-file (locate-user-emacs-file "init.el"))
+         (dolist (theme custom-enabled-themes) ;; Enabled Themes
+           (funcall check-file (locate-file
+                                (concat (symbol-name theme) "-theme.el")
+                                (custom-theme--load-path)
+                                '("" "c"))))
+         files))))
+    (find-file config))
 
-  (defun lsp-install-java ()
-    (let ((url nil)
-          (buffer nil)
-          (dir (expand-file-name
-                (locate-user-emacs-file "language-servers/jdtls/"))))
-
-      (setq tar-file (concat dir "jdtls.tar.gz"))
-      (unless (file-directory-p dir)
-        (make-directory dir))
-
-      (when (file-directory-p dir)
-        (setq url "https://download.eclipse.org/jdtls/milestones/?d")
-        (setq url
-              (concat
-               "https://download.eclipse.org"
-               (with-current-buffer (url-retrieve-synchronously url)
-                 (goto-char (point-max))
-                 (goto-char (re-search-backward "jdtls[/]milestones[/][1-9.]+"))
-                 (thing-at-point 'filename t))))
-        (unless url (user-error "Failed to retrieve url"))
-        (setq url
-              (concat
-               "https://download.eclipse.org"
-               (with-current-buffer (url-retrieve-synchronously url)
-                 (goto-char 0)
-                 (goto-char (re-search-forward "tar[.]gz"))
-                 (thing-at-point 'filename t))))
-        (unless url (user-error "Failed to retrieve url"))
-        (setq buffer (url-retrieve-synchronously url))
-        (unless buffer (user-error "Failed to retrieve url"))
-        (with-current-buffer buffer
-          (re-search-forward "\r?\n\r?\n")
-          (write-region (point) (point-max) tar-file))
-        (let ((warning-minimum-level :error)))
-        (with-current-buffer (find-file tar-file)
-          (cd dir)
-          (tar-untar-buffer)
-          (delete-file tar-file)
-          (kill-buffer (current-buffer))))))
-
-  (defun lsp-install-pyright ()
-    (message "no"))
-
-  (defun lsp-install (server)
-    "Install a language server (for eglot)"
-    (interactive (list (completing-read "Language server to install:"
-                                        '("eclipse jdtls" "pyright"))))
-    (let (func)
-      (setq func (cdr (assoc server '(("eclipse jdtls" . lsp-install-java)
-                                      ("pyright" . lsp-install-pyright)))))
-      (if func (funcall func) (message "Unknown language server"))))
 
   (defun get-system-clipboard ()
     "Get value of the system clipboard"
@@ -196,8 +181,6 @@
          'CLIPBOARD
          (or x-select-request-type
              'UTF8_STRING)) ""))
-
-
 
   (defun close ()
     " Kill buffer when there's only one window displaying the buffer.
@@ -227,11 +210,11 @@
           (set-window-prev-buffers (selected-window) var)))
       (when del (delete-window))))
 
-  (defun executable(cmd)
+  (defun executable (cmd)
     "Return nil if executable does not exist"
     (locate-file cmd exec-path exec-suffixes 1))
 
-  (defun run()
+  (defun run ()
     "Automatically compile (if needed) and execute the current program "
     (interactive)
     (save-buffer)
@@ -399,6 +382,7 @@
 
 ;;; HOOKS ;;;
 (progn
+  (add-hook 'sh-mode-hook 'sh-electric-here-document-mode)
   (add-hook 'before-save-hook 'delete-trailing-whitespace)
   (add-hook 'emacs-lisp-mode-hook (lambda() (setq-local indent-tabs-mode nil)))
 
@@ -420,10 +404,21 @@
   (package-install 'use-package))
 
 
+(use-package visual-regexp
+  :ensure t
+  :demand t
+  :config
+  (fset 'replace-regexp 'vr/replace)
+  (fset 'query-replace-regexp 'vr/query-replace))
+
+
 (use-package yasnippet
   :defer t
   :ensure t
   :config (yas-global-mode))
+
+(use-package pdf-tools
+  :ensure t)
 
 
 (use-package nix-mode
@@ -485,9 +480,20 @@
   :commands (ranger dired)
   :config
   (ranger-override-dired-mode t)
-  :init (setq-default ranger-show-hidden t
-                      ranger-parent-depth 1
-                      ranger-dont-show-binary t))
+  (define-key ranger-mode-map ":"
+    (lambda () (interactive) (execute-extended-command nil)))
+  :init
+  (setq-default ranger-show-hidden  t
+                ranger-parent-depth 1
+                ranger-dont-show-binary t)
+  (add-hook 'ranger-mode-hook
+            (lambda ()
+              (if (eq major-mode 'ranger-mode)
+                  (progn
+                    (setq-local ranger-show-literal nil) ;; Preview images by default
+                    (when (package-installed-p 'evil) ;; Turn off evil
+                      (turn-off-evil-mode)))
+                (hl-line-mode -1)))))
 
 
 (use-package dired
@@ -515,7 +521,7 @@
                 org-export-with-toc       nil)
   :config
   (define-key org-mode-map "\M-h" nil)
-  (define-key org-mode-map [return] 'org-return-indent)
+  (define-key org-mode-map [return] (lambda() (interactive) (org-return t)))
   (add-hook 'org-mode-hook
             (lambda()
               (setq-local indent-tabs-mode nil
@@ -612,16 +618,76 @@
       (when file
         (setenv "CLASSPATH" (expand-file-name (concat dir "/" (car file)))))))
 
-  (if (or (executable "clangd") (executable "ccls"))
-      (add-hook 'c-mode-common-hook 'eglot-ensure)
-    (add-hook 'c-mode-common-hook
-              (lambda() (message "clangd or ccls is not installed"))))
+  (let ((eglot-auto-hook
+         (lambda (hook bins) ;; bins for binaries
+           (catch 'break
+             (dolist (bin bins)
+               (when (locate-file bin exec-path exec-suffixes 'executable)
+                 (add-hook hook 'eglot-ensure)
+                 (throw 'break t)))
+             (user-error
+              (format "A supported language server isn't found: %s" bins))))))
 
-  (if (or (executable "pyls") (executable "pylsp") (executable "pyright"))
-      (add-hook 'python-mode-hook 'eglot-ensure)
-    (add-hook 'python-mode-hook
-              (lambda()
-                (message "pyls, pylsp, or pyright is not installed")))))
+    (funcall eglot-auto-hook 'c-mode-common-hook '("clangd" "ccls"))
+    (funcall eglot-auto-hook 'python-mode-hook '("pyls" "pylsp" "pyright")))
+
+
+  (defun lsp-install-java ()
+    (let ((url nil)
+          (buffer nil)
+          (dir (expand-file-name
+                (locate-user-emacs-file "language-servers/jdtls/"))))
+
+      (setq tar-file (concat dir "jdtls.tar.gz"))
+      (unless (file-directory-p dir)
+        (make-directory dir))
+
+      (when (file-directory-p dir)
+        (setq url "https://download.eclipse.org/jdtls/milestones/?d")
+        (setq url
+              (concat
+               "https://download.eclipse.org"
+               (with-current-buffer (url-retrieve-synchronously url)
+                 (goto-char (point-max))
+                 (goto-char (re-search-backward "jdtls[/]milestones[/][1-9.]+"))
+                 (thing-at-point 'filename t))))
+        (unless url (user-error "Failed to retrieve url"))
+        (setq url
+              (concat
+               "https://download.eclipse.org"
+               (with-current-buffer (url-retrieve-synchronously url)
+                 (goto-char 0)
+                 (goto-char (re-search-forward "tar[.]gz"))
+                 (thing-at-point 'filename t))))
+        (unless url (user-error "Failed to retrieve url"))
+        (setq buffer (url-retrieve-synchronously url))
+        (unless buffer (user-error "Failed to retrieve url"))
+        (with-current-buffer buffer
+          (re-search-forward "\r?\n\r?\n")
+          (write-region (point) (point-max) tar-file))
+        (let ((warning-minimum-level :error)))
+        (with-current-buffer (find-file tar-file)
+          (cd dir)
+          (tar-untar-buffer)
+          (delete-file tar-file)
+          (kill-buffer (current-buffer))))))
+
+  (defun lsp-install (server)
+    "Install a language server (for eglot)"
+    (interactive (list (completing-read "Language server to install:"
+                                        '("eclipse jdtls" "clangd"))))
+    (let (func)
+      (setq func (cdr (assoc server '(("eclipse jdtls" . lsp-install-java)
+                                      ("pyright" . lsp-install-pyright)))))
+      (if func (funcall func) (message "Unknown language server")))))
+
+
+(use-package flymake
+  :defer t
+  :init
+  (setq-default flymake-error-bitmap   '(vertical-bar compilation-error)
+                flymake-warning-bitmap '(vertical-bar compilation-warning)
+                flymake-note-bitmap    '(vertical-bar compilation-info)))
 
 
 (use-package evil
@@ -639,6 +705,7 @@
     (evil-define-key 'normal org-mode-map
       " i" 'org-display-inline-images
       [return] 'org-open-at-point
+      [tab] 'org-cycle
       (kbd "M-C-h") 'org-promote-subtree
       (kbd "M-C-j") 'outline-move-subtree-down
       (kbd "M-C-k") 'outline-move-subtree-up
@@ -746,11 +813,4 @@
            (interactive)
            (when (y-or-n-p "Quit Emacs?")
              (kill-emacs)))
-    " ea" (lambda () (interactive)
-            (let ((file "~/.config/awesome/rc.lua"))
-              (when (file-exists-p file)
-                (find-file file))))
-    " et" (lambda () (interactive)
-            (find-file (locate-user-emacs-file "warmspace-theme.el")))
-    " ei" (lambda () (interactive)
-            (find-file (locate-user-emacs-file "init.el")))))
+    " e" 'edit-config))

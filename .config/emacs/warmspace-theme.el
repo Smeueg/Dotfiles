@@ -59,6 +59,9 @@
    `(flymake-error   ((,class (:underline ,red))))
    `(flymake-note    ((,class (:underline ,green))))
    `(flymake-warning ((,class (:underline ,orange))))
+   `(compilation-error   ((,class (:foreground ,red))))
+   `(compilation-warning ((,class (:foreground ,yellow))))
+   `(compilation-info    ((,class (:foreground ,green))))
    ;; (Custom) Mode Line
    `(mode-line
      ((,class (:background ,bg2 :foreground ,bg3 :weight bold
@@ -84,7 +87,10 @@
      ((,class (:foreground ,bg3 :background ,bg2 :weight bold
                            :box (:line-width 5 :color ,bg2)))))
    `(widget-button ((,class (:foreground ,yellow :background ,red))))
-
+   ;; Man
+   `(Man-overstrike ((,class (:foreground ,red :weight bold))))
+   `(Man-underline  ((,class (:foreground ,yellow :underline t))))
+   `(nobreak-hyphen ((,class (:foreground ,cyan :weight bold))))
    ;; Regular Term (Ansi-term)
    `(term               ((,class (:foreground ,fg))))
    `(term-color-black   ((,class (:foreground ,bg3))))
@@ -118,6 +124,9 @@
      ((,class (:foreground ,cyan :background ,bg2 :weight bold
                            :box (:line-width ,box-width :color ,bg2)))))
    ;;; External Packages
+   ;; visual-regexp
+   `(vr/match-0 ((,class (:foreground ,bg :background ,yellow :weight bold))))
+   `(vr/match-1 ((,class (:foreground ,bg :background ,yellow :weight bold))))
    ;; Company-mode
    `(company-preview           ((,class (:background ,bg2 :foreground ,fg))))
    `(company-tooltip           ((,class (:background ,bg2 :foreground ,fg))))

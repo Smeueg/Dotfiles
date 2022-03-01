@@ -45,7 +45,7 @@ local home           = os.getenv("HOME")
 local terminal       = os.getenv("TERMINAL") or "x-terminal-emulator"
 local editor         = os.getenv("EDITOR") or "editor"
 local modkey         = "Mod4"
-local wallpaper      = home .. "/.config/awesome/Shark Space.png"
+local wallpaper      = home .. "/.config/rice/Shark Space.png"
 local wallpaper_url  = "https://i.imgur.com/DVJsvfN.png"
 local screenshot_dir = "/tmp/"
 local browser        = command_exists(os.getenv("BROWSER"))
@@ -253,18 +253,20 @@ end
 
 
 local function find_or_spawn_emacs()
-	-- Find emacs if found, move it to the current tag and focus.
-	-- Else, spawn emacs
-	for _, c in ipairs(client.get()) do
-		if (c.class == "Emacs") then
-			c:move_to_tag(awful.screen.focused().selected_tag)
-			c.hidden = false
-			awful.client.focus.byidx(0, c)
-			return
-		end
+	-- Spawn Emacs if one is not already set as scratch_client,
+	-- else focus and move it to the current tag.
+	if scratch_client and scratch_client.valid then
+		scratch_client:move_to_tag(awful.screen.focused().selected_tag)
+		awful.client.focus.byidx(0, scratch_client)
+	else -- Spawn emacs and make it the scratchpad client
+		naughty.notify({title = "Opening emacs"})
+		awful.spawn.raise_or_spawn(
+			"emacs",
+			{},
+			nil,
+			nil,
+			function(c) scratch_client = c end)
 	end
-	naughty.notify({title = "Opening emacs"})
-	awful.spawn("emacs")
 end
 
 
@@ -749,6 +751,9 @@ end
 
 -- Key and Mouse Bindings --
 globalkeys = gears.table.join( -- Keybindings
+	awful.key({ modkey }, "y", function()
+			naughty.notify {title = screen[1].workarea.height}
+	end),
 	-- Volume
 	awful.key({ modkey }, "[", function() widget_volume:ctrl("-5") end),
 	awful.key({ modkey }, "]", function() widget_volume:ctrl("+5") end),
@@ -768,17 +773,17 @@ globalkeys = gears.table.join( -- Keybindings
 	-- Screens
 	awful.key({ modkey, "Control" }, "j",
 		function() awful.screen.focus_relative(-1) end), -- Focus previous screen
-	awful.key({ modkey, "Control" }, "k",
-		function() awful.screen.focus_relative(1) end), -- Focus next screen
-	-- Layout
-	awful.key({ modkey }, "l",
-		function() awful.tag.incmwfact(0.05) end), -- Increase master width
-	awful.key({ modkey }, "h",
-		function() awful.tag.incmwfact(-0.05) end), -- Decrease master width
-	awful.key({ modkey }, "t",
-		function() set_layout_all(awful.layout.suit.tile.right) end),
-	awful.key({ modkey }, "m",
-		function() set_layout_all(awful.layout.suit.max) end),
+		awful.key({ modkey, "Control" }, "k",
+			function() awful.screen.focus_relative(1) end), -- Focus next screen
+		-- Layout
+		awful.key({ modkey }, "l",
+			function() awful.tag.incmwfact(0.05) end), -- Increase master width
+		awful.key({ modkey }, "h",
+			function() awful.tag.incmwfact(-0.05) end), -- Decrease master width
+		awful.key({ modkey }, "t",
+			function() set_layout_all(awful.layout.suit.tile.right) end),
+		awful.key({ modkey }, "m",
+			function() set_layout_all(awful.layout.suit.max) end),
 	awful.key({ modkey }, "f",
 		function() set_layout_all(awful.layout.suit.floating) end),
 	-- Awesome Functions
@@ -821,18 +826,18 @@ clientkeys = gears.table.join( -- Key Bindings That Activate Per-client
             c:raise()
         end),
     awful.key({ modkey, "Shift" }, "c", function(c) c:kill() end),
-    awful.key({ modkey, "Shift" }, "space",  awful.client.floating.toggle),
-    awful.key({ modkey, "Shift" }, "t", function(c) c.ontop = not c.ontop end),
-    awful.key({ modkey }, "space", function(c) c:swap(awful.client.getmaster()) end),
-    awful.key({ modkey }, "o",     function(c) c:move_to_screen() end),
+    awful.key({ modkey, "Shift" }, "space",  function(c) c.floating = not c.floating end),
+	awful.key({ modkey, "Shift" }, "t", function(c) c.ontop = not c.ontop end),
+	awful.key({ modkey }, "space", function(c) c:swap(awful.client.getmaster()) end),
+	awful.key({ modkey }, "o",     function(c) c:move_to_screen() end),
 	awful.key({ modkey }, "Down",  function(c) c:relative_move(  0,  10,   0, 0) end),
 	awful.key({ modkey }, "Up",    function(c) c:relative_move(  0, -10,   0, 0) end),
 	awful.key({ modkey }, "Left",  function(c) c:relative_move(-10,   0,   0, 0) end),
-	awful.key({ modkey }, "Right", function(c) c:relative_move( 10,   0,   0, 0) end),
-	awful.key({ modkey, "Shift" }, "Down",  function(c) c:relative_move(0, 0,   0,  10) end),
-	awful.key({ modkey, "Shift" }, "Up",    function(c) c:relative_move(0, 0,   0, -10) end),
-	awful.key({ modkey, "Shift" }, "Left",  function(c) c:relative_move(0, 0, -10,   0) end),
-	awful.key({ modkey, "Shift" }, "Right", function(c) c:relative_move(0, 0,  10,   0) end)
+		awful.key({ modkey }, "Right", function(c) c:relative_move( 10,   0,   0, 0) end),
+		awful.key({ modkey, "Shift" }, "Down",  function(c) c:relative_move(0, 0,   0,  10) end),
+		awful.key({ modkey, "Shift" }, "Up",    function(c) c:relative_move(0, 0,   0, -10) end),
+		awful.key({ modkey, "Shift" }, "Left",  function(c) c:relative_move(0, 0, -10,   0) end),
+		awful.key({ modkey, "Shift" }, "Right", function(c) c:relative_move(0, 0,  10,   0) end)
 )
 
 -- Bind Keybindings to Tags
