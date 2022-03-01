@@ -142,6 +142,47 @@
   (defalias 'vs 'split-window-vertically)
   (defalias 's 'replace-regexp)
 
+
+  (defun script-header (opt)
+    "Add a comment header for information about a script, template from
+Terminal For Life"
+    (interactive (list (completing-read "Action: " '("Add New" "Update"))))
+    (cond ((string= opt "Add New")
+           (save-excursion
+             (let (point))
+             (goto-line 2)
+             (setq point (point))
+             (insert-char ?- 48)
+             (insert-char ?\n 1)
+             (insert (concat "Script Name    - "
+                             (file-name-nondirectory buffer-file-name) "\n"))
+             (insert "Author Name    - Smeueg\n")
+             (insert "Author Email   - Smeueg@gmail.com\n")
+             (insert "Author Gitlab  - https://gitlab.com/Smeueg\n")
+             (insert (format-time-string
+                      "Last Updated   - %a %_d %b %T %Z %Y\n"))
+             (insert-char ?- 48)
+             (insert-char ?\n 1)
+             (comment-region point (point))))
+          ((string= opt "Update")
+           (save-excursion
+             (goto-char 0)
+             (when
+                 (re-search-forward (concat
+                                     ".+ -+\n"
+                                     ".+ Script Name    - .+\n"
+                                     ".+ Author Name    - .+\n"
+                                     ".+ Author Email   - .+\n"
+                                     ".+ Author Gitlab  - .+\n"
+                                     ".+ Last Updated   - .+\n"
+                                     ".+ -+\n")
+                                    nil t)
+               (previous-line 2)
+               (re-search-forward ".* Last Updated +- " nil t)
+               (delete-region (point) (progn (end-of-line) (point)))
+               (insert (format-time-string "%a %_d %b %T %Z %Y")))))))
+
+
   (defun edit-config (config)
     "Edit a configuration file. Supports emacs's init-file and enabled theme,
 awesomewm, and the users shell's"
@@ -384,6 +425,12 @@ awesomewm, and the users shell's"
 (progn
   (add-hook 'sh-mode-hook 'sh-electric-here-document-mode)
   (add-hook 'before-save-hook 'delete-trailing-whitespace)
+  (when (and (fboundp 'script-header))
+    (add-hook 'before-save-hook
+              (lambda ()
+                (when (and (derived-mode-p 'sh-mode) (buffer-modified-p))
+                  (script-header "Update")))))
+  (add-hook 'before-save-hook 'delete-trailing-whitespace)
   (add-hook 'emacs-lisp-mode-hook (lambda() (setq-local indent-tabs-mode nil)))
 
   (add-hook 'completion-list-mode-hook
@@ -539,7 +586,9 @@ awesomewm, and the users shell's"
   (define-key global-map "\C-n" nil)
   :config
   (defadvice term-handle-exit (after term-kill-buffer-on-exit activate) (close))
-  (add-hook 'term-mode-hook (lambda() (display-line-numbers-mode 0)))
+  (add-hook 'term-mode-hook (lambda ()
+                              (display-line-numbers-mode 0)
+                              (setq-local scroll-margin 0)))
   (define-key term-raw-map "\C-\\" 'term-esc-map)
   (if (package-installed-p 'evil)
       (define-key term-raw-map "\C-\\\C-n"
@@ -688,6 +737,11 @@ awesomewm, and the users shell's"
   (setq-default flymake-error-bitmap   '(vertical-bar compilation-error)
                 flymake-warning-bitmap '(vertical-bar compilation-warning)
                 flymake-note-bitmap    '(vertical-bar compilation-info)))
+
+
+(use-package cheat-sh
+  :ensure t
+  :defer t)
 
 
 (use-package evil
