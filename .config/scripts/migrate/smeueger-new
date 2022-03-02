@@ -4,13 +4,13 @@
 # Author Name    - Smeueg
 # Author Email   - Smeueg@gmail.com
 # Author Gitlab  - https://gitlab.com/Smeueg
-# Last Updated   - Tue  1 Mar 19:24:58 WIB 2022
+# Last Updated   - Wed  2 Mar 08:27:02 WIB 2022
 # ------------------------------------------------
 # The bootstraping script that makes you more Smeueg INSTANTLY
 #
 # TODO: Clean Up
 # TODO: Decide whether to use 2>/dev/null or 2>&-
-# TODO: Remove the uneeded echo in line 372
+# TODO: Remove the uneeded echo in line 386 once ready
 # TODO: Test out full install in another system
 
 # Variables
@@ -227,6 +227,18 @@ install_nix() {
 	sh -s -- --no-daemon <<-EOF
 	$(curl -L https://nixos.org/nix/install)
 EOF
+
+	# Removes the line that was added by nix's auto install script, i.e:
+	# if [ -e ${HOME}/.nix-profile/etc/profile.d/nix.sh ]; then . ${HOME}/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer
+	[ -f "${HOME}/.profile" ] || return
+	file="$(while read line; do
+			 if ! [ "${line}" = "if [ -e ${HOME}/.nix-profile/etc/profile.d/nix.sh ]; then . ${HOME}/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer" ]; then
+				 printf '%s\n' "${line}"
+			 fi
+		 done < ${HOME}/.profile
+	  )"
+
+	printf '%s\n' "${file}" > "${HOME}/.profile"
 }
 
 
