@@ -1,5 +1,5 @@
 #!/bin/sh
-# Shell configuration to source all other shell configuration files
+# Basic interactive shell config that should work on every posix compliant shell
 set -o vi   # Vi mode, works on most shells
 [ "$(command -v stty)" ] && stty -ixon 	# Disable Ctrl-q and Ctrl-s
 export HISTFILE=/tmp/shell_history
@@ -121,9 +121,28 @@ e() {
 	fi
 }
 
+
+fet.sh() {
+	bin=$(command -v fet.sh)
+	if [ "${bin}" ]; then
+		url="https://github.com/6gk/fet.sh/raw/master/fet.sh"
+		if [ "$(command -v curl)" ]; then
+			{ curl -s -L -H "User-Agent: Mozilla/5.0"  "${url}" ||
+				  printf 'printf "Failed to get fet.sh with curl\\n"\n'; } | sh
+		elif [ "$(command -v wget)" ]; then
+			{ wget -U 'Mozilla/5.0' -qO- "${url}" ||
+				  printf 'printf "Failed to get fet.sh with wget\\n"\n'; } | sh
+		else
+			printf 'ERROR: Dependencies not met (curl or wget)\n' >&2
+		fi
+		unset url
+	else
+		"${bin}"
+	fi
+	unset bin
+}
+
 doar() { eval "su -c '$@'"; }
-
-
 
 # Misc ENV Variable Exporting
 export UEBERZUG_FIFO=/tmp/ueberzug-fifo

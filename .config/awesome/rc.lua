@@ -256,6 +256,8 @@ local function find_or_spawn_emacs()
 	-- Spawn Emacs if one is not already set as scratch_client,
 	-- else focus and move it to the current tag.
 	if scratch_client and scratch_client.valid then
+		scratch_client.hidden = false
+		scratch_client.minimized = false
 		scratch_client:move_to_tag(awful.screen.focused().selected_tag)
 		awful.client.focus.byidx(0, scratch_client)
 	else -- Spawn emacs and make it the scratchpad client

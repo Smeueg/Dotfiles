@@ -1,4 +1,11 @@
 #!/bin/sh
+# ------------------------------------------------
+# Script Name    - droidcam-start
+# Author Name    - Smeueg
+# Author Email   - Smeueg@gmail.com
+# Author Gitlab  - https://gitlab.com/Smeueg
+# Last Updated   - Wed  2 Mar 12:00:14 WIB 2022
+# ------------------------------------------------
 
 # Variables
 arguments="$@"
@@ -143,8 +150,6 @@ main() {
 	droidcam-cli ${arguments} &
 	${audio} && sleep 3 && LoadPulseaudioModule
 
-	tput bold
-	printf 'Run `droidcam-start kill` or `killall droidcam-cli` to stop droidcam\n'
-	tput sgr0
+	printf '\033[1mRun `droidcam-start kill` or `killall droidcam-cli` to stop droidcam\033[0m\n'
 }
 main

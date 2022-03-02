@@ -1,4 +1,12 @@
 #!/bin/sh
+# ------------------------------------------------
+# Script Name    - tts
+# Author Name    - Smeueg
+# Author Email   - Smeueg@gmail.com
+# Author Gitlab  - https://gitlab.com/Smeueg
+# Last Updated   - Wed  2 Mar 12:02:52 WIB 2022
+# ------------------------------------------------
+# Adds a text to speech sink for pulseaudio, not tested with pipewire
 
 if [ ! "$(command -v pactl)" ]; then
 	printf 'ERROR: `pactl` is not installed\n' >&2

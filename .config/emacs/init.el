@@ -505,6 +505,7 @@ awesomewm, and the users shell's"
 
 (use-package server
   :commands ansi-term
+  :demand t
   :config (unless (server-running-p) (server-start)))
 
 
