@@ -2,6 +2,8 @@
 ## TODO
 - Add a license
 - Clean up the system
+- Add screenshots
+- Create a gitlab.io page
 
 
 
