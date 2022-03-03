@@ -1,598 +1,391 @@
 #!/bin/sh
-# Interactive migration to be more smeueg instantly.
-# If you call now, you can be more smeueg with just $0.00
-# Or you get 2 more smeueg with only $0.00
-
-# Trying to imitate ncurses using pure shell and ansi escape sequences
-# I miss arrays, please help
+# ------------------------------------------------
+# Script Name    - smeueger
+# Author Name    - Smeueg
+# Author Email   - Smeueg@gmail.com
+# Author Gitlab  - https://gitlab.com/Smeueg
+# Last Updated   - Thu  3 Mar 08:41:57 WIB 2022
+# ------------------------------------------------
+# Info:
+#   The bootstraping script that makes you more Smeueg INSTANTLY
+#
+# TODO:
+#   - Clean Up
+#   - Decide whether to use 2>/dev/null or 2>&-
+#   - Test out full install in another system
 
 # Variables
-DOTFILE_URL="https://gitlab.com/Smeueg/Dotfiles.git"
+WALLPAPER_DIR="${HOME}/.config/rice/"
+WALLPAPER_URL="https://i.imgur.com/DVJsvfN.png"
 DOTFILE_DIR="${HOME}/.local/dots"
-WALLPAPER_DIR="${HOME}/.local/rice/Wallpapers"
-FONT_DIR="${HOME}/.local/share/fonts"
-SUCKLESS_DIR="${HOME}/.local/rice"
-SUCKLESS_URL="https://gitlab.com/Smeueg"
-SUCKLESS_PREFIX="${HOME}/.local/" # Where to puts binaries in i.e. ${PREFIX}/bin
+FONT_DIR="${HOME}/.local/share/fonts/"
 
-wallpapers="\
-Geometry.jpg       https://images7.alphacoders.com/106/1065726.jpg
-Rock Thing.png     https://images2.alphacoders.com/950/950452.png
-Red Space.jpg      https://cdna.artstation.com/p/assets/images/images/004/085/784/large/starkiteckt-designs-untitled-2.jpg
-Warm Mountain.jpg  https://i.redd.it/odrdq4yqtoz61.jpg
-Warm Ruins.jpg     https://cdna.artstation.com/p/assets/images/images/024/821/702/large/fredrik-persson-worldonfire.jpg
-Blue Caverns.jpg   https://cdnb.artstation.com/p/assets/images/images/025/243/893/large/fredrik-persson-caverns.jpg
-Retro Galaxy.jpg   https://drive.google.com/u/0/uc?id=1yHdTy9CSku8ngkw0ugdj6pNq2UDsiLP0&export=download
+
+# Character Variable
+special="$(printf '\033')"
+newline="$(printf '\n')"
+choices="
+Dotfiles              {git}        | install_dotfiles
+Font (JetBrainsMono)  {wget||curl} | install_font
+Wallpaper             {wget||curl} | install_wallpaper
+Nix Package Manager   {wget||curl} | install_nix
+TFL's Simplify Ubuntu {wget||curl} | install_SU
 "
 
-fonts='
-https://github.com/JetBrains/JetBrainsMono/tree/master/fonts/otf
-'
-
-# Menu
-# Name        (dependencies) {c libraries}   [Submenu]    "function/program to execute"
-main_choices='
-Dotfiles  (git,mv)                 {}                        "get_dotfiles"
-Wallpaper (mkdir,wget|curl)        {}                        "get_wallpapers"
-Fonts     (mkdir,wget|curl)        {}                        "get_fonts"
-Suckless  (git,make,gcc|clang|cc)  {X11}  [suckless_choices] "compile_suckless"
-'
-
-suckless_choices='
-Dynamic-Window-Manager ()                    {} "get_suckless dwm"
-DwmBlocks              ()                    {} "get_suckless dwmblocks"
-Simple-Terminal        ()                    {} "get_suckless st"
-D-Menu                 ()                    {} "get_suckless dmenu"
-External-X-Tools       (patch,wget|curl)     {} "get_suckless misc"
-'
+# Utility functions
+error() { printf "\033[31mERROR: ${1}\033[0m\n" >&2; }
+warning() { printf "\033[33mWARNING: ${1}\033[0m\n" >&2; }
 
 
-if [ "$(command -v gcc)" ]; then
-	compiler='gcc'
-elif [ "$(command -v clang)" ]; then
-	compiler='clang'
-elif [ "$(command -v cc)" ]; then
-	compiler='cc'
+# Check if /dev/null exists, if it does then use it, else use a subshell
+# To capture stdout
+if [ -c /dev/null ] && [ -w /dev/null ]; then
+	check_depend() { command -v "${1}" >/dev/null; }
 else
-	compiler=''
+	check_depend() { [ "$(command -v >/dev/null)" ]; }
 fi
 
 
-if [ "${BASH}" ]; then
-	bourne_shell='false'
-	input_cmd='read -n1 input'
-elif [ "${ZSH_NAME}" ]; then
-	bourne_shell='false'
-	input_cmd='read -k1 input'
-else
-	bourne_shell='true'
-	input_cmd='input=$(dd bs=1 count=1 2>/dev/null)'
+# Check for curl or wget
+if check_depend curl; then
+	fetch() { curl -L "${1}" -o "${2}"; }
+elif check_depend wget; then
+	fetch() { wget "${1}" -O "${2}"; }
 fi
 
 
-old_ifs=${IFS}
+# Read a single character some shells, including bash and zsh, has read -n1
+# which is better to use than dd. So use that if it's available
+if [ "${BASH_VERSION}" ]; then
+	read_char() { IFS= read -n 1 input; }
+else
+	read_char() {
+		stty -icanon
+		input="$(dd bs=1 count=1 2>/dev/null)"
+		stty icanon
+	}
+fi
 
 
-# Utilies
-get()
-{
-	url="${1}"
-
-	if [ "$(command -v curl)" ]; then
-		curl -Ls "${url}" -A 'Mozilla/5.0'
-	elif [ "$(command -v wget)" ]; then
-		wget "${url}" -U 'Mozilla/5.0' -qO-
-	fi
-}
-
-
-get_input()
-{
-	eval "${input_cmd}"
-
-	if [ "${input}" = "$(printf '\033')" ]; then
-		eval "${input_cmd}"
-		eval "${input_cmd}"
-		special=1
-	fi
-
-	case "${input%%1+0*}${special}" in
-		h|D1) printf 'left'   ;;
-		k|A1) printf 'up'     ;;
-		j|B1) printf 'down'   ;;
-		l|C1) printf 'right'  ;;
-		a|A)  printf 'all'    ;;
-		q)    printf 'quit'   ;;
-		g)    printf 'top'    ;;
-		G)    printf 'bottom' ;;
-		' '|'') printf 'select' ;;
+# Prompt user with Y or no question, with ${1} as the prompt
+# Usage: `confirm "Are you sure?"` -> "Are you sure? [Y\n] "
+confirm() {
+	printf '%s [Y\\n] ' "${1}"
+	read reply
+	printf '\n'
+	echo "${reply}"
+	case "${reply}" in
+		[Yy][Ee][Ss]|[Yy]|"") return 0 ;;
+		*) return 1;;
 	esac
 }
 
 
-prompt_yes_no()
-{
-	printf '%s [Y/n] ' "${1}"
-	read reply
-	case "${reply}" in
-		[Yy][Ee][Ss]|[Yy]) ;;
-		*)
-			printf 'Exiting...\n'
-			exit 1
+# Replace $1 with $2 in $3
+# Usage: `replace "foo" "bar" "foo jar bar"` ─> "bar jar bar"
+replace() {
+	str="${3}"
+	while ! [ "${str##*${1}*}" ]; do
+		str="${str%%${1}*}${2}${str#*${1}}"
+	done
+	printf '%s\n' "${str}"
+	unset str
+}
+
+
+# Pick a choice interactively with ${1} being the string
+# Usage: `mini_choice "$(printf 'foo\nbar\nbaz')"`
+mini_choice() {
+	chosen=0
+	while true; do
+		i=0
+		while read line; do
+			if [ ${i} -eq ${chosen%%:*} ]; then
+				printf '\033[7m %s \033[0m\n' "${line}"
+				chosen_line="${line}"
+			else
+				printf ' %s \n' "${line}"
+			fi
+			i=$((i+1))
+		done <<-EOF
+		${1}
+EOF
+
+		stty -echo
+		read_char
+		if [ "${input}" = "${special}" ]; then
+			read_char
+			read_char
+			case "${input}" in
+				"A") input="k" ;;
+				"B") input="j" ;;
+			esac
+		fi
+		stty echo
+
+		case "${input}" in
+			"k") [ ${chosen} -eq 0 ] || chosen=$((chosen-1));;
+			"j") [ ${chosen} -eq $((i-1)) ] || chosen=$((chosen+1));;
+			"q")
+				choice_out=""
+				return ;;
+			"${newline}"|" ")
+				printf "\033[${i}A\033[J"
+				choice_out="${chosen_line}"
+				unset chosen_line chosen input i
+				return ;;
+		esac
+		printf "\033[${i}A\033[J"
+	done
+}
+
+
+
+# Installation functions
+
+dot_sync() {
+	# Backup files that are different from the git repo
+	printf 'Backing up existing files...\n'
+	while read file; do
+		file="${file#*$(printf '\t')}"
+		dir="${HOME}/DotBackup/${file%/*}"
+		file="${HOME}/${file}"
+
+		if ! [ -d "${dir}" ] && ! mkdir --parents --verbose "${dir}"; then
+			error "Failed to create directory '${dir}'\n"
+			return
+		fi
+		mv --verbose "${file}" "${dir}"
+	done <<-EOF
+$(git --git-dir=${DOTFILE_DIR} --work-tree=$HOME diff --name-status)
+EOF
+	# Sync bare repo
+	printf 'Syncing dotfiles...\n'
+	if ! git --git-dir="${DOTFILE_DIR}" --work-tree="${HOME}" checkout; then
+		error "Failed to run 'git --git-dir=${DOTFILE_DIR} --work-tree=${HOME}'"
+		return
+	fi
+}
+
+dot_clone() {
+	# Clone as bare repo
+	printf 'Cloning bare repo...\n'
+	if ! git clone --bare "${DOTFILE_URL}" "${DOTFILE_DIR}"; then
+		error "Failed to run 'git clone --bare ${DOTFILE_URL} ${DOTFILE_DIR}'"
+		return
+	fi
+	# Do not show untracked files
+	printf 'Configuring repo to not show untracked files...\n'
+	if ! git --git-dir="${DOTFILE_DIR}" config status.showUntrackedFiles no; then
+		warning "Failed to run 'git --git-dir=${DOTFILE_DIR} config status.showUntrackedFiles no'"
+		return
+	fi
+}
+
+install_dotfiles() {
+	printf 'Installing Dotfiles...\n'
+	if ! [ "$(git --git-dir=${DOTFILE_DIR} rev-parse 2>&1)" ]; then
+		printf '%s is already a git repo, overwrite?\n' "${DOTFILE_DIR}"
+		mini_choice "$(printf 'Overwrite and Sync\nSync\nCancel')"
+		case "${choice_out}" in
+			"Overwrite and Sync")
+				dot_clone
+				dot_sync
+				;;
+			"Sync")
+				dot_sync
+				;;
+			*)
+				printf "Won't do anything...\n"
+				;;
+		esac
+		return
+	fi
+	dot_clone
+	dot_sync
+}
+
+
+install_nix() {
+	# Check if nix is already installed
+	if check_depend nix; then
+		printf 'Nix seems to already be installed (command nix found), exiting...\n'
+		return
+	elif [ -d /nix ]; then
+		printf 'Nix seems to already be installed (`/nix` exists), exiting...\n'
+		return
+	fi
+
+	# Prompt for confirmation on installing in single-user mode
+	if confirm "WARNING: This will install nix in single-user mode, continue?"; then
+		printf 'Continuing nix installation...\n'
+	else
+		printf 'Not running nix installation...\n'
+		return
+	fi
+
+	su -c "mkdir -m 0755 /nix && chown ${USER} /nix"
+	[ -d /nix ] || return
+
+	sh -s -- --no-daemon <<-EOF
+	$(curl -L https://nixos.org/nix/install)
+EOF
+
+	# Removes the line that was added by nix's auto install script, i.e:
+	# if [ -e ${HOME}/.nix-profile/etc/profile.d/nix.sh ]; then . ${HOME}/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer
+	[ -f "${HOME}/.profile" ] || return
+	file="$(while IFS= read line; do
+			 if ! [ "${line}" = "if [ -e ${HOME}/.nix-profile/etc/profile.d/nix.sh ]; then . ${HOME}/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer" ]; then
+				 printf '%s\n' "${line}"
+			 fi
+		 done < ${HOME}/.profile
+	  )"
+
+	printf '%s\n' "${file}" > "${HOME}/.profile"
+}
+
+
+install_font() {
+	# Will install JetBrainsMono
+	# Create directory FONT_DIR if needed
+	FONT_DIR="${FONT_DIR%/}/JetBrainsMono"
+	[ -d "${FONT_DIR}" ] ||
+		mkdir --parents --verbose "${FONT_DIR}" || return
+
+	# Get every JetBrainsMono font
+	while read line; do
+		! [ "${line}" ] || [ "${line##*/JetBrains/JetBrainsMono/blob/master*}" ] && continue
+		line="https://github.com${line#*href=\"}"
+		line="${line%\"*}"
+		line=$(replace "blob" "raw" "${line}")
+		#fetch "${line}" "${FONT_DIR}/${line##*/}"
+		printf '%s\n' "${FONT_DIR}/${line##*/}"
+	done <<EOF
+$(curl -L https://github.com/JetBrains/JetBrainsMono/tree/master/fonts/otf)
+EOF
+}
+
+
+install_wallpaper() {
+	printf 'Getting wallpaper...\n'
+	fetch "${WALLPAPER_URL}" "${WALLPAPER_DIR%/}/Shark Space.png"
+}
+
+install_SU() {
+	sh <<EOF
+$(curl -L "https://github.com/terminalforlife/Extra/raw/master/source/simplify-ubuntu/simplify-ubuntu-installer")
+EOF
+}
+
+
+# MAIN SELECTION #
+# Check Dependencies and warn that some dependencies aren't met
+while read line; do
+	[ "${line}" ] || continue
+	deps="${line#*\{}"
+	deps="${deps%\}*}"
+	deps_satisfied=false
+
+	# Check for dependencies (|| is or)
+	for dep in $(replace "||" " " "${deps}"); do
+		check_depend "${dep}" || continue
+		deps_satisfied=true
+		break
+	done
+
+	# Format Choices
+	[ "${tmp}" ] && tmp="${tmp}\n"
+	if ${deps_satisfied}; then
+		tmp="${tmp}[ ] ${line}"
+	else
+		tmp="${tmp}[-] ${line}"
+		line="${line%%\{*}"
+		line="${line%${line##*[! ]}} "
+		warning "${line} will not be an option, as dependencies aren't met: ($(replace "||" " or " "${deps}"))"
+	fi
+done <<EOF
+${choices}
+EOF
+
+choices=$(printf "${tmp}\nContinue\n")
+unset tmp
+
+
+printf '\nj/↓:Down  k/↑:Up  q:quit  Enter/Space:Toggle Selection/Continue\n\n'
+chosen=0
+trap 'stty echo; exit 1' INT
+stty -echo
+while true; do
+	i=0
+	printf '\033[s'
+	while read line; do
+		line="${line%%\{*}"
+		line="${line%${line##*[! ]}} "
+		# Highlight Chosen Line
+		if [ ${i} -eq ${chosen} ]; then
+			printf '\033[7m %s\033[0m\n' "${line}"
+		else
+			printf ' %s\n' "${line}"
+		fi
+		i=$((i+1))
+	done <<EOF
+${choices}
+EOF
+
+	read_char
+	if [ "${input}" = "${special}" ]; then
+		read_char
+		read_char
+		case "${input}" in
+			"A") input="k" ;;
+			"B") input="j" ;;
+		esac
+	fi
+
+
+	case "${input}" in
+		"k") [ ${chosen} -ne 0 ] && chosen=$((chosen-1));;
+		"j") [ ${chosen} -ne $((i-1)) ] && chosen=$((chosen+1));;
+		"q") break ;;
+		"${newline}"|" ")
+			if [ ${chosen} -eq $((i-1)) ]; then
+				printf "\033[${i}A\033[J"
+				break
+			else
+				# Toggle chosen option
+				choices="$(
+				i=0
+				while read line; do
+					if [ "${i}" = "${chosen}" ]; then
+						if [ "${line}" = "Continue" ]; then
+							printf '%s\n' " Continue "
+						elif [ "${line%${line#??}}" = "[X" ]; then
+							printf '%s\n' "[ ${line#\[?}"
+						elif [ "${line%${line#??}}" = "[ " ]; then
+							printf '%s\n' "[X${line#\[?}"
+						else
+							printf '%s\n' "[-${line#\[?}"
+						fi
+					else
+						printf '%s\n' "${line}"
+					fi
+				i=$((i+1))
+				done <<EOF
+${choices}
+EOF
+)"
+			fi
 			;;
 	esac
-	printf '\n'
-}
-
-
-create_dir()
-{
-	if [ ! -d "${1}" ]; then
-		printf 'Directory %s does not exist, creating\n' "${1}"
-		mkdir --parents "${1}"
-		if [ ! -d "${1}" ]; then
-			printf '\033[31mERROR: Failed to create directory %s\033[0m\n' "${1}" >&2
-			return -1
-		fi
-	fi
-	return 0
-}
-
-
-
-# Choice Functions #
-get_dotfiles()
-{
-	printf 'Getting Dotfiles:\n'
-	if ! git clone --bare "${DOTFILE_URL}" "${DOTFILE_DIR}"; then
-		printf '\033[31mERROR: Failed to run `git clone --bare "%s" "%s"`\033[0m\n' "${DOTFILE_URL}" "${DOTFILE_DIR}" >&2
-		return
-	fi
-
-	IFS='
-	'
-	for file in $(git --git-dir "${DOTFILE_DIR}" ls-tree -r HEAD | while read -r line; do printf '/%s\n' "${line##*$(printf '\t')}"; done); do
-		[ ! -f "${HOME}${file}" ] &&
-			continue
-
-		if [ ! -d "${HOME}/DotfilesBackup${file%/*}" ]; then
-			if ! mkdir --parents "${HOME}/DotfilesBackup${file%/*}"; then
-				printf "\033[31mERROR: Failed to create directory %s\n" "${HOME}/DotfilesBackup${file%/*}" >&2
-				return
-			fi
-		fi
-
-		mv "${HOME}${file}" "${HOME}/DotfilesBackup"
-	done
-
-	if ! git --git-dir="${DOTFILE_DIR}" --work-tree="${HOME}" checkout; then
-		printf '\033[31mERROR: Failed to run `git --git-dir="%s" --work-tree="%s"`\n' "${DOTFILE_DIR}" "${HOME}" >&2
-		return
-	fi
-
-    git --git-dir="${DOTFILE_DIR}" config status.showUntrackedFiles no ||
-		printf '\033[33mWARNING: Failed to run `git config --git-dir="%s" status.showUntrackedFiles no`\033[33m\n' "${DOTFILE_DIR}" >&2
-}
-
-
-get_wallpapers()
-{
-	printf 'Grabbing Wallpapers\n'
-	if ! create_dir "${WALLPAPER_DIR}"; then
-		return
-	fi
-
-	IFS='
-	'
-	for line in ${wallpapers}; do
-		file_name="${line%https:*}"
-		file_name="${file_name%${file_name##*[! ]}}"
-
-		url="${line##* }"
-		printf 'Downloading %s\n' "${file_name}"
-		get "${url}" > "${WALLPAPER_DIR%/}/${file_name}"
-	done
-	printf '\n'
-}
-
-
-get_fonts()
-{
-	printf 'Grabbing Fonts:\n'
-	if ! create_dir "${FONT_DIR}"; then
-		return
-	fi
-
-	IFS='
-	'
-	for font in ${fonts}; do
-		case "${font}" in
-			*'/tree/'*)
-				while IFS= read -r line; do
-					if [ "${line##*[.]otf*}" ] || [ ! "${line}" ]; then
-						continue
-					fi
-					line="${line##*href=\"}"
-					line="${line%%\">*}"
-					line="${line%%blob*}raw${line##*blob}"
-					line="${font%/${font#https://*/}}${line}"
-					repo="${font#https://*/*/}"
-					repo="${repo%%/*}"
-					if [ ! -d "${FONT_DIR%/}/${repo}" ]; then
-						mkdir "${FONT_DIR%/}/${repo}"
-						printf 'Directory %s does not exist, creating\n' "${FONT_DIR%/}/${repo}"
-						if [ ! -d "${FONT_DIR%/}/${repo}" ]; then
-							printf '\033[31mERROR: Failed to create directory %s\033[0m\n' "${FONT_DIR%/}/${repo}" >&2
-							continue
-						fi
-					fi
-					printf 'Downloading %s\n' "${line##*/}"
-					get "${line}" > "${FONT_DIR%/}/${repo}/${line##*/}"
-				done <<-EOF
-				$(get "${font}")
-				EOF
-				;;
-
-			'') continue ;;
-			*)
-				printf 'Downloading %s\n' "${font##*/}"
-				get "${font}" > "${FONT_DIR%/}/${font##*/}"
-				;;
-		esac
-	done
-
-	printf '\n'
-}
-
-
-get_suckless()
-{
-	if [ "${1}" = 'misc' ]; then
-		git clone 'https://github.com/salman-abedin/devour' "${SUCKLESS_DIR%/}/devour"
-		git clone 'https://github.com/dudik/herbe' "${SUCKLESS_DIR%/}/herbe"
-		get 'https://patch-diff.githubusercontent.com/raw/dudik/herbe/pull/11.diff' | patch -d "${SUCKLESS_DIR%/}/herbe" -i -
-		get 'https://patch-diff.githubusercontent.com/raw/dudik/herbe/pull/19.diff' | patch -d "${SUCKLESS_DIR%/}/herbe" -i -
-		return
-	fi
-
-	if ! git clone "${SUCKLESS_URL%/}/${1}" "${SUCKLESS_DIR%/}/${1}"; then
-		printf '\033[31mERROR: Failed to clone %s\033[0m\n' "${1}"
-	fi
-}
-
-
-compile_suckless()
-{
-    printf 'Compiling suckless utilities\n'
-	for dir in "${SUCKLESS_DIR%/}"/*/[Mm]akefile; do
-		PREFIX="${SUCKLESS_PREFIX}" make --directory="${dir}" install
-	done
-}
-
-
-# Main Functions
-msg_printed='false'
-check_depend()
-{
-	IFS='
-	'
-
-	has_dependencies='true'
-	tmp_choices=''
-	eval "choice=\$${1}"
-	eval "${1}=''"
-	for line in ${choice}; do
-		uninstalled=''
-		uninstalled_libs=''
-		dependencies="${line#*(}"
-		dependencies="${dependencies%)*}"
-		IFS=','
-		for dep in ${dependencies}; do
-			if [ ! "${dep##*|*}" ]; then
-				IFS='|'
-				display='false'
-				for d in ${dep}; do
-					if [ "$(command -v ${d# })" ]; then
-						display='true'
-						break
-					fi
-				done
-				IFS=','
-				! ${display} && uninstalled="${uninstalled};${dep}"
-			elif [ ! "$(command -v ${dep# })" ]; then
-				uninstalled="${uninstalled};${dep}"
-			fi
-		done
-
-		lib_deps="${line#*\{}"
-		lib_deps="${lib_deps%\}*}"
-		IFS=','
-
-		if [ "${lib_deps}" ] && [ "${compiler}" ]; then
-			cmd="${compiler}"
-			for dep in ${lib_deps}; do
-				cmd="${cmd} -l${dep}"
-			done
-
-			while IFS= read LINE; do
-			    if [ ! "${LINE##*cannot find -l*}" ]; then
-				uninstalled_libs="${uninstalled_libs};${LINE#*-l}"
-			    fi
-			done <<-EOF
-			$(eval "${cmd}" 2>&1)
-			EOF
-		elif [ "${lib_deps}" ]; then
-		    uninstalled_libs='Unknown installed libraries, compiler not found'
-		fi
-
-		if [ "${uninstalled}" ] || [ "${uninstalled_libs}" ]; then
-			has_dependencies='false'
-			if ! "${msg_printed}"; then
-				while read -r LINE; do
-					printf '\033[33m%s\033[0m\n' "${LINE}"
-				done <<-EOF
-				WARNING: There are some dependencies that are not installed.
-				These dependencies are for necessary for installing and or compiling
-				EOF
-				msg_printed='true'
-			fi
-			IFS=';'
-			printf '%s requires:\n' "${line%% *}"
-
-			ran='false'
-			for prog in ${uninstalled}; do
-				[ ! "${prog}" ] && continue
-				if "${ran}"; then
-					printf ', %s' "${prog}"
-				else
-					printf '  Programs:  %s' "${prog}"
-					ran='true'
-				fi
-			done
-			[ "${uninstalled}" ] && printf '\n'
-
-			ran='false'
-			for libs in ${uninstalled_libs}; do
-				[ ! "${libs}" ] && continue
-				if "${ran}"; then
-					printf ', lib%s' "${libs}"
-				else
-					printf '  Libraries: lib%s' "${libs}"
-					ran='true'
-				fi
-			done
-			[ "${uninstalled_libs}" ] && printf '\n'
-
-			tmp_choices=$(
-				printf '%s\n' "${tmp_choices}"
-				if [ "${line##*[*]*}" ]; then
-					printf '3%s\n' "${line}"
-				else
-					printf '4%s\n' "${line}"
-				fi
-			)
-		else
-			tmp_choices=$(
-				printf '%s\n' "${tmp_choices}"
-				if [ ! "${line##*\[*\]*}" ]; then
-					printf '2%s\n' "${line}"
-				else
-					printf '0%s\n' "${line}"
-				fi
-			)
-		fi
-	done
-
-	if "${2}"; then
-	    tmp_choices=$(printf '%s\n0Back' "${tmp_choices}")
-	else
-	    tmp_choices=$(printf '%s\n0Continue' "${tmp_choices}")
-	fi
-
-	eval "${1}='${tmp_choices}'"
-
-	IFS='
-	'
-	for line in ${tmp_choices}; do
-		if [ ! "${line##*\[*\]*}" ]; then
-			line="${line#*\[}"
-			line="${line%\]*}"
-			check_depend "${line}" 'true'
-		fi
-	done
-
-	"${2}" && return
-	if ! "${has_dependencies}"; then
-		prompt_yes_no "Are you sure you want to continue?"
-	fi
-}
-
-
-choose()
-{
-	# First argument is the variable name
-	# Second argument is if it's in a submenu or not
-
-	eval "choices=\$${1}"
-	IFS='
-	'
-
-	selected=0
-	while true; do
-		index=0
-		for choice in ${choices}; do
-			choice="${choice%% *}"
-
-			if [ "${index}" -eq "${selected}" ]; then
-				printf '\033[7m'
-			fi
-
-			case "${choice}" in
-				*'Continue'*|*'Back'*) printf '  '  ;;
-				4*)           printf '\033[31m *  ' ;;
-				3*)           printf '\033[31m[ ] ' ;;
-				2*)           printf ' *  ' ;;
-				1*)           printf '[X] ' ;;
-				*)            printf '[ ] ' ;;
-			esac
-
-			printf '%s\033[0m\n' "${choice#?}"
-			index=$((index + 1))
-		done
-		index=$((index - 1))
-
-		case "$(get_input)" in
-			'up')   [ "${selected}" -ne '0' ]        && selected=$((selected - 1)) ;;
-			'down') [ "${selected}" -ne "${index}" ] && selected=$((selected + 1)) ;;
-			'top')    selected='0'        ;;
-			'bottom') selected="${index}" ;;
-			'quit')
-				eval "${1}=''"
-				printf "\033[$((index + 1))A\033[0J"
-				quit
-				;;
-
-			'select')
-				# If selected Continue or back
-				if [ "${selected}" -eq "${index}" ]; then
-					if ! "${2}"; then
-						printf "\033[$((index + 1))A\033[0J"
-					fi
-					eval "${1}='${choices}'"
-					return
-				fi
-
-				# If selected a submenu
-				chosen_submenu=''
-				index=0
-				for choice in ${choices}; do
-					if [ "${index}" -eq "${selected}" ] && [ ! "${choice##*\[*\]*}" ]; then
-						chosen_submenu="${choice##*\[}"
-						chosen_submenu="${chosen_submenu%%\]*}"
-						break
-					fi
-					index=$((index + 1))
-				done
-
-
-				if [ "${chosen_submenu}" ]; then
-					tmp_choices="${choices}"
-					tmp_selected="${selected}"
-					IFS='
-					'
-					printf "\033[$((index + 2))A\033[0J"
-					choose "${chosen_submenu}" 'true'
-					choices="${tmp_choices}"
-					selected="${tmp_selected}"
-				else
-					choices=$(
-						index=0
-						for choice in ${choices}; do
-							if [ "${index}" = "${selected}" ]; then
-								if [ ! "${choice%%0*}" ]; then
-									printf '1%s\n' "${choice#?}"
-								elif [ ! "${choice%%1*}" ]; then
-									printf '0%s\n' "${choice#?}"
-								else
-									printf '%s\n' "${choice}"
-								fi
-							else
-								printf '%s\n' "${choice}"
-							fi
-							index=$((index + 1))
-						done
-					)
-					index=$((index - 1))
-				fi
-				;;
-
-			'all')
-				choices=$(
-					if [ "${choices%%1*}" ]; then
-						num='1'
-					else
-						num='0'
-					fi
-					for choice in ${choices}; do
-						if [ ! "${choice##?Continue}" ] || [ ! "${choice##?Back}" ] || [ ! "${choice##[234]*}" ]; then
-							printf '%s\n' "${choice}"
-						else
-							printf '%i%s\n' "${num}" "${choice#?}"
-						fi
-					done
-				)
-				;;
-		esac
-
-		index=$((index + 1))
-		printf "\033[${index}A\033[0J"
-
-	done
-}
-
-
-execute_choices()
-{
-	eval "choices=\"\$${1}\""
-	for choice in ${choices}; do
-		if [ ! "${choice##1*}" ]; then
-			choice="${choice#*\"}"
-			choice="${choice%\"*}"
-			eval "${choice}"
-		fi
-	done
-
-	eval "choices=\"\$${1}\""
-	for choice in ${choices}; do
-		if [ "${choice##*\[*\]*}" ]; then
-			continue
-		fi
-		choice="${choice#*\[}"
-		choice="${choice%\]*}"
-		execute_choices "${choice}"
-	done
-}
-
-
-quit()
-{
-	stty echo
-	stty icanon
-	exit
-}
-
-
-# Main Function
-main()
-{
-	error='false'
-	if [ ! "$(command -v stty)" ]; then
-		printf '\033[31mERROR: `stty` is a dependency...\033[0m\n' >&2
-		error='true'
-	fi
-	if [ ! "$(command -v dd)" ] && [ ! "${BASH}" ] && [ ! "${ZSH_NAME}" ]; then
-		printf "\033[31mERROR: This script requires \`dd\` to be installed if this script isn't executed using bash or zsh...\033[0m\n" >&2
-		error='true'
-	fi
-	"${error}" && exit -1
-
-	printf '\r\033[38;5;3mWARNING: This script will create some directories, move files, and remove some files\033[0m\n'
-	if [ "${USER}" = "root" ]; then
-		prompt_yes_no 'Are you sure you would like to run this script as root (not recommended)? [Y/n] '
-	fi
-
-	check_depend "main_choices" 'false'
-
-	stty -echo
-	"${bourne_shell}" &&
-		stty -icanon
-
-	trap 'quit' INT
-	printf '\rUse vim keys or arrow keys, space or enter to select, q to quit\n'
-	choose 'main_choices' 'false'
-	execute_choices 'main_choices'
+	printf "\033[${i}A\033[J"
+done
+stty echo
+
+old_ifs=${IFS}
+IFS="
+"
+for line in ${choices}; do
 	IFS=${old_ifs}
-
-	quit
-}
-main
+	[ "${line##\[X*}" ] && continue
+	"${line#*| }"
+done
