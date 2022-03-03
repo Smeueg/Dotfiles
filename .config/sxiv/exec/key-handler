@@ -1,5 +1,0 @@
-#!/bin/sh
-
-case "$1" in
-  "w" ) while read file; do hsetroot -cover "$file"; done
-esac
