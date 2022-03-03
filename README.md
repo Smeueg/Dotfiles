@@ -1,4 +1,6 @@
-# Salty Dotfiles for Linux Ricing and Seasoning
+# Very Smeueg Dotfiles For Linux
+![Screenshot](./.config/rice/Screenshot.png)
+
 ## TODO
 - Add a license
 - Clean up the system
