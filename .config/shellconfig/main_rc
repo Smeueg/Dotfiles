@@ -25,7 +25,7 @@ fi
 
 
 
-# Prompt
+# PROMPT #
 print_prompt() {
 	ret=$?
 	dir_col=$'\033[38;5;11m'

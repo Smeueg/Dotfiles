@@ -15,7 +15,7 @@
 ;; although I haven't tested it yet.
 
 
-(progn ;; Set Basic Variables
+(progn ;;; VARIABLES ;;;
   (setq-default
    ;; Do not create backup file i.e. file~
    make-backup-files nil
@@ -50,19 +50,19 @@
    custom-file (make-temp-file "")
    ;; Categorize every theme to be safe
    custom-safe-themes t
+   ;; Mouse wheel speed
+   mouse-wheel-scroll-amount '(1)
+   mouse-wheel-progressive-speed nil
    ;; Fix tramp prompt error nonsense
    tramp-shell-prompt-pattern
    "\\(?:^\\|\r\\)[^]#$%>\n]*#?[]#$%>].* *\\(^[\\[[0-9;]*[a-zA-Z] *\\)*"))
 
 
-(progn ;; Indentation
-  (setq-default
-   ;; Use Tabs
-   indent-tabs-mode t
-   tab-always-indent nil
-   tab-width 4
-   ;; Make backspace actually delete \t instead of one by one
-   backward-delete-char-untabify-method 'hungry)
+(progn ;;; INDENTATION ;;;
+  (setq-default indent-tabs-mode t
+                tab-always-indent nil
+                tab-width 4
+                backward-delete-char-untabify-method 'hungry)
   (defvaralias 'c-basic-offset 'tab-width)
   ;; Use spaces when aligning with align-regexp
   (defadvice align-regexp (around align-regexp-with-spaces activate)
@@ -70,8 +70,7 @@
       ad-do-it)))
 
 
-;;; VISUALS ;;;
-(progn
+(progn ;;; VISUALS ;;;
   ;; Mode Line
   (make-face 'ml/fill)
   (make-face 'ml/read-only-face)
@@ -90,8 +89,7 @@
     (load-theme 'warmspace 1))
 
   (setq-default cursor-in-non-selected-windows nil
-                left-fringe-width 10
-                )
+                left-fringe-width 10)
   (set-frame-font "JetBrains Mono-12")
   (menu-bar-mode 0)           ;; Disable menu bar
   (blink-cursor-mode 0)       ;; Disable cursor blinking
@@ -103,15 +101,9 @@
   (global-visual-line-mode 0) ;; Disable wrap
   (set-window-buffer nil (current-buffer)))
 
-(progn ;; Whitespace-mode
-  (setq-default whitespace-style '(face trailing lines-tail)
-                whitespace-line-column 80)
-  (global-whitespace-mode 1))
 
-(progn ;; Keybindings
+(progn ;;; KEYBINDINGS ;;;
   (define-key key-translation-map [?\C-h] [?\C-?])
-  (global-set-key [mouse-5] 'scroll-up-line)
-  (global-set-key [mouse-4] 'scroll-down-line)
   (global-set-key [mouse-3] 'mouse-major-mode-menu)
   (global-set-key (kbd "C-S-v")
                   (lambda()
@@ -122,17 +114,24 @@
                                 ""))))
   (define-key prog-mode-map [return] 'newline-and-indent))
 
-(progn ;; Functionality / Misc Modes
-  (electric-pair-mode 1) ;; Auto close and delete parenthesis, brackets, etc...
+(progn ;;; FUNCTIONALITY / MISC MODES ;;;
+  (electric-pair-mode 1) ;; Auto pairs
+  (global-auto-revert-mode 1) ;; Autorefresh buffers
   (global-eldoc-mode -1)
-  (global-auto-revert-mode 1) ;; Automatically refresh buffer
-  (when (fboundp 'save-place-mode)
+
+  (progn ;; Whitespace-mode
+    (setq-default whitespace-style '(face trailing lines-tail)
+                  whitespace-line-column 80)
+    (global-whitespace-mode 1))
+
+
+  (when (fboundp 'save-place-mode) ;; Remember last place emacs visits
     (setq-default save-place-file "/tmp/emacs_places"
                   save-place-forget-unreadable-files nil)
     (save-place-mode 1))
   (kill-buffer "*Messages*"))
 
-(progn ;; Custom Functions
+(progn ;;; FUNCTIONS ;;;
   ;; Change prompt from yes/no to y/n
   (fset 'yes-or-no-p 'y-or-n-p)
 
@@ -154,13 +153,13 @@ Terminal For Life"
              (setq point (point))
              (insert-char ?- 48)
              (insert-char ?\n 1)
-             (insert (concat "Script Name    - "
-                             (file-name-nondirectory buffer-file-name) "\n"))
-             (insert "Author Name    - Smeueg\n")
-             (insert "Author Email   - Smeueg@gmail.com\n")
-             (insert "Author Gitlab  - https://gitlab.com/Smeueg\n")
-             (insert (format-time-string
-                      "Last Updated   - %a %_d %b %T %Z %Y\n"))
+             (insert
+              (concat
+               "Script Name    - " (file-name-nondirectory buffer-file-name) "\n"
+               "Author Name    - Smeueg\n"
+               "Author Email   - Smeueg@gmail.com\n"
+               "Author Gitlab  - https://gitlab.com/Smeueg\n"
+               (format-time-string "Last Updated   - %a %_d %b %T %Z %Y\n")))
              (insert-char ?- 48)
              (insert-char ?\n 1)
              (comment-region point (point))))
@@ -251,10 +250,6 @@ awesomewm, and the users shell's"
           (set-window-prev-buffers (selected-window) var)))
       (when del (delete-window))))
 
-  (defun executable (cmd)
-    "Return nil if executable does not exist"
-    (locate-file cmd exec-path exec-suffixes 1))
-
   (defun run ()
     "Automatically compile (if needed) and execute the current program "
     (interactive)
@@ -290,7 +285,7 @@ awesomewm, and the users shell's"
           (term-send-raw-string
            (concat "clear; printf 'Output:\n';" command)))))))
 
-;;; Custom Mode-Line
+;;; CUSTOM MODE-LINE ;;;
 (defun ml/align(left right)
   "Add padding to mode line with arguments being LEFT, and RIGHT."
   (let ((space (- (window-total-width)
@@ -335,7 +330,7 @@ awesomewm, and the users shell's"
 
 
 
-;;; Custom Splash Screen
+;;; CUSTOM SPLASH SCREEN
 (defun min-splash()
   "A custom minimal emacs splash screen"
   (interactive)
@@ -368,50 +363,22 @@ awesomewm, and the users shell's"
 (defun min-splash-align()
   (if (get-buffer "*min-splash*")
       (with-current-buffer "*min-splash*"
-        (let ((current-point (point))
-              (lines (count-lines (point-min) (point-max))))
-          (setq-local fill-column (- (window-body-width nil) 2))
-          (read-only-mode 0)
-          (with-temp-message "" (mark-whole-buffer))
-          (delete-blank-lines)
-          (deactivate-mark)
-          (goto-char 0)
-          (insert-char ?\n (/ (- (window-body-height nil) 15) 2))
-          (center-line 16)
-          (read-only-mode 1)
-          (goto-char current-point)))
+        (save-excursion
+          (let ((lines (count-lines (point-min) (point-max))))
+            (setq-local fill-column (- (window-body-width nil) 2))
+            (read-only-mode 0)
+            (with-temp-message "" (mark-whole-buffer))
+            (delete-blank-lines)
+            (deactivate-mark)
+            (goto-char 0)
+            (insert-char ?\n (/ (- (window-body-height nil) 15) 2))
+            (center-line 16)
+            (read-only-mode 1)
+            )))
     (progn
       (remove-hook 'post-command-hook #'min-splash-align)
       (remove-hook 'window-state-change-hook #'min-splash-align))))
 
-(defun kill-min-splash()
-  (when (catch 'p
-          (dolist (buffer (buffer-list))
-            (unless (string-match
-                     (concat
-                      "\\*Echo Area.*\\*\\|"
-                      "\\*Minibuf.*\\*\\|"
-                      "\\*DOC\\*\\|"
-                      "\\*Buffer List\\*\\|"
-                      "\\*Backtrace\\*\\|"
-                      "\\*WoMan-Log\\*\\|"
-                      "\\*min-splash\\*\\|"
-                      "\\*scratch\\*\\|"
-                      "\\*Metahelp\\*\\|"
-                      "\\*code-conversion-work\\*\\|"
-                      "\\*Backtrace\\*\\|"
-                      "\\*Metahelp*\\*\\|"
-                      "\\*Help*\\*\\|"
-                      "\\*Completions*\\*"
-                      )
-                     (buffer-name buffer))
-              (throw 'p t)))
-          (throw 'p nil))
-    (progn
-      (kill-buffer "*min-splash*")
-      (unless (= 1 (length (window-list))) (delete-window))
-      (remove-hook 'post-command-hook #'kill-min-splash))))
-(add-hook 'post-command-hook #'kill-min-splash)
 
 (when (and (not (member "-no-splash"  command-line-args))
            (not (member "--file"      command-line-args))
@@ -421,9 +388,8 @@ awesomewm, and the users shell's"
 
 
 
-;;; HOOKS ;;;
-(progn
-  (add-hook 'sh-mode-hook 'sh-electric-here-document-mode)
+(progn ;;; HOOKS ;;;
+  (add-hook 'sh-mode-hook (lambda () (sh-electric-here-document-mode 0)))
   (add-hook 'before-save-hook 'delete-trailing-whitespace)
   (when (and (fboundp 'script-header))
     (add-hook 'before-save-hook
@@ -464,13 +430,6 @@ awesomewm, and the users shell's"
   :ensure t
   :config (yas-global-mode))
 
-(use-package pdf-tools
-  :ensure t)
-
-
-(use-package nix-mode
-  :ensure t
-  :mode "\\.nix\\'")
 
 
 (use-package tramp
@@ -478,8 +437,12 @@ awesomewm, and the users shell's"
 
 
 (use-package tab-bar
-  :init (setq-default tab-bar-close-button-show nil
-                      tab-bar-new-button-show nil))
+  :demand t
+  :init
+  (setq-default tab-bar-close-button-show nil
+                tab-bar-new-button-show nil)
+  :config
+  (tab-bar-mode 1))
 
 
 (use-package aggressive-indent
@@ -589,6 +552,7 @@ awesomewm, and the users shell's"
   (defadvice term-handle-exit (after term-kill-buffer-on-exit activate) (close))
   (add-hook 'term-mode-hook (lambda ()
                               (display-line-numbers-mode 0)
+                              (electric-pair-local-mode 0)
                               (setq-local scroll-margin 0)))
   (define-key term-raw-map "\C-\\" 'term-esc-map)
   (if (package-installed-p 'evil)
@@ -652,6 +616,11 @@ awesomewm, and the users shell's"
 (use-package eglot
   :ensure t
   :commands eglot-ensure
+  :config
+  (when (package-installed-p 'evil)
+    (define-key eglot-mode-map [remap display-local-help] nil)
+    (evil-define-key 'normal prog-mode-map " g" 'display-local-help)
+    )
   :init
   (setq-default gc-cons-threshold 100000000
                 read-process-output-max (* 4 1024 1024))
@@ -668,18 +637,9 @@ awesomewm, and the users shell's"
       (when file
         (setenv "CLASSPATH" (expand-file-name (concat dir "/" (car file)))))))
 
-  (let ((eglot-auto-hook
-         (lambda (hook bins) ;; bins for binaries
-           (catch 'break
-             (dolist (bin bins)
-               (when (locate-file bin exec-path exec-suffixes 'executable)
-                 (add-hook hook 'eglot-ensure)
-                 (throw 'break t)))
-             (user-error
-              (format "A supported language server isn't found: %s" bins))))))
+  (add-hook 'c-mode-common-hook 'eglot-ensure)
+  (add-hook 'python-mode-hook 'eglot-ensure)
 
-    (funcall eglot-auto-hook 'c-mode-common-hook '("clangd" "ccls"))
-    (funcall eglot-auto-hook 'python-mode-hook '("pyls" "pylsp" "pyright")))
 
 
   (defun lsp-install-java ()
@@ -745,12 +705,18 @@ awesomewm, and the users shell's"
   :defer t)
 
 
+(use-package auto-package-update
+  :ensure t
+  :commands auto-package-update-now)
+
+
 (use-package evil
   :ensure t
   :demand t
   :init
   (use-package undo-fu :commands (undo-fu-only-undo undo-fu-only-redo))
   (use-package restart-emacs :commands restart-emacs)
+  (setq-default evil-insert-state-cursor 'bar)
   :config
   (evil-mode 1)
   (evil-define-key '(normal motion visual) 'global " " nil)
@@ -799,9 +765,11 @@ awesomewm, and the users shell's"
               (lambda()
                 (when (equal major-mode 'term-mode)
                   (turn-off-evil-mode)
-                  (setq-local cursor-type 'box)
                   (term-char-mode))))
-    (add-hook 'term-mode-hook 'turn-off-evil-mode))
+    (add-hook 'term-mode-hook
+              (lambda ()
+                (turn-off-evil-mode)
+                (setq-local evil-insert-state-cursor 'box))))
 
   (when (fboundp 'run)
     (evil-define-key 'normal 'global "  " 'run))
@@ -845,11 +813,12 @@ awesomewm, and the users shell's"
     (kbd "C-S-k") 'text-scale-increase
     (kbd "C-S-j") 'text-scale-decrease
     (kbd "C-S-l") (lambda () (interactive) (text-scale-adjust 0))
-    " k" 'close
-    " K" 'kill-buffer
-    " D" 'delete-window
+    " k"  'close
+    " K"  'kill-buffer
+    " D"  'delete-window
     " a"  'mark-whole-buffer
     " b"  'switch-to-buffer
+    " e"  'edit-config
     " f"  'find-file
     " h"  'help
     " l"  'global-display-line-numbers-mode
@@ -867,5 +836,4 @@ awesomewm, and the users shell's"
     " q" (lambda ()
            (interactive)
            (when (y-or-n-p "Quit Emacs?")
-             (kill-emacs)))
-    " e" 'edit-config))
+             (kill-emacs)))))
