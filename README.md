@@ -1,9 +1,9 @@
-<div align="center"><img src="./.config/rice/Smeueg.png" height=128 width=128></div>
-
-
-
+<div align="center">
+<img src="./.config/rice/Smeueg.png" height=128 width=128>
 # Very Smeueg Dotfiles For Linux
 ![Screenshot](./.config/rice/Screenshot.png)
+</div>
+
 
 ## TODO
 - Add a license
