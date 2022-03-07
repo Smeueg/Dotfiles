@@ -1,6 +1,6 @@
 <div align="center">
 <img src="./.config/rice/Smeueg.png" height=128 width=128>
-# Very Smeueg Dotfiles For Linux
+<h1>Very Smeueg Dotfiles For Linux</h1>
 ![Screenshot](./.config/rice/Screenshot.png)
 </div>
 
