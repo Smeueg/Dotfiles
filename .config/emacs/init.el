@@ -163,7 +163,7 @@ Terminal For Life"
              (insert-char ?- 48)
              (insert-char ?\n 1)
              (comment-region point (point))))
-          ((string= opt "Update")
+          ((and (string= opt "Update") (buffer-modified-p))
            (save-excursion
              (goto-char 0)
              (when
@@ -330,7 +330,10 @@ awesomewm, and the users shell's"
 
 
 
+
 ;;; CUSTOM SPLASH SCREEN
+;; Disable startup message
+(fset 'display-startup-echo-area-message (lambda () (message nil)))
 (defun min-splash()
   "A custom minimal emacs splash screen"
   (interactive)
@@ -390,12 +393,12 @@ awesomewm, and the users shell's"
 
 (progn ;;; HOOKS ;;;
   (add-hook 'sh-mode-hook (lambda () (sh-electric-here-document-mode 0)))
+
+
   (add-hook 'before-save-hook 'delete-trailing-whitespace)
   (when (and (fboundp 'script-header))
-    (add-hook 'before-save-hook
-              (lambda ()
-                (when (and (derived-mode-p 'sh-mode) (buffer-modified-p))
-                  (script-header "Update")))))
+    (add-hook 'sh-mode-hook
+              (lambda () (add-hook 'before-save-hook 'script-header 0 t))))
   (add-hook 'before-save-hook 'delete-trailing-whitespace)
   (add-hook 'emacs-lisp-mode-hook (lambda() (setq-local indent-tabs-mode nil)))
 
@@ -437,7 +440,6 @@ awesomewm, and the users shell's"
 
 
 (use-package tab-bar
-  :demand t
   :init
   (setq-default tab-bar-close-button-show nil
                 tab-bar-new-button-show nil)

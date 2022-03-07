@@ -86,7 +86,6 @@
    `(tab-bar-tab-inactive
      ((,class (:foreground ,bg3 :background ,bg2 :weight bold
                            :box (:line-width 5 :color ,bg2)))))
-   `(widget-button ((,class (:foreground ,yellow :background ,red))))
    ;; Man
    `(Man-overstrike ((,class (:foreground ,red :weight bold))))
    `(Man-underline  ((,class (:foreground ,yellow :underline t))))

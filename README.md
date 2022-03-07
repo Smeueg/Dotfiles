@@ -1,5 +1,5 @@
 <p align="center">
-<img src="./.config/rice/Smeueg.png">
+<img src="./.config/rice/Smeueg.png" height=128 width=128>
 </p>
 
 
