@@ -1,3 +1,9 @@
+<p align="center">
+<img src="./.config/rice/Smeueg.png">
+</p>
+
+
+
 # Very Smeueg Dotfiles For Linux
 ![Screenshot](./.config/rice/Screenshot.png)
 
