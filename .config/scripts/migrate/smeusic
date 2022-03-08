@@ -1,11 +1,15 @@
 #!/bin/sh
 # ------------------------------------------------
-# Script Name    - smeueger-music
+# Script Name    - smeuesic
 # Author Name    - Smeueg
 # Author Email   - Smeueg@gmail.com
 # Author Gitlab  - https://gitlab.com/Smeueg
 # Last Updated   - Tue  1 Mar 19:04:18 WIB 2022
 # ------------------------------------------------
+# TODO:
+# Automatically remove files that aren't in the youtube playlist
+#
+#
 # Download the mp3 of videos in a playlist
 # Change the value `pl_url` to the playlist url that you want
 

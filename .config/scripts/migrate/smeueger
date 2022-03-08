@@ -50,7 +50,7 @@ fi
 if check_depend curl; then
 	fetch() { curl -L "${1}" -o "${2}"; }
 elif check_depend wget; then
-	fetch() { wget "${1}" -O "${2}"; }
+	fetch() { WGETRC= wget --no-hsts "${1}" -O "${2}"; }
 fi
 
 
@@ -248,20 +248,26 @@ EOF
 install_font() {
 	# Will install JetBrainsMono
 	# Create directory FONT_DIR if needed
-	FONT_DIR="${FONT_DIR%/}/JetBrainsMono"
+	FONT_DIR="${FONT_DIR%/}/JetBrainsMono Nerd Font"
 	[ -d "${FONT_DIR}" ] ||
 		mkdir --parents --verbose "${FONT_DIR}" || return
 
-	# Get every JetBrainsMono font
-	while read line; do
-		! [ "${line}" ] || [ "${line##*/JetBrains/JetBrainsMono/blob/master*}" ] && continue
-		line="https://github.com${line#*href=\"}"
-		line="${line%\"*}"
-		line=$(replace "blob" "raw" "${line}")
-		#fetch "${line}" "${FONT_DIR}/${line##*/}"
-		printf '%s\n' "${FONT_DIR}/${line##*/}"
+	while read font; do
+		[ "${font}" ] || continue
+		[ "${font##*/ryanoasis/nerd-fonts/tree/master/patched-fonts/JetBrainsMono/Ligatures/*}" ] && continue
+		font="${font%\"*}"
+		font="${font##*/}"
+		while read line; do
+			[ "${line}" ] || continue
+			[ "${line##*Complete*Mono.ttf*}" ] && continue
+			line="${line#*href=\"}"
+			line="${line%\"*}"
+			fetch "https://github.com${line%/blob/*}/raw/${line#*/blob/}" "${FONT_DIR}/JetBrainsMono Nerd Font ${font} Complete.ttf"
+		done <<EOF
+$(fetch "https://github.com/ryanoasis/nerd-fonts/tree/master/patched-fonts/JetBrainsMono/Ligatures/${font}/complete" -)
+EOF
 	done <<EOF
-$(curl -L https://github.com/JetBrains/JetBrainsMono/tree/master/fonts/otf)
+$(fetch https://github.com/ryanoasis/nerd-fonts/tree/master/patched-fonts/JetBrainsMono/Ligatures -)
 EOF
 }
 
