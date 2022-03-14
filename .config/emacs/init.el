@@ -15,306 +15,302 @@
 ;; although I haven't tested it yet.
 
 
-(progn ;;; VARIABLES ;;;
-  (setq-default
-   ;; Do not create backup file i.e. file~
-   make-backup-files nil
-   ;; Do not create autosave file i.e. #file#
-   auto-save-default nil
-   ;; Do not create autosave directory i.e. ~/.emacs.d/auto-save-list
-   auto-save-list-file-prefix nil
-   ;; Do not open emacs startup buffer
-   inhibit-startup-screen t
-   ;; Do noto create lockfiles i.e. .#file
-   create-lockfiles nil
-   ;; Do not overwrite system clipboard
-   x-select-enable-clipboard nil
-   ;; Enable every command
-   disabled-command-function nil
-   ;; Disable "*messages*" buffer
-   message-log-max nil
-   ;; Scratch Buffer will be empty by default
-   initial-scratch-message ""
-   ;; Disable line wrapping
-   truncate-lines t
-   ;; Automatically add newline at the end
-   require-final-newline t
-   ;; Always center cursor horizontally
-   hscroll-margin 1000
-   ;; A "smoother" scrolling experience
-   scroll-conservatively 101
-   scroll-margin 5
-   ;; Always use emacs's minibuffer instead of a gui window
-   use-dialog-box nil
-   ;; Don't add custom-set-variable in this file
-   custom-file (make-temp-file "")
-   ;; Categorize every theme to be safe
-   custom-safe-themes t
-   ;; Mouse wheel speed
-   mouse-wheel-scroll-amount '(1)
-   mouse-wheel-progressive-speed nil
-   ;; Fix tramp prompt error nonsense
-   tramp-shell-prompt-pattern
-   "\\(?:^\\|\r\\)[^]#$%>\n]*#?[]#$%>].* *\\(^[\\[[0-9;]*[a-zA-Z] *\\)*"))
+;;; VARIABLES ;;;
+(setq-default
+ ;; Do not create backup file i.e. file~
+ make-backup-files nil
+ ;; Do not create autosave file i.e. #file#
+ auto-save-default nil
+ ;; Do not create autosave directory i.e. ~/.emacs.d/auto-save-list
+ auto-save-list-file-prefix nil
+ ;; Do not open emacs startup buffer
+ inhibit-startup-screen t
+ ;; Do noto create lockfiles i.e. .#file
+ create-lockfiles nil
+ ;; Do not overwrite system clipboard
+ x-select-enable-clipboard nil
+ ;; Enable every command
+ disabled-command-function nil
+ ;; Scratch Buffer will be empty by default
+ initial-scratch-message ""
+ ;; Disable line wrapping
+ truncate-lines t
+ ;; Automatically add newline at the end
+ require-final-newline t
+ ;; Always center cursor horizontally
+ hscroll-margin 1000
+ ;; A "smoother" scrolling experience
+ scroll-conservatively 101
+ scroll-margin 5
+ ;; Always use emacs's minibuffer instead of a gui window
+ use-dialog-box nil
+ ;; Don't add custom-set-variable in this file
+ custom-file (make-temp-file "")
+ ;; Categorize every theme to be safe
+ custom-safe-themes t
+ ;; Mouse wheel speed
+ mouse-wheel-scroll-amount '(1)
+ mouse-wheel-progressive-speed nil)
 
 
-(progn ;;; INDENTATION ;;;
-  (setq-default indent-tabs-mode t
-                tab-always-indent nil
-                tab-width 4
-                backward-delete-char-untabify-method 'hungry)
-  (defvaralias 'c-basic-offset 'tab-width)
-  ;; Use spaces when aligning with align-regexp
-  (defadvice align-regexp (around align-regexp-with-spaces activate)
-    (let ((indent-tabs-mode nil))
-      ad-do-it)))
+
+;;; INDENTATION CONFIGURATION ;;;
+(defvaralias 'c-basic-offset 'tab-width)
+(setq-default indent-tabs-mode t
+              tab-always-indent nil
+              tab-width 4
+              backward-delete-char-untabify-method 'hungry)
+;; Use spaces when aligning with align-regexp
+(defadvice align-regexp (around align-regexp-with-spaces activate)
+  (let ((indent-tabs-mode nil)) ad-do-it))
 
 
-(progn ;;; VISUALS ;;;
-  ;; Mode Line
-  (make-face 'ml/fill)
-  (make-face 'ml/read-only-face)
-  (make-face 'ml/modified-face)
-  (make-face 'ml/normal-face)
-  ;; Custom Splash Screen
-  (make-face 'splash-text)
-  (make-face 'splash-text-special)
 
-  ;; Add Paddings
-  (add-to-list 'default-frame-alist
-               '(internal-boder-width . 20))
+;;; VISUAL CONFIGURATION ;;;
+;; Mode Line
+(make-face 'ml/fill)
+(make-face 'ml/read-only-face)
+(make-face 'ml/modified-face)
+(make-face 'ml/normal-face)
 
-  ;; Custom theme
-  (when (member 'warmspace (custom-available-themes))
-    (load-theme 'warmspace 1))
+;; Custom Splash Screen
+(make-face 'splash-text)
+(make-face 'splash-text-special)
 
-  (setq-default cursor-in-non-selected-windows nil
-                left-fringe-width 10)
-  (set-frame-font "JetBrains Mono-12")
-  (menu-bar-mode 0)           ;; Disable menu bar
-  (blink-cursor-mode 0)       ;; Disable cursor blinking
-  (show-paren-mode 1)         ;; Show parentheses pairs
-  (tool-bar-mode -1)          ;; Disable the toolbar
-  (tooltip-mode -1)           ;; Disable tooltips
-  (fringe-mode 3)             ;; Disable fringes
-  (scroll-bar-mode -1)        ;; Disable scroll bar
-  (global-visual-line-mode 0) ;; Disable wrap
-  (set-window-buffer nil (current-buffer)))
+;; Custom theme
+(when (member 'warmspace (custom-available-themes))
+  (load-theme 'warmspace 1))
 
-
-(progn ;;; KEYBINDINGS ;;;
-  (define-key key-translation-map [?\C-h] [?\C-?])
-  (global-set-key [mouse-3] 'mouse-major-mode-menu)
-  (global-set-key (kbd "C-S-v")
-                  (lambda()
-                    (interactive)
-                    (insert (or (gui-get-selection
-                                 'CLIPBOARD
-                                 (or x-select-request-type 'UTF8_STRING))
-                                ""))))
-  (define-key prog-mode-map [return] 'newline-and-indent))
-
-(progn ;;; FUNCTIONALITY / MISC MODES ;;;
-  (electric-pair-mode 1) ;; Auto pairs
-  (global-auto-revert-mode 1) ;; Autorefresh buffers
-  (global-eldoc-mode -1)
-
-  (progn ;; Whitespace-mode
-    (setq-default whitespace-style '(face trailing lines-tail)
-                  whitespace-line-column 80)
-    (global-whitespace-mode 1))
+;; Modes
+(set-frame-font "JetBrainsMono Nerd Font Mono-12")
+(menu-bar-mode 0)           ;; Disable menu bar
+(blink-cursor-mode 0)       ;; Disable cursor blinking
+(show-paren-mode 1)         ;; Show parentheses pairs
+(tool-bar-mode -1)          ;; Disable the toolbar
+(tooltip-mode -1)           ;; Disable tooltips
+(fringe-mode 3)             ;; Disable fringes
+(scroll-bar-mode -1)        ;; Disable scroll bar
+(global-visual-line-mode 0) ;; Disable wrap
+(set-window-buffer nil (current-buffer))
+(setq-default cursor-in-non-selected-windows nil
+              left-fringe-width 10)
 
 
-  (when (fboundp 'save-place-mode) ;; Remember last place emacs visits
-    (setq-default save-place-file "/tmp/emacs_places"
-                  save-place-forget-unreadable-files nil)
-    (save-place-mode 1))
-  (kill-buffer "*Messages*"))
 
-(progn ;;; FUNCTIONS ;;;
-  ;; Change prompt from yes/no to y/n
-  (fset 'yes-or-no-p 'y-or-n-p)
+;;; FUNCTIONALITY / MISC MODES ;;;
+(electric-pair-mode 1) ;; Auto pairs
+(global-auto-revert-mode 1) ;; Autorefresh buffers
+(global-eldoc-mode -1)
 
-  ;; Aliases
-  (defalias 'w 'save-buffer)
-  (defalias 'hs 'split-window-horizontally)
-  (defalias 'vs 'split-window-vertically)
-  (defalias 's 'replace-regexp)
+;; Whitespace
+(global-whitespace-mode 1)
+(setq-default whitespace-style '(face trailing lines-tail)
+              whitespace-line-column 80)
+
+;; Make Emacs remember the last vistied line
+(when (fboundp 'save-place-mode) ;; Remember last place emacs visits
+  (save-place-mode 1)
+  (setq-default save-place-file "/tmp/emacs_places"
+                save-place-forget-unreadable-files nil))
+
+;; Disable "*Messages*" buffer
+(setq-default message-log-max nil)
+(kill-buffer "*Messages*")
 
 
-  (defun script-header (opt)
-    "Add a comment header for information about a script, template from
+
+;;; FUNCTIONS ;;;
+;; "Aliases"
+(fset 'yes-or-no-p 'y-or-n-p)
+(defalias 'w 'save-buffer)
+(defalias 'hs 'split-window-horizontally)
+(defalias 'vs 'split-window-vertically)
+(defalias 's 'replace-regexp)
+
+
+(defun script-header (opt)
+  "Add a comment header for information about a script, template from
 Terminal For Life"
-    (interactive (list (completing-read "Action: " '("Add New" "Update"))))
-    (cond ((string= opt "Add New")
-           (save-excursion
-             (let (point))
-             (goto-line 2)
-             (setq point (point))
-             (insert-char ?- 48)
-             (insert-char ?\n 1)
-             (insert
-              (concat
-               "Script Name    - " (file-name-nondirectory buffer-file-name) "\n"
-               "Author Name    - Smeueg\n"
-               "Author Email   - Smeueg@gmail.com\n"
-               "Author Gitlab  - https://gitlab.com/Smeueg\n"
-               (format-time-string "Last Updated   - %a %_d %b %T %Z %Y\n")))
-             (insert-char ?- 48)
-             (insert-char ?\n 1)
-             (comment-region point (point))))
-          ((and (string= opt "Update") (buffer-modified-p))
-           (save-excursion
-             (goto-char 0)
-             (when
-                 (re-search-forward (concat
-                                     ".+ -+\n"
-                                     ".+ Script Name    - .+\n"
-                                     ".+ Author Name    - .+\n"
-                                     ".+ Author Email   - .+\n"
-                                     ".+ Author Gitlab  - .+\n"
-                                     ".+ Last Updated   - .+\n"
-                                     ".+ -+\n")
-                                    nil t)
-               (previous-line 2)
-               (re-search-forward ".* Last Updated +- " nil t)
-               (delete-region (point) (progn (end-of-line) (point)))
-               (insert (format-time-string "%a %_d %b %T %Z %Y")))))))
+  (interactive (list (completing-read "Action: " '("Add New" "Update"))))
+  (cond ((string= opt "Add New")
+         (save-excursion
+           (let (point))
+           (goto-line 2)
+           (setq point (point))
+           (insert-char ?- 48)
+           (insert-char ?\n 1)
+           (insert
+            (concat
+             "Script Name    - " (file-name-nondirectory buffer-file-name) "\n"
+             "Author Name    - Smeueg\n"
+             "Author Email   - Smeueg@gmail.com\n"
+             "Author Gitlab  - https://gitlab.com/Smeueg\n"
+             (format-time-string "Last Updated   - %a %_d %b %T %Z %Y\n")))
+           (insert-char ?- 48)
+           (insert-char ?\n 1)
+           (comment-region point (point))))
+        ((and (string= opt "Update") (buffer-modified-p))
+         (save-excursion
+           (goto-char 0)
+           (when
+               (re-search-forward (concat
+                                   ".+ -+\n"
+                                   ".+ Script Name    - .+\n"
+                                   ".+ Author Name    - .+\n"
+                                   ".+ Author Email   - .+\n"
+                                   ".+ Author Gitlab  - .+\n"
+                                   ".+ Last Updated   - .+\n"
+                                   ".+ -+\n")
+                                  nil t)
+             (previous-line 2)
+             (re-search-forward ".* Last Updated +- " nil t)
+             (delete-region (point) (progn (end-of-line) (point)))
+             (insert (format-time-string "%a %_d %b %T %Z %Y")))))))
 
 
-  (defun edit-config (config)
-    "Edit a configuration file. Supports emacs's init-file and enabled theme,
+(defun edit-config (config)
+  "Edit a configuration file. Supports emacs's init-file and enabled theme,
 awesomewm, and the users shell's"
-    (interactive
-     (list
-      (completing-read
-       "Config File: "
-       (let ((files '())
-             (shell (file-name-base (getenv "SHELL")))
-             (home (or (getenv "HOME") ""))
-             (config-dir (getenv "XDG_CONFIG_HOME"))
-             (check-file nil))
-         (setq check-file (lambda (f)
-                            (when (file-exists-p f)
-                              (push (abbreviate-file-name f) files))))
-         ;; Shell
-         (cond ((string= shell "bash")
-                (funcall check-file "~/.bashrc")
-                (funcall check-file "~/.profile")))
-         ;; Awesomewm
-         (funcall check-file (concat config-dir "/awesome/rc.lua"))
-         ;; Emacs
-         (funcall check-file (locate-user-emacs-file "init.el"))
-         (dolist (theme custom-enabled-themes) ;; Enabled Themes
-           (funcall check-file (locate-file
-                                (concat (symbol-name theme) "-theme.el")
-                                (custom-theme--load-path)
-                                '("" "c"))))
-         files))))
-    (find-file config))
+  (interactive
+   (list
+    (completing-read
+     "Config File: "
+     (let ((files '())
+           (shell (file-name-base (getenv "SHELL")))
+           (home (or (getenv "HOME") ""))
+           (config-dir (getenv "XDG_CONFIG_HOME"))
+           (check-file nil))
+       (setq check-file (lambda (f)
+                          (when (file-exists-p f)
+                            (push (abbreviate-file-name f) files))))
+       ;; Shell
+       (cond ((string= shell "bash")
+              (funcall check-file "~/.bashrc")
+              (funcall check-file "~/.profile")))
+       ;; Awesomewm
+       (funcall check-file (concat config-dir "/awesome/rc.lua"))
+       ;; Emacs
+       (funcall check-file (locate-user-emacs-file "init.el"))
+       (dolist (theme custom-enabled-themes) ;; Enabled Themes
+         (funcall check-file (locate-file
+                              (concat (symbol-name theme) "-theme.el")
+                              (custom-theme--load-path)
+                              '("" "c"))))
+       files))))
+  (find-file config))
 
 
-  (defun get-system-clipboard ()
-    "Get value of the system clipboard"
-    (interactive)
-    (or (gui-get-selection
-         'CLIPBOARD
-         (or x-select-request-type
-             'UTF8_STRING)) ""))
+(defun get-system-clipboard ()
+  "Get value of the system clipboard"
+  (interactive)
+  (or (gui-get-selection
+       'CLIPBOARD
+       (or x-select-request-type
+           'UTF8_STRING)) ""))
 
-  (defun close ()
-    " Kill buffer when there's only one window displaying the buffer.
+
+(defun close ()
+  " Kill buffer when there's only one window displaying the buffer.
       Delete window when the current window has no previous buffers"
-    (interactive)
-    (let ((count 0) (del nil) (kill t))
-      (when (or (= 0 (length (window-prev-buffers)))
-                (and (equal (current-buffer) (caar (window-prev-buffers)))
-                     (= 1 (length (window-prev-buffers)))))
-        (setq del t))
+  (interactive)
+  (let ((count 0) (del nil) (kill t))
+    (when (or (= 0 (length (window-prev-buffers)))
+              (and (equal (current-buffer) (caar (window-prev-buffers)))
+                   (= 1 (length (window-prev-buffers)))))
+      (setq del t))
 
-      (catch 'break
-        (unless (= 1 (length (get-buffer-window-list)))
-          (setq kill nil)
-          (throw 'break nil))
-        (dolist (window (delete (selected-window) (window-list)))
-          (dolist (buffer (window-prev-buffers window))
-            (when (equal (current-buffer) (car buffer))
-              (setq kill nil)
-              (throw 'break nil)))))
-      (if kill (kill-buffer)
-        (let ((var '()) (cur (current-buffer)))
-          (switch-to-prev-buffer)
-          (dolist (buffer (window-prev-buffers))
-            (unless (eq cur (car buffer))
-              (push buffer var)))
-          (set-window-prev-buffers (selected-window) var)))
-      (when del (delete-window))))
+    (catch 'break
+      (unless (= 1 (length (get-buffer-window-list)))
+        (setq kill nil)
+        (throw 'break nil))
+      (dolist (window (delete (selected-window) (window-list)))
+        (dolist (buffer (window-prev-buffers window))
+          (when (equal (current-buffer) (car buffer))
+            (setq kill nil)
+            (throw 'break nil)))))
+    (if kill (kill-buffer)
+      (let ((var '()) (cur (current-buffer)))
+        (switch-to-prev-buffer)
+        (dolist (buffer (window-prev-buffers))
+          (unless (eq cur (car buffer))
+            (push buffer var)))
+        (set-window-prev-buffers (selected-window) var)))
+    (when del (delete-window))))
 
-  (defun run ()
-    "Automatically compile (if needed) and execute the current program "
-    (interactive)
-    (save-buffer)
-    (when (derived-mode-p 'org-mode)
-      (org-export-dispatch)
-      (user-error ""))
-    (let ((command nil))
-      (cond ((member major-mode '(c-mode c++mode)) ;; C & C++
-             (setq command (concat "cc \"" buffer-file-name "\" -o /tmp/\""
-                                   "\"" (file-name-base buffer-file-name)
-                                   "\" && \"/tmp/"
-                                   (file-name-base buffer-file-name) "\"\n")))
-            ((or (derived-mode-p 'sh-mode))
-             (executable-make-buffer-file-executable-if-script-p)
-             (setq command (concat "\"" buffer-file-name "\"\n")))
-            ((derived-mode-p 'lua-mode)
-             (setq command (concat "lua \"" buffer-file-name "\"\n")))
-            ((derived-mode-p 'python-mode) ;; Python
-             (setq command (concat "python3 \"" buffer-file-name "\"\n")))
-            ((derived-mode-p 'java-mode)
-             (setq command
-                   (concat "java \"" buffer-file-name "\"\n")))
-            ((= 1 1)
-             (message "Unknown filetype")
-             (setq command nil)))
-      (when command
-        (progn
-          (split-window-below)
-          (other-window 1)
-          (ansi-term (getenv "SHELL"))
-          (set-window-prev-buffers (selected-window) '())
-          (term-send-raw-string
-           (concat "clear; printf 'Output:\n';" command)))))))
+
+(defun run ()
+  "Automatically compile (if needed) and execute the current program "
+  (interactive)
+  (save-buffer)
+  (when (derived-mode-p 'org-mode)
+    (org-export-dispatch)
+    (user-error ""))
+  (let ((command nil))
+    (cond ((member major-mode '(c-mode c++mode)) ;; C & C++
+           (setq command (concat "cc \"" buffer-file-name "\" -o /tmp/\""
+                                 "\"" (file-name-base buffer-file-name)
+                                 "\" && \"/tmp/"
+                                 (file-name-base buffer-file-name) "\"\n")))
+          ((or (derived-mode-p 'sh-mode))
+           (executable-make-buffer-file-executable-if-script-p)
+           (setq command (concat "\"" buffer-file-name "\"\n")))
+          ((derived-mode-p 'lua-mode)
+           (setq command (concat "lua \"" buffer-file-name "\"\n")))
+          ((derived-mode-p 'python-mode) ;; Python
+           (setq command (concat "python3 \"" buffer-file-name "\"\n")))
+          ((derived-mode-p 'java-mode)
+           (setq command
+                 (concat "java \"" buffer-file-name "\"\n")))
+          ((= 1 1)
+           (message "Unknown filetype")
+           (setq command nil)))
+    (when command
+      (progn
+        (split-window-below)
+        (other-window 1)
+        (ansi-term (getenv "SHELL"))
+        (set-window-prev-buffers (selected-window) '())
+        (term-send-raw-string
+         (concat "clear; printf 'Output:\n';" command))))))
+
+
+
+;;; KEYBINDINGS ;;;
+(define-key key-translation-map [?\C-h] [?\C-?])
+(global-set-key [mouse-3] 'mouse-major-mode-menu)
+(define-key prog-mode-map [return] 'newline-and-indent)
+(global-set-key (kbd "C-S-v")
+                (lambda()
+                  (interactive)
+                  (insert (get-system-clipboard))))
+
+
 
 ;;; CUSTOM MODE-LINE ;;;
 (defun ml/align(left right)
   "Add padding to mode line with arguments being LEFT, and RIGHT."
-  (let ((space (- (window-total-width)
-                  (+ (length (format-mode-line right))
-                     (length (format-mode-line left))
-                     2))))
-    (append
-     (list (propertize " " 'display '((space :width 0.5))))
-     left
-     (list (make-string space ?\ ))
-     right
-     (list (propertize "  " 'display '((space :width 0.5)))))))
+  (let ((space (length (format-mode-line right))))
+    (when (and window-system (eq 'right (get-scroll-bar-mode)))
+      (setq space (- space 2)))
+    (append (list (propertize " " 'display '((space :width 0.5))))
+            left
+            (list (propertize " " 'display `((space :align-to (- (+ right right-fringe right-margin) ,space)))))
+            right)))
 
 
 (setq-default
  mode-line-format
  '((:eval
     (ml/align
-     ;; Left
-     `(,(propertize (concat " " (buffer-name) " ") 'face
-                    (progn
-                      (setq-local
-                       main-face
-                       (cond (buffer-read-only (quote 'ml/read-only-face))
-                             ((buffer-modified-p) (quote 'ml/modified-face))
-                             ((= 1 1) (quote 'ml/normal-face))))))
+     `( ;; Left
+       ,(propertize (concat " " (buffer-name) " ") 'face
+                    (setq-local main-face
+                                (cond (buffer-read-only 'ml/read-only-face)
+                                      ((buffer-modified-p) 'ml/modified-face)
+                                      ((= 1 1) 'ml/normal-face))))
        " %m")
-     ;; Right
-     `(,(cdr (assoc (or (and (boundp 'evil-state) (symbol-value 'evil-state)) t)
+     `( ;; Right
+       ,(cdr (assoc (or (and (boundp 'evil-state) (symbol-value 'evil-state)) t)
                     '((normal   . "Normal ")
                       (visual   . "Visual ")
                       (insert   . "Insert ")
@@ -322,7 +318,6 @@ awesomewm, and the users shell's"
                       (operator . "O-Pending ")
                       (motion   . "Motion ")
                       (emacs    . "Emacs "))))
-
        ,(propertize
          (concat " %l/"
                  (int-to-string (count-lines (point-min) (point-max))) " ")
@@ -331,7 +326,7 @@ awesomewm, and the users shell's"
 
 
 
-;;; CUSTOM SPLASH SCREEN
+;;; CUSTOM SPLASH SCREEN ;;;
 ;; Disable startup message
 (fset 'display-startup-echo-area-message (lambda () (message nil)))
 (defun min-splash()
@@ -376,8 +371,7 @@ awesomewm, and the users shell's"
             (goto-char 0)
             (insert-char ?\n (/ (- (window-body-height nil) 15) 2))
             (center-line 16)
-            (read-only-mode 1)
-            )))
+            (read-only-mode 1))))
     (progn
       (remove-hook 'post-command-hook #'min-splash-align)
       (remove-hook 'window-state-change-hook #'min-splash-align))))
@@ -391,23 +385,20 @@ awesomewm, and the users shell's"
 
 
 
-(progn ;;; HOOKS ;;;
-  (add-hook 'sh-mode-hook (lambda () (sh-electric-here-document-mode 0)))
-
-
-  (add-hook 'before-save-hook 'delete-trailing-whitespace)
-  (when (and (fboundp 'script-header))
-    (add-hook 'sh-mode-hook
-              (lambda () (add-hook 'before-save-hook 'script-header 0 t))))
-  (add-hook 'before-save-hook 'delete-trailing-whitespace)
-  (add-hook 'emacs-lisp-mode-hook (lambda() (setq-local indent-tabs-mode nil)))
-
-  (add-hook 'completion-list-mode-hook
-            (lambda() (display-line-numbers-mode 0)))
-  (add-hook 'minibuffer-exit-hook
-            (lambda() (and (get-buffer "*Completions*")
-                           (kill-buffer "*Completions*")))))
-
+;;; HOOKS ;;;
+(add-hook 'before-save-hook 'delete-trailing-whitespace)
+(add-hook 'sh-mode-hook
+          (lambda () (sh-electric-here-document-mode 0)))
+(add-hook 'emacs-lisp-mode-hook
+          (lambda () (setq-local indent-tabs-mode nil)))
+(add-hook 'completion-list-mode-hook
+          (lambda () (display-line-numbers-mode 0)))
+(add-hook 'minibuffer-exit-hook
+          (lambda () (when (get-buffer "*Completions*")
+                       (kill-buffer "*Completions*"))))
+(when (fboundp 'script-header)
+  (add-hook 'sh-mode-hook
+            (lambda () (add-hook 'before-save-hook 'script-header 0 t))))
 
 
 
@@ -434,12 +425,16 @@ awesomewm, and the users shell's"
   :config (yas-global-mode))
 
 
-
 (use-package tramp
-  :init (setq-default tramp-persistency-file-name "/tmp/tramp"))
+  :init
+  (setq-default
+   ;; Fix tramp prompt error nonsense
+   tramp-shell-prompt-pattern  "\\(?:^\\|\r\\)[^]#$%>\n]*#?[]#$%>].* *\\(^[\\[[0-9;]*[a-zA-Z] *\\)*"
+   tramp-persistency-file-name "/tmp/tramp"))
 
 
 (use-package tab-bar
+  :disabled t
   :init
   (setq-default tab-bar-close-button-show nil
                 tab-bar-new-button-show nil)
@@ -523,15 +518,16 @@ awesomewm, and the users shell's"
 (use-package org
   :defer t
   :init
-  (setq-default org-ellipsis              "  ▼"
-                org-src-fontify-natively  t
-                org-startup-folded        t
-                org-hide-emphasis-markers t
-                note-file                 "~/Documents/Notes/Notes.org"
-                org-log-done              t
-                org-image-actual-width    (list 500)
-                org-agenda-files          `(,note-file)
-                org-export-with-toc       nil)
+  (setq-default
+   org-ellipsis              "  ▼"
+   org-src-fontify-natively  t
+   org-startup-folded        t
+   org-hide-emphasis-markers t
+   note-file                 "~/Documents/Notes/Notes.org"
+   org-log-done              t
+   org-image-actual-width    (list 500)
+   org-agenda-files          `(,note-file)
+   org-export-with-toc       nil)
   :config
   (define-key org-mode-map "\M-h" nil)
   (define-key org-mode-map [return] (lambda() (interactive) (org-return t)))
@@ -559,19 +555,16 @@ awesomewm, and the users shell's"
   (define-key term-raw-map "\C-\\" 'term-esc-map)
   (if (package-installed-p 'evil)
       (define-key term-raw-map "\C-\\\C-n"
-        (lambda()
+        (lambda ()
           (interactive)
           (turn-on-evil-mode)
           (evil-normal-state 1)
           (term-line-mode)))
     (define-key term-raw-map "\C-\\\C-n" 'term-line-mode))
   (define-key term-raw-map (kbd "C-S-v")
-    (lambda()
+    (lambda ()
       (interactive)
-      (term-send-raw-string
-       (gui-get-selection
-        'CLIPBOARD
-        (or x-select-request-type 'UTF8_STRING))))))
+      (term-send-raw-string (get-system-clipboard)))))
 
 
 (use-package bongo
@@ -597,11 +590,12 @@ awesomewm, and the users shell's"
   :demand t
   :hook (prog-mode . global-company-mode)
   :init
-  (setq-default company-minimum-prefix-length 2
-                company-idle-delay 0
-                company-selection-wrap-around t
-                company-require-match nil
-                company-tooltip-align-annotations t)
+  (setq-default
+   company-minimum-prefix-length     2
+   company-idle-delay                0
+   company-selection-wrap-around     t
+   company-require-match             nil
+   company-tooltip-align-annotations t)
   :config
   (when (package-installed-p 'yasnippet)
     (setq-default company-backends
@@ -621,8 +615,7 @@ awesomewm, and the users shell's"
   :config
   (when (package-installed-p 'evil)
     (define-key eglot-mode-map [remap display-local-help] nil)
-    (evil-define-key 'normal prog-mode-map " g" 'display-local-help)
-    )
+    (evil-define-key 'normal prog-mode-map " g" 'display-local-help))
   :init
   (setq-default gc-cons-threshold 100000000
                 read-process-output-max (* 4 1024 1024))
@@ -641,7 +634,6 @@ awesomewm, and the users shell's"
 
   (add-hook 'c-mode-common-hook 'eglot-ensure)
   (add-hook 'python-mode-hook 'eglot-ensure)
-
 
 
   (defun lsp-install-java ()
@@ -697,9 +689,10 @@ awesomewm, and the users shell's"
 (use-package flymake
   :defer t
   :init
-  (setq-default flymake-error-bitmap   '(vertical-bar compilation-error)
-                flymake-warning-bitmap '(vertical-bar compilation-warning)
-                flymake-note-bitmap    '(vertical-bar compilation-info)))
+  (setq-default
+   flymake-error-bitmap   '(vertical-bar compilation-error)
+   flymake-warning-bitmap '(vertical-bar compilation-warning)
+   flymake-note-bitmap    '(vertical-bar compilation-info)))
 
 
 (use-package cheat-sh
@@ -723,7 +716,7 @@ awesomewm, and the users shell's"
   (evil-mode 1)
   (evil-define-key '(normal motion visual) 'global " " nil)
 
-  ;; External Packages
+  ;; External Packages ;;
   (when (locate-library "org") ;; org-mode
     (evil-define-key 'normal org-mode-map
       " i" 'org-display-inline-images
@@ -777,7 +770,7 @@ awesomewm, and the users shell's"
     (evil-define-key 'normal 'global "  " 'run))
 
 
-    ;;; Basic Keybindings ;;;
+  ;; Basic Keybindings ;;
   (fset 'evil-next-line     'evil-next-visual-line)
   (fset 'evil-previous-line 'evil-previous-visual-line)
   (evil-define-key 'normal 'global "gc" 'comment-line)
@@ -836,6 +829,4 @@ awesomewm, and the users shell's"
             (split-window-below) (other-window 1) (ansi-term (getenv "SHELL"))
             (set-window-prev-buffers (selected-window) '()))
     " q" (lambda ()
-           (interactive)
-           (when (y-or-n-p "Quit Emacs?")
-             (kill-emacs)))))
+           (interactive) (when (y-or-n-p "Quit Emacs?") (kill-emacs)))))

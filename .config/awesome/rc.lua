@@ -15,6 +15,8 @@ local hotkeys_popup	= awful.hotkeys_popup
 local cairo			= require("lgi").cairo
 local dpi			= beautiful.xresources.apply_dpi
 
+
+
 -- Handle errors if there are any --
 do
 	local in_error = false
@@ -29,6 +31,8 @@ do
 		in_error = false
 	end)
 end
+
+
 
 -- Variables --
 local function command_exists(cmd)
@@ -121,6 +125,7 @@ beautiful.taglist_squares_unsel = nil
 -- Notification
 beautiful.notification_border_color = red
 beautiful.notification_border_width = 3
+
 
 
 -- Custom Images/Icons --
@@ -218,13 +223,12 @@ gears.shape.transform(gears.shape.losange)
 cr:stroke()
 
 
+
 -- Custom Functions --
 local saved_gap          = beautiful.useless_gap
 local saved_border_width = beautiful.border_width
 local function set_layout_all(layout)
-	for _, t in pairs(root.tags()) do
-		awful.layout.set(layout, t)
-	end
+	for _, t in pairs(root.tags()) do awful.layout.set(layout, t) end
 
 	if layout == awful.layout.suit.floating then
 		for _, c in pairs(client.get()) do awful.titlebar.show(c) end
@@ -261,13 +265,22 @@ local function find_or_spawn_emacs()
 		scratch_client:move_to_tag(awful.screen.focused().selected_tag)
 		awful.client.focus.byidx(0, scratch_client)
 	else -- Spawn emacs and make it the scratchpad client
-		naughty.notify({title = "Opening emacs"})
+		for _, c in ipairs(client.get()) do
+			if c.class == "Emacs" then
+				scratch_client = c
+				find_or_spawn_emacs()
+				return
+			end
+		end
+
+		naughty.notify {title = "Opening emacs"}
 		awful.spawn.raise_or_spawn(
-			"emacs",
+			"emacs --internal-border=20",
 			{},
 			nil,
 			nil,
-			function(c) scratch_client = c end)
+			function(c) scratch_client = c; find_or_spawn_emacs() end
+		)
 	end
 end
 
@@ -1150,8 +1163,15 @@ do  -- Commands to execute in startup
 			naughty.notify({title = str})
 		end
 	end
-	run("pactl set-sink-volume @DEFAULT_SINK@ 40%")
-	run("xrdb ~/.config/X11/Xresources")
 	run("xrandr --output DP-1 --mode 1280x1024 --scale 1.2x1.2")
 	run("xset r rate 250 50")
+	run("setxkbmap -option keypad:pointerkeys")
+	run("xset s off -dpms")
+	run("xcompmgr")
+
+	awful.spawn.with_shell("xrdb ~/.config/X11/Xresources")
+	awful.spawn.with_shell("pidof pulseaudio || command -v pulseaudio && setsid --fork pulseaudio --start --exit-idle-time=-1")
+	run("pactl set-sink-volume @DEFAULT_SINK@ 40%")
+
+	awful.spawn.with_shell("export WINIT_X11_SCALE_FACTOR=1")
 end

@@ -1,15 +1,15 @@
 #!/bin/sh
 WM="awesome"
 
-setxkbmap -option keypad:pointerkeys &
-xrdb ~/.config/X11/Xresources &
+# setxkbmap -option keypad:pointerkeys &
+# xrdb ~/.config/X11/Xresources &
 
-export WINIT_X11_SCALE_FACTOR=1
+# export WINIT_X11_SCALE_FACTOR=1
 
 # Turn of screen saver and dpms
-xset s off -dpms &
-pidof pulseaudio >/dev/null || setsid --fork pulseaudio --start --exit-idle-time=-1
-xcompmgr &
+# xset s off -dpms &
+# pidof pulseaudio >/dev/null || setsid --fork pulseaudio --start --exit-idle-time=-1
+# xcompmgr &
 
 
 case "$WM" in

@@ -25,6 +25,3 @@ herbe.duration: 3
 Sxiv.background: #100B0D
 Sxiv.foreground: #CEA04E
 Sxiv.font: JetBrains Mono:size=11
-
-! Emacs !
-emacs.internalBorder: 20

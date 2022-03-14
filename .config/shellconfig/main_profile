@@ -15,7 +15,6 @@ export PATH
 
 export LESSHISTFILE=/dev/null
 export CCACHE_DIR=${HOME}/.cache/ccache
-export WGETRC="$XDG_CONFIG_HOME/wgetrc"
 export TERMINFO="$XDG_DATA_HOME"/terminfo
 export TERMINFO_DIRS="$XDG_DATA_HOME"/terminfo:/usr/share/terminfo
 

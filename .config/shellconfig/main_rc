@@ -32,31 +32,20 @@ print_prompt() {
 	success_col=$'\033[38;5;6m'
 	failed_col=$'\033[38;5;1m'
 	branch_col=$'\033[38;5;8m'
-	if [ -z "${PWD##${HOME}*}" ]; then
-		printf '\001\033[1m\002\001%b\002%s' "${dir_col}" "~${PWD##${HOME}}"
+	symbol=">"
+	if ! [ "${PWD#${HOME}*}" ]; then
+		printf '\001\033[1m\002\001%b\002%s' "${dir_col}" "~${PWD#${HOME}}"
 	else
 		printf '\001\033[1m\002\001%b\002%s' "${dir_col}" "${PWD}"
 	fi
 
-
-	if [ "$(command -v git)" ]; then
-		branch="$(git branch 2>&-)"
-		IFS='
-		'
-		for line in "${branch}"; do
-			[ -z "${branch}" ] && break
-
-			if [ -z "${line##[*]*}" ]; then
-				printf '\001%b\002 [ %s ]' "${branch_col}" "${line##[*] }"
-				break
-			fi
-		done
-	fi
+	branch="$(git branch --show-current 2>&-)"
+	[ "${branch}" ] && printf '\001%b\002 [ %s ]' "${branch_col}" "${branch}"
 
 	if [ ${ret} -eq 0 ]; then
-		printf '\n\001%b\002>\001\033[0m\002 ' "${success_col}"
+		printf '\n\001%b\002%s \001\033[0m\002' "${success_col}" "${symbol}"
 	else
-		printf '\n\001%b\002>\001\033[0m\002 ' "${failed_col}"
+		printf '\n\001%b\002%s \001\033[0m\002' "${failed_col}" "${symbol}"
 	fi
 }
 export PS1="\$(print_prompt)"
@@ -143,6 +132,8 @@ fet.sh() {
 }
 
 doar() { eval "su -c '$@'"; }
+
+
 
 # Misc ENV Variable Exporting
 export UEBERZUG_FIFO=/tmp/ueberzug-fifo

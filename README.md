@@ -48,7 +48,7 @@ These are all really optional, since without them, the "rice" would still be fun
 
 
 ## Installing/Migrating into a new system
-This is how you can become more smeueg *INSTANTLY* using this one liner:
+There are multiple ways to become more smeueg **INSTANTLY**:
 ```sh
 # Either run
 sh <<EOF
@@ -59,11 +59,10 @@ sh <(curl -L https://gitlab.com/Smeueg/dotfiles/-/raw/master/.config/scripts/mig
 # Or
 sh <<< "$(curl -L https://gitlab.com/Smeueg/dotfiles/-/raw/master/.config/scripts/migrate/smeueger)"
 ```
-This _should_ be able to work with most shells (except for fish).
+This _should_ be able to work with most shells that are *sort of* posix
+compliant (except for fish).
 Note: This is a *POST*-Install script so this **WILL NOT** install any
-dependencies automatically. I'm also working on a revamp of the script that
-should be less tedious to use and more simple.
-
+dependencies automatically.
 
 ## Using a git bare repository to manage your salty dotfiles
 Refer to the arch wiki: https://wiki.archlinux.org/index.php/Dotfiles
