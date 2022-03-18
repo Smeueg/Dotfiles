@@ -475,15 +475,14 @@ awesomewm, and the users shell's"
   (define-key vertico-map "\C-n" 'vertico-next))
 
 
-
-
 (use-package ranger
   :ensure t
   :commands (ranger dired)
   :config
-  (define-key ranger-mode-map " " 'ranger-mark)
   (define-key ranger-mode-map ":"
     (lambda () (interactive) (execute-extended-command nil)))
+  (define-key ranger-mode-map " "
+    (lambda () (interactive) (ranger-toggle-mark) (ranger-next-file 1)))
   :init
   (setq-default ranger-show-hidden  t
                 ranger-parent-depth 1
