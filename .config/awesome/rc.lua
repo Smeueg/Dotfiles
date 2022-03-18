@@ -1,3 +1,13 @@
+-- Smeueg's Awesomewm configuration
+--
+-- TODO:
+--   * Add a dropdown menu widget for the wibar
+--     (to select screenshot, system, or pick a program)
+--   * Create a wallpaper (cube in the middle)
+--   * Add a layout widget on the wibar
+--
+
+
 -- Libraries --
 -- Make sure LuaRocks packages is loaded if installed
 pcall(require, "luarocks.loader")
@@ -47,10 +57,8 @@ end
 
 local home           = os.getenv("HOME")
 local terminal       = os.getenv("TERMINAL") or "x-terminal-emulator"
-local editor         = os.getenv("EDITOR") or "editor"
+local editor         = os.getenv("EDITOR")
 local modkey         = "Mod4"
-local wallpaper      = home .. "/.config/rice/Shark Space.png"
-local wallpaper_url  = "https://i.imgur.com/DVJsvfN.png"
 local screenshot_dir = "/tmp/"
 local browser        = command_exists(os.getenv("BROWSER"))
 	or command_exists("brave-browser")
@@ -59,40 +67,46 @@ local browser        = command_exists(os.getenv("BROWSER"))
 
 
 -- Aesthetic Variables (colors & fonts) --
-local yellow             = "#FEA34B"
-local red                = "#C5483F"
-local green              = "#819013"
-local background_dark    = "#291F2E"
-local background         = "#322638"
-local background_light   = "#35283b"
-local background_lighter = "#382B3F"
-local foreground         = "#E7DEC7"
-local foreground2        = "#493751"
-local font               = "JetBrains Mono 11"
-local icon_color         = foreground2
-local menu_color         = red
+local themes = {
+	["Smeueg"] = {
+		wallpaper          = home .. "/.config/rice/Shark Space.png",
+		yellow             = "#FEA34B",
+		red                = "#C5483F",
+		green              = "#819013",
+		background_dark    = "#291F2E",
+		background         = "#322638",
+		background_light   = "#35283b",
+		background_lighter = "#382B3F",
+		foreground         = "#E7DEC7",
+		foreground2        = "#493751",
+		font               = "JetBrains Mono 11",
+	}
+}
+local theme = themes["Smeueg"]
+theme.icon_color = theme.foreground2
+theme.menu_color = theme.red
 
 
 -- Shapes --
 local titlebar_circle = gears.shape.transform(gears.shape.circle)
 	:scale(0.6, 0.6):translate(3, 7)
 local button_close = gears.surface.load_from_shape(
-	20, 20, titlebar_circle, red)
+	20, 20, titlebar_circle, theme.red)
 local button_maximize = gears.surface.load_from_shape(
-	20, 20, titlebar_circle, green)
+	20, 20, titlebar_circle, theme.green)
 local button_minimize = gears.surface.load_from_shape(
-	20, 20, titlebar_circle, yellow)
+	20, 20, titlebar_circle, theme.yellow)
 
 
 -- Theme Variables --
 beautiful.init()
-beautiful.fg_normal = foreground
+beautiful.fg_normal = theme.foreground
 beautiful.fg_focus  = beautiful.fg_normal
-beautiful.bg_normal	= background
-beautiful.font		= font
+beautiful.bg_normal	= theme.background
+beautiful.font		= theme.font
 -- Wibar
-beautiful.wibar_selected_tag	= foreground
-beautiful.wibar_unselected_tag	= foreground2
+beautiful.wibar_selected_tag	= theme.foreground
+beautiful.wibar_unselected_tag	= theme.foreground2
 -- Titlebar
 beautiful.titlebar_close_button_normal				= button_close
 beautiful.titlebar_close_button_focus				= button_close
@@ -104,18 +118,18 @@ beautiful.titlebar_maximized_button_focus_active	= button_maximize
 beautiful.titlebar_maximized_button_focus_inactive	= button_maximize
 beautiful.titlebar_minimize_button_normal			= button_minimize
 beautiful.titlebar_minimize_button_focus			= button_minimize
-beautiful.titlebar_bg  = background
-beautiful.titlebar_fg  = foreground
+beautiful.titlebar_bg  = theme.background
+beautiful.titlebar_fg  = theme.foreground
 -- Menu Bar
-beautiful.menubar_fg_focus = red
-beautiful.menubar_bg_focus = background_lighter
+beautiful.menubar_fg_focus = theme.red
+beautiful.menubar_bg_focus = theme.background_lighter
 -- Tasklist
-beautiful.tasklist_bg_focus		= background_lighter
-beautiful.tasklist_bg_normal	= background
+beautiful.tasklist_bg_focus		= theme.background_lighter
+beautiful.tasklist_bg_normal	= theme.background
 beautiful.tasklist_bg_minimize	= beautiful.wibar_bg
 -- Borders & Gaps
-beautiful.border_normal = background
-beautiful.border_focus  = red
+beautiful.border_normal = theme.background
+beautiful.border_focus  = theme.red
 beautiful.border_width  = dpi(4)
 beautiful.useless_gap   = 5
 -- Taglists
@@ -123,7 +137,7 @@ beautiful.taglist_bg_focus		= beautiful.wibar_bg
 beautiful.taglist_squares_sel	= nil
 beautiful.taglist_squares_unsel = nil
 -- Notification
-beautiful.notification_border_color = red
+beautiful.notification_border_color = theme.red
 beautiful.notification_border_width = 3
 
 
@@ -131,7 +145,7 @@ beautiful.notification_border_width = 3
 -- Custom Images/Icons --
 local icon_clock = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
 local cr = cairo.Context(icon_clock)
-cr:set_source(gears.color(icon_color))
+cr:set_source(gears.color(theme.icon_color))
 cr:rectangle(11, 5, 1, 6)
 cr:rectangle(11, 10, 3, 1)
 gears.shape.transform(gears.shape.radial_progress)
@@ -141,7 +155,7 @@ cr:fill()
 
 local icon_calendar = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
 local cr = cairo.Context(icon_calendar)
-cr:set_source(gears.color(icon_color))
+cr:set_source(gears.color(theme.icon_color))
 cr:rectangle(7, 4, 12, 12)
 cr:stroke()
 cr:rectangle(7, 5, 12, 3)
@@ -155,7 +169,7 @@ cr:fill()
 
 local icon_volume = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
 local cr = cairo.Context(icon_volume)
-cr:set_source(gears.color(icon_color))
+cr:set_source(gears.color(theme.icon_color))
 gears.shape.transform(gears.shape.rectangle)
 	:translate(3, 7.5)(cr, 3, 6)
 gears.shape.transform(gears.shape.isosceles_triangle)
@@ -171,7 +185,7 @@ cr:fill()
 
 local icon_mute = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
 local cr = cairo.Context(icon_mute)
-cr:set_source(gears.color(icon_color))
+cr:set_source(gears.color(theme.icon_color))
 gears.shape.transform(gears.shape.rectangle)
 	:translate(3, 7.5)(cr, 3, 6)
 gears.shape.transform(gears.shape.isosceles_triangle)
@@ -184,7 +198,7 @@ cr:fill()
 
 local icon_wifi = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
 local cr = cairo.Context(icon_wifi)
-cr:set_source(gears.color(icon_color))
+cr:set_source(gears.color(theme.icon_color))
 gears.shape.transform(gears.shape.pie)
 	:scale(1.25, 1.5)
 	:translate(-1.5, 1.5)(cr, 20, 20, 1.25 * math.pi, 1.75* math.pi)
@@ -192,7 +206,7 @@ cr:fill()
 
 local icon_ethernet = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
 local cr = cairo.Context(icon_ethernet)
-cr:set_source(gears.color(icon_color))
+cr:set_source(gears.color(theme.icon_color))
 cr:rectangle(9, 2, 6, 6)
 cr:rectangle(4, 14, 6, 6)
 cr:rectangle(14, 14, 6, 6)
@@ -204,7 +218,7 @@ cr:fill()
 
 local icon_no_network = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
 local cr = cairo.Context(icon_no_network)
-cr:set_source(gears.color(icon_color))
+cr:set_source(gears.color(theme.icon_color))
 gears.shape.transform(gears.shape.pie)
 	:scale(1.15, 1.4)
 	:translate(-1.5, 1.8)(cr, 20, 20, 1.25 * math.pi, 1.75* math.pi)
@@ -212,7 +226,7 @@ cr:stroke()
 
 local icon_menu = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
 local cr = cairo.Context(icon_menu)
-cr:set_source(gears.color(menu_color))
+cr:set_source(gears.color(theme.menu_color))
 gears.shape.transform(gears.shape.losange)
 	:translate(6, 1)(cr, 8, 18)
 gears.shape.transform(gears.shape.losange)
@@ -286,8 +300,8 @@ end
 
 
 local function set_wallpaper(s)
-	if gears.filesystem.file_readable(wallpaper) then
-		gears.wallpaper.maximized(wallpaper, s, false)
+	if gears.filesystem.file_readable(theme.wallpaper) then
+		gears.wallpaper.maximized(theme.wallpaper, s, false)
 	else
 		if beautiful.wallpaper then
 			local wallpaper = beautiful.wallpaper
@@ -384,8 +398,8 @@ local function toggle_popup(arg)
 				widget  = wibox.container.margin,
 				update  = function(self)
 					local bgs = self:get_children_by_id("bg")
-					for i, _ in ipairs(bgs) do bgs[i].bg = background end
-					bgs[popup.selected].bg = background_lighter
+					for i, _ in ipairs(bgs) do bgs[i].bg = theme.background end
+					bgs[popup.selected].bg = theme.background_lighter
 				end
 			},
 			border_width	= beautiful.border_width,
@@ -577,7 +591,8 @@ widget_volume = wibox.widget {
 			["-1"]     = "pactl set-sink-volume @DEFAULT_SINK@ -1%",
 			["+5"]     = "pactl set-sink-volume @DEFAULT_SINK@ +5%",
 			["-5"]     = "pactl set-sink-volume @DEFAULT_SINK@ -5%",
-			["toggle"] = "pactl set-sink-mute   @DEFAULT_SINK@ toggle"
+			["toggle"] = "pactl set-sink-mute   @DEFAULT_SINK@ toggle",
+			["default"] = "pactl set-sink-volume  @DEFAULT_SINK@ 40%"
 		}
 		awful.spawn.with_line_callback(
 			cmds[cmd],
@@ -772,10 +787,10 @@ globalkeys = gears.table.join( -- Keybindings
 	-- Volume
 	awful.key({ modkey }, "[", function() widget_volume:ctrl("-5") end),
 	awful.key({ modkey }, "]", function() widget_volume:ctrl("+5") end),
-	awful.key({modkey, "Control"}, "[", function()widget_volume:ctrl("-1")end),
-	awful.key({modkey, "Control"}, "]", function()widget_volume:ctrl("+1")end),
-	awful.key({ modkey }, "\\",
-		function() widget_volume:ctrl("toggle") end), -- Toggle mute
+	awful.key({ modkey, "Control" }, "[", function()widget_volume:ctrl("-1")end),
+	awful.key({ modkey, "Control" }, "]", function()widget_volume:ctrl("+1")end),
+	awful.key({ modkey }, "\\", function() widget_volume:ctrl("toggle") end),
+	awful.key({ modkey, "Shift" }, "\\", function() widget_volume:ctrl("default") end),
 	-- Clients
 	awful.key({ modkey }, "j",
 		function() awful.client.focus.byidx(-1) end), -- Focus previous window
@@ -1159,7 +1174,7 @@ do  -- Commands to execute in startup
 		if command_exists(str) then
 			awful.spawn(cmd)
 		else
-			local str = "Error: " .. str .. " is not installed"
+			local str = "Warning: " .. str .. " is not installed"
 			naughty.notify({title = str})
 		end
 	end
@@ -1167,11 +1182,10 @@ do  -- Commands to execute in startup
 	run("xset r rate 250 50")
 	run("setxkbmap -option keypad:pointerkeys")
 	run("xset s off -dpms")
-	run("xcompmgr")
 
 	awful.spawn.with_shell("xrdb ~/.config/X11/Xresources")
 	awful.spawn.with_shell("pidof pulseaudio || command -v pulseaudio && setsid --fork pulseaudio --start --exit-idle-time=-1")
-	run("pactl set-sink-volume @DEFAULT_SINK@ 40%")
 
 	awful.spawn.with_shell("export WINIT_X11_SCALE_FACTOR=1")
+	run("pactl set-sink-volume @DEFAULT_SINK@ 40%")
 end
