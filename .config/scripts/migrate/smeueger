@@ -425,5 +425,4 @@ run_scripts() {
 	done
 }
 
-IFS="
-" run_scripts
+IFS="${newline}" run_scripts
