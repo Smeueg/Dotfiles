@@ -62,6 +62,9 @@
    `(compilation-error   ((,class (:foreground ,red))))
    `(compilation-warning ((,class (:foreground ,yellow))))
    `(compilation-info    ((,class (:foreground ,green))))
+   ;; Flyspell
+   `(flyspell-duplicate ((,class (:underline ,yellow))))
+   `(flyspell-incorrect ((,class (:underline ,red))))
    ;; (Custom) Mode Line
    `(mode-line
      ((,class (:background ,bg2 :foreground ,bg3 :weight bold

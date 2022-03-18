@@ -107,7 +107,7 @@
 (setq-default whitespace-style '(face trailing lines-tail)
               whitespace-line-column 80)
 
-;; Make Emacs remember the last vistied line
+;; Make Emacs remember the last vistied lineaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 (when (fboundp 'save-place-mode) ;; Remember last place emacs visits
   (save-place-mode 1)
   (setq-default save-place-file "/tmp/emacs_places"
@@ -129,8 +129,8 @@
 
 
 (defun script-header (opt)
-  "Add a comment header for information about a script, template from
-Terminal For Life"
+  "Add a comment header for information about a script,
+template from Terminal For Life"
   (interactive (list (completing-read "Action: " '("Add New" "Update"))))
   (cond ((string= opt "Add New")
          (save-excursion
@@ -247,10 +247,10 @@ awesomewm, and the users shell's"
     (user-error ""))
   (let ((command nil))
     (cond ((member major-mode '(c-mode c++mode)) ;; C & C++
-           (setq command (concat "cc \"" buffer-file-name "\" -o /tmp/\""
-                                 "\"" (file-name-base buffer-file-name)
-                                 "\" && \"/tmp/"
-                                 (file-name-base buffer-file-name) "\"\n")))
+           (setq command (concat "cc " buffer-file-name " -o /tmp/'"
+                                 (file-name-base buffer-file-name)
+                                 "' && /tmp/'"
+                                 (file-name-base buffer-file-name) "'\n")))
           ((or (derived-mode-p 'sh-mode))
            (executable-make-buffer-file-executable-if-script-p)
            (setq command (concat "\"" buffer-file-name "\"\n")))
@@ -262,8 +262,7 @@ awesomewm, and the users shell's"
            (setq command
                  (concat "java \"" buffer-file-name "\"\n")))
           ((= 1 1)
-           (message "Unknown filetype")
-           (setq command nil)))
+           (message "Unsupported mode")))
     (when command
       (progn
         (split-window-below)
@@ -294,7 +293,7 @@ awesomewm, and the users shell's"
       (setq space (- space 2)))
     (append (list (propertize " " 'display '((space :width 0.5))))
             left
-            (list (propertize " " 'display `((space :align-to (- (+ right right-fringe right-margin) ,space)))))
+            (list (propertize " " 'display `((space :align-to (- (+ right right-fringe right-margin) ,space 1)))))
             right)))
 
 
@@ -336,15 +335,15 @@ awesomewm, and the users shell's"
     (setq splash-buffer (get-buffer-create "*min-splash*"))
     (setq margin-size (/ (- (frame-width) 20) 2))
     (with-current-buffer splash-buffer
-      (insert "▓█████  ███▄ ▄███▓▓█████  █    ██   ▄████   ██████ \n")
-      (insert "▓█   ▀ ▓██▒▀█▀ ██▒▓█   ▀  ██  ▓██▒ ██▒ ▀█▒▒██    ▒ \n")
-      (insert "▒███   ▓██    ▓██░▒███   ▓██  ▒██░▒██░▄▄▄░░ ▓██▄   \n")
-      (insert "▒▓█  ▄ ▒██    ▒██ ▒▓█  ▄ ▓▓█  ░██░░▓█  ██▓  ▒   ██▒\n")
-      (insert "░▒████▒▒██▒   ░██▒░▒████▒▒▒█████▓ ░▒▓███▀▒▒██████▒▒\n")
-      (insert "░░ ▒░ ░░ ▒░   ░  ░░░ ▒░ ░░▒▓▒ ▒ ▒  ░▒   ▒ ▒ ▒▓▒ ▒ ░\n")
-      (insert "░ ░  ░░  ░      ░ ░ ░  ░░░▒░ ░ ░   ░   ░ ░ ░▒  ░ ░ \n")
-      (insert "░   ░      ░      ░    ░░░ ░ ░ ░ ░   ░ ░  ░  ░     \n")
-      (insert "░  ░       ░      ░  ░   ░           ░       ░     \n")
+      (insert "▓█████▓ ███▄ ▄███▓▓█████  █    ██   ▄████    ██████\n")
+      (insert "▓█   ▀▓▓██▒▀█▀ ██▒▓█   ▀  ██  ▓██▒ ██▒ ▀█▒▒ ██    ▒\n")
+      (insert "▒███   ▓██    ▓██ ▒███   ▓██  ▒██░▒██░▄▄▄░░  ▓██▄ ░\n")
+      (insert "▒▓█  ▄ ▒██    ▒██ ▒▓█  ▄  ▓█  ░██░░▓█  ██▓   ▒  ██▒\n")
+      (insert "░▒████ ▒██▒   ░██ ░▒████▒ ▒█████▓ ░▒▓███▀  ██████ ▒\n")
+      (insert "░░ ▒░ ░░ ▒░   ░  ░ ░ ▒░ ░░▒▓▒ ▒ ▒  ░▒   ▒ ▒ ▒▓▒ ▒ ░\n")
+      (insert "░ ░  ░░  ░      ░ ░ ░  ░░░▒░ ░ ░   ░   ░ ░ ░▒  ░ ░░\n")
+      (insert "░   ░      ░           ░░░ ░ ░ ░ ░   ░ ░  ░  ░    ░\n")
+      (insert "░  ░       ░      ░  ░   ░           ░       ░    ░\n")
       (insert (propertize "\n\n\nWelcome to " 'face 'splash-text))
       (insert (propertize "Emeugs" 'face  'splash-text-special))
       (insert-char ?\n 2)
@@ -373,8 +372,8 @@ awesomewm, and the users shell's"
             (center-line 16)
             (read-only-mode 1))))
     (progn
-      (remove-hook 'post-command-hook #'min-splash-align)
-      (remove-hook 'window-state-change-hook #'min-splash-align))))
+      (remove-hook 'post-command-hook 'min-splash-align)
+      (remove-hook 'window-state-change-hook 'min-splash-align))))
 
 
 (when (and (not (member "-no-splash"  command-line-args))
@@ -476,23 +475,20 @@ awesomewm, and the users shell's"
   (define-key vertico-map "\C-n" 'vertico-next))
 
 
-(use-package org-bullets
-  :ensure t
-  :hook (org-mode . org-bullets-mode)
-  :init
-  (setq-default org-bullets-bullet-list '("ζ" "◉" "✸" )))
 
 
 (use-package ranger
   :ensure t
   :commands (ranger dired)
   :config
-  (ranger-override-dired-mode t)
+  (define-key ranger-mode-map " " 'ranger-mark)
   (define-key ranger-mode-map ":"
     (lambda () (interactive) (execute-extended-command nil)))
   :init
   (setq-default ranger-show-hidden  t
                 ranger-parent-depth 1
+                ranger-dont-show-binary t
+                ranger-excluded-extensions '("mkv" "iso" "mp4" "pdf")
                 ranger-dont-show-binary t)
   (add-hook 'ranger-mode-hook
             (lambda ()
@@ -506,6 +502,8 @@ awesomewm, and the users shell's"
 
 (use-package dired
   :defer t
+  :init
+  (add-hook 'dired-mode (lambda () (whitespa-mode 0)))
   :config
   (put 'dired-find-alternate-file 'disabled nil)
   (define-key dired-mode-map [return] 'dired-find-alternate-file)
@@ -518,6 +516,11 @@ awesomewm, and the users shell's"
 (use-package org
   :defer t
   :init
+  (use-package org-bullets
+    :ensure t
+    :hook (org-mode . org-bullets-mode)
+    :init
+    (setq-default org-bullets-bullet-list '("ζ" "◉" "✸" )))
   (setq-default
    org-ellipsis              "  ▼"
    org-src-fontify-natively  t
@@ -611,17 +614,26 @@ awesomewm, and the users shell's"
 
 (use-package eglot
   :ensure t
+  :defer t
   :commands eglot-ensure
-  :config
-  (when (package-installed-p 'evil)
-    (define-key eglot-mode-map [remap display-local-help] nil)
-    (evil-define-key 'normal prog-mode-map " g" 'display-local-help))
   :init
+  (use-package eglot-java
+    :ensure t
+    :demand t
+    :init
+    (eval-after-load 'eglot-java
+      (progn
+        (require 'eglot-java)
+        '(eglot-java-init))))
+
   (setq-default gc-cons-threshold 100000000
                 read-process-output-max (* 4 1024 1024))
 
   (add-hook 'eglot-managed-mode-hook
             (lambda ()
+              (when (fboundp 'evil-define-key)
+                (define-key 'eglot-mode-map [remap display-local-help] nil)
+                (evil-define-key 'normal 'local " g" 'display-local-help))
               (when (package-installed-p 'company)
                 (setq company-backends (default-value 'company-backends)))))
 
@@ -633,57 +645,8 @@ awesomewm, and the users shell's"
         (setenv "CLASSPATH" (expand-file-name (concat dir "/" (car file)))))))
 
   (add-hook 'c-mode-common-hook 'eglot-ensure)
-  (add-hook 'python-mode-hook 'eglot-ensure)
+  (add-hook 'python-mode-hook 'eglot-ensure))
 
-
-  (defun lsp-install-java ()
-    (let ((url nil)
-          (buffer nil)
-          (dir (expand-file-name
-                (locate-user-emacs-file "language-servers/jdtls/"))))
-
-      (setq tar-file (concat dir "jdtls.tar.gz"))
-      (unless (file-directory-p dir)
-        (make-directory dir))
-
-      (when (file-directory-p dir)
-        (setq url "https://download.eclipse.org/jdtls/milestones/?d")
-        (setq url
-              (concat
-               "https://download.eclipse.org"
-               (with-current-buffer (url-retrieve-synchronously url)
-                 (goto-char (point-max))
-                 (goto-char (re-search-backward "jdtls[/]milestones[/][1-9.]+"))
-                 (thing-at-point 'filename t))))
-        (unless url (user-error "Failed to retrieve url"))
-        (setq url
-              (concat
-               "https://download.eclipse.org"
-               (with-current-buffer (url-retrieve-synchronously url)
-                 (goto-char 0)
-                 (goto-char (re-search-forward "tar[.]gz"))
-                 (thing-at-point 'filename t))))
-        (unless url (user-error "Failed to retrieve url"))
-        (setq buffer (url-retrieve-synchronously url))
-        (unless buffer (user-error "Failed to retrieve url"))
-        (with-current-buffer buffer
-          (re-search-forward "\r?\n\r?\n")
-          (write-region (point) (point-max) tar-file))
-        (let ((warning-minimum-level :error)))
-        (with-current-buffer (find-file tar-file)
-          (cd dir)
-          (tar-untar-buffer)
-          (delete-file tar-file)
-          (kill-buffer (current-buffer))))))
-
-  (defun lsp-install (server)
-    "Install a language server (for eglot)"
-    (interactive (list (completing-read "Language server to install:"
-                                        '("eclipse jdtls" "clangd"))))
-    (let (func)
-      (setq func (cdr (assoc server '(("eclipse jdtls" . lsp-install-java)
-                                      ("pyright" . lsp-install-pyright)))))
-      (if func (funcall func) (message "Unknown language server")))))
 
 
 (use-package flymake
@@ -703,6 +666,11 @@ awesomewm, and the users shell's"
 (use-package auto-package-update
   :ensure t
   :commands auto-package-update-now)
+
+
+(use-package marginalia
+  :ensure t
+  :init (marginalia-mode))
 
 
 (use-package evil
@@ -734,10 +702,10 @@ awesomewm, and the users shell's"
       [return]  'bongo-dwim
       "c" 'bongo-pause/resume))
 
-  (if (package-installed-p 'ranger) ;; Ranger / Dired
-      (evil-define-key 'normal 'global " F" 'ranger)
-    (evil-define-key 'normal 'global " F"
-      (lambda() (interactive) (dired "."))))
+  (evil-define-key 'normal 'global " F"
+    (lambda ()
+      (interactive)
+      (if (fboundp 'ranger) (ranger) (dired "."))))
 
   (when (package-installed-p 'flymake) ;; Flymake
     (evil-define-key 'normal flymake-mode-map
@@ -801,9 +769,9 @@ awesomewm, and the users shell's"
   (evil-define-key 'normal 'global "\M-p"
     (lambda () (interactive) (transpose-lines 1) (evil-previous-line 2)))
   (evil-define-key 'normal 'global "\M-n"
-    (lambda () (interactive) (evil-next-line) (transpose-lines 1) (evil-previous-line 2)))
+    (lambda () (interactive) (evil-next-line) (transpose-lines 1) (evil-previous-line 1)))
 
-  (evil-define-key '(emacs normal motion) 'global
+  (evil-define-key '(normal motion) 'global
     [return] 'push-button
     (kbd "C-S-k") 'text-scale-increase
     (kbd "C-S-j") 'text-scale-decrease
