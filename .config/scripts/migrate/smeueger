@@ -7,12 +7,13 @@
 # Last Updated   - Thu  3 Mar 08:41:57 WIB 2022
 # ------------------------------------------------
 # Info:
-#   The bootstraping script that makes you more Smeueg INSTANTLY
+#   The bootstraping script that makes you more Smeueg INSTANTLY.
+#   Tested with bash, yash, ash, dash, and zsh
 #
 # TODO:
 #   - Clean Up
-#   - Decide whether to use 2>/dev/null or 2>&-
 #   - Test out full install in another system
+#   - Make script ksh compatible
 
 # Variables
 WALLPAPER_DIR="${HOME}/.config/rice/"
@@ -23,9 +24,10 @@ FONT_DIR="${HOME}/.local/share/fonts/"
 
 # Character Variable
 special="$(printf '\033')"
-newline="$(printf '\n')"
+newline="
+"
 choices="
-Dotfiles              {git}        | install_dotfiles
+Dotfiles              {git,mv}     | install_dotfiles
 Font (JetBrainsMono)  {wget||curl} | install_font
 Wallpaper             {wget||curl} | install_wallpaper
 Nix Package Manager   {wget||curl} | install_nix
@@ -33,17 +35,11 @@ TFL's Simplify Ubuntu {wget||curl} | install_SU
 "
 
 # Utility functions
-error() { printf "\033[31mERROR: ${1}\033[0m\n" >&2; }
-warning() { printf "\033[33mWARNING: ${1}\033[0m\n" >&2; }
+error() { printf "\033[31m\033[1m[ERROR]\033[0m ${1}\033[0m\n" >&2; }
+warning() { printf "\033[33m\033[1m[WARNING]\033[0m ${1}\n"; }
 
 
-# Check if /dev/null exists, if it does then use it, else use a subshell
-# To capture stdout
-if [ -c /dev/null ] && [ -w /dev/null ]; then
-	check_depend() { command -v "${1}" >/dev/null; }
-else
-	check_depend() { [ "$(command -v >/dev/null)" ]; }
-fi
+check_depend() { [ "$(command -v "${1}")" ]; }
 
 
 # Check for curl or wget
@@ -56,13 +52,16 @@ fi
 
 # Read a single character some shells, including bash and zsh, has read -n1
 # which is better to use than dd. So use that if it's available
-if [ "${BASH_VERSION}" ]; then
+if [ "${BASH_VERSION}" ] || [ "${KSH_VERSION}" ]; then
 	read_char() { IFS= read -n 1 input; }
+elif [ "${ZSH_NAME}" ]; then
+	emulate sh
+	read_char() { IFS= read -k 1 input; }
 else
+	stty_settings=$(stty -g)
 	read_char() {
-		stty -icanon
-		input="$(dd bs=1 count=1 2>/dev/null)"
-		stty icanon
+		input="$(dd bs=1 count=1 2>&1)"
+		input="${input%${input#?}}"
 	}
 fi
 
@@ -84,12 +83,15 @@ confirm() {
 # Replace $1 with $2 in $3
 # Usage: `replace "foo" "bar" "foo jar bar"` ─> "bar jar bar"
 replace() {
-	str="${3}"
-	while ! [ "${str##*${1}*}" ]; do
-		str="${str%%${1}*}${2}${str#*${1}}"
-	done
-	printf '%s\n' "${str}"
-	unset str
+	_replace() {
+		for i in ${2}; do
+			str="${str}${i}${1}"
+		done
+		printf '%s\n' "${str%${1}}"
+		unset str
+	}
+	IFS="${1}" _replace "${2}" "${3}"
+	unset -f _replace
 }
 
 
@@ -97,7 +99,7 @@ replace() {
 # Usage: `mini_choice "$(printf 'foo\nbar\nbaz')"`
 mini_choice() {
 	chosen=0
-	while true; do
+	while :; do
 		i=0
 		while read line; do
 			if [ ${i} -eq ${chosen%%:*} ]; then
@@ -109,9 +111,8 @@ mini_choice() {
 			i=$((i+1))
 		done <<-EOF
 		${1}
-EOF
+		EOF
 
-		stty -echo
 		read_char
 		if [ "${input}" = "${special}" ]; then
 			read_char
@@ -123,20 +124,20 @@ EOF
 		fi
 		stty echo
 
-		case "${input}" in
-			"k") [ ${chosen} -eq 0 ] || chosen=$((chosen-1));;
-			"j") [ ${chosen} -eq $((i-1)) ] || chosen=$((chosen+1));;
-			"q")
-				choice_out=""
-				return ;;
-			"${newline}"|" ")
-				printf "\033[${i}A\033[J"
-				choice_out="${chosen_line}"
-				unset chosen_line chosen input i
-				return ;;
-		esac
-		printf "\033[${i}A\033[J"
-	done
+		 case "${input}" in
+			 "k") [ ${chosen} -eq 0 ] || chosen=$((chosen-1));;
+			 "j") [ ${chosen} -eq $((i-1)) ] || chosen=$((chosen+1));;
+			 "q")
+				 choice_out=""
+				 return ;;
+			 "${newline}"|" ")
+				 printf "\033[${i}A\033[J"
+				 choice_out="${chosen_line}"
+				 unset chosen_line chosen input i
+				 return ;;
+		 esac
+		 printf "\033[${i}A\033[J"
+	 done
 }
 
 
@@ -157,8 +158,9 @@ dot_sync() {
 		fi
 		mv --verbose "${file}" "${dir}"
 	done <<-EOF
-$(git --git-dir=${DOTFILE_DIR} --work-tree=$HOME diff --name-status)
-EOF
+	$(git --git-dir=${DOTFILE_DIR} --work-tree=$HOME diff --name-status)
+	EOF
+
 	# Sync bare repo
 	printf 'Syncing dotfiles...\n'
 	if ! git --git-dir="${DOTFILE_DIR}" --work-tree="${HOME}" checkout; then
@@ -172,13 +174,13 @@ dot_clone() {
 	printf 'Cloning bare repo...\n'
 	if ! git clone --bare "${DOTFILE_URL}" "${DOTFILE_DIR}"; then
 		error "Failed to run 'git clone --bare ${DOTFILE_URL} ${DOTFILE_DIR}'"
-		return
+		return 1
 	fi
 	# Do not show untracked files
 	printf 'Configuring repo to not show untracked files...\n'
 	if ! git --git-dir="${DOTFILE_DIR}" config status.showUntrackedFiles no; then
 		warning "Failed to run 'git --git-dir=${DOTFILE_DIR} config status.showUntrackedFiles no'"
-		return
+		return 1
 	fi
 }
 
@@ -224,12 +226,14 @@ install_nix() {
 		return
 	fi
 
-	su -c "mkdir -m 0755 /nix && chown ${USER} /nix"
-	[ -d /nix ] || return
+	if [ "$(uname)" = "Linux" ]; then
+		su -c "mkdir -m 0755 /nix && chown ${USER} /nix"
+		[ -d /nix ] || return
+	fi
 
 	sh -s -- --no-daemon <<-EOF
 	$(curl -L https://nixos.org/nix/install)
-EOF
+	EOF
 
 	# Removes the line that was added by nix's auto install script, i.e:
 	# if [ -e ${HOME}/.nix-profile/etc/profile.d/nix.sh ]; then . ${HOME}/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer
@@ -263,12 +267,12 @@ install_font() {
 			line="${line#*href=\"}"
 			line="${line%\"*}"
 			fetch "https://github.com${line%/blob/*}/raw/${line#*/blob/}" "${FONT_DIR}/JetBrainsMono Nerd Font ${font} Complete.ttf"
-		done <<EOF
-$(fetch "https://github.com/ryanoasis/nerd-fonts/tree/master/patched-fonts/JetBrainsMono/Ligatures/${font}/complete" -)
-EOF
-	done <<EOF
-$(fetch https://github.com/ryanoasis/nerd-fonts/tree/master/patched-fonts/JetBrainsMono/Ligatures -)
-EOF
+		done <<-EOF
+		$(fetch "https://github.com/ryanoasis/nerd-fonts/tree/master/patched-fonts/JetBrainsMono/Ligatures/${font}/complete" -)
+		EOF
+	done <<-EOF
+	$(fetch https://github.com/ryanoasis/nerd-fonts/tree/master/patched-fonts/JetBrainsMono/Ligatures -)
+	EOF
 }
 
 
@@ -278,26 +282,34 @@ install_wallpaper() {
 }
 
 install_SU() {
-	sh <<EOF
-$(curl -L "https://github.com/terminalforlife/Extra/raw/master/source/simplify-ubuntu/simplify-ubuntu-installer")
-EOF
+	sh <<-EOF
+	$(curl -L "https://github.com/terminalforlife/Extra/raw/master/source/simplify-ubuntu/simplify-ubuntu-installer")
+	EOF
 }
 
 
 # MAIN SELECTION #
-# Check Dependencies and warn that some dependencies aren't met
+# Check Dependencies
 while read line; do
 	[ "${line}" ] || continue
 	deps="${line#*\{}"
 	deps="${deps%\}*}"
-	deps_satisfied=false
-
-	# Check for dependencies (|| is or)
-	for dep in $(replace "||" " " "${deps}"); do
-		check_depend "${dep}" || continue
-		deps_satisfied=true
-		break
+	deps_satisfied=:
+	for dep in $(replace "," " " "${deps}"); do
+		if ! [ "${dep##*||*}" ]; then
+			deps_satisfied=false
+			for dep in $(replace "||" " " "${dep}"); do
+				if [ "$(command -v "${dep}")" ]; then
+					deps_satisfied=:
+					break
+				fi
+			done
+		elif ! [ "$(command -v "${dep}")" ]; then
+			deps_satisfied=false
+			break
+		fi
 	done
+
 
 	# Format Choices
 	[ "${tmp}" ] && tmp="${tmp}\n"
@@ -307,7 +319,6 @@ while read line; do
 		tmp="${tmp}[-] ${line}"
 		line="${line%%\{*}"
 		line="${line%${line##*[! ]}} "
-		warning "${line} will not be an option, as dependencies aren't met: ($(replace "||" " or " "${deps}"))"
 	fi
 done <<EOF
 ${choices}
@@ -316,27 +327,43 @@ EOF
 choices=$(printf "${tmp}\nContinue\n")
 unset tmp
 
-
-printf '\nj/↓:Down  k/↑:Up  q:quit  Enter/Space:Toggle Selection/Continue\n\n'
+warning 'If the script fails and the terminal is acting strange, please run `stty icanon echo`'
+printf '\033[32m\033[1mj/↓:Down  k/↑:Up  q:quit  Enter/Space:Select\033[0m\n'
+printf 'Options:\n'
 chosen=0
-trap 'stty echo; exit 1' INT
-stty -echo
-while true; do
+
+# Restore stty settings when ctrl-c'ing
+if [ "${stty_settings}" ]; then
+	stty -icanon
+	trap 'stty "${stty_settings}"; exit 1' INT
+fi
+while :; do
 	i=0
-	printf '\033[s'
 	while read line; do
-		line="${line%%\{*}"
-		line="${line%${line##*[! ]}} "
 		# Highlight Chosen Line
-		if [ ${i} -eq ${chosen} ]; then
-			printf '\033[7m %s\033[0m\n' "${line}"
+		if [ "${line%${line#???}}" = "[-]" ]; then
+			printf '\033[31m'
+			deps="${line%%\}*}"
+			deps="${deps##*\{}"
+			deps="$(replace "||" " or " "${deps}")"
+			deps="$(replace ',' '|' "${deps}")"
+			line="${line%%\{*}"
+			line="${line%${line##*[! ]}} "
+			line="${line} (Dependencies: ${deps})"
 		else
-			printf ' %s\n' "${line}"
+			line="${line%%\{*}"
+			line="${line%${line##*[! ]}} "
+		fi
+
+		if [ ${i} -eq ${chosen} ]; then
+			printf '\r\033[7m %s\033[0m\n' "${line}"
+		else
+			printf '\r%s\033[0m\n' "${line}"
 		fi
 		i=$((i+1))
-	done <<EOF
-${choices}
-EOF
+	done <<-EOF
+	${choices}
+	EOF
 
 	read_char
 	if [ "${input}" = "${special}" ]; then
@@ -352,46 +379,51 @@ EOF
 	case "${input}" in
 		"k") [ ${chosen} -ne 0 ] && chosen=$((chosen-1));;
 		"j") [ ${chosen} -ne $((i-1)) ] && chosen=$((chosen+1));;
-		"q") break ;;
-		"${newline}"|" ")
+		"q") printf "\r\033[2A\033[${i}A\033[J"
+			 choices=""
+			 break ;;
+		"${newline}"|" "|$'\n'|"")
+			printf '\033[A'
 			if [ ${chosen} -eq $((i-1)) ]; then
-				printf "\033[${i}A\033[J"
+				printf "\033[2A\033[${i}A\033[J"
 				break
-			else
-				# Toggle chosen option
-				choices="$(
-				i=0
-				while read line; do
-					if [ "${i}" = "${chosen}" ]; then
-						if [ "${line}" = "Continue" ]; then
-							printf '%s\n' " Continue "
-						elif [ "${line%${line#??}}" = "[X" ]; then
-							printf '%s\n' "[ ${line#\[?}"
-						elif [ "${line%${line#??}}" = "[ " ]; then
-							printf '%s\n' "[X${line#\[?}"
-						else
-							printf '%s\n' "[-${line#\[?}"
-						fi
-					else
-						printf '%s\n' "${line}"
-					fi
-				i=$((i+1))
-				done <<EOF
-${choices}
-EOF
-)"
 			fi
+
+			# Toggle chosen option
+			j=0
+			unset tmp
+			while read line; do
+				if [ "${j}" -ne "${chosen}" ]; then
+					tmp="${tmp}${newline}${line}"
+					j=$((j+1))
+					continue
+				fi
+
+				if [ "${line%${line#???}}" = "[X]" ]; then
+					tmp="${tmp}${newline}[ ]${line#???}"
+				elif [ "${line%${line#???}}" = "[ ]" ]; then
+					tmp="${tmp}${newline}[X]${line#???}"
+				else
+					tmp="${tmp}${newline}${line}"
+				fi
+
+				j=$((j+1))
+			done <<-EOF
+			${choices}
+			EOF
+			choices=$(printf '%s' "${tmp#?}")
 			;;
 	esac
 	printf "\033[${i}A\033[J"
 done
-stty echo
 
-old_ifs=${IFS}
+
+run_scripts() {
+	for line in ${choices}; do
+		[ "${line%%\[X\]*}" ] && continue
+		"${line#*| }"
+	done
+}
+
 IFS="
-"
-for line in ${choices}; do
-	IFS=${old_ifs}
-	[ "${line##\[X*}" ] && continue
-	"${line#*| }"
-done
+" run_scripts
