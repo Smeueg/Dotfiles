@@ -421,8 +421,9 @@ done
 run_scripts() {
 	for line in ${choices}; do
 		[ "${line%%\[X\]*}" ] && continue
-		echo "${line#*| }"
+		"${line#*| }"
 	done
 }
 
-IFS="${newline}" run_scripts
+IFS="
+" run_scripts
