@@ -24,7 +24,7 @@ pl_url="https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc
 }
 
 # A replacement for `sed`
-replace() {
+replace() { # Arguments: <string> <query> <substitution>
 	string="${1}"
 	query="${2}"
 	substitution="${3}"
