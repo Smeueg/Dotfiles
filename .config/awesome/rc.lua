@@ -12,18 +12,18 @@
 -- Make sure LuaRocks packages is loaded if installed
 pcall(require, "luarocks.loader")
 require("awful.autofocus")
-local gears			= require("gears")
-local beautiful		= require("beautiful")
-local awful			= require("awful")
-local wibox			= require("wibox")
-local naughty		= require("naughty")
-local menubar		= require("menubar")
+local gears         = require("gears")
+local beautiful     = require("beautiful")
+local awful         = require("awful")
+local wibox         = require("wibox")
+local naughty       = require("naughty")
+local menubar       = require("menubar")
 
-local hotkeys_popup	= require("awful.hotkeys_popup")
-local hotkeys_popup	= require("awful.hotkeys_popup")
-local hotkeys_popup	= awful.hotkeys_popup
-local cairo			= require("lgi").cairo
-local dpi			= beautiful.xresources.apply_dpi
+local hotkeys_popup = require("awful.hotkeys_popup")
+local hotkeys_popup = require("awful.hotkeys_popup")
+local hotkeys_popup = awful.hotkeys_popup
+local cairo         = require("lgi").cairo
+local dpi           = beautiful.xresources.apply_dpi
 
 
 
@@ -588,11 +588,11 @@ widget_volume = wibox.widget {
 
 	ctrl = function(self, cmd)
 		local cmds = {
-			["+1"]     = "pactl set-sink-volume @DEFAULT_SINK@ +1%",
-			["-1"]     = "pactl set-sink-volume @DEFAULT_SINK@ -1%",
-			["+5"]     = "pactl set-sink-volume @DEFAULT_SINK@ +5%",
-			["-5"]     = "pactl set-sink-volume @DEFAULT_SINK@ -5%",
-			["toggle"] = "pactl set-sink-mute   @DEFAULT_SINK@ toggle",
+			["+1"]      = "pactl set-sink-volume @DEFAULT_SINK@ +1%",
+			["-1"]      = "pactl set-sink-volume @DEFAULT_SINK@ -1%",
+			["+5"]      = "pactl set-sink-volume @DEFAULT_SINK@ +5%",
+			["-5"]      = "pactl set-sink-volume @DEFAULT_SINK@ -5%",
+			["toggle"]  = "pactl set-sink-mute   @DEFAULT_SINK@ toggle",
 			["default"] = "pactl set-sink-volume  @DEFAULT_SINK@ 40%"
 		}
 		awful.spawn.with_line_callback(
