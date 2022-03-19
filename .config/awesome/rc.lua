@@ -47,6 +47,7 @@ end
 -- Variables --
 local function command_exists(cmd)
 	-- Check if a command can be ran
+	if cmd == nil then return false end
 	for dir in string.gmatch(os.getenv("PATH"), "([^:]+)") do
 		if gears.filesystem.file_executable(dir .. "/" .. cmd) then
 			return cmd
@@ -79,7 +80,7 @@ local themes = {
 		background_lighter = "#382B3F",
 		foreground         = "#E7DEC7",
 		foreground2        = "#493751",
-		font               = "JetBrains Mono 11",
+		font               = "JetBrainsMono Nerd Font Mono 11"
 	}
 }
 local theme = themes["Smeueg"]
@@ -601,14 +602,10 @@ widget_volume = wibox.widget {
 
 	update = function(self)
 		awful.spawn.easy_async(
-			"pactl get-sink-volume @DEFAULT_SINK@",
+			"pactl list sinks",
 			function(stdout)
-				self:get_children_by_id("vol")[1].text = stdout:match("%d+%% ")
-		end)
-
-		awful.spawn.easy_async(
-			"pactl get-sink-mute @DEFAULT_SINK@", function(stdout)
-				if stdout:match("no") then
+				self:get_children_by_id("vol")[1].text = stdout:match("Volume:[^%%]+%%"):match("[0-9]+%%$")
+				if stdout:match("Mute: no\n") then
 					self:get_children_by_id("icon")[1].image = icon_volume
 				else
 					self:get_children_by_id("icon")[1].image = icon_mute
