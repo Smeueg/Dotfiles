@@ -34,6 +34,7 @@
    `(header-line              ((,class (:background ,bg))))
    `(completions-common-part  ((,class (:foreground ,orange :weight bold))))
    `(highlight                ((,class (:foreground ,orange :background ,bg3))))
+   `(file-name-shadow         ((,class (:foreground ,bg3))))
    `(whitespace-line
      ((,class (:background ,bg2 :foreground ,magenta :weight bold))))
    ;; Escape and prompt faces
@@ -126,6 +127,10 @@
      ((,class (:foreground ,cyan :background ,bg2 :weight bold
                            :box (:line-width ,box-width :color ,bg2)))))
    ;;; External Packages
+   ;; Marginalia
+   `(marginalia-documentation ((,class (:foreground ,orange :weight bold))))
+   `(marginalia-installed     ((,class (:foreground ,green :weight bold))))
+   `(marginalia-archive       ((,class (:foreground ,orange :weight bold))))
    ;; visual-regexp
    `(vr/match-0 ((,class (:foreground ,bg :background ,yellow :weight bold))))
    `(vr/match-1 ((,class (:foreground ,bg :background ,yellow :weight bold))))
@@ -161,6 +166,6 @@
 
 (custom-theme-set-variables
  'warmspace
- '(ansi-color-names-vector [,bg3 ,red ,green ,yellow ,blue ,magenta ,cyan ,fg]))
+ `(ansi-color-names-vector [,bg3 ,red ,green ,yellow ,blue ,magenta ,cyan ,fg]))
 
 (provide-theme 'warmspace)
