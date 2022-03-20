@@ -4,7 +4,7 @@
 # Author Name    - Smeueg
 # Author Email   - Smeueg@gmail.com
 # Author Gitlab  - https://gitlab.com/Smeueg
-# Last Updated   - Sat 19 Mar 17:59:13 WIB 2022
+# LaSun 20 Mar 12:05:22 WIB 2022
 # ------------------------------------------------
 # Info:
 #   The bootstraping script that makes you more Smeueg INSTANTLY.
@@ -46,7 +46,7 @@ header() {
 	while [ ${#str} -ne $(((70-${#1})/2)) ]; do
 		str="${str}#"
 	done
-	echo "${str} ${1} ${str}"
+	printf '%s %s %s' "${str}" "${1}" "${str}"
 }
 
 
@@ -66,6 +66,11 @@ elif [ "${ZSH_NAME}" ]; then
 	emulate sh
 	read_char() { IFS= read -k 1 input; }
 else
+	if ! check_depend "stty"; then
+		error 'Command `stty` not found. Exiting'
+		exit
+	fi
+
 	stty_settings=$(stty -g)
 	read_char() {
 		input="$(dd bs=1 count=1 2>&1)"
@@ -109,7 +114,7 @@ mini_choice() {
 	chosen=0
 	while :; do
 		i=0
-		while read line; do
+		while read -r line; do
 			if [ ${i} -eq ${chosen%%:*} ]; then
 				printf '\033[7m %s \033[0m\n' "${line}"
 				chosen_line="${line}"
@@ -133,16 +138,19 @@ mini_choice() {
 		stty echo
 
 		 case "${input}" in
-			 "k") [ ${chosen} -eq 0 ] || chosen=$((chosen-1));;
-			 "j") [ ${chosen} -eq $((i-1)) ] || chosen=$((chosen+1));;
+			 "k") [ ${chosen} -ne 0 ] && chosen=$((chosen-1));;
+			 "j") [ ${chosen} -ne $((i-1)) ] && chosen=$((chosen+1));;
 			 "q")
 				 choice_out=""
-				 return ;;
+				 return
+				 ;;
+
 			 "${newline}"|" ")
 				 printf "\033[${i}A\033[J"
 				 choice_out="${chosen_line}"
 				 unset chosen_line chosen input i
-				 return ;;
+				 return
+				 ;;
 		 esac
 		 printf "\033[${i}A\033[J"
 	 done
@@ -155,7 +163,7 @@ mini_choice() {
 dot_sync() {
 	# Backup files that are different from the git repo
 	printf 'Backing up existing files...\n'
-	while read file; do
+	while read -r file; do
 		file="${file#*$(printf '\t')}"
 		dir="${HOME}/DotBackup/${file%/*}"
 		file="${HOME}/${file}"
@@ -229,10 +237,8 @@ install_nix() {
 	fi
 
 	# Prompt for confirmation on installing in single-user mode
-	if confirm "This will install nix in single-user mode, continue?"; then
-		printf 'Continuing nix installation...\n'
-	else
-		printf 'Not running nix installation...\n'
+	if ! confirm "This will install nix in single-user mode, continue?"; then
+		printf "Won't install nix...\n"
 		return
 	fi
 
@@ -246,17 +252,17 @@ install_nix() {
 	$(curl -L https://nixos.org/nix/install)
 	EOF
 
-	# Removes the line that was added by nix's auto install script, i.e:
-	# if [ -e ${HOME}/.nix-profile/etc/profile.d/nix.sh ]; then . ${HOME}/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer
-	[ -f "${HOME}/.profile" ] || return
-	file="$(while IFS= read line; do
+		# Removes the line that was added by nix's auto install script, i.e:
+		# if [ -e ${HOME}/.nix-profile/etc/profile.d/nix.sh ]; then . ${HOME}/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer
+		[ -f "${HOME}/.profile" ] || return
+		file="$(while IFS= read -r line; do
 			 if ! [ "${line}" = "if [ -e ${HOME}/.nix-profile/etc/profile.d/nix.sh ]; then . ${HOME}/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer" ]; then
 				 printf '%s\n' "${line}"
 			 fi
 		 done < ${HOME}/.profile
 	  )"
 
-	printf '%s\n' "${file}" > "${HOME}/.profile"
+		printf '%s\n' "${file}" > "${HOME}/.profile"
 }
 
 
@@ -268,12 +274,12 @@ install_font() {
 		mkdir --parents --verbose "${FONT_DIR}" || return
 
 	header "Downloading Fonts"
-	while read font; do
+	while read -r font; do
 		[ "${font}" ] || continue
 		[ "${font##*/ryanoasis/nerd-fonts/tree/master/patched-fonts/JetBrainsMono/Ligatures/*}" ] && continue
 		font="${font%\"*}"
 		font="${font##*/}"
-		while read line; do
+		while read -r line; do
 			[ "${line}" ] || continue
 			[ "${line##*Complete*Mono.ttf*}" ] && continue
 			line="${line#*href=\"}"
@@ -306,17 +312,17 @@ install_SU() {
 
 install_droidcam() {
 	header "Installing Droidcam"
-	[ -d /lib/modules/$(uname -r)/build ] || {
+	if ! [ -d /lib/modules/$(uname -r)/build ]; then
 		error "Kernel headers not found: Kernel $(uname -r)"
 		return
-	}
+	fi
 
 	fetch https://files.dev47apps.net/linux/droidcam_1.8.2.zip /tmp/droidcam_latest.zip
 
-	[ -f "/tmp/droidcam_latest.zip" ] || {
+	if ! [ -f "/tmp/droidcam_latest.zip" ]; then
 		error "Failed to download droidcam zip file."
 		return
-	}
+	fi
 
 	unzip /tmp/droidcam_latest.zip -d /tmp/droidcam
 	su -c "/tmp/droidcam/install-client; /tmp/droidcam/install-sound; /tmp/droidcam/install-video"
@@ -325,7 +331,7 @@ install_droidcam() {
 
 # MAIN SELECTION #
 # Check Dependencies
-while read line; do
+while read -r line; do
 	[ "${line}" ] || continue
 	deps="${line#*\{}"
 	deps="${deps%\}*}"
@@ -374,7 +380,7 @@ if [ "${stty_settings}" ]; then
 fi
 while :; do
 	i=0
-	while read line; do
+	while read -r line; do
 		# Highlight Chosen Line
 		if [ "${line%${line#???}}" = "[-]" ]; then
 			printf '\033[31m'
@@ -427,7 +433,7 @@ while :; do
 			# Toggle chosen option
 			j=0
 			unset tmp
-			while read line; do
+			while read -r line; do
 				if [ "${j}" -ne "${chosen}" ]; then
 					tmp="${tmp}${newline}${line}"
 					j=$((j+1))
