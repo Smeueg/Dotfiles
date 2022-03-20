@@ -510,7 +510,7 @@ widget_date = wibox.widget {
 			},
 			layout = wibox.layout.fixed.horizontal,
 		},
-		bg = background_dark,
+		bg = theme.background_dark,
 		widget = wibox.container.background
 	},
 	margins = 7,
@@ -539,7 +539,7 @@ widget_time = wibox.widget {
 			},
 			layout = wibox.layout.fixed.horizontal,
 		},
-		bg = background_dark,
+		bg = theme.background_dark,
 		widget = wibox.container.background
 	},
 	margins = 7,
@@ -569,7 +569,7 @@ widget_volume = wibox.widget {
 			},
 			layout = wibox.layout.fixed.horizontal,
 		},
-		bg     = background_dark,
+		bg     = theme.background_dark,
 		widget = wibox.container.background
 	},
 	margins = 7,
@@ -604,7 +604,7 @@ widget_volume = wibox.widget {
 		awful.spawn.easy_async(
 			"pactl list sinks",
 			function(stdout)
-				self:get_children_by_id("vol")[1].text = stdout:match("Volume:[^%%]+%%"):match("[0-9]+%%$")
+				self:get_children_by_id("vol")[1].text = stdout:match("Volume:[^%%]+"):match("[0-9]+$") .. "% "
 				if stdout:match("Mute: no\n") then
 					self:get_children_by_id("icon")[1].image = icon_volume
 				else
@@ -640,7 +640,7 @@ widget_network = wibox.widget {
 			},
 			layout = wibox.layout.fixed.horizontal,
 		},
-		bg = background_dark,
+		bg = theme.background_dark,
 		widget = wibox.container.background
 	},
 	margins = 7,
@@ -658,18 +658,20 @@ widget_network = wibox.widget {
 				if stdout == "" then return end
 
 				awful.spawn.easy_async(
-					"nmcli d", function(stdout)
+					"nmcli -t -f name,type connection show --active",
+					function(stdout)
 						local str = ""
-						for match in stdout:gmatch("[^ ]+%s+connected%s+[^\n]+") do
-							if match:match("[^ ]+") == "wifi" then
+						for net_name, net_type in stdout:gmatch("([^:]+):([^\n]+)") do
+							if str ~= "" then str = str .. " " end
+							str	= str .. net_name
+
+							if net_type:match("[^-]+$") == "wireless" then
 								self:get_children_by_id("icon")[1].image = icon_wifi
 							else
 								self:get_children_by_id("icon")[1].image = icon_ethernet
 							end
-
-							if str ~= "" then str = str .. " " end
-							str	= str .. match:gsub(".*connected%s+", ""):gsub("%s+$", "")
 						end
+
 
 						if str ~= "" then
 							self:get_children_by_id("text")[1].text	= str .. " "
