@@ -4,7 +4,7 @@
 # Author Name    - Smeueg
 # Author Email   - Smeueg@gmail.com
 # Author Gitlab  - https://gitlab.com/Smeueg
-# Last Updated   - Tue  1 Mar 19:04:18 WIB 2022
+# Sun 20 Mar 12:01:39 WIB 2022
 # ------------------------------------------------
 # TODO:
 # Automatically remove files that aren't in the youtube playlist
@@ -19,7 +19,7 @@ pl_url="https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc
 
 # Check if youtube-dl is installed
 [ "$(command -v youtube-dl)" ] || {
-	printf 'ERROR: `youtube-dl` is not installed\n' >&2
+	printf '\033[1m\033[31m[ERROR]\033[0m `youtube-dl` is not installed'
 	exit 1
 }
 
@@ -37,18 +37,18 @@ replace() { # Arguments: <string> <query> <substitution>
 
 # Check if ${music_dir} exist as a directory
 [ -d "${music_dir}" ] || {
-	printf 'Warning: `%s` does not exist, create [Y\\n] ' "${music_dir}"
+	printf '\033[1m\033[32m[NOTICE] "%s" does not exit, create? [Y\\n] ' "${music_dir}"
+
 	read input
 	case "${input}" in
 		[Yy][Ee][Ss]|[Yy]|"") ;;
 		*) printf 'Exiting...\n' && exit 1 ;;
 	esac
-	mkdir "${music_dir}"
+	mkdir -pv "${music_dir}"
 }
 
 
-printf 'Getting urls...\n'
-cd "${music_dir}"
+printf '================================= Getting Urls =================================\n'
 while read title; do
 	read id
 	title=$(replace "${title}" "/" "\\")
@@ -61,7 +61,7 @@ while read title; do
 		 		   --add-metadata --metadata-from-title "%(title)s" \
 		 		   --postprocessor-args \
 		 		   "-acodec libmp3lame" \
-		 		   -o "${title}.%(ext)s"
-done << EOF
+		 		   -o "${music_dir}/${title}.%(ext)s"
+done <<EOF
 $(youtube-dl ${pl_url} --flat-playlist  --get-id -e)
 EOF
