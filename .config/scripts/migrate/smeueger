@@ -4,7 +4,7 @@
 # Author Name    - Smeueg
 # Author Email   - Smeueg@gmail.com
 # Author Gitlab  - https://gitlab.com/Smeueg
-# Last Updated   - Thu  3 Mar 08:41:57 WIB 2022
+# Last Updated   - Sat 19 Mar 17:59:13 WIB 2022
 # ------------------------------------------------
 # Info:
 #   The bootstraping script that makes you more Smeueg INSTANTLY.
@@ -28,19 +28,26 @@ special="$(printf '\033')"
 newline="
 "
 choices="
-Dotfiles              {git,mv}     | install_dotfiles
-Font (JetBrainsMono)  {wget||curl} | install_font
-Wallpaper             {wget||curl} | install_wallpaper
-Nix Package Manager   {wget||curl} | install_nix
-TFL's Simplify Ubuntu {wget||curl} | install_SU
+Dotfiles              {git,mv}              | install_dotfiles
+Font (JetBrainsMono)  {wget||curl}          | install_font
+Wallpaper             {wget||curl}          | install_wallpaper
+Nix Package Manager   {wget||curl}          | install_nix
+Droidcam              {wget||curl,unzip,cc} | install_droidcam
+TFL's Simplify Ubuntu {wget||curl}          | install_SU
 "
 
 # Utility functions
 error() { printf "\033[31m\033[1m[ERROR]\033[0m ${1}\033[0m\n" >&2; }
 warning() { printf "\033[33m\033[1m[WARNING]\033[0m ${1}\n"; }
-
-
 check_depend() { [ "$(command -v "${1}")" ]; }
+
+header() {
+	str="#"
+	while [ ${#str} -ne $(((70-${#1})/2)) ]; do
+		str="${str}#"
+	done
+	echo "${str} ${1} ${str}"
+}
 
 
 # Check for curl or wget
@@ -186,16 +193,17 @@ dot_clone() {
 }
 
 install_dotfiles() {
-	printf 'Installing Dotfiles...\n'
 	if ! [ "$(git --git-dir=${DOTFILE_DIR} rev-parse 2>&1)" ]; then
 		printf '%s is already a git repo, overwrite?\n' "${DOTFILE_DIR}"
 		mini_choice "$(printf 'Overwrite and Sync\nSync\nCancel')"
 		case "${choice_out}" in
 			"Overwrite and Sync")
+				header "Cloning and Syncing Dotfiles"
 				dot_clone
 				dot_sync
 				;;
 			"Sync")
+				header "Syncing Dotfiles"
 				dot_sync
 				;;
 			*)
@@ -204,6 +212,7 @@ install_dotfiles() {
 		esac
 		return
 	fi
+	header "Cloning and Syncing Dotfiles"
 	dot_clone
 	dot_sync
 }
@@ -220,15 +229,16 @@ install_nix() {
 	fi
 
 	# Prompt for confirmation on installing in single-user mode
-	if confirm "WARNING: This will install nix in single-user mode, continue?"; then
+	if confirm "This will install nix in single-user mode, continue?"; then
 		printf 'Continuing nix installation...\n'
 	else
 		printf 'Not running nix installation...\n'
 		return
 	fi
 
+	header "Installing Nix"
 	if [ "$(uname)" = "Linux" ]; then
-		su -c "mkdir -m 0755 /nix && chown ${USER} /nix"
+		su -c "mkdir -pvm 0755 /nix && chown ${USER} /nix"
 		[ -d /nix ] || return
 	fi
 
@@ -257,6 +267,7 @@ install_font() {
 	[ -d "${FONT_DIR}" ] ||
 		mkdir --parents --verbose "${FONT_DIR}" || return
 
+	header "Downloading Fonts"
 	while read font; do
 		[ "${font}" ] || continue
 		[ "${font##*/ryanoasis/nerd-fonts/tree/master/patched-fonts/JetBrainsMono/Ligatures/*}" ] && continue
@@ -278,7 +289,7 @@ install_font() {
 
 
 install_wallpaper() {
-	printf 'Getting wallpaper...\n'
+	header "Downloading Wallpaper"
 	[ -d "${WALLPAPER_DIR}" ] || mkdir --parents --verbose "${FONT_DIR}" ||
 		return
 
@@ -286,9 +297,29 @@ install_wallpaper() {
 }
 
 install_SU() {
+	header "Installing Simplify Ubuntu"
 	sh <<-EOF
 	$(curl -L "https://github.com/terminalforlife/Extra/raw/master/source/simplify-ubuntu/simplify-ubuntu-installer")
 	EOF
+}
+
+
+install_droidcam() {
+	header "Installing Droidcam"
+	[ -d /lib/modules/$(uname -r)/build ] || {
+		error "Kernel headers not found: Kernel $(uname -r)"
+		return
+	}
+
+	fetch https://files.dev47apps.net/linux/droidcam_1.8.2.zip /tmp/droidcam_latest.zip
+
+	[ -f "/tmp/droidcam_latest.zip" ] || {
+		error "Failed to download droidcam zip file."
+		return
+	}
+
+	unzip /tmp/droidcam_latest.zip -d /tmp/droidcam
+	su -c "/tmp/droidcam/install-client; /tmp/droidcam/install-sound; /tmp/droidcam/install-video"
 }
 
 
@@ -420,6 +451,11 @@ while :; do
 	esac
 	printf "\033[${i}A\033[J"
 done
+
+# Restore default stty settings
+if [ "${stty_settings}" ]; then
+	stty "${stty_settings}"
+fi
 
 
 run_scripts() {
