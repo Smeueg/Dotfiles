@@ -132,7 +132,7 @@ dit() {
 
 e() {
 	if [ "${EDITOR}" = "emacs" ] && [ "$(command -v emacsclient)" ]; then
-		emacsclient -a ${EDITOR} "$@"
+		emacsclient -a ${EDITOR} "$@" &
 	else
 		${EDITOR} "$@"
 	fi

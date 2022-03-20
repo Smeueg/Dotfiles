@@ -128,7 +128,7 @@
 (defalias 's 'replace-regexp)
 
 
-(defun script-header (opt)
+(defun script-header (&optional opt)
   "Add a comment header for information about a script,
 template from Terminal For Life"
   (interactive (list (completing-read "Action: " '("Add New" "Update"))))
@@ -149,7 +149,7 @@ template from Terminal For Life"
            (insert-char ?- 48)
            (insert-char ?\n 1)
            (comment-region point (point))))
-        ((and (string= opt "Update") (buffer-modified-p))
+        ((and (or (not opt) (string= opt "Update")) (buffer-modified-p))
          (save-excursion
            (goto-char 0)
            (when
@@ -676,8 +676,7 @@ awesomewm, and the users shell's"
   :ensure t
   :demand t
   :init
-  (use-package undo-fu :commands (undo-fu-only-undo undo-fu-only-redo))
-  (use-package restart-emacs :commands restart-emacs)
+  (use-package undo-fu :ensure t :commands (undo-fu-only-undo undo-fu-only-redo))
   (setq-default evil-insert-state-cursor 'bar)
   :config
   (evil-mode 1)
@@ -712,7 +711,7 @@ awesomewm, and the users shell's"
       "\C-p" 'flymake-goto-prev-error))
 
   (when (package-installed-p 'undo-fu) ;; Undo-fu
-    (setq evil-undo-system 'undo-fu)
+    (setq-default evil-undo-system 'undo-fu)
     (evil-define-key 'normal 'global
       "u" 'undo-fu-only-undo
       "\C-r" 'undo-fu-only-redo))
