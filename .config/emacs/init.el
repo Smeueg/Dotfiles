@@ -210,7 +210,7 @@ awesomewm, and the users shell's"
 
 
 (defun close ()
-  " Kill buffer when there's only one window displaying the buffer.
+  "Kill buffer when there's only one window displaying the buffer.
       Delete window when the current window has no previous buffers"
   (interactive)
   (let ((count 0) (del nil) (kill t))
@@ -236,6 +236,7 @@ awesomewm, and the users shell's"
             (push buffer var)))
         (set-window-prev-buffers (selected-window) var)))
     (when del (delete-window))))
+(defalias 'q 'close)
 
 
 (defun run ()
@@ -774,12 +775,14 @@ awesomewm, and the users shell's"
   (evil-define-key 'normal 'global "\M-n"
     (lambda () (interactive) (evil-next-line) (transpose-lines 1) (evil-previous-line 1)))
 
+  (evil-define-key 'motion 'Info-mode-map ":"
+    (lambda () (interactive) (execute-extended-command nil)))
+
   (evil-define-key '(normal motion) 'global
     [return] 'push-button
     (kbd "C-S-k") 'text-scale-increase
     (kbd "C-S-j") 'text-scale-decrease
     (kbd "C-S-l") (lambda () (interactive) (text-scale-adjust 0))
-    " k"  'close
     " K"  'kill-buffer
     " D"  'delete-window
     " a"  'mark-whole-buffer
@@ -789,7 +792,6 @@ awesomewm, and the users shell's"
     " h"  'help
     " l"  'global-display-line-numbers-mode
     " w"  'global-whitespace-mode
-    ":"   (lambda () (interactive) (execute-extended-command nil))
     " t"  (lambda () (interactive) (ansi-term (getenv "SHELL")))
     " d"  (lambda () (interactive) (find-file note-file))
     " i"  (lambda () (interactive) (set-auto-mode))
