@@ -159,8 +159,18 @@ fetsh() {
 	unset bin
 }
 
-doar() { eval "su -c '$@'"; }
 
+compress_documents() {
+	if [ -d "${HOME}/Documents" ]; then
+		printf '\033[1m\033[31m[ERROR]\033[0m "%s" does not exist, exiting.\n' "${HOME}/Documents"
+		return
+	fi
+	printf 'Compressing "%s" to %s\n' "${HOME}/Documents" "${HOME}/Documents.tar.gz"
+	tar cvf Documents.tar.gz ~/Documents -I "gzip --best"
+}
+
+
+doar() { eval "su -c '$@'"; }
 
 
 # Misc ENV Variable Exporting
