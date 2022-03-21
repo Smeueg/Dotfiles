@@ -33,6 +33,7 @@ Font (JetBrainsMono)  {wget||curl}          | install_font
 Wallpaper             {wget||curl}          | install_wallpaper
 Nix Package Manager   {wget||curl}          | install_nix
 Droidcam              {wget||curl,unzip,cc} | install_droidcam
+Mount tmpfs to /tmp   {su}                  | mktmpfs
 TFL's Simplify Ubuntu {wget||curl}          | install_SU
 "
 
@@ -42,11 +43,11 @@ warning() { printf "\033[33m\033[1m[WARNING]\033[0m ${1}\n"; }
 check_depend() { [ "$(command -v "${1}")" ]; }
 
 header() {
-	str="#"
+	str="="
 	while [ ${#str} -ne $(((70-${#1})/2)) ]; do
-		str="${str}#"
+		str="${str}="
 	done
-	printf '%s %s %s' "${str}" "${1}" "${str}"
+	printf '\n%s %s %s\n' "${str}" "${1}" "${str}"
 }
 
 
@@ -302,6 +303,7 @@ install_wallpaper() {
 	fetch "${WALLPAPER_URL}" "${WALLPAPER_DIR%/}/Shark Space.png"
 }
 
+
 install_SU() {
 	header "Installing Simplify Ubuntu"
 	sh <<-EOF
@@ -326,6 +328,33 @@ install_droidcam() {
 
 	unzip /tmp/droidcam_latest.zip -d /tmp/droidcam
 	su -c "/tmp/droidcam/install-client; /tmp/droidcam/install-sound; /tmp/droidcam/install-video"
+}
+
+
+mktmpfs() {
+	if ! [ -f "/etc/fstab" ]; then
+		error "/etc/fstab doesn't exist, exiting."
+		return
+	fi
+
+	header "TMPFS"
+	warning "This will mount tmpfs with a size of 512M to /etc/fstab"
+	while IFS= read -r line; do
+		[ "${line%%tmpfs*/tmp*tmpfs*}" ] && continue
+		warning 'Seems like `/tmp` is already mounted as tmpfs'
+		break
+	done < /etc/fstab
+
+	printf 'Do you want to continue? [Y\\n] '
+	read reply
+	case "${reply}" in
+		[Yy][Ee][Ss]|[Yy]|"") ;;
+		*)
+			printf 'Exiting.\n'
+			return ;;
+	esac
+	printf 'Adding tmpfs to `/etc/fstab`\n'
+	su -c 'printf "tmpfs   /tmp         tmpfs   rw,nodev,nosuid,size=512M          0  0\n" >>/etc/fstab'
 }
 
 
