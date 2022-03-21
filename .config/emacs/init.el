@@ -395,6 +395,11 @@ awesomewm, and the users shell's"
 (add-hook 'minibuffer-exit-hook
           (lambda () (when (get-buffer "*Completions*")
                        (kill-buffer "*Completions*"))))
+(add-hook 'debugger-mode-hook
+          (lambda ()
+            (local-set-key "q"
+                           (lambda () (interactive) (debugger-quit)
+                             (kill-buffer "*Backtrace*")))))
 (when (fboundp 'script-header)
   (add-hook 'sh-mode-hook
             (lambda () (add-hook 'before-save-hook 'script-header 0 t))))
@@ -418,10 +423,6 @@ awesomewm, and the users shell's"
   (fset 'query-replace-regexp 'vr/query-replace))
 
 
-(use-package yasnippet
-  :defer t
-  :ensure t
-  :config (yas-global-mode))
 
 
 (use-package tramp
@@ -592,6 +593,10 @@ awesomewm, and the users shell's"
   :demand t
   :hook (prog-mode . global-company-mode)
   :init
+  (use-package yasnippet
+    :defer t
+    :ensure t
+    :config (yas-global-mode))
   (setq-default
    company-minimum-prefix-length     2
    company-idle-delay                0

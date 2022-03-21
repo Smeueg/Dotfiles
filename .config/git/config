@@ -1,2 +1,2 @@
 [core]
-	editor = emacsclient -t -a=\\\"\\\"
+	editor = emacsclient -a=''

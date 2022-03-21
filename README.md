@@ -18,6 +18,7 @@
 - AwesomeWM
 - Emacs
 - Bash
+- Pixelorama (for the pfp and WIP wallpaper)
 
 ### Things I used to use (Configurations still exists but I don't edit and use them anymore):
 - Neovim (0.5+)

@@ -22,7 +22,7 @@
 	          (,class
 	           (:background "#3a3a3a" :foreground ,fg))))
    ;; Emacs Stuff
-   `(cursor                   ((,class (:background ,fg :foreground ,bg))))
+   `(cursor                   ((,class (:background ,fg))))
    `(line-number-current-line ((,class (:background ,bg :foreground ,orange))))
    `(line-number              ((,class (:background ,bg :foreground ,bg3))))
    `(show-paren-match         ((,class (:foreground ,orange :weight bold))))
