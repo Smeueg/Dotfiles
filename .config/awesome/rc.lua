@@ -18,7 +18,6 @@ local awful         = require("awful")
 local wibox         = require("wibox")
 local naughty       = require("naughty")
 local menubar       = require("menubar")
-
 local hotkeys_popup = require("awful.hotkeys_popup")
 local hotkeys_popup = require("awful.hotkeys_popup")
 local hotkeys_popup = awful.hotkeys_popup

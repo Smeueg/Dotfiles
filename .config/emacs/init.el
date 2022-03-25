@@ -271,7 +271,7 @@ awesomewm, and the users shell's"
         (ansi-term (getenv "SHELL"))
         (set-window-prev-buffers (selected-window) '())
         (term-send-raw-string
-         (concat "clear; printf 'Output:\n';" command))))))
+         (concat "clear;" command))))))
 
 
 
@@ -320,7 +320,11 @@ awesomewm, and the users shell's"
                       (emacs    . "Emacs "))))
        ,(propertize
          (concat " %l/"
-                 (int-to-string (count-lines (point-min) (point-max))) " ")
+                 (with-current-buffer (window-buffer (selected-window))
+                   (save-excursion
+                     (goto-char (point-max))
+                     (format-mode-line "%l")))
+                 " ")
          'face main-face))))))
 
 
@@ -396,11 +400,6 @@ awesomewm, and the users shell's"
 (add-hook 'minibuffer-exit-hook
           (lambda () (when (get-buffer "*Completions*")
                        (kill-buffer "*Completions*"))))
-(add-hook 'debugger-mode-hook
-          (lambda ()
-            (local-set-key "q"
-                           (lambda () (interactive) (debugger-quit)
-                             (kill-buffer "*Backtrace*")))))
 (when (fboundp 'script-header)
   (add-hook 'sh-mode-hook
             (lambda () (add-hook 'before-save-hook 'script-header 0 t))))
@@ -623,6 +622,7 @@ awesomewm, and the users shell's"
   :commands eglot-ensure
   :init
   (use-package eglot-java
+    :disabled t
     :ensure t
     :demand t
     :init
@@ -642,13 +642,6 @@ awesomewm, and the users shell's"
               (when (package-installed-p 'company)
                 (setq company-backends (default-value 'company-backends)))))
 
-  (let ((dir (locate-user-emacs-file "language-servers/jdtls/plugins"))
-        (file nil))
-    (when (file-directory-p dir)
-      (setq file (directory-files dir nil ".*[.]launcher_.*[.]jar" nil))
-      (when file
-        (setenv "CLASSPATH" (expand-file-name (concat dir "/" (car file)))))))
-
   (add-hook 'c-mode-common-hook 'eglot-ensure)
   (add-hook 'python-mode-hook 'eglot-ensure))
 
@@ -666,11 +659,6 @@ awesomewm, and the users shell's"
 (use-package cheat-sh
   :ensure t
   :defer t)
-
-
-(use-package auto-package-update
-  :ensure t
-  :commands auto-package-update-now)
 
 
 (use-package marginalia
@@ -775,14 +763,17 @@ awesomewm, and the users shell's"
   (evil-define-key 'normal 'global "\M-n"
     (lambda () (interactive) (evil-next-line) (transpose-lines 1) (evil-previous-line 1)))
 
-  (evil-define-key 'motion 'Info-mode-map ":"
-    (lambda () (interactive) (execute-extended-command nil)))
+  (evil-define-key 'motion 'Info-mode-map ":" 'execute-extended-command)
+  (add-hook 'evil-emacs-state-entry-hook
+            (lambda ()
+              (evil-define-key 'emacs 'local ":" 'execute-extended-command)))
 
   (evil-define-key '(normal motion) 'global
     [return] 'push-button
     (kbd "C-S-k") 'text-scale-increase
     (kbd "C-S-j") 'text-scale-decrease
     (kbd "C-S-l") (lambda () (interactive) (text-scale-adjust 0))
+    ":"   'execute-extended-command
     " K"  'kill-buffer
     " D"  'delete-window
     " a"  'mark-whole-buffer
