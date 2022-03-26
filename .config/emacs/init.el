@@ -64,6 +64,7 @@
 (defadvice align-regexp (around align-regexp-with-spaces activate)
   (let ((indent-tabs-mode nil)) ad-do-it))
 
+(add-hook 'html-mode-hook (lambda () (setq-local tab-width 2)))
 
 
 ;;; VISUAL CONFIGURATION ;;;
@@ -259,6 +260,8 @@ awesomewm, and the users shell's"
            (setq command (concat "lua \"" buffer-file-name "\"\n")))
           ((derived-mode-p 'python-mode) ;; Python
            (setq command (concat "python3 \"" buffer-file-name "\"\n")))
+          ((derived-mode-p 'html-mode)
+           (setq command (concat "${BROWSER} '" buffer-file-name "'\n")))
           ((derived-mode-p 'java-mode)
            (setq command
                  (concat "java \"" buffer-file-name "\"\n")))
@@ -671,6 +674,7 @@ awesomewm, and the users shell's"
   :demand t
   :init
   (use-package undo-fu :ensure t :commands (undo-fu-only-undo undo-fu-only-redo))
+  (defvaralias 'evil-shift-width 'tab-width)
   (setq-default evil-insert-state-cursor 'bar)
   :config
   (evil-mode 1)

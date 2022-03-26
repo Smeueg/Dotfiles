@@ -327,7 +327,7 @@ install_droidcam() {
 	fi
 
 	unzip /tmp/droidcam_latest.zip -d /tmp/droidcam
-	su -c "/tmp/droidcam/install-client; /tmp/droidcam/install-sound; /tmp/droidcam/install-video"
+	su -c 'export PATH="/sbin:$PATH" /tmp/droidcam/install-client; /tmp/droidcam/install-sound; /tmp/droidcam/install-video'
 }
 
 

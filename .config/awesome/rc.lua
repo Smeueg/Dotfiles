@@ -604,7 +604,7 @@ widget_volume = wibox.widget {
 			"pactl list sinks",
 			function(stdout)
 				self:get_children_by_id("vol")[1].text = stdout:match("Volume:[^%%]+"):match("[0-9]+$") .. "% "
-				if stdout:match("Mute: no\n") then
+				if stdout:match("Mute: [a-z]+\n"):match("no") then
 					self:get_children_by_id("icon")[1].image = icon_volume
 				else
 					self:get_children_by_id("icon")[1].image = icon_mute

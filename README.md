@@ -5,6 +5,11 @@
 </div>
 
 
+## WIP
+- Custom wallpaper
+
+
+
 ## TODO
 - Add a license
 - Clean up the system
@@ -18,7 +23,7 @@
 - AwesomeWM
 - Emacs
 - Bash
-- Pixelorama (for the pfp and WIP wallpaper)
+- Pixelorama (for my profile picture and WIP wallpaper)
 
 ### Things I used to use (Configurations still exists but I don't edit and use them anymore):
 - Neovim (0.5+)
@@ -65,7 +70,7 @@ compliant (except for fish).
 Note: This is a *POST*-Install script so this **WILL NOT** install any
 dependencies automatically.
 
-## Using a git bare repository to manage your salty dotfiles
+## Using a git bare repository to manage your dotfiles
 Refer to the arch wiki: https://wiki.archlinux.org/index.php/Dotfiles
 
 
