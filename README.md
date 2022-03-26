@@ -54,17 +54,7 @@ These are all really optional, since without them, the "rice" would still be fun
 
 
 ## Installing/Migrating into a new system
-There are multiple ways to become more smeueg **INSTANTLY**:
-```sh
-# Either run
-sh <<EOF
-$(curl -L https://gitlab.com/Smeueg/dotfiles/-/raw/master/.config/scripts/migrate/smeueger)
-EOF
-# Or
-sh <(curl -L https://gitlab.com/Smeueg/dotfiles/-/raw/master/.config/scripts/migrate/smeueger)
-# Or
-sh <<< "$(curl -L https://gitlab.com/Smeueg/dotfiles/-/raw/master/.config/scripts/migrate/smeueger)"
-```
+https://smeueg.github.io/
 This _should_ be able to work with most shells that are *sort of* posix
 compliant (except for fish).
 Note: This is a *POST*-Install script so this **WILL NOT** install any
