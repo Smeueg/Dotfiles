@@ -329,7 +329,7 @@ install_droidcam() {
 	fi
 
 	unzip /tmp/droidcam_latest.zip -d /tmp/droidcam
-	su -lc '/tmp/droidcam/install-client; /tmp/droidcam/install-sound; /tmp/droidcam/install-video'
+	su -c '/tmp/droidcam/install-client; /tmp/droidcam/install-sound; /tmp/droidcam/install-video'
 }
 
 
