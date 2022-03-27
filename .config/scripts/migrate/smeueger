@@ -33,10 +33,10 @@ Dotfiles              {git,mv}                 | install_dotfiles
 Font (JetBrainsMono)  {wget||curl}             | install_font
 Wallpaper             {wget||curl}             | install_wallpaper
 Nix Package Manager   {wget||curl}             | install_nix
+TFL's Simplify Ubuntu {wget||curl}             | install_SU
 Droidcam              {wget||curl,unzip,cc}    | install_droidcam
 Mount tmpfs to /tmp   {su}                     | mktmpfs
 Create Swapfile       {mkswap,swapon,dd,chmod} | mkswapfile
-TFL's Simplify Ubuntu {wget||curl}             | install_SU
 "
 
 # Utility functions
@@ -329,19 +329,14 @@ install_droidcam() {
 	fi
 
 	unzip /tmp/droidcam_latest.zip -d /tmp/droidcam
-	su -c 'export PATH="/sbin:$PATH"; /tmp/droidcam/install-client; /tmp/droidcam/install-sound; /tmp/droidcam/install-video'
+	su -lc '/tmp/droidcam/install-client; /tmp/droidcam/install-sound; /tmp/droidcam/install-video'
 }
 
 
 mkswapfile() {
 	header "Creating Swap File"
 	warning "This will create a swapfile of 4Gb"
-	su -c 'export PATH="/sbin/:$PATH"
-	dd if=/dev/zero of=/swapfile bs=1M count=4096 status=progress
-	chmod 600 /swapfile
-	mkswap /swapfile
-	swapon /swapfile
-	printf "/swapfile none swap defaults 0 0\n" >> /etc/fstab'
+	su -lc 'dd if=/dev/zero of=/swapfile bs=1M count=4096 status=progress; chmod 600 /swapfile; mkswap /swapfile; swapon /swapfile; printf "/swapfile none swap defaults 0 0\n" >> /etc/fstab'
 }
 
 
