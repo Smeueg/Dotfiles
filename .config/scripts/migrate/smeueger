@@ -70,7 +70,7 @@ elif [ "${ZSH_NAME}" ]; then
 	read_char() { IFS= read -k 1 input; }
 else
 	if ! check_depend "stty"; then
-		error 'Command `stty` not found. Exiting'
+		error "Command 'stty' not found. Exiting"
 		exit
 	fi
 
@@ -235,7 +235,7 @@ install_nix() {
 		printf 'Nix seems to already be installed (command nix found), exiting...\n'
 		return
 	elif [ -d /nix ]; then
-		printf 'Nix seems to already be installed (`/nix` exists), exiting...\n'
+		printf "Nix seems to already be installed ('/nix' exists), exiting...\n"
 		return
 	fi
 
@@ -315,10 +315,14 @@ install_SU() {
 
 
 install_droidcam() {
-	header "Installing Droidcam"
+	header "Droidcam"
 	if ! [ -d /lib/modules/$(uname -r)/build ]; then
 		error "Kernel headers not found: Kernel $(uname -r)"
 		return
+	fi
+
+	if [ "$(command -v droidcam-cli)" ]; then
+		error "'droidcam' is already installed, exiting"
 	fi
 
 	fetch https://files.dev47apps.net/linux/droidcam_1.8.2.zip /tmp/droidcam_latest.zip
@@ -350,7 +354,7 @@ mktmpfs() {
 	warning "This will mount tmpfs with a size of 512M to /etc/fstab"
 	while IFS= read -r line; do
 		[ "${line%%tmpfs*/tmp*tmpfs*}" ] && continue
-		warning 'Seems like `/tmp` is already mounted as tmpfs'
+		warning "Seems like '/tmp' is already mounted as tmpfs"
 		break
 	done < /etc/fstab
 
@@ -362,7 +366,7 @@ mktmpfs() {
 			printf 'Exiting.\n'
 			return ;;
 	esac
-	printf 'Adding tmpfs to `/etc/fstab`\n'
+	printf "Adding tmpfs to '/etc/fstab'\n"
 	su -c 'printf "tmpfs   /tmp         tmpfs   rw,nodev,nosuid,size=512M          0  0\n" >>/etc/fstab'
 }
 
@@ -406,7 +410,7 @@ EOF
 choices=$(printf "${tmp}\nContinue\n")
 unset tmp
 
-warning 'If the script fails and the terminal is acting strange, please run `stty icanon echo`'
+warning "If the script fails and the terminal is acting strange, please run 'stty icanon echo'"
 printf '\033[32m\033[1mj/↓:Down  k/↑:Up  q:quit  Enter/Space:Select\033[0m\n'
 printf 'Options:\n'
 chosen=0
