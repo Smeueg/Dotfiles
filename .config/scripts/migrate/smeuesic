@@ -48,13 +48,24 @@ replace() { # Arguments: <string> <query> <substitution>
 }
 
 
-printf '================================= Getting Urls =================================\n'
+# Header
+[ ${COLUMNS} -le 80 ]
+cols=${COLUMNS}
+
+len=$((${cols:-80} / 2 - 7))
+while [ ${#str} -lt ${len} ]; do
+	str="${str}="
+done
+printf '%s Getting Urls %s' "${str}" "${str}"
+
+
+# Downloading Music
 while read title; do
 	read id
 	title=$(replace "${title}" "/" "\\")
 
 	url="https://www.youtube.com/watch?v=${id}"
-	[ -f "${title}.mp3" ] ||
+	[ -f "${music_dir}/${title}.mp3" ] ||
 		youtube-dl "${url}" \
 		 		   -x \
 		 		   --audio-format mp3 \
