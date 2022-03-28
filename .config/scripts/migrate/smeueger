@@ -257,15 +257,15 @@ install_nix() {
 
 		# Removes the line that was added by nix's auto install script, i.e:
 		# if [ -e ${HOME}/.nix-profile/etc/profile.d/nix.sh ]; then . ${HOME}/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer
-		[ -f "${HOME}/.profile" ] || return
-		file="$(while IFS= read -r line; do
+	[ -f "${HOME}/.profile" ] || return
+	file="$(while IFS= read -r line; do
 			 if ! [ "${line}" = "if [ -e ${HOME}/.nix-profile/etc/profile.d/nix.sh ]; then . ${HOME}/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer" ]; then
 				 printf '%s\n' "${line}"
 			 fi
 		 done < ${HOME}/.profile
 	  )"
 
-		printf '%s\n' "${file}" > "${HOME}/.profile"
+	printf '%s\n' "${file}" > "${HOME}/.profile"
 }
 
 
@@ -415,6 +415,21 @@ printf '\033[32m\033[1mj/↓:Down  k/↑:Up  q:quit  Enter/Space:Select\033[0m\n
 printf 'Options:\n'
 chosen=0
 
+
+# Get column position
+stty_settings_2=$(stty -g)
+stty -icanon -echo
+printf "\033[6n"
+while :; do
+	read_char
+	[ "${input}" = "R" ] && break
+	row="${row}${input}"
+done
+row="${row#*\[}"
+row="${row%;*}"
+stty "${stty_settings_2}"
+
+
 # Restore stty settings when ctrl-c'ing
 if [ "${stty_settings}" ]; then
 	stty -icanon
@@ -462,11 +477,12 @@ while :; do
 	case "${input}" in
 		"k") [ ${chosen} -ne 0 ] && chosen=$((chosen-1));;
 		"j") [ ${chosen} -ne $((i-1)) ] && chosen=$((chosen+1));;
-		"q") printf "\r\033[2A\033[${i}A\033[J"
+		"q") printf "\033[$((row - 2));1H\r\033[J"
 			 choices=""
-			 break ;;
+			 break
+			 ;;
+
 		"${newline}"|" "|$'\n'|"")
-			printf '\033[A'
 			if [ ${chosen} -eq $((i-1)) ]; then
 				printf "\033[2A\033[${i}A\033[J"
 				break
@@ -497,7 +513,7 @@ while :; do
 			choices=$(printf '%s' "${tmp#?}")
 			;;
 	esac
-	printf "\033[${i}A\033[J"
+	printf "\033[${row};1H\r\033[J"
 done
 
 # Restore default stty settings
