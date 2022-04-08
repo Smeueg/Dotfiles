@@ -123,10 +123,16 @@
    `(org-level-8  ((,class (:foreground ,orange :weight bold :underline t))))
    `(org-table    ((,class (:foreground ,yellow :background ,bg2))))
    `(org-date     ((,class (:foreground ,red :underline t))))
+   `(org-done
+     ((,class (:foreground ,green :background ,bg2 :weight bold
+                           :box (:line-width ,box-width :color ,bg2)))))
    `(org-todo
      ((,class (:foreground ,cyan :background ,bg2 :weight bold
                            :box (:line-width ,box-width :color ,bg2)))))
    ;;; External Packages
+   ;; Tree Sitter
+   `(tree-sitter-hl-face:function.call ((,class (:foreground ,red :weight bold))))
+   `(tree-sitter-hl-face:function.builtin ((,class (:foreground ,red :weight bold))))
    ;; Marginalia
    `(marginalia-documentation ((,class (:foreground ,orange :weight bold))))
    `(marginalia-installed     ((,class (:foreground ,green :weight bold))))

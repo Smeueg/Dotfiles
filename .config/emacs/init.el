@@ -124,9 +124,16 @@
 ;; "Aliases"
 (fset 'yes-or-no-p 'y-or-n-p)
 (defalias 'w 'save-buffer)
+(defalias 'd 'delete-window)
 (defalias 'hs 'split-window-horizontally)
 (defalias 'vs 'split-window-vertically)
 (defalias 's 'replace-regexp)
+
+
+(defun scratch()
+  "Open the scratch buffer"
+  (interactive)
+  (switch-to-buffer "*scratch*"))
 
 
 (defun script-header (&optional opt)
@@ -165,8 +172,9 @@ template from Terminal For Life"
                                   nil t)
              (previous-line 2)
              (re-search-forward ".* Last Updated +- " nil t)
-             (delete-region (point) (progn (end-of-line) (point)))
-             (insert (format-time-string "%a %_d %b %T %Z %Y")))))))
+             (delete-region (progn (beginning-of-line) (point)) (progn (end-of-line) (point)))
+             (insert (format-time-string "Last Updated   - %a %_d %b %T %Z %Y"))
+             (comment-line 1))))))
 
 
 (defun edit-config (config)
@@ -247,24 +255,27 @@ awesomewm, and the users shell's"
   (when (derived-mode-p 'org-mode)
     (org-export-dispatch)
     (user-error ""))
-  (let ((command nil))
+  (let ((command nil) (bin-path nil) (file-path nil))
+    (setq bin-path (concat "'/tmp/" (file-name-base buffer-file-name) "'"))
+    (setq file-path (concat "'" buffer-file-name "'"))
     (cond ((member major-mode '(c-mode c++mode)) ;; C & C++
-           (setq command (concat "cc " buffer-file-name " -o /tmp/'"
-                                 (file-name-base buffer-file-name)
-                                 "' && /tmp/'"
-                                 (file-name-base buffer-file-name) "'\n")))
+           (setq command (concat "cc " file-path " -o "
+                                 bin-path " && " bin-path "\n")))
           ((or (derived-mode-p 'sh-mode))
            (executable-make-buffer-file-executable-if-script-p)
-           (setq command (concat "\"" buffer-file-name "\"\n")))
+           (setq command (concat file-path "\n")))
           ((derived-mode-p 'lua-mode)
-           (setq command (concat "lua \"" buffer-file-name "\"\n")))
+           (setq command (concat "lua " file-path "\n")))
+          ((derived-mode-p 'rust-mode )
+           (setq command (concat "rustc -C prefer-dynamic " file-path " -o "
+                                 bin-path " && " bin-path "\n")))
           ((derived-mode-p 'python-mode) ;; Python
-           (setq command (concat "python3 \"" buffer-file-name "\"\n")))
+           (setq command (concat "python3 " file-path "\n")))
           ((derived-mode-p 'html-mode)
-           (setq command (concat "${BROWSER} '" buffer-file-name "'\n")))
+           (setq command (concat "${BROWSER} " file-path "\n")))
           ((derived-mode-p 'java-mode)
            (setq command
-                 (concat "java \"" buffer-file-name "\"\n")))
+                 (concat "java " file-path "\n")))
           ((= 1 1)
            (message "Unsupported mode")))
     (when command
@@ -418,15 +429,14 @@ awesomewm, and the users shell's"
   (package-install 'use-package))
 
 
-(use-package visual-regexp
-  :ensure t
-  :demand t
-  :config
-  (fset 'replace-regexp 'vr/replace)
-  (fset 'query-replace-regexp 'vr/query-replace))
-
-
-
+;; Regular Emacs Packages/features ;;
+(use-package flymake
+  :defer t
+  :init
+  (setq-default
+   flymake-error-bitmap   '(vertical-bar compilation-error)
+   flymake-warning-bitmap '(vertical-bar compilation-warning)
+   flymake-note-bitmap    '(vertical-bar compilation-info)))
 
 (use-package tramp
   :init
@@ -435,73 +445,19 @@ awesomewm, and the users shell's"
    tramp-shell-prompt-pattern  "\\(?:^\\|\r\\)[^]#$%>\n]*#?[]#$%>].* *\\(^[\\[[0-9;]*[a-zA-Z] *\\)*"
    tramp-persistency-file-name "/tmp/tramp"))
 
-
 (use-package tab-bar
   :disabled t
   :init
-  (setq-default tab-bar-close-button-show nil
-                tab-bar-new-button-show nil)
+  (setq-default
+   tab-bar-close-button-show nil
+   tab-bar-new-button-show nil)
   :config
   (tab-bar-mode 1))
-
-
-(use-package aggressive-indent
-  :ensure t
-  :init (global-aggressive-indent-mode 1))
-
-
-(use-package rainbow-mode
-  :ensure t
-  :init (add-hook 'prog-mode-hook 'rainbow-mode))
-
-
-(use-package eterm-256color
-  :ensure t
-  :hook (term-mode . eterm-256color-mode))
-
-
-(use-package lua-mode
-  :ensure t
-  :init (setq-default lua-indent-level 4
-                      lua-indent-string-contents t))
-
 
 (use-package server
   :commands ansi-term
   :demand t
   :config (unless (server-running-p) (server-start)))
-
-
-(use-package vertico
-  :ensure t
-  :init
-  (vertico-mode)
-  (define-key vertico-map "\C-n" 'vertico-next))
-
-
-(use-package ranger
-  :ensure t
-  :commands (ranger dired)
-  :config
-  (define-key ranger-mode-map ":"
-    (lambda () (interactive) (execute-extended-command nil)))
-  (define-key ranger-mode-map " "
-    (lambda () (interactive) (ranger-toggle-mark) (ranger-next-file 1)))
-  :init
-  (setq-default ranger-show-hidden  t
-                ranger-parent-depth 1
-                ranger-dont-show-binary t
-                ranger-excluded-extensions '("mkv" "iso" "mp4" "pdf")
-                ranger-dont-show-binary t)
-  (add-hook 'ranger-mode-hook
-            (lambda ()
-              (if (eq major-mode 'ranger-mode)
-                  (progn
-                    (setq-local ranger-show-literal nil) ;; Preview images by default
-                    (when (package-installed-p 'evil) ;; Turn off evil
-                      (turn-off-evil-mode)))
-                (hl-line-mode -1)))))
-
 
 (use-package dired
   :defer t
@@ -520,6 +476,7 @@ awesomewm, and the users shell's"
   :defer t
   :init
   (use-package org-bullets
+    ;; Fancy-er bulletpoints
     :ensure t
     :hook (org-mode . org-bullets-mode)
     :init
@@ -545,13 +502,24 @@ awesomewm, and the users shell's"
               (display-line-numbers-mode -1)
               (turn-on-auto-fill))))
 
-
 (use-package term
   :commands ansi-term
   :init
   (define-prefix-command 'term-esc-map)
   (define-key global-map "\C-\\" 'term-esc-map)
   (define-key global-map "\C-n" nil)
+  ;; Custom Functions ;;
+  (defun term-e ()
+    "Open a terminal in a new buffer."
+    (interactive)
+    (ansi-term (getenv "SHELL")))
+  (defun term-vs ()
+    "Open a terminal in a new vertical split."
+    (interactive)
+    (split-window-below)
+    (other-window 1)
+    (ansi-term (getenv "SHELL"))
+    (set-window-prev-buffers (selected-window) '()))
   :config
   (defadvice term-handle-exit (after term-kill-buffer-on-exit activate) (close))
   (add-hook 'term-mode-hook (lambda ()
@@ -573,7 +541,69 @@ awesomewm, and the users shell's"
       (term-send-raw-string (get-system-clipboard)))))
 
 
+;; "Nice To Have" Packages
+(use-package cheat-sh
+  :ensure t
+  :defer t)
+
+(use-package visual-regexp
+  ;; A better replace-regexp function
+  :ensure t
+  :demand t
+  :config
+  (fset 'replace-regexp 'vr/replace)
+  (fset 'query-replace-regexp 'vr/query-replace))
+
+(use-package aggressive-indent
+  ;; Better Indentation
+  :ensure t
+  :init (global-aggressive-indent-mode 1))
+
+(use-package rainbow-mode
+  ;; Hex coloring
+  :ensure t
+  :init (add-hook 'prog-mode-hook 'rainbow-mode))
+
+(use-package eterm-256color
+  ;; 256 colors for ansi-term
+  :ensure t
+  :hook (term-mode . eterm-256color-mode))
+
+(use-package vertico
+  ;; Fancy-er `M-x'
+  :ensure t
+  :init
+  (use-package marginalia
+    :ensure t
+    :init (marginalia-mode))
+  (vertico-mode)
+  (define-key vertico-map "\C-n" 'vertico-next))
+
+(use-package ranger
+  :ensure t
+  :commands (ranger dired)
+  :config
+  (define-key ranger-mode-map ":"
+    (lambda () (interactive) (execute-extended-command nil)))
+  (define-key ranger-mode-map " "
+    (lambda () (interactive) (ranger-toggle-mark) (ranger-next-file 1)))
+  :init
+  (setq-default ranger-show-hidden  t
+                ranger-parent-depth 1
+                ranger-dont-show-binary t
+                ranger-excluded-extensions '("mkv" "iso" "mp4" "pdf")
+                ranger-dont-show-binary t)
+  (add-hook 'ranger-mode-hook
+            (lambda ()
+              (if (eq major-mode 'ranger-mode)
+                  (progn
+                    (setq-local ranger-show-literal nil) ;; Preview images by default
+                    (when (package-installed-p 'evil) ;; Turn off evil
+                      (turn-off-evil-mode)))
+                (hl-line-mode -1)))))
+
 (use-package bongo
+  ;; Music player (requires mpg123)
   :ensure t
   :commands bongo-playlist
   :init
@@ -588,10 +618,10 @@ awesomewm, and the users shell's"
                 (when (file-directory-p music_dir)
                   (bongo-insert-file music_dir))
                 (display-line-numbers-mode 0)
-                (goto-char 1)))))
-
+                (goto-char 0)))))
 
 (use-package company
+  ;; Auto completion
   :ensure t
   :demand t
   :hook (prog-mode . global-company-mode)
@@ -599,6 +629,7 @@ awesomewm, and the users shell's"
   (use-package yasnippet
     :defer t
     :ensure t
+    :init (use-package yasnippet-snippets :ensure t)
     :config (yas-global-mode))
   (setq-default
    company-minimum-prefix-length     2
@@ -619,13 +650,21 @@ awesomewm, and the users shell's"
                    company-backends))))
 
 
+;; "Programming" Packages ;;
+(use-package format-all
+  ;; Code Formatter
+  :ensure t
+  :defer t
+  :commands format-all-buffer)
+
+
 (use-package eglot
+  ;; LSP Client
   :ensure t
   :defer t
   :commands eglot-ensure
   :init
   (use-package eglot-java
-    :disabled t
     :ensure t
     :demand t
     :init
@@ -640,35 +679,62 @@ awesomewm, and the users shell's"
   (add-hook 'eglot-managed-mode-hook
             (lambda ()
               (when (fboundp 'evil-define-key)
-                (define-key 'eglot-mode-map [remap display-local-help] nil)
+                (define-key eglot-mode-map [remap display-local-help] nil)
                 (evil-define-key 'normal 'local " g" 'display-local-help))
               (when (package-installed-p 'company)
                 (setq company-backends (default-value 'company-backends)))))
 
+  (add-hook 'rust-mode-hook 'eglot-ensure)
   (add-hook 'c-mode-common-hook 'eglot-ensure)
   (add-hook 'python-mode-hook 'eglot-ensure))
 
-
-
-(use-package flymake
+(use-package tree-sitter
+  :ensure t
   :defer t
   :init
-  (setq-default
-   flymake-error-bitmap   '(vertical-bar compilation-error)
-   flymake-warning-bitmap '(vertical-bar compilation-warning)
-   flymake-note-bitmap    '(vertical-bar compilation-info)))
+  (use-package tree-sitter-langs :ensure t :defer t)
+  (global-tree-sitter-mode)
+  (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode)
+  (add-hook 'html-mode-hook
+            (lambda ()
+              (tree-sitter-mode 0)
+              (tree-sitter-hl-mode 0))))
 
+;; Html ;;
+(use-package impatient-mode
+  :ensure t
+  :defer t
+  :init
+  (defun open-impatient-browser() (browse-url "http://localhost:8080/imp/"))
+  (defun run-impatient()
+    (httpd-start)
+    (impatient-mode)
+    (browse-url "http://localhost:8080/imp/")))
 
-(use-package cheat-sh
+(use-package emmet-mode
   :ensure t
   :defer t)
 
 
-(use-package marginalia
+;; Lua ;;
+(use-package lua-mode
+  :defer t
   :ensure t
-  :init (marginalia-mode))
+  :init
+  (setq-default lua-indent-level 4
+                lua-indent-string-contents t))
 
 
+;; Rust ;;
+(use-package rust-mode
+  :ensure t
+  :defer t
+  :init
+  (add-hook 'rust-mode-hook
+            (lambda () (setq indent-tabs-mode nil))))
+
+
+;; Evil
 (use-package evil
   :ensure t
   :demand t
@@ -720,15 +786,15 @@ awesomewm, and the users shell's"
              (when (y-or-n-p "Restart Emacs?") (restart-emacs)))))
 
   (when (locate-library "term")
-    (add-hook 'evil-insert-state-entry-hook
-              (lambda()
-                (when (equal major-mode 'term-mode)
-                  (turn-off-evil-mode)
-                  (term-char-mode))))
     (add-hook 'term-mode-hook
               (lambda ()
                 (turn-off-evil-mode)
-                (setq-local evil-insert-state-cursor 'box))))
+                (setq-local evil-insert-state-cursor 'box)
+                (add-hook 'evil-insert-state-entry-hook
+                          (lambda ()
+                            (turn-off-evil-mode)
+                            (term-char-mode))
+                          0 t))))
 
   (when (fboundp 'run)
     (evil-define-key 'normal 'global "  " 'run))
@@ -779,7 +845,6 @@ awesomewm, and the users shell's"
     (kbd "C-S-l") (lambda () (interactive) (text-scale-adjust 0))
     ":"   'execute-extended-command
     " K"  'kill-buffer
-    " D"  'delete-window
     " a"  'mark-whole-buffer
     " b"  'switch-to-buffer
     " e"  'edit-config
@@ -787,14 +852,10 @@ awesomewm, and the users shell's"
     " h"  'help
     " l"  'global-display-line-numbers-mode
     " w"  'global-whitespace-mode
-    " t"  (lambda () (interactive) (ansi-term (getenv "SHELL")))
     " d"  (lambda () (interactive) (find-file note-file))
     " i"  (lambda () (interactive) (set-auto-mode))
     " s"  (lambda () (interactive) (switch-to-buffer "*scratch*"))
     " r"  (lambda () (interactive) (load-theme 'warmspace 1))
     " 80" (lambda () (interactive) (move-to-column 80))
-    " T"  (lambda () (interactive)
-            (split-window-below) (other-window 1) (ansi-term (getenv "SHELL"))
-            (set-window-prev-buffers (selected-window) '()))
-    " q" (lambda ()
-           (interactive) (when (y-or-n-p "Quit Emacs?") (kill-emacs)))))
+    " q"  (lambda ()
+            (interactive) (when (y-or-n-p "Quit Emacs?") (kill-emacs)))))

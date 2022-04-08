@@ -4,7 +4,7 @@
 # Author Name    - Smeueg
 # Author Email   - Smeueg@gmail.com
 # Author Gitlab  - https://gitlab.com/Smeueg
-# LaSun 20 Mar 12:05:22 WIB 2022
+# Last Updated   - Thu  7 Apr 10:11:15 WIB 2022
 # ------------------------------------------------
 # Info:
 #   The bootstraping script that makes you more Smeueg INSTANTLY.
@@ -42,6 +42,7 @@ Create Swapfile       {mkswap,swapon,dd,chmod} | mkswapfile
 # Utility functions
 error() { printf "\033[31m\033[1m[ERROR]\033[0m ${1}\033[0m\n" >&2; }
 warning() { printf "\033[33m\033[1m[WARNING]\033[0m ${1}\n"; }
+notice() { printf "\033[32m\033[1m[NOTICE]\033[0m ${1}\n"; }
 check_depend() { [ "$(command -v "${1}")" ]; }
 
 header() {
@@ -52,6 +53,26 @@ header() {
 	printf '\n%s %s %s\n' "${str}" "${1}" "${str}"
 }
 
+run_as_root() {
+	case "${cmd_for_root}" in
+		"sudo") eval "sudo $SHELL -c '$@'" ;;
+		"su") eval "su -c '$@'" ;;
+		"none") error "Root isn't authenticated, unable to run '$@'" ;;
+		*) if check_depend sudo && notice "checking if 'sudo' can be used" && [ "$(sudo printf 'y\n')" = "y" ]; then
+			   cmd_for_root="sudo"
+			   notice "Using 'sudo' to run commands with root privilages"
+			   eval "sudo $SHELL -c '$@'"
+		   elif check_depend su && notice "checking if 'su' can be used" && [ "$(su -c 'printf "y\n"')" = "y" ]; then
+			   cmd_for_root="su"
+			   notice "Using 'su -c' to run commands with root privilages"
+			   eval "su -c '$@'"
+		   else
+			   error "Root isn't authenticated"
+			   cmd_for_root="none"
+		   fi
+		   ;;
+	esac
+}
 
 # Check for curl or wget
 if check_depend curl; then
@@ -247,7 +268,7 @@ install_nix() {
 
 	header "Installing Nix"
 	if [ "$(uname)" = "Linux" ]; then
-		su -c "mkdir -pvm 0755 /nix && chown ${USER} /nix"
+		run_as_root "mkdir -pvm 0755 /nix && chown ${USER} /nix"
 		[ -d /nix ] || return
 	fi
 
@@ -255,8 +276,8 @@ install_nix() {
 	$(curl -L https://nixos.org/nix/install)
 	EOF
 
-		# Removes the line that was added by nix's auto install script, i.e:
-		# if [ -e ${HOME}/.nix-profile/etc/profile.d/nix.sh ]; then . ${HOME}/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer
+	# Removes the line that was added by nix's auto install script, i.e:
+	# if [ -e ${HOME}/.nix-profile/etc/profile.d/nix.sh ]; then . ${HOME}/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer
 	[ -f "${HOME}/.profile" ] || return
 	file="$(while IFS= read -r line; do
 			 if ! [ "${line}" = "if [ -e ${HOME}/.nix-profile/etc/profile.d/nix.sh ]; then . ${HOME}/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer" ]; then
@@ -322,25 +343,26 @@ install_droidcam() {
 	fi
 
 	if [ "$(command -v droidcam-cli)" ]; then
-		error "'droidcam' is already installed, exiting"
+		warning "'droidcam' is already installed"
 	fi
 
-	fetch https://files.dev47apps.net/linux/droidcam_1.8.2.zip /tmp/droidcam_latest.zip
-
-	if ! [ -f "/tmp/droidcam_latest.zip" ]; then
-		error "Failed to download droidcam zip file."
-		return
+	if [ -f "/tmp/droidcam_latest.zip" ]; then
+		fetch https://files.dev47apps.net/linux/droidcam_1.8.2.zip /tmp/droidcam_latest.zip
+		if ! [ -f "/tmp/droidcam_latest.zip" ]; then
+			error "Failed to download droidcam zip file."
+			return
+		fi
 	fi
 
 	unzip /tmp/droidcam_latest.zip -d /tmp/droidcam
-	su -c '/tmp/droidcam/install-client; /tmp/droidcam/install-sound; /tmp/droidcam/install-video'
+	run_as_root "cd /tmp/droidcam; ./install-client; ./install-sound; ./install-video"
 }
 
 
 mkswapfile() {
 	header "Creating Swap File"
 	warning "This will create a swapfile of 4Gb"
-	su -lc 'dd if=/dev/zero of=/swapfile bs=1M count=4096 status=progress; chmod 600 /swapfile; mkswap /swapfile; swapon /swapfile; printf "/swapfile none swap defaults 0 0\n" >> /etc/fstab'
+	run_as_root 'dd if=/dev/zero of=/swapfile bs=1M count=4096 status=progress; chmod 600 /swapfile; /sbin/mkswap /swapfile; /sbin/swapon /swapfile; printf "/swapfile none swap defaults 0 0\n" >> /etc/fstab'
 }
 
 

@@ -46,7 +46,7 @@ end
 -- Variables --
 local function command_exists(cmd)
 	-- Check if a command can be ran
-	if cmd == nil then return false end
+	if not cmd then return false end
 	for dir in string.gmatch(os.getenv("PATH"), "([^:]+)") do
 		if gears.filesystem.file_executable(dir .. "/" .. cmd) then
 			return cmd
@@ -60,10 +60,7 @@ local terminal       = os.getenv("TERMINAL") or "x-terminal-emulator"
 local editor         = os.getenv("EDITOR")
 local modkey         = "Mod4"
 local screenshot_dir = "/tmp/"
-local browser        = command_exists(os.getenv("BROWSER"))
-	or command_exists("brave-browser")
-	or command_exists("brave")
-	or nil
+local browser        = os.getenv("BROWSER")
 
 
 -- Aesthetic Variables (colors & fonts) --
@@ -236,12 +233,13 @@ gears.shape.transform(gears.shape.losange)
 	:translate(1, 1)(cr, 18, 18)
 cr:stroke()
 
+cr = nil
+
 
 
 -- Custom Functions --
-local saved_gap          = beautiful.useless_gap
-local saved_border_width = beautiful.border_width
 local function set_layout_all(layout)
+	-- Set layout for all tags
 	for _, t in pairs(root.tags()) do awful.layout.set(layout, t) end
 
 	if layout == awful.layout.suit.floating then
@@ -257,9 +255,16 @@ local function set_layout_all(layout)
 	end
 
 	if layout == awful.layout.suit.tile.right then
-		beautiful.useless_gap = saved_gap
+		if not saved_attr then
+			saved_attr = {
+				gap = beautiful.useless_gap,
+				border_w = beautiful.border_width
+			}
+		end
+
+		beautiful.useless_gap = saved_attr.gap
 		for _, c in pairs(client.get()) do
-			c.border_width = beautiful.border_width
+			c.border_width = saved_attr.border_w
 		end
 	else
 		beautiful.useless_gap = 0
@@ -279,7 +284,7 @@ local function find_or_spawn_emacs()
 		scratch_client:move_to_tag(awful.screen.focused().selected_tag)
 		awful.client.focus.byidx(0, scratch_client)
 	else -- Spawn emacs and make it the scratchpad client
-		for _, c in ipairs(client.get()) do
+		for _, c in pairs(client.get()) do
 			if c.class == "Emacs" then
 				scratch_client = c
 				find_or_spawn_emacs()
@@ -300,46 +305,40 @@ end
 
 
 local function set_wallpaper(s)
-	if gears.filesystem.file_readable(theme.wallpaper) then
+	if beautiful.wallpaper and gears.filesystem.file_readable(beautiful.wallpaper) then
+		gears.wallpaper.maximized(beautiful.wallpaper, s, false)
+	elseif gears.filesystem.file_readable(theme.wallpaper) then
 		gears.wallpaper.maximized(theme.wallpaper, s, false)
-	else
-		if beautiful.wallpaper then
-			local wallpaper = beautiful.wallpaper
-			-- If wallpaper is a function, call it with the screen
-			if type(wallpaper) == "function" then
-				wallpaper = wallpaper(s)
-			end
-			gears.wallpaper.maximized(wallpaper, s, false)
-		end
 	end
 end
 
 
 local function load_droidcam_module()
-	if command_exists("pactl") then
-		awful.spawn.easy_async(
-			"ps -C droidcam-cli --no-header -o 'cmd'",
-			function(stdout)
-				if not stdout:match("-a") then return end
-				awful.spawn.easy_async(
-					"pactl list short",
-					function(stdout)
-						if stdout:match("droidcam_audio") then return end
-						naughty.notify {title = "Loading Droidcam Audio Module"}
-						awful.spawn.easy_async(
-							"pactl load-module module-alsa-source device=hw:Loopback,1,0 source_properties=device.description=droidcam_audio",
-							function(stdout)
-								awful.spawn.easy_async(
-									"pactl list short", function(stdout)
-										if not stdout:match("droidcam_audio") then return end
+	-- Load pulseaudio droidcam module
+	if not command_exists("pactl") then return end
+	awful.spawn.easy_async(
+		"ps -C droidcam-cli --no-header -o 'cmd'",
+		function(stdout)
+			if not stdout:match("-a") then return end
+			awful.spawn.easy_async(
+				"pactl list short",
+				function(stdout)
+					local module_name = "DroidcamAudio"
+					if stdout:match(module_name) then return end
+					naughty.notify {title = "Loading Droidcam Audio Module"}
+					awful.spawn.easy_async(
+						"pactl load-module module-alsa-source device=hw:Loopback,1,0 source_properties=device.description=" .. module_name,
+						function(stdout)
+							awful.spawn.easy_async(
+								"pactl list short", function(stdout)
+									if not stdout:match(module_name) then return end
 
-										naughty.notify {title = "Successfully loaded droidcam module"}
-										awful.spawn("pactl set-default-source 'alsa_input.hw_Loopback_1_0'")
-								end)
-						end)
+									naughty.notify {title = "Successfully loaded Droidcam module"}
+									awful.spawn.with_shell("pactl set-default-source 'alsa_input.hw_Loopback_1_0' && pactl set-source-volume @DEFAULT_SINK@ 150%")
+							end)
 					end)
-		end)
-	end
+			end)
+	end)
 end
 
 
@@ -719,15 +718,12 @@ widget_network:update()
 
 
 local function system()
-	-- Suspend, Shutdown or Reboot the system
-	local opts = {
-		{"Suspend",  "systemctl suspend",  {title = "Suspending System"}},
-		{"Shutdown", "systemctl poweroff", {title = "Powering Off System"}},
-		{"Reboot",   "systemctl reboot",   {title = "Rebooting System"}},
-		msg_after = false
-	}
-
-	toggle_popup(opts)
+	toggle_popup({
+			{"Suspend",  "systemctl suspend",  {title = "Suspending System"}},
+			{"Shutdown", "systemctl poweroff", {title = "Powering Off System"}},
+			{"Reboot",   "systemctl reboot",   {title = "Rebooting System"}},
+			msg_after = false
+	})
 end
 
 local function screenshot()
@@ -760,22 +756,7 @@ local function screenshot()
 	end
 end
 
-local function client_ctrl(key)
-	local layout = awful.screen.focused().selected_tag.layout
-	local c = client.focus
 
-	if c and c.floating or c and layout == awful.layout.suit.floating then
-		local actions = {
-			["J"] = function() awful.client.swap.byidx(-1) end,
-			["K"] = function() awful.client.swap.byidx(1) end
-		}
-	else
-		local actions = {
-			["J"] = function() awful.client.swap.byidx(-1) end,
-			["K"] = function() awful.client.swap.byidx(1) end
-		}
-	end
-end
 
 -- Key and Mouse Bindings --
 globalkeys = gears.table.join( -- Keybindings
@@ -801,22 +782,37 @@ globalkeys = gears.table.join( -- Keybindings
 	-- Screens
 	awful.key({ modkey, "Control" }, "j",
 		function() awful.screen.focus_relative(-1) end), -- Focus previous screen
-		awful.key({ modkey, "Control" }, "k",
-			function() awful.screen.focus_relative(1) end), -- Focus next screen
-		-- Layout
-		awful.key({ modkey }, "l",
-			function() awful.tag.incmwfact(0.05) end), -- Increase master width
-		awful.key({ modkey }, "h",
-			function() awful.tag.incmwfact(-0.05) end), -- Decrease master width
-		awful.key({ modkey }, "t",
-			function() set_layout_all(awful.layout.suit.tile.right) end),
-		awful.key({ modkey }, "m",
-			function() set_layout_all(awful.layout.suit.max) end),
+
+	awful.key({ modkey, "Control" }, "k",
+		function() awful.screen.focus_relative(1) end), -- Focus next screen
+	-- Layout
+	awful.key({ modkey }, "l", -- Increase master width
+		function()
+			if client.focus and client.focus.first_tag.layout == awful.layout.suit.tile.right then
+				awful.tag.incmwfact(0.05)
+			end
+	end),
+	awful.key({ modkey }, "h", -- Decrease master width
+		function()
+			if client.focus and client.focus.first_tag.layout == awful.layout.suit.tile.right then
+				awful.tag.incmwfact(-0.05)
+			end
+	end),
+	awful.key({ modkey }, "t",
+		function() set_layout_all(awful.layout.suit.tile.right) end),
+	awful.key({ modkey }, "m",
+		function() set_layout_all(awful.layout.suit.max) end),
 	awful.key({ modkey }, "f",
 		function() set_layout_all(awful.layout.suit.floating) end),
 	-- Awesome Functions
 	awful.key({ modkey, "Control" }, "r", awesome.restart),
 	awful.key({ modkey, "Shift" }, "q", awesome.quit),
+	awful.key({ modkey, "Shift" }, "b",
+		function()
+			local s = awful.screen.focused()
+			if not s.wibox then return end
+			s.wibox.visible = not s.wibox.visible
+	end),
 	-- Menubar
 	awful.key({ modkey }, "p", function() menubar.show() end),
 	-- Standard programs
@@ -861,11 +857,11 @@ clientkeys = gears.table.join( -- Key Bindings That Activate Per-client
 	awful.key({ modkey }, "Down",  function(c) c:relative_move(  0,  10,   0, 0) end),
 	awful.key({ modkey }, "Up",    function(c) c:relative_move(  0, -10,   0, 0) end),
 	awful.key({ modkey }, "Left",  function(c) c:relative_move(-10,   0,   0, 0) end),
-		awful.key({ modkey }, "Right", function(c) c:relative_move( 10,   0,   0, 0) end),
-		awful.key({ modkey, "Shift" }, "Down",  function(c) c:relative_move(0, 0,   0,  10) end),
-		awful.key({ modkey, "Shift" }, "Up",    function(c) c:relative_move(0, 0,   0, -10) end),
-		awful.key({ modkey, "Shift" }, "Left",  function(c) c:relative_move(0, 0, -10,   0) end),
-		awful.key({ modkey, "Shift" }, "Right", function(c) c:relative_move(0, 0,  10,   0) end)
+	awful.key({ modkey }, "Right", function(c) c:relative_move( 10,   0,   0, 0) end),
+	awful.key({ modkey, "Shift" }, "Down",  function(c) c:relative_move(0, 0,   0,  10) end),
+	awful.key({ modkey, "Shift" }, "Up",    function(c) c:relative_move(0, 0,   0, -10) end),
+	awful.key({ modkey, "Shift" }, "Left",  function(c) c:relative_move(0, 0, -10,   0) end),
+	awful.key({ modkey, "Shift" }, "Right", function(c) c:relative_move(0, 0,  10,   0) end)
 )
 
 -- Bind Keybindings to Tags
@@ -919,6 +915,8 @@ awful.rules.rules = { -- Rules
 	}
 }
 
+
+
 -- Buttons --
 clientbuttons = gears.table.join(
 	awful.button({ }, 1, function (c)
@@ -933,6 +931,7 @@ clientbuttons = gears.table.join(
         awful.mouse.client.resize(c)
     end)
 )
+
 
 
 -- Signals --
@@ -1003,8 +1002,8 @@ awful.screen.connect_for_each_screen(
 							client.focus:move_to_tag(t)
 						end
 				end),
-				awful.button({}, 4, function(t)awful.tag.viewnext(t.screen)end),
-				awful.button({}, 5, function(t)awful.tag.viewprev(t.screen)end)
+				awful.button({}, 4, function(t)awful.tag.viewprev(t.screen)end),
+				awful.button({}, 5, function(t)awful.tag.viewnext(t.screen)end)
 			)
 		}
 
@@ -1048,7 +1047,7 @@ awful.screen.connect_for_each_screen(
 		s.wibox = awful.wibar { position = "top", screen = s, height = 50 }
 
 		s.wibox:setup { -- Wibox widgets
-			layout = wibox.layout.align.horizontal,
+			layout = wibox.layout.flex.horizontal,
 			{ -- Left Widgets
 				s.taglist,
 				layout = wibox.layout.fixed.horizontal
@@ -1056,6 +1055,7 @@ awful.screen.connect_for_each_screen(
 			{ -- Center Widgets
 				{widget = wibox.widget.textbox},
 				s.mytasklist,
+				{widget = wibox.widget.textbox},
 				layout = wibox.layout.flex.horizontal
 			},
 			{ -- Right Widgets
@@ -1161,7 +1161,7 @@ gears.timer {
 	-- Better clean up those memory leaks
 	timeout = 30,
 	autostart = true,
-	callback = function() collectgarbage() end
+	callback = collectgarbage
 }
 
 
@@ -1181,9 +1181,11 @@ do  -- Commands to execute in startup
 	run("setxkbmap -option keypad:pointerkeys")
 	run("xset s off -dpms")
 
-	awful.spawn.with_shell("xrdb ~/.config/X11/Xresources")
+	awful.spawn.with_shell("xrdb $HOME/.config/X11/Xresources")
 	awful.spawn.with_shell("pidof pulseaudio || command -v pulseaudio && setsid --fork pulseaudio --start --exit-idle-time=-1")
 
 	awful.spawn.with_shell("export WINIT_X11_SCALE_FACTOR=1")
 	run("pactl set-sink-volume @DEFAULT_SINK@ 40%")
+
+	set_layout_all(awful.layout.suit.tile.right)
 end
