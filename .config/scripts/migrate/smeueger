@@ -4,551 +4,276 @@
 # Author Name    - Smeueg
 # Author Email   - Smeueg@gmail.com
 # Author Gitlab  - https://gitlab.com/Smeueg
-# Last Updated   - Thu  7 Apr 10:11:15 WIB 2022
+# Last Updated   - Sat  9 Apr 17:59:44 WIB 2022
 # ------------------------------------------------
-# Info:
-#   The bootstraping script that makes you more Smeueg INSTANTLY.
-#   Tested with bash, yash, ash, dash, and zsh
-#
-# TODO:
-#   - Clean Up
-#   - Test out full install in another system
-#   - Make script ksh compatible
-
-# Variables
-export PATH="/sbin:$PATH"
-WALLPAPER_DIR="${HOME}/.config/rice/"
-WALLPAPER_URL="https://i.imgur.com/DVJsvfN.png"
-DOTFILE_DIR="${HOME}/.local/dots"
-DOTFILE_URL="https://gitlab.com/smeueg/dotfiles.git"
-FONT_DIR="${HOME}/.local/share/fonts/"
+# Variables #
+opts="\
+== Rice ==
+Dotfiles              [git,mv]                          | install_dotfiles
+Font (JetBrainsMono)  [wget|curl]                       | install_font
+Wallpaper             [wget|curl]                       | install_wallpaper
+== System Config ==
+Nix Package Manager   [wget|curl]                       | install_nix
+TFL's Simplify Ubuntuaaaaaaaaaaaaaaaaaaa [wgt|crl]                       | install_SU
+Droidcam              [sudo|su,wget|curl,unzip,cc,make] | install_droidcam
+Mount tmpfs to /tmp   [sudo|su]                         | mktmpfs
+Create Swapfile       [sudo|su,mkswap,swapon,dd,chmod]  | mkswapfile"
+opts_chosen_line=1
+opts_chosen_tab=1
 
 
-# Character Variable
-special="$(printf '\033')"
-newline="
-"
-choices="
-Dotfiles              {git,mv}                 | install_dotfiles
-Font (JetBrainsMono)  {wget||curl}             | install_font
-Wallpaper             {wget||curl}             | install_wallpaper
-Nix Package Manager   {wget||curl}             | install_nix
-TFL's Simplify Ubuntu {wget||curl}             | install_SU
-Droidcam              {wget||curl,unzip,cc}    | install_droidcam
-Mount tmpfs to /tmp   {su}                     | mktmpfs
-Create Swapfile       {mkswap,swapon,dd,chmod} | mkswapfile
-"
 
-# Utility functions
-error() { printf "\033[31m\033[1m[ERROR]\033[0m ${1}\033[0m\n" >&2; }
-warning() { printf "\033[33m\033[1m[WARNING]\033[0m ${1}\n"; }
-notice() { printf "\033[32m\033[1m[NOTICE]\033[0m ${1}\n"; }
-check_depend() { [ "$(command -v "${1}")" ]; }
+# Utility Functions #
+error() { printf '\033[1m\033[31m[ERROR]\033[0m %s\n' "${1}"; }
+warning() { printf '\033[1m\033[33m[ERROR]\033[0m %s\n' "${1}"; }
+notice() { printf '\033[1m\033[32m[NOTICE]\033[0m %s\n' "${1}"; }
 
-header() {
-	str="="
-	while [ ${#str} -ne $(((70-${#1})/2)) ]; do
-		str="${str}="
-	done
-	printf '\n%s %s %s\n' "${str}" "${1}" "${str}"
-}
-
-run_as_root() {
-	case "${cmd_for_root}" in
-		"sudo") eval "sudo $SHELL -c '$@'" ;;
-		"su") eval "su -c '$@'" ;;
-		"none") error "Root isn't authenticated, unable to run '$@'" ;;
-		*) if check_depend sudo && notice "checking if 'sudo' can be used" && [ "$(sudo printf 'y\n')" = "y" ]; then
-			   cmd_for_root="sudo"
-			   notice "Using 'sudo' to run commands with root privilages"
-			   eval "sudo $SHELL -c '$@'"
-		   elif check_depend su && notice "checking if 'su' can be used" && [ "$(su -c 'printf "y\n"')" = "y" ]; then
-			   cmd_for_root="su"
-			   notice "Using 'su -c' to run commands with root privilages"
-			   eval "su -c '$@'"
-		   else
-			   error "Root isn't authenticated"
-			   cmd_for_root="none"
-		   fi
-		   ;;
-	esac
-}
-
-# Check for curl or wget
-if check_depend curl; then
-	fetch() { curl -L "${1}" -o "${2}"; }
-elif check_depend wget; then
-	fetch() { WGETRC= wget --no-hsts "${1}" -O "${2}"; }
-fi
-
-
-# Read a single character some shells, including bash and zsh, has read -n1
-# which is better to use than dd. So use that if it's available
 if [ "${BASH_VERSION}" ] || [ "${KSH_VERSION}" ]; then
-	read_char() { IFS= read -n 1 input; }
+	read_char() { IFS= read -n 1 opts_input; }
 elif [ "${ZSH_NAME}" ]; then
 	emulate sh
-	read_char() { IFS= read -k 1 input; }
+	read_char() { IFS= read -k 1 opts_input; }
 else
-	if ! check_depend "stty"; then
-		error "Command 'stty' not found. Exiting"
+	if ! [ "$(command -v stty)" ]; then
+		error "Command 'stty' not found."
+		exit
+	fi
+
+	if ! [ "$(command -v dd)" ]; then
+		error "Command 'dd' not found."
 		exit
 	fi
 
 	stty_settings=$(stty -g)
 	read_char() {
-		input="$(dd bs=1 count=1 2>&1)"
-		input="${input%${input#?}}"
+		opts_input="$(dd bs=1 count=1 2>&1)"
+		opts_input="${opts_input%${opts_input#?}}"
 	}
 fi
 
-
-# Prompt user with Y or no question, with ${1} as the prompt
-# Usage: `confirm "Are you sure?"` -> "Are you sure? [Y\n] "
-confirm() {
-	printf '%s [Y\\n] ' "${1}"
-	read reply
-	printf '\n'
-	echo "${reply}"
-	case "${reply}" in
-		[Yy][Ee][Ss]|[Yy]|"") return 0 ;;
-		*) return 1;;
-	esac
-}
-
-
-# Replace $1 with $2 in $3
-# Usage: `replace "foo" "bar" "foo jar bar"` ─> "bar jar bar"
-replace() {
-	_replace() {
-		for i in ${2}; do
-			str="${str}${i}${1}"
-		done
-		printf '%s\n' "${str%${1}}"
-		unset str
-	}
-	IFS="${1}" _replace "${2}" "${3}"
-	unset -f _replace
-}
-
-
-# Pick a choice interactively with ${1} being the string
-# Usage: `mini_choice "$(printf 'foo\nbar\nbaz')"`
-mini_choice() {
-	chosen=0
+get_cur_row() {
+	# Get current cursor row
+	[ "${stty_settings+x}" ] && stty -icanon
+	printf '\033[6n'
 	while :; do
-		i=0
-		while read -r line; do
-			if [ ${i} -eq ${chosen%%:*} ]; then
-				printf '\033[7m %s \033[0m\n' "${line}"
-				chosen_line="${line}"
-			else
-				printf ' %s \n' "${line}"
-			fi
-			i=$((i+1))
-		done <<-EOF
-		${1}
-		EOF
-
 		read_char
-		if [ "${input}" = "${special}" ]; then
-			read_char
-			read_char
-			case "${input}" in
-				"A") input="k" ;;
-				"B") input="j" ;;
-			esac
-		fi
-		stty echo
-
-		 case "${input}" in
-			 "k") [ ${chosen} -ne 0 ] && chosen=$((chosen-1));;
-			 "j") [ ${chosen} -ne $((i-1)) ] && chosen=$((chosen+1));;
-			 "q")
-				 choice_out=""
-				 return
-				 ;;
-
-			 "${newline}"|" ")
-				 printf "\033[${i}A\033[J"
-				 choice_out="${chosen_line}"
-				 unset chosen_line chosen input i
-				 return
-				 ;;
-		 esac
-		 printf "\033[${i}A\033[J"
-	 done
-}
-
-
-
-# Installation functions
-
-dot_sync() {
-	# Backup files that are different from the git repo
-	printf 'Backing up existing files...\n'
-	while read -r file; do
-		file="${file#*$(printf '\t')}"
-		dir="${HOME}/DotBackup/${file%/*}"
-		file="${HOME}/${file}"
-
-		if ! [ -d "${dir}" ] && ! mkdir --parents --verbose "${dir}"; then
-			error "Failed to create directory '${dir}'\n"
-			return
-		fi
-		mv --verbose "${file}" "${dir}"
-	done <<-EOF
-	$(git --git-dir=${DOTFILE_DIR} --work-tree=$HOME diff --name-status)
-	EOF
-
-	# Sync bare repo
-	printf 'Syncing dotfiles...\n'
-	if ! git --git-dir="${DOTFILE_DIR}" --work-tree="${HOME}" checkout; then
-		error "Failed to run 'git --git-dir=${DOTFILE_DIR} --work-tree=${HOME}'"
-		return
-	fi
-}
-
-dot_clone() {
-	# Clone as bare repo
-	printf 'Cloning bare repo...\n'
-	if ! git clone --bare "${DOTFILE_URL}" "${DOTFILE_DIR}"; then
-		error "Failed to run 'git clone --bare ${DOTFILE_URL} ${DOTFILE_DIR}'"
-		return 1
-	fi
-	# Do not show untracked files
-	printf 'Configuring repo to not show untracked files...\n'
-	if ! git --git-dir="${DOTFILE_DIR}" config status.showUntrackedFiles no; then
-		warning "Failed to run 'git --git-dir=${DOTFILE_DIR} config status.showUntrackedFiles no'"
-		return 1
-	fi
-}
-
-install_dotfiles() {
-	if ! [ "$(git --git-dir=${DOTFILE_DIR} rev-parse 2>&1)" ]; then
-		printf '%s is already a git repo, overwrite?\n' "${DOTFILE_DIR}"
-		mini_choice "$(printf 'Overwrite and Sync\nSync\nCancel')"
-		case "${choice_out}" in
-			"Overwrite and Sync")
-				header "Cloning and Syncing Dotfiles"
-				dot_clone
-				dot_sync
-				;;
-			"Sync")
-				header "Syncing Dotfiles"
-				dot_sync
-				;;
-			*)
-				printf "Won't do anything...\n"
-				;;
-		esac
-		return
-	fi
-	header "Cloning and Syncing Dotfiles"
-	dot_clone
-	dot_sync
-}
-
-
-install_nix() {
-	# Check if nix is already installed
-	if check_depend nix; then
-		printf 'Nix seems to already be installed (command nix found), exiting...\n'
-		return
-	elif [ -d /nix ]; then
-		printf "Nix seems to already be installed ('/nix' exists), exiting...\n"
-		return
-	fi
-
-	# Prompt for confirmation on installing in single-user mode
-	if ! confirm "This will install nix in single-user mode, continue?"; then
-		printf "Won't install nix...\n"
-		return
-	fi
-
-	header "Installing Nix"
-	if [ "$(uname)" = "Linux" ]; then
-		run_as_root "mkdir -pvm 0755 /nix && chown ${USER} /nix"
-		[ -d /nix ] || return
-	fi
-
-	sh -s -- --no-daemon <<-EOF
-	$(curl -L https://nixos.org/nix/install)
-	EOF
-
-	# Removes the line that was added by nix's auto install script, i.e:
-	# if [ -e ${HOME}/.nix-profile/etc/profile.d/nix.sh ]; then . ${HOME}/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer
-	[ -f "${HOME}/.profile" ] || return
-	file="$(while IFS= read -r line; do
-			 if ! [ "${line}" = "if [ -e ${HOME}/.nix-profile/etc/profile.d/nix.sh ]; then . ${HOME}/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer" ]; then
-				 printf '%s\n' "${line}"
-			 fi
-		 done < ${HOME}/.profile
-	  )"
-
-	printf '%s\n' "${file}" > "${HOME}/.profile"
-}
-
-
-install_font() {
-	# Will install JetBrainsMono
-	# Create directory FONT_DIR if needed
-	FONT_DIR="${FONT_DIR%/}/JetBrainsMono Nerd Font"
-	[ -d "${FONT_DIR}" ] ||
-		mkdir --parents --verbose "${FONT_DIR}" || return
-
-	header "Downloading Fonts"
-	while read -r font; do
-		[ "${font}" ] || continue
-		[ "${font##*/ryanoasis/nerd-fonts/tree/master/patched-fonts/JetBrainsMono/Ligatures/*}" ] && continue
-		font="${font%\"*}"
-		font="${font##*/}"
-		while read -r line; do
-			[ "${line}" ] || continue
-			[ "${line##*Complete*Mono.ttf*}" ] && continue
-			line="${line#*href=\"}"
-			line="${line%\"*}"
-			fetch "https://github.com${line%/blob/*}/raw/${line#*/blob/}" "${FONT_DIR}/JetBrainsMono Nerd Font ${font} Complete.ttf"
-		done <<-EOF
-		$(fetch "https://github.com/ryanoasis/nerd-fonts/tree/master/patched-fonts/JetBrainsMono/Ligatures/${font}/complete" -)
-		EOF
-	done <<-EOF
-	$(fetch https://github.com/ryanoasis/nerd-fonts/tree/master/patched-fonts/JetBrainsMono/Ligatures -)
-	EOF
-}
-
-
-install_wallpaper() {
-	header "Downloading Wallpaper"
-	[ -d "${WALLPAPER_DIR}" ] || mkdir --parents --verbose "${FONT_DIR}" ||
-		return
-
-	fetch "${WALLPAPER_URL}" "${WALLPAPER_DIR%/}/Shark Space.png"
-}
-
-
-install_SU() {
-	header "Installing Simplify Ubuntu"
-	sh <<-EOF
-	$(curl -L "https://github.com/terminalforlife/Extra/raw/master/source/simplify-ubuntu/simplify-ubuntu-installer")
-	EOF
-}
-
-
-install_droidcam() {
-	header "Droidcam"
-	if ! [ -d /lib/modules/$(uname -r)/build ]; then
-		error "Kernel headers not found: Kernel $(uname -r)"
-		return
-	fi
-
-	if [ "$(command -v droidcam-cli)" ]; then
-		warning "'droidcam' is already installed"
-	fi
-
-	if [ -f "/tmp/droidcam_latest.zip" ]; then
-		fetch https://files.dev47apps.net/linux/droidcam_1.8.2.zip /tmp/droidcam_latest.zip
-		if ! [ -f "/tmp/droidcam_latest.zip" ]; then
-			error "Failed to download droidcam zip file."
-			return
-		fi
-	fi
-
-	unzip /tmp/droidcam_latest.zip -d /tmp/droidcam
-	run_as_root "cd /tmp/droidcam; ./install-client; ./install-sound; ./install-video"
-}
-
-
-mkswapfile() {
-	header "Creating Swap File"
-	warning "This will create a swapfile of 4Gb"
-	run_as_root 'dd if=/dev/zero of=/swapfile bs=1M count=4096 status=progress; chmod 600 /swapfile; /sbin/mkswap /swapfile; /sbin/swapon /swapfile; printf "/swapfile none swap defaults 0 0\n" >> /etc/fstab'
-}
-
-
-mktmpfs() {
-	if ! [ -f "/etc/fstab" ]; then
-		error "/etc/fstab doesn't exist, exiting."
-		return
-	fi
-
-	header "TMPFS"
-	warning "This will mount tmpfs with a size of 512M to /etc/fstab"
-	while IFS= read -r line; do
-		[ "${line%%tmpfs*/tmp*tmpfs*}" ] && continue
-		warning "Seems like '/tmp' is already mounted as tmpfs"
-		break
-	done < /etc/fstab
-
-	printf 'Do you want to continue? [Y\\n] '
-	read reply
-	case "${reply}" in
-		[Yy][Ee][Ss]|[Yy]|"") ;;
-		*)
-			printf 'Exiting.\n'
-			return ;;
-	esac
-	printf "Adding tmpfs to '/etc/fstab'\n"
-	su -c 'printf "tmpfs   /tmp         tmpfs   rw,nodev,nosuid,size=512M          0  0\n" >>/etc/fstab'
-}
-
-
-# MAIN SELECTION #
-# Check Dependencies
-while read -r line; do
-	[ "${line}" ] || continue
-	deps="${line#*\{}"
-	deps="${deps%\}*}"
-	deps_satisfied=:
-	for dep in $(replace "," " " "${deps}"); do
-		if ! [ "${dep##*||*}" ]; then
-			deps_satisfied=false
-			for dep in $(replace "||" " " "${dep}"); do
-				if [ "$(command -v "${dep}")" ]; then
-					deps_satisfied=:
-					break
-				fi
-			done
-		elif ! [ "$(command -v "${dep}")" ]; then
-			deps_satisfied=false
-			break
-		fi
+		[ "${opts_input}" = "R" ] && break
+		row="${row}${opts_input}"
 	done
+	row="${row#*\[}"
+	row="${row%;*}"
+	[ "${stty_settings+x}" ] && stty "${stty_settings}"
+	printf '\r\033[2K'
+}
 
-
-	# Format Choices
-	[ "${tmp}" ] && tmp="${tmp}\n"
-	if ${deps_satisfied}; then
-		tmp="${tmp}[ ] ${line}"
-	else
-		tmp="${tmp}[-] ${line}"
-		line="${line%%\{*}"
-		line="${line%${line##*[! ]}} "
-	fi
-done <<EOF
-${choices}
-EOF
-
-choices=$(printf "${tmp}\nContinue\n")
-unset tmp
-
-warning "If the script fails and the terminal is acting strange, please run 'stty icanon echo'"
-printf '\033[32m\033[1mj/↓:Down  k/↑:Up  q:quit  Enter/Space:Select\033[0m\n'
-printf 'Options:\n'
-chosen=0
-
-
-# Get column position
-stty_settings_2=$(stty -g)
-stty -icanon -echo
-printf "\033[6n"
-while :; do
-	read_char
-	[ "${input}" = "R" ] && break
-	row="${row}${input}"
-done
-row="${row#*\[}"
-row="${row%;*}"
-stty "${stty_settings_2}"
-
-
-# Restore stty settings when ctrl-c'ing
-if [ "${stty_settings}" ]; then
-	stty -icanon
-	trap 'stty "${stty_settings}"; exit 1' INT
-fi
-while :; do
+printn() {
+	# print ${1}, ${2} times
 	i=0
-	while read -r line; do
-		# Highlight Chosen Line
-		if [ "${line%${line#???}}" = "[-]" ]; then
-			printf '\033[31m'
-			deps="${line%%\}*}"
-			deps="${deps##*\{}"
-			deps="$(replace "||" " or " "${deps}")"
-			deps="$(replace ',' '|' "${deps}")"
-			line="${line%%\{*}"
-			line="${line%${line##*[! ]}} "
-			line="${line} (Dependencies: ${deps})"
-		else
-			line="${line%%\{*}"
-			line="${line%${line##*[! ]}} "
-		fi
-
-		if [ ${i} -eq ${chosen} ]; then
-			printf '\r\033[7m %s\033[0m\n' "${line}"
-		else
-			printf '\r%s\033[0m\n' "${line}"
-		fi
+	while [ ${i} -ne ${2} ]; do
+		printf '%s' "${1}"
 		i=$((i+1))
-	done <<-EOF
-	${choices}
-	EOF
-
-	read_char
-	if [ "${input}" = "${special}" ]; then
-		read_char
-		read_char
-		case "${input}" in
-			"A") input="k" ;;
-			"B") input="j" ;;
-		esac
-	fi
-
-
-	case "${input}" in
-		"k") [ ${chosen} -ne 0 ] && chosen=$((chosen-1));;
-		"j") [ ${chosen} -ne $((i-1)) ] && chosen=$((chosen+1));;
-		"q") printf "\033[$((row - 2));1H\r\033[J"
-			 choices=""
-			 break
-			 ;;
-
-		"${newline}"|" "|$'\n'|"")
-			if [ ${chosen} -eq $((i-1)) ]; then
-				printf "\033[2A\033[${i}A\033[J"
-				break
-			fi
-
-			# Toggle chosen option
-			j=0
-			unset tmp
-			while read -r line; do
-				if [ "${j}" -ne "${chosen}" ]; then
-					tmp="${tmp}${newline}${line}"
-					j=$((j+1))
-					continue
-				fi
-
-				if [ "${line%${line#???}}" = "[X]" ]; then
-					tmp="${tmp}${newline}[ ]${line#???}"
-				elif [ "${line%${line#???}}" = "[ ]" ]; then
-					tmp="${tmp}${newline}[X]${line#???}"
-				else
-					tmp="${tmp}${newline}${line}"
-				fi
-
-				j=$((j+1))
-			done <<-EOF
-			${choices}
-			EOF
-			choices=$(printf '%s' "${tmp#?}")
-			;;
-	esac
-	printf "\033[${row};1H\r\033[J"
-done
-
-# Restore default stty settings
-if [ "${stty_settings}" ]; then
-	stty "${stty_settings}"
-fi
-
-
-run_scripts() {
-	for line in ${choices}; do
-		[ "${line%%\[X\]*}" ] && continue
-		"${line#*| }"
 	done
+	unset i
 }
 
-IFS="${newline}" run_scripts
+
+
+
+
+# UI Functions #
+opts_setup() {
+	opts_tab_count=0
+	# Setup the options to determine whether the dependencies are met
+	_handle_or() {
+		for opt_dep in $1; do
+			[ "$(command -v ${opt_dep})" ] || continue
+			opt_has_deps=:
+		done
+	}
+
+	_handle_comma() {
+		for opt_dep in $1; do
+			if ! [ "${opt_dep##*\|*}" ]; then
+				IFS="|" _handle_or "${opt_dep}"
+			elif ! [ "$(command -v ${opt_dep})" ]; then
+				opt_has_deps=false
+				return
+			else
+				opt_has_deps=:
+			fi
+		done
+	}
+
+	# Check if dependencies are met
+	for opt in ${opts}; do
+		if ! [ "${opt%%== * ==}" ]; then
+			opt_tmp="${opt_tmp} Continue ${newline}${opt}${newline}"
+			opts_tab_count=$((opts_tab_count + 1))
+			continue
+		fi
+		opt_has_deps=false
+		opt_deps="${opt#*\[}"
+		opt_deps="${opt_deps%\]*}"
+		IFS="," _handle_comma "${opt_deps}"
+
+		opt_front_tmp="${opt%%\[*}"
+		opt_front_tmp="${opt_front_tmp%${opt_front_tmp##*[! ]}}"
+		opt_back_tmp="${opt##*\|}"
+		opt_back_tmp="${opt_back_tmp# }"
+
+		if ${opt_has_deps}; then
+			opt_tmp="${opt_tmp} [ ] ${opt_front_tmp}"
+		else
+			opt_tmp="${opt_tmp}\033[31m [-] ${opt_front_tmp} [Dependencies: ${opt_deps}]"
+		fi
+
+		opt_tmp="${opt_tmp} \033[0m|${opt_back_tmp}${newline}"
+	done
+	opts="${opt_tmp} Continue "
+	unset -f _handle_comma _handle_or
+	unset opt_has_deps opt_dep opt_front_tmp opt_back_tmp
+	get_cur_row
+}
+
+
+opts_print() {
+	# Get Height and Width for the current tab
+	opts_tmp_line=0
+	opts_tmp_tab=0
+	opts_tmp_width=52
+	for opt in ${opts}; do
+		if ! [ "${opt##== * ==}" ]; then
+			opts_tmp_tab=$((opts_tmp_tab + 1))
+			continue
+		fi
+
+		if [ ${opts_tmp_tab} -eq ${opts_chosen_tab} ]; then
+			opts_tmp_line=$((opts_tmp_line + 1))
+			opt="${opt%\\033*}"
+			opt="${opt#*\\033[31m}"
+			[ ${#opt} -gt ${opts_tmp_width} ] && opts_tmp_width=${#opt}
+		fi
+	done
+	opts_height=${opts_tmp_line}
+	opts_width=$((opts_tmp_width + 5))
+	unset opts_tmp_line opts_tmp_tab opts_tmp_width
+
+	# Actually Print
+	opts_tmp_tab=0
+	opts_tmp_line=0
+	opts_tmp_header=""
+	opts_tmp_str=""
+	opts_tmp_line_str=$(printn "─" $((opts_width - 3)))
+
+	printf "\r\033[J${opts_tmp_line_str}╮\n%${opts_width}s\r│\n" "│"
+	for opt in ${opts}; do
+		if ! [ "${opt%%== * ==}" ]; then
+			opts_tmp_tab=$((opts_tmp_tab + 1))
+			opts_tmp_line=0
+
+			opt_tmp=${opt#== }
+			opt_tmp=${opt_tmp% ==}
+			if [ ${opts_tmp_tab} -eq ${opts_chosen_tab} ]; then
+				opt_tmp="\033[7m\033[1m${opt_tmp}"
+			fi
+			opts_tmp_header="${opts_tmp_header} \033[31m${opt_tmp}\033[0m ─"
+			continue
+		fi
+
+		opts_tmp_line=$((opts_tmp_line + 1))
+		if [ ${opts_tmp_tab} -eq ${opts_chosen_tab} ]; then
+			if [ ${opts_tmp_line} -eq ${opts_chosen_line} ]; then
+				printf "%${opts_width}s\r│ \033[7m${opt%\|*}\n" "│"
+			else
+				printf "%${opts_width}s\r│ ${opt%\|*}\n" "│"
+			fi
+		fi
+	done
+	opts_tmp_header="\033[0m╭──${opts_tmp_header}"
+
+	# footer
+	printf "\
+\033[${row};0H${opts_tmp_header}\033[${opts_height}B
+\n%${opts_width}s\r│\n${opts_tmp_line_str}┤\
+\r\033[0m├── \033[33mj/↓:Down\033[0m ─ \033[33mk/↑:Up\033[0m ─ \033[33mq:quit\033[0m ─ \033[33mEnter/Space:Select\033[0m ─
+${opts_tmp_line_str}╯\r╰── \033[33mh/←:Select Left Tab\033[0m ─ \033[33ml/→:Select Right Tab\033[0m \n
+" "│"
+	unset opts_tmp_tab opts_tmp_line opt_tmp
+}
+
+opts_select() {
+	opts_tmp_tab=0
+	opts_tmp_line=0
+	opts_tmp=""
+	for opt in ${opts}; do
+		if ! [ "${opt%%== * ==}" ]; then
+			opts_tmp_tab=$((opts_tmp_tab + 1))
+			opts_tmp_line=0
+			opts_tmp="${opts_tmp}${opt}${newline}"
+			continue
+		fi
+
+		opts_tmp_line=$((opts_tmp_line + 1))
+		if [ ${opts_tmp_line} -eq ${opts_chosen_line} ] && [ ${opts_tmp_tab} -eq ${opts_chosen_tab} ]; then
+			if ! [ "${opt%% Continue }" ]; then
+				opts_run=false
+			elif ! [ "${opt%% \[X\]*}" ]; then
+				opts_tmp="${opts_tmp} [ ]${opt# \[X\]}${newline}"
+			elif ! [ "${opt%% \[ \]*}" ]; then
+				opts_tmp="${opts_tmp} [X]${opt# \[ \]}${newline}"
+			else
+				opts_tmp="${opts_tmp}${opt}${newline}"
+			fi
+		else
+			opts_tmp="${opts_tmp}${opt}${newline}"
+		fi
+	done
+	opts="${opts_tmp}"
+	[ ${opts_chosen_line} -ne ${opts_height} ] && opts_chosen_line=$((opts_chosen_line + 1))
+	unset opts_tmp_tab opts_tmp_line opts_tmp
+}
+
+opts_handle_keypress() {
+	if [ "${stty_settings+x}" ]; then
+		stty -icanon
+	fi
+
+	opts_run=:
+	while ${opts_run}; do
+		read_char
+
+		if [ "${opts_input}" = "$(printf '\033')" ]; then
+		 	read_char
+		 	read_char
+		 	case "${opts_input}" in
+		 		"A") opts_input="k";;
+		 		"B") opts_input="j";;
+		 		"C") opts_input="l";;
+		 		"D") opts_input="h";;
+		 	esac
+		fi
+
+		case "${opts_input}" in
+		 	"h") [ ${opts_chosen_tab} -ne 1 ] && opts_chosen_tab=$((opts_chosen_tab - 1)); opts_chosen_line=1;;
+		 	"k") [ ${opts_chosen_line} -ne 1 ] && opts_chosen_line=$((opts_chosen_line - 1));;
+		 	"j") [ ${opts_chosen_line} -ne ${opts_height} ] && opts_chosen_line=$((opts_chosen_line + 1));;
+		 	"l") [ ${opts_chosen_tab} -ne ${opts_tab_count} ] && opts_chosen_tab=$((opts_chosen_tab + 1)); opts_chosen_line=1;;
+			"q") opts_run=false ;;
+			" "|${newline}||"") IFS=${newline} opts_select;;
+		esac
+		printf "\033[${row};0H"
+		IFS=${newline} opts_print
+	done
+	printf "\033[${row};0H\033[J"
+	unset opts_run
+}
+
+
+special=$(printf '\033')
+newline="
+"
+
+IFS=${newline} opts_setup
+IFS=${newline} opts_print
+opts_handle_keypress
+notice "Installation functions not implemented yet :)"
