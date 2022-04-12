@@ -1,0 +1,122 @@
+#!/bin/bash
+# ------------------------------------------------
+# Script Name    - xrandr-cli
+# Author Name    - Smeueg
+# Author Email   - Smeueg@gmail.com
+# Author Gitlab  - https://gitlab.com/Smeueg
+# Last Updated   - Tue 12 Apr 11:49:32 WIB 2022
+# ------------------------------------------------
+# Script to interactively change the resolution using xrandr
+xrandr_output=$(xrandr)
+newline="
+"
+
+scales="\
+0.5
+0.6
+0.7
+0.8
+0.9
+1.0
+1.1
+1.1
+1.2
+1.3
+1.4
+1.5"
+
+if [ "${BASH_NAME}" ]; then
+	read_char() { read -n1 input; }
+else
+	if ! [ "$(command -v stty)" ]; then
+		printf "\033[31m\033[1m[ERROR]\033[0m The command 'stty' not found, exiting"
+		exit 1
+	fi
+
+	if ! [ "$(command -v dd)" ]; then
+		printf "\033[31m\033[1m[ERROR]\033[0m The command 'dd' not found, exiting"
+		exit 1
+	fi
+
+	stty_settings="$(stty -g)"
+	trap "stty '${stty_settings}'; exit 1" INT
+	stty -icanon
+	read_char() {
+		input="$(dd bs=1 count=1 2>&1)"
+		input="${input%${input#?}}"
+	}
+fi
+
+# Parse Xrandr output
+get_screens() {
+	for line in ${xrandr_output}; do
+		[ "${line##* connected *}" ] && continue
+		screens="${screens}${line%% *}${newline}"
+	done
+	screens="${screens%?}"
+}
+
+
+get_resolutions() {
+	for line in ${xrandr_output}; do
+		[ "${line%% *}" ] && continue
+		resolutions="${resolutions}${line#   }${newline}"
+	done
+	resolutions="${resolutions%?}"
+}
+
+
+# UI Functions
+draw() {
+	i=0
+	for line in ${1}; do
+		if [ ${i} -eq ${chosen} ]; then
+			printf '\r\033[2K\033[7m %s \033[0m\n' "${line}"
+		else
+			printf '\r\033[2K %s\n' "${line}"
+		fi
+		i=$((i + 1))
+	done
+}
+
+pick() {
+	i=0
+	for line in ${1}; do
+		[ ${i} -ne ${chosen} ] && i=$((i+1)) && continue
+		eval "${2}="\${line}""
+		break
+	done
+}
+
+
+loop() {
+	chosen=0
+	printf '\r%s\n' "${1}"
+	while :; do
+		IFS=${newline} draw "${2}"
+		read_char
+		case "${input}" in
+			"j") [ ${chosen} -ne $((i - 1)) ] && chosen=$((chosen + 1));;
+			"k") [ ${chosen} -ne 0 ] && chosen=$((chosen - 1));;
+			"q") [ "${stty_settings+x}" ] && stty "${stty_settings}"
+				 exit 0;;
+			""|" "|"${newline}")
+				printf "\033[$((i+2))A\r\033[J"
+				IFS=${newline} pick "${2}" "${3}"
+				break;;
+		esac
+		printf "\r\033[2K\033[${i}A"
+	done
+}
+
+
+IFS=${newline} get_screens
+IFS=${newline} get_resolutions
+loop "Pick screen to change:" "${screens}" "screen"
+loop "Pick resolution:" "${resolutions}" "resolution"
+loop "Pick scale:" "${scales}" "scale"
+printf '\033[2K\n'
+
+
+[ "${stty_settings+x}" ] && stty "${stty_settings}"
+xrandr --output "${screen}" --mode "${resolution%% *}" --scale "${scale}x${scale}"
