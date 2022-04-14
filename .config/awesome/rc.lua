@@ -63,47 +63,65 @@ local screenshot_dir = "/tmp/"
 local browser        = os.getenv("BROWSER")
 
 
--- Aesthetic Variables (colors & fonts) --
+-- Theming --
 local themes = {
 	["Smeueg"] = {
-		wallpaper          = home .. "/.config/rice/Shark Space.png",
-		yellow             = "#FEA34B",
-		red                = "#C5483F",
-		green              = "#819013",
-		background_dark    = "#291F2E",
-		background         = "#322638",
-		background_light   = "#35283b",
-		background_lighter = "#382B3F",
-		foreground         = "#E7DEC7",
-		foreground2        = "#493751",
-		font               = "JetBrainsMono Nerd Font Mono 11"
+		["wallpaper"] = home .. "/.config/rice/Shark Space.png",
+		["yellow"]    = "#FEA34B",
+		["red"]       = "#C5483F",
+		["green"]     = "#819013",
+		["bg_dark"]   = "#291F2E",
+		["bg"]        = "#322638",
+		["bg_light"]  = "#382B3F",
+		["fg"]        = "#E7DEC7",
+		["fg2"]       = "#493751",
+		["font"]      = "JetBrainsMono Nerd Font Mono 11",
+		["focus"]     = "red",
+		["icon_color"] = "bg_light",
+		["menu_color"] = "red"
+	},
+	["EverForest"] = {
+		["wallpaper"]  = "#3A454A",
+		["yellow"]     = "#dbbc7f",
+		["red"]        = "#e67e80",
+		["green"]      = "#a7c080",
+		["cyan"]       = "#83c092",
+		["bg_dark"]    = "#3A454A",
+		["bg"]         = "#445055",
+		["bg_light"]   = "#4B585D",
+		["fg"]         = "#d3c6aa",
+		["fg2"]        = "#57666C",
+		["font"]       = "JetBrainsMono Nerd Font Mono 11",
+		["focus"]      = "cyan",
+		["icon_color"] = "cyan",
+		["menu_color"] = "green"
 	}
 }
 local theme = themes["Smeueg"]
-theme.icon_color = theme.foreground2
-theme.menu_color = theme.red
+theme["icon_color"] = theme[theme["icon_color"]]
+theme["menu_color"] = theme[theme["menu_color"]]
+theme["focus"] = theme[theme["focus"]]
 
 
 -- Shapes --
 local titlebar_circle = gears.shape.transform(gears.shape.circle)
 	:scale(0.6, 0.6):translate(3, 7)
 local button_close = gears.surface.load_from_shape(
-	20, 20, titlebar_circle, theme.red)
+	20, 20, titlebar_circle, theme["red"])
 local button_maximize = gears.surface.load_from_shape(
-	20, 20, titlebar_circle, theme.green)
+	20, 20, titlebar_circle, theme["green"])
 local button_minimize = gears.surface.load_from_shape(
-	20, 20, titlebar_circle, theme.yellow)
-
+	20, 20, titlebar_circle, theme["yellow"])
 
 -- Theme Variables --
 beautiful.init()
-beautiful.fg_normal = theme.foreground
+beautiful.fg_normal = theme["fg"]
 beautiful.fg_focus  = beautiful.fg_normal
-beautiful.bg_normal	= theme.background
-beautiful.font		= theme.font
+beautiful.bg_normal	= theme["bg"]
+beautiful.font		= theme["font"]
 -- Wibar
-beautiful.wibar_selected_tag	= theme.foreground
-beautiful.wibar_unselected_tag	= theme.foreground2
+beautiful.wibar_selected_tag	= theme["fg"]
+beautiful.wibar_unselected_tag	= theme["fg2"]
 -- Titlebar
 beautiful.titlebar_close_button_normal				= button_close
 beautiful.titlebar_close_button_focus				= button_close
@@ -115,18 +133,18 @@ beautiful.titlebar_maximized_button_focus_active	= button_maximize
 beautiful.titlebar_maximized_button_focus_inactive	= button_maximize
 beautiful.titlebar_minimize_button_normal			= button_minimize
 beautiful.titlebar_minimize_button_focus			= button_minimize
-beautiful.titlebar_bg  = theme.background
-beautiful.titlebar_fg  = theme.foreground
+beautiful.titlebar_bg  = theme["bg"]
+beautiful.titlebar_fg  = theme["fg"]
 -- Menu Bar
-beautiful.menubar_fg_focus = theme.red
-beautiful.menubar_bg_focus = theme.background_lighter
+beautiful.menubar_fg_focus = theme["focus"]
+beautiful.menubar_bg_focus = theme["bg_light"]
 -- Tasklist
-beautiful.tasklist_bg_focus		= theme.background_lighter
-beautiful.tasklist_bg_normal	= theme.background
+beautiful.tasklist_bg_focus		= theme["bg_light"]
+beautiful.tasklist_bg_normal	= theme["bg"]
 beautiful.tasklist_bg_minimize	= beautiful.wibar_bg
 -- Borders & Gaps
-beautiful.border_normal = theme.background
-beautiful.border_focus  = theme.red
+beautiful.border_normal = theme["bg"]
+beautiful.border_focus  = theme["focus"]
 beautiful.border_width  = dpi(4)
 beautiful.useless_gap   = 5
 -- Taglists
@@ -134,7 +152,7 @@ beautiful.taglist_bg_focus		= beautiful.wibar_bg
 beautiful.taglist_squares_sel	= nil
 beautiful.taglist_squares_unsel = nil
 -- Notification
-beautiful.notification_border_color = theme.red
+beautiful.notification_border_color = theme["focus"]
 beautiful.notification_border_width = 3
 
 
@@ -142,7 +160,7 @@ beautiful.notification_border_width = 3
 -- Custom Images/Icons --
 local icon_clock = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
 local cr = cairo.Context(icon_clock)
-cr:set_source(gears.color(theme.icon_color))
+cr:set_source(gears.color(theme["icon_color"]))
 cr:rectangle(11, 5, 1, 6)
 cr:rectangle(11, 10, 3, 1)
 gears.shape.transform(gears.shape.radial_progress)
@@ -152,7 +170,7 @@ cr:fill()
 
 local icon_calendar = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
 local cr = cairo.Context(icon_calendar)
-cr:set_source(gears.color(theme.icon_color))
+cr:set_source(gears.color(theme["icon_color"]))
 cr:rectangle(7, 4, 12, 12)
 cr:stroke()
 cr:rectangle(7, 5, 12, 3)
@@ -166,7 +184,7 @@ cr:fill()
 
 local icon_volume = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
 local cr = cairo.Context(icon_volume)
-cr:set_source(gears.color(theme.icon_color))
+cr:set_source(gears.color(theme["icon_color"]))
 gears.shape.transform(gears.shape.rectangle)
 	:translate(3, 7.5)(cr, 3, 6)
 gears.shape.transform(gears.shape.isosceles_triangle)
@@ -182,7 +200,7 @@ cr:fill()
 
 local icon_mute = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
 local cr = cairo.Context(icon_mute)
-cr:set_source(gears.color(theme.icon_color))
+cr:set_source(gears.color(theme["icon_color"]))
 gears.shape.transform(gears.shape.rectangle)
 	:translate(3, 7.5)(cr, 3, 6)
 gears.shape.transform(gears.shape.isosceles_triangle)
@@ -195,7 +213,7 @@ cr:fill()
 
 local icon_wifi = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
 local cr = cairo.Context(icon_wifi)
-cr:set_source(gears.color(theme.icon_color))
+cr:set_source(gears.color(theme["icon_color"]))
 gears.shape.transform(gears.shape.pie)
 	:scale(1.25, 1.5)
 	:translate(-1.5, 1.5)(cr, 20, 20, 1.25 * math.pi, 1.75* math.pi)
@@ -203,7 +221,7 @@ cr:fill()
 
 local icon_ethernet = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
 local cr = cairo.Context(icon_ethernet)
-cr:set_source(gears.color(theme.icon_color))
+cr:set_source(gears.color(theme["icon_color"]))
 cr:rectangle(9, 2, 6, 6)
 cr:rectangle(4, 14, 6, 6)
 cr:rectangle(14, 14, 6, 6)
@@ -215,7 +233,7 @@ cr:fill()
 
 local icon_no_network = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
 local cr = cairo.Context(icon_no_network)
-cr:set_source(gears.color(theme.icon_color))
+cr:set_source(gears.color(theme["icon_color"]))
 gears.shape.transform(gears.shape.pie)
 	:scale(1.15, 1.4)
 	:translate(-1.5, 1.8)(cr, 20, 20, 1.25 * math.pi, 1.75* math.pi)
@@ -223,7 +241,7 @@ cr:stroke()
 
 local icon_menu = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
 local cr = cairo.Context(icon_menu)
-cr:set_source(gears.color(theme.menu_color))
+cr:set_source(gears.color(theme["menu_color"]))
 gears.shape.transform(gears.shape.losange)
 	:translate(6, 1)(cr, 8, 18)
 gears.shape.transform(gears.shape.losange)
@@ -307,8 +325,12 @@ end
 local function set_wallpaper(s)
 	if beautiful.wallpaper and gears.filesystem.file_readable(beautiful.wallpaper) then
 		gears.wallpaper.maximized(beautiful.wallpaper, s, false)
-	elseif gears.filesystem.file_readable(theme.wallpaper) then
-		gears.wallpaper.maximized(theme.wallpaper, s, false)
+	elseif gears.filesystem.file_readable(theme["wallpaper"]) then
+		gears.wallpaper.maximized(theme["wallpaper"], s, false)
+	else
+		local tmp = #theme["wallpaper"]:match("^#[a-fA-F0-9]+")
+		if not (tmp == 7 or tmp == 4) then return end
+		gears.wallpaper.set(theme["wallpaper"])
 	end
 end
 
@@ -397,8 +419,8 @@ local function toggle_popup(arg)
 				widget  = wibox.container.margin,
 				update  = function(self)
 					local bgs = self:get_children_by_id("bg")
-					for i, _ in ipairs(bgs) do bgs[i].bg = theme.background end
-					bgs[popup.selected].bg = theme.background_lighter
+					for i, _ in ipairs(bgs) do bgs[i].bg = theme["bg"] end
+					bgs[popup.selected].bg = theme["bg_light"]
 				end
 			},
 			border_width	= beautiful.border_width,
@@ -508,7 +530,7 @@ widget_date = wibox.widget {
 			},
 			layout = wibox.layout.fixed.horizontal,
 		},
-		bg = theme.background_dark,
+		bg = theme["bg_dark"],
 		widget = wibox.container.background
 	},
 	margins = 7,
@@ -537,7 +559,7 @@ widget_time = wibox.widget {
 			},
 			layout = wibox.layout.fixed.horizontal,
 		},
-		bg = theme.background_dark,
+		bg = theme["bg_dark"],
 		widget = wibox.container.background
 	},
 	margins = 7,
@@ -567,7 +589,7 @@ widget_volume = wibox.widget {
 			},
 			layout = wibox.layout.fixed.horizontal,
 		},
-		bg     = theme.background_dark,
+		bg     = theme["bg_dark"],
 		widget = wibox.container.background
 	},
 	margins = 7,
@@ -638,7 +660,7 @@ widget_network = wibox.widget {
 			},
 			layout = wibox.layout.fixed.horizontal,
 		},
-		bg = theme.background_dark,
+		bg = theme["bg_dark"],
 		widget = wibox.container.background
 	},
 	margins = 7,
@@ -982,12 +1004,14 @@ awful.screen.connect_for_each_screen(
 				create_callback = function(self, t, index, objects)
 					self.update_callback(self, t, index, objects)
 				end,
+
 				update_callback = function(self, t, index, objects)
 					if t.selected then
 						self:get_children_by_id("icon")[1].shape_border_color = beautiful.wibar_selected_tag
 					else
 						self:get_children_by_id("icon")[1].shape_border_color = beautiful.wibar_unselected_tag
 					end
+
 					if not next(t:clients()) then
 						self:get_children_by_id("icon")[1].bg = beautiful.wibar_bg
 					else
@@ -1176,6 +1200,7 @@ do  -- Commands to execute in startup
 			naughty.notify({title = str})
 		end
 	end
+	run("sct 6000K")
 	run("xrandr --output DP-1 --mode 1280x1024 --scale 1.2x1.2")
 	run("xset r rate 250 50")
 	run("setxkbmap -option keypad:pointerkeys")

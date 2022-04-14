@@ -79,8 +79,9 @@
 (make-face 'splash-text-special)
 
 ;; Custom theme
-(when (member 'warmspace (custom-available-themes))
-  (load-theme 'warmspace 1))
+(setq-default chosen-theme 'Smeueg)
+(when (member chosen-theme (custom-available-themes))
+  (load-theme chosen-theme 1))
 
 ;; Modes
 (set-frame-font "JetBrainsMono Nerd Font Mono-12")
@@ -332,14 +333,7 @@ awesomewm, and the users shell's"
                       (operator . "O-Pending ")
                       (motion   . "Motion ")
                       (emacs    . "Emacs "))))
-       ,(propertize
-         (concat " %l/"
-                 (with-current-buffer (window-buffer (selected-window))
-                   (save-excursion
-                     (goto-char (point-max))
-                     (format-mode-line "%l")))
-                 " ")
-         'face main-face))))))
+       ,(propertize " %l:%c " 'face main-face))))))
 
 
 
@@ -705,8 +699,9 @@ awesomewm, and the users shell's"
   :ensure t
   :defer t
   :init
-  (defun open-impatient-browser() (browse-url "http://localhost:8080/imp/"))
+  (defun open-impatient-browser() (interactive) (browse-url "http://localhost:8080/imp/"))
   (defun run-impatient()
+    (interactive)
     (httpd-start)
     (impatient-mode)
     (browse-url "http://localhost:8080/imp/")))
@@ -855,7 +850,7 @@ awesomewm, and the users shell's"
     " d"  (lambda () (interactive) (find-file note-file))
     " i"  (lambda () (interactive) (set-auto-mode))
     " s"  (lambda () (interactive) (switch-to-buffer "*scratch*"))
-    " r"  (lambda () (interactive) (load-theme 'warmspace 1))
+    " r"  (lambda () (interactive) (load-theme chosen-theme 1))
     " 80" (lambda () (interactive) (move-to-column 80))
     " q"  (lambda ()
             (interactive) (when (y-or-n-p "Quit Emacs?") (kill-emacs)))))
