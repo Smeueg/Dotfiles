@@ -4,7 +4,7 @@
 # Author Name    - Smeueg
 # Author Email   - Smeueg@gmail.com
 # Author Gitlab  - https://gitlab.com/Smeueg
-# Last Updated   - Thu 14 Apr 09:59:53 WIB 2022
+# Last Updated   - Thu 14 Apr 20:58:31 WIB 2022
 # ------------------------------------------------
 # Variables #
 opts="\
@@ -36,7 +36,7 @@ fi
 
 
 # Utility Functions #
-error() { printf '[\033[1m\033[31mERROR\033[0m] %s\n' "${1}"; }
+error() { printf '[\033[1m\033[31mERROR\033[0m] %s\n' "${1}" >&2; }
 warning() { printf '[\033[1m\033[33mWARNING\033[0m] %s\n' "${1}"; }
 notice() { printf '[\033[1m\033[32mNOTICE\033[0m] %s\n' "${1}"; }
 
