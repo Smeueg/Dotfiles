@@ -103,16 +103,30 @@ alias mv="mv -i"
 alias rm="rm -i"
 alias cp="cp -i"
 alias ip="ip --color=auto"
+alias dra="droidcam-cli -a 192.168.18.44 4747"
+alias drav="droidcam-cli -a -v 192.168.18.44 4747"
 
 
 
 # Functions #
 colors() {
 	i=0
-	while [ ${i} -ne 255 ]; do
-		printf "\033[38;5;${i}mcolour${i} "
-		i=$((i + 1))
-	done
+	case "${1}" in
+		"255")
+			while [ ${i} -ne 255 ]; do
+				printf "\033[7m\033[38;5;${i}m ${i} \033[0m"
+				i=$((i + 1))
+			done
+			;;
+		"16")
+			while [ ${i} -ne 16 ]; do
+				[ ${i} -eq 8 ] && printf '\n\n'
+				printf "\033[7m\033[38;5;${i}m  \033[0m "
+				i=$((i + 1))
+			done
+			printf '\n'
+			;;
+	esac
 	printf '\n'
 	unset i
 }
@@ -199,3 +213,5 @@ export LESS_TERMCAP_us=$'\033[1;4;31m'
 # Nix
 [ -f "${HOME}/.nix-profile/etc/profile.d/nix.sh" ] &&
 	. "${HOME}/.nix-profile/etc/profile.d/nix.sh"
+
+colors 16
