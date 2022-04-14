@@ -4,7 +4,7 @@
 # Author Name    - Smeueg
 # Author Email   - Smeueg@gmail.com
 # Author Gitlab  - https://gitlab.com/Smeueg
-# Last Updated   - Tue 12 Apr 11:49:32 WIB 2022
+# Last Updated   - Tue 12 Apr 16:46:36 WIB 2022
 # ------------------------------------------------
 # Script to interactively change the resolution using xrandr
 xrandr_output=$(xrandr)
@@ -12,18 +12,17 @@ newline="
 "
 
 scales="\
-0.5
-0.6
-0.7
-0.8
-0.9
 1.0
-1.1
 1.1
 1.2
 1.3
 1.4
-1.5"
+1.5
+0.5
+0.6
+0.7
+0.8
+0.9"
 
 if [ "${BASH_NAME}" ]; then
 	read_char() { read -n1 input; }
