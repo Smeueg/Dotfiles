@@ -1,4 +1,4 @@
-(deftheme warmspace
+(deftheme Smeueg
   "Predominantly blue/cyan faces on a dark cyan background.")
 
 (setq bg      "#322638"
@@ -15,7 +15,7 @@
       box-width 7)
 (let ((class '((class color) (min-colors 89))))
   (custom-theme-set-faces
-   'warmspace
+   'Smeueg
    ;; Ensure sufficient contrast on 256-color xterms.
    `(default ((((class color) (min-colors 4096))
 	           (:background ,bg :foreground ,fg))
@@ -171,7 +171,7 @@
    `(eterm-256color-bright-white   ((,class (:foreground ,fg))))))
 
 (custom-theme-set-variables
- 'warmspace
+ 'Smeueg
  `(ansi-color-names-vector [,bg3 ,red ,green ,yellow ,blue ,magenta ,cyan ,fg]))
 
-(provide-theme 'warmspace)
+(provide-theme 'Smeueg)
