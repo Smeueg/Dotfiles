@@ -47,6 +47,7 @@ deleted. When I do try it out again, I will use:
 
 ### Optional
 These are all really optional, since without them, the "rice" would still be functional:
+- rofi (if rofi isn't installed, then AwesomeWM has it's own selection method with menubar)
 - xset (Change autorepeat value)
 - xrandr (To change the resolution)
 - xrdb (To set xresources values)
