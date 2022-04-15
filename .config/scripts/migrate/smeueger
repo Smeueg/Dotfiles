@@ -4,7 +4,7 @@
 # Author Name    - Smeueg
 # Author Email   - Smeueg@gmail.com
 # Author Gitlab  - https://gitlab.com/Smeueg
-# Last Updated   - Fri 15 Apr 07:36:41 WIB 2022
+# Last Updated   - Fri 15 Apr 10:46:16 WIB 2022
 # ------------------------------------------------
 # Variables #
 opts="\
@@ -59,8 +59,8 @@ else
 
 	stty_settings=$(stty -g)
 	read_char() {
-		opts_input="$(dd bs=1 count=1 2>&1)"
-		opts_input="${opts_input%${opts_input#?}}"
+		opts_input=$(dd bs=1 count=1 2>&1)
+		opts_input=${opts_input%${opts_input#?}}
 	}
 fi
 
@@ -79,8 +79,8 @@ get_cur_row() {
 		[ "${opts_input}" = "R" ] && break
 		row="${row}${opts_input}"
 	done
-	row="${row#*\[}"
-	row="${row%;*}"
+	row=${row#*\[}
+	row=${row%;*}
 	[ "${stty_settings+x}" ] && stty "${stty_settings}"
 	printf '\r\033[2K'
 }
@@ -160,7 +160,7 @@ install_dotfiles() {
 		# Backup files that are different from the git repo
 		notice 'Backing up existing files'
 		while read -r file; do
-			file="${file#*$(printf '\t')}"
+			file=${file#*$(printf '\t')}
 			dir="${HOME}/DotBackup/${file%/*}"
 			file="${HOME}/${file}"
 
@@ -214,14 +214,14 @@ install_font() {
 	for line in $(fetch "${url}" -); do
 		[ "${line}" ] || continue
 		[ "${line##*/ryanoasis/nerd-fonts/tree/master/patched-fonts/JetBrainsMono/Ligatures/*}" ] && continue
-		type="${line%\"*}"
-		type="${type##*/}"
+		type=${line%\"*}
+		type=${type##*/}
 		url="https://github.com/ryanoasis/nerd-fonts/tree/master/patched-fonts/JetBrainsMono/Ligatures/${type}/complete"
 		for line in $(fetch "${url}" -); do
 			[ "${line}" ] || continue
 			[ "${line##*Complete*Mono.ttf*}" ] && continue
-			line="${line#*href=\"}"
-			line="${line%\"*}"
+			line=${line#*href=\"}
+			line=${line%\"*}
 			fetch "https://github.com${line%/blob/*}/raw/${line#*/blob/}" "${font_dir%/}/JetBrainsMono Nerd Font ${type} Complete.ttf"
 		done
 	done
@@ -454,14 +454,14 @@ opts_setup() {
 			continue
 		fi
 		opt_has_deps=false
-		opt_deps="${opt#*\[}"
-		opt_deps="${opt_deps%\]*}"
+		opt_deps=${opt#*\[}
+		opt_deps=${opt_deps%\]*}
 		IFS="," _handle_comma "${opt_deps}"
 
-		opt_front_tmp="${opt%%\[*}"
-		opt_front_tmp="${opt_front_tmp%${opt_front_tmp##*[! ]}}"
-		opt_back_tmp="${opt##*\|}"
-		opt_back_tmp="${opt_back_tmp# }"
+		opt_front_tmp=${opt%%\[*}
+		opt_front_tmp=${opt_front_tmp%${opt_front_tmp##*[! ]}}
+		opt_back_tmp=${opt##*\|}
+		opt_back_tmp=${opt_back_tmp# }
 
 		if ${opt_has_deps}; then
 			opt_tmp="${opt_tmp} [ ] ${opt_front_tmp}"
@@ -493,8 +493,8 @@ opts_print() {
 
 		if [ ${opts_tmp_tab} -eq ${opts_chosen_tab} ]; then
 			opts_tmp_line=$((opts_tmp_line + 1))
-			opt="${opt%\\033*}"
-			opt="${opt#*\\033[31m}"
+			opt=${opt%\\033*}
+			opt=${opt#*\\033\[31m}
 			[ ${#opt} -gt ${opts_tmp_width} ] && opts_tmp_width=${#opt}
 		fi
 	done
@@ -577,7 +577,7 @@ opts_select() {
 			opts_tmp="${opts_tmp}${opt}${newline}"
 		fi
 	done
-	opts="${opts_tmp}"
+	opts=${opts_tmp}
 	[ ${opts_chosen_line} -ne ${opts_height} ] && opts_chosen_line=$((opts_chosen_line + 1))
 	unset opts_tmp_tab opts_tmp_line opts_tmp
 }
@@ -630,8 +630,8 @@ opts_run() {
 			printf '━'
 			i=$((i + 1))
 		done
-		opt_tmp_str="${opt# \[?\] }"
-		opt_tmp_str="${opt_tmp_str% \\033*}"
+		opt_tmp_str=${opt# \[?\] }
+		opt_tmp_str=${opt_tmp_str% \\033*}
 		printf "\r\033[$(((COLUMNS - ${#opt_tmp_str}) / 2))C %s \n" "${opt_tmp_str}"
 		unset i opt_tmp_str
 		${opt##*\|}
