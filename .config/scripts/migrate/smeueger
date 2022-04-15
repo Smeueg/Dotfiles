@@ -4,7 +4,7 @@
 # Author Name    - Smeueg
 # Author Email   - Smeueg@gmail.com
 # Author Gitlab  - https://gitlab.com/Smeueg
-# Last Updated   - Fri 15 Apr 10:46:16 WIB 2022
+# Last Updated   - Fri 15 Apr 11:02:33 WIB 2022
 # ------------------------------------------------
 # Variables #
 opts="\
@@ -37,9 +37,9 @@ fi
 
 
 # Utility Functions #
-error() { printf '[\033[1m\033[31mERROR\033[0m] %s\n' "${1}" >&2; }
-warning() { printf '[\033[1m\033[33mWARNING\033[0m] %s\n' "${1}"; }
-notice() { printf '[\033[1m\033[32mNOTICE\033[0m] %s\n' "${1}"; }
+error() { printf '[\033[1;31mERROR\033[0m] %s\n' "${1}" >&2; }
+warning() { printf '[\033[1;33mWARNING\033[0m] %s\n' "${1}"; }
+notice() { printf '[\033[1;32mNOTICE\033[0m] %s\n' "${1}"; }
 
 if [ "${BASH_VERSION}" ] || [ "${KSH_VERSION}" ]; then
 	read_char() { IFS= read -n 1 opts_input; }
@@ -159,8 +159,9 @@ install_dotfiles() {
 	dot_sync() {
 		# Backup files that are different from the git repo
 		notice 'Backing up existing files'
+		tab_char=$(printf '\t')
 		while read -r file; do
-			file=${file#*$(printf '\t')}
+			file=${file#*${tab_char}}
 			dir="${HOME}/DotBackup/${file%/*}"
 			file="${HOME}/${file}"
 
@@ -172,8 +173,7 @@ install_dotfiles() {
 		done <<-EOF
 		$(git --git-dir=${dotfile_dir} --work-tree=$HOME diff --name-status)
 		EOF
-		unset file
-		unset dir
+		unset file dir tab_char
 
 		# Sync bare repo
 		notice 'Syncing dotfiles'
@@ -523,7 +523,7 @@ opts_print() {
 		opt_tmp=${opt#== }
 		opt_tmp=${opt_tmp% ==}
 		if [ ${opts_tmp_tab} -eq ${opts_chosen_tab} ]; then
-			opt_tmp="\033[7m\033[1m${opt_tmp}"
+			opt_tmp="\033[1;7m${opt_tmp}"
 		fi
 		opts_tmp_header="${opts_tmp_header} \033[31m${opt_tmp}\033[0m ─"
 		continue
