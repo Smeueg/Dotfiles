@@ -836,7 +836,13 @@ globalkeys = gears.table.join( -- Keybindings
 			s.wibox.visible = not s.wibox.visible
 	end),
 	-- Menubar
-	awful.key({ modkey }, "p", function() menubar.show() end),
+	awful.key({ modkey }, "p", function()
+			if command_exists("rofi") then
+				awful.spawn("rofi -show drun")
+			else
+				menubar.show()
+			end
+	end),
 	-- Standard programs
 	awful.key({ modkey }, "b", function()
 			if browser then
@@ -846,24 +852,16 @@ globalkeys = gears.table.join( -- Keybindings
 				naughty.notify { title = "Error: browser not found" }
 			end
 	end),
+
+	awful.key({ modkey }, "Return", function()
+			if terminal == "emacs" then find_or_spawn_emacs(); return; end
+			awful.spawn(terminal)
+	end),
+
 	awful.key({ modkey }, "q", system), -- Suspend, shutdown, or reboot
 	awful.key({ modkey }, "s", screenshot)
 )
 
-
-if (terminal == "emacs") then
-	globalkeys = gears.table.join(
-		globalkeys,
-		awful.key({ modkey }, "Return", find_or_spawn_emacs,
-			{description = "Move emacs to the current tag or launch emacs",
-			 group = "programs"})
-	)
-else
-   globalkeys = gears.table.join(
-	  globalkeys,
-	  awful.key({ modkey }, "Return", function() awful.spawn(terminal) end,
-		 {description = "Launch the terminal", group = "programs"}))
-end
 
 clientkeys = gears.table.join( -- Key Bindings That Activate Per-client
     awful.key({ modkey, "Shift" }, "f",
