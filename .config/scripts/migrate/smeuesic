@@ -19,7 +19,7 @@ pl_url="https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc
 
 # Check if youtube-dl is installed
 [ "$(command -v youtube-dl)" ] || {
-	printf '\033[1m\033[31m[ERROR]\033[0m `youtube-dl` is not installed'
+	printf '\033[1;31m[ERROR]\033[0m `youtube-dl` is not installed\n' >&2
 	exit 1
 }
 
@@ -37,7 +37,7 @@ replace() { # Arguments: <string> <query> <substitution>
 
 # Check if ${music_dir} exist as a directory
 [ -d "${music_dir}" ] || {
-	printf '\033[1m\033[32m[NOTICE] "%s" does not exit, create? [Y\\n] ' "${music_dir}"
+	printf '\033[1;32m[NOTICE] "%s" does not exit, create? [Y\\n] ' "${music_dir}"
 
 	read input
 	case "${input}" in
@@ -49,10 +49,7 @@ replace() { # Arguments: <string> <query> <substitution>
 
 
 # Header
-[ ${COLUMNS} -le 80 ]
-cols=${COLUMNS}
-
-len=$((${cols:-80} / 2 - 7))
+len=$((COLUMNS / 2 - 7))
 while [ ${#str} -lt ${len} ]; do
 	str="${str}="
 done
