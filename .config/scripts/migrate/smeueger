@@ -4,7 +4,7 @@
 # Author Name    - Smeueg
 # Author Email   - Smeueg@gmail.com
 # Author Gitlab  - https://gitlab.com/Smeueg
-# Last Updated   - Thu 14 Apr 20:58:31 WIB 2022
+# Last Updated   - Fri 15 Apr 07:36:41 WIB 2022
 # ------------------------------------------------
 # Variables #
 opts="\
@@ -30,6 +30,7 @@ newline="
 if [ "$(command -v apt)" ]; then
 	opts="${opts}${newline}== Debian Misc Packages ==${newline}"
 	opts="${opts}Enable Brave Browser [sudo|su,wget|curl,dpkg] | apt_enable_brave${newline}"
+	opts="${opts}Enable Github Cli    [sudo|su,wget|curl,dpkg] | apt_enable_gh_cli${newline}"
 	opts="${opts}Bootstrap Packages   [sudo|su]                | apt_bootstrap_packages${newline}"
 fi
 
@@ -383,6 +384,26 @@ apt_enable_brave() {
 	cmd="${cmd}; printf 'deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main\n' > /etc/apt/sources.list.d/brave-browser-release.list"
 	run_as_root "${cmd}"
 	unset cmd
+}
+
+
+apt_enable_gh_cli() {
+	check_for_root
+	cmd=""
+	tmp=$(dpkg -l apt-transport-https 2>&1)
+	if [ "${tmp##*no packages found*}" ]; then
+		cmd="apt install apt-transport-https;"
+	fi
+
+	if [ "$(command -v curl)" ]; then
+		cmd="${cmd}curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o /usr/share/keyrings/githubcli-archive-keyring.gpg"
+	elif [ "$(command -v wget)" ]; then
+		cmd="${cmd}wget --no-hsts https://cli.github.com/packages/githubcli-archive-keyring.gpg -O /usr/share/keyrings/githubcli-archive-keyring.gpg"
+	fi
+
+	cmd="${cmd}; printf 'deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main\n' > /etc/apt/sources.list.d/github-cli.list"
+	run_as_root "${cmd}"
+	unset cmd tmp
 }
 
 
