@@ -50,7 +50,8 @@
  custom-safe-themes t
  ;; Mouse wheel speed
  mouse-wheel-scroll-amount '(1)
- mouse-wheel-progressive-speed nil)
+ mouse-wheel-progressive-speed nil
+ hs-hide-comments-when-hiding-all nil)
 
 
 
@@ -63,7 +64,6 @@
 ;; Use spaces when aligning with align-regexp
 (defadvice align-regexp (around align-regexp-with-spaces activate)
   (let ((indent-tabs-mode nil)) ad-do-it))
-
 (add-hook 'html-mode-hook (lambda () (setq-local tab-width 2)))
 
 
@@ -79,12 +79,12 @@
 (make-face 'splash-text-special)
 
 ;; Custom theme
+(set-frame-font "JetBrainsMono Nerd Font Mono-12")
 (setq-default chosen-theme 'Smeueg)
 (when (member chosen-theme (custom-available-themes))
   (load-theme chosen-theme 1))
 
 ;; Modes
-(set-frame-font "JetBrainsMono Nerd Font Mono-12")
 (menu-bar-mode 0)           ;; Disable menu bar
 (blink-cursor-mode 0)       ;; Disable cursor blinking
 (show-paren-mode 1)         ;; Show parentheses pairs
@@ -94,8 +94,7 @@
 (scroll-bar-mode -1)        ;; Disable scroll bar
 (global-visual-line-mode 0) ;; Disable wrap
 (set-window-buffer nil (current-buffer))
-(setq-default cursor-in-non-selected-windows nil
-              left-fringe-width 10)
+(setq-default cursor-in-non-selected-windows nil left-fringe-width 10)
 
 
 
@@ -109,7 +108,7 @@
 (setq-default whitespace-style '(face trailing lines-tail)
               whitespace-line-column 80)
 
-;; Make Emacs remember the last vistied lineaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+;; Make Emacs remember the last vistied line
 (when (fboundp 'save-place-mode) ;; Remember last place emacs visits
   (save-place-mode 1)
   (setq-default save-place-file "/tmp/emacs_places"
@@ -126,9 +125,17 @@
 (fset 'yes-or-no-p 'y-or-n-p)
 (defalias 'w 'save-buffer)
 (defalias 'd 'delete-window)
-(defalias 'hs 'split-window-horizontally)
-(defalias 'vs 'split-window-vertically)
 (defalias 's 'replace-regexp)
+
+;; Actual Functions
+(defun hs()
+  "Split the buffer horizontally and focus on said window"
+  (interactive)
+  (select-window (split-window-horizontally)))
+(defun vs()
+  "Split the buffer vertically and focus on said window"
+  (interactive)
+  (select-window (split-window-vertically)))
 
 
 (defun scratch()
@@ -273,7 +280,7 @@ awesomewm, and the users shell's"
           ((derived-mode-p 'python-mode) ;; Python
            (setq command (concat "python3 " file-path "\n")))
           ((derived-mode-p 'html-mode)
-           (setq command (concat "${BROWSER} " file-path "\n")))
+           (setq command (concat "${BROWSER} " file-path "; exit\n")))
           ((derived-mode-p 'java-mode)
            (setq command
                  (concat "java " file-path "\n")))
@@ -311,8 +318,6 @@ awesomewm, and the users shell's"
             left
             (list (propertize " " 'display `((space :align-to (- (+ right right-fringe right-margin) ,space 1)))))
             right)))
-
-
 (setq-default
  mode-line-format
  '((:eval
@@ -368,8 +373,6 @@ awesomewm, and the users shell's"
     (add-hook 'post-command-hook #'min-splash-align 0 t)
     (add-hook 'window-state-change-hook #'min-splash-align 0 t)
     (kill-buffer "*scratch*")))
-
-
 (defun min-splash-align()
   (if (get-buffer "*min-splash*")
       (with-current-buffer "*min-splash*"
@@ -387,8 +390,6 @@ awesomewm, and the users shell's"
     (progn
       (remove-hook 'post-command-hook 'min-splash-align)
       (remove-hook 'window-state-change-hook 'min-splash-align))))
-
-
 (when (and (not (member "-no-splash"  command-line-args))
            (not (member "--file"      command-line-args))
            (not (member "--find-file" command-line-args))
@@ -408,6 +409,10 @@ awesomewm, and the users shell's"
 (add-hook 'minibuffer-exit-hook
           (lambda () (when (get-buffer "*Completions*")
                        (kill-buffer "*Completions*"))))
+(add-hook 'prog-mode-hook
+          (lambda ()
+            (hs-minor-mode)
+            (hs-hide-all)))
 (when (fboundp 'script-header)
   (add-hook 'sh-mode-hook
             (lambda () (add-hook 'before-save-hook 'script-header 0 t))))
@@ -464,7 +469,6 @@ awesomewm, and the users shell's"
     (lambda()
       (interactive)
       (find-alternate-file ".."))))
-
 
 (use-package org
   :defer t
@@ -651,7 +655,6 @@ awesomewm, and the users shell's"
   :defer t
   :commands format-all-buffer)
 
-
 (use-package eglot
   ;; LSP Client
   :ensure t
@@ -708,7 +711,7 @@ awesomewm, and the users shell's"
 
 (use-package emmet-mode
   :ensure t
-  :defer t)
+  :hook (html-mode . emmet-mode))
 
 
 ;; Lua ;;
@@ -832,6 +835,9 @@ awesomewm, and the users shell's"
   (add-hook 'evil-emacs-state-entry-hook
             (lambda ()
               (evil-define-key 'emacs 'local ":" 'execute-extended-command)))
+
+
+  (evil-define-key 'motion 'global "zt" 'hs-toggle-hiding)
 
   (evil-define-key '(normal motion) 'global
     [return] 'push-button
