@@ -1,10 +1,14 @@
 #!/bin/sh
+
+if ! [ "$(command -v youtube-dl)" ]; then
+	printf "[\033[1;31mERROR\033[0m] 'youtube-dl' isn't installed. Exiting\n" >&2
+	exit 1
+fi
+
+
 music_dir="${HOME}/Music"
-
-
 printf "Insert playlist url (Leave blank for smeusic playlist): "
 read pl_url
-
 if ! [ "${pl_url}" ]; then
 	printf "[\033[1;32mNOTICE\033[0m] Downloading Smeueg's playlist\n"
 	pl_url="https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc"
@@ -14,9 +18,8 @@ elif [ "${pl_url%%https://www.youtube.com/playlist\?list=*}" ]; then
 fi
 
 
-if ! [ "$(command -v youtube-dl)" ]; then
-	printf "[\033[1;31mERROR\033[0m] 'youtube-dl' isn't installed. Exiting\n" >&2
-	exit 1
+if ! [ "${COLUMNS}" ]; then
+	COLUMNS=$(tput cols)
 fi
 
 
@@ -43,10 +46,10 @@ header() {
 		str="${str}─"
 		i=$((i+1))
 	done
-	printf '\033[1;31m%s\033[0m' "${str}"
-	[ "${1}" ] &&
-		printf "\r\033[$(((COLUMNS - ${#1} - 2) / 2))C ${1} \n"
-	unset str
+		printf '\033[1;31m%s\033[0m' "${str}"
+		[ "${1}" ] &&
+			printf "\r\033[$(((COLUMNS - ${#1} - 2) / 2))C ${1} \n"
+		unset str
 }
 
 
