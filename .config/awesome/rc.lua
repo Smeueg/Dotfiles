@@ -1,8 +1,6 @@
 -- Smeueg's Awesomewm configuration
 --
 -- TODO:
---   * Add a dropdown menu widget for the wibar
---     (to select screenshot, system, or pick a program)
 --   * Create a wallpaper (cube in the middle)
 --   * Add a layout widget on the wibar
 --
@@ -105,9 +103,18 @@ theme["focus"] = theme[theme["focus"]]
 
 -- Shapes --
 local titlebar_circle = gears.shape.transform(gears.shape.circle)
-	:scale(0.6, 0.6):translate(3, 7)
+	:scale(0.5, 0.5):translate(7, 10)
 local button_close = gears.surface.load_from_shape(
 	20, 20, titlebar_circle, theme["red"])
+
+if false then -- Tests
+	local cr = cairo.Context(button_close)
+	cr:set_source(gears.color(theme["icon_color"]))
+	cr:rectangle(11, 5, 10, 6)
+	cr:rectangle(11, 10, 3, 1)
+	cr:fill()
+end
+
 local button_maximize = gears.surface.load_from_shape(
 	20, 20, titlebar_circle, theme["green"])
 local button_minimize = gears.surface.load_from_shape(
@@ -128,42 +135,44 @@ beautiful.titlebar_close_button_focus				= button_close
 beautiful.titlebar_maximized_button_normal			= button_maximize
 beautiful.titlebar_maximized_button_normal_active	= button_maximize
 beautiful.titlebar_maximized_button_normal_inactive = button_maximize
-beautiful.titlebar_maximized_button_focus			= button_maximize
-beautiful.titlebar_maximized_button_focus_active	= button_maximize
-beautiful.titlebar_maximized_button_focus_inactive	= button_maximize
-beautiful.titlebar_minimize_button_normal			= button_minimize
-beautiful.titlebar_minimize_button_focus			= button_minimize
-beautiful.titlebar_bg  = theme["bg"]
-beautiful.titlebar_fg  = theme["fg"]
--- Menu Bar
-beautiful.menubar_fg_focus = theme["focus"]
-beautiful.menubar_bg_focus = theme["bg_light"]
--- Tasklist
-beautiful.tasklist_bg_focus		= theme["bg_light"]
-beautiful.tasklist_bg_normal	= theme["bg"]
-beautiful.tasklist_bg_minimize	= beautiful.wibar_bg
--- Borders & Gaps
-beautiful.border_normal = theme["bg"]
-beautiful.border_focus  = theme["focus"]
-beautiful.border_width  = dpi(4)
-beautiful.useless_gap   = 5
--- Taglists
-beautiful.taglist_bg_focus		= beautiful.wibar_bg
-beautiful.taglist_squares_sel	= nil
-beautiful.taglist_squares_unsel = nil
--- Notification
-beautiful.notification_border_color = theme["focus"]
-beautiful.notification_border_width = 3
+	beautiful.titlebar_maximized_button_focus			= button_maximize
+	beautiful.titlebar_maximized_button_focus_active	= button_maximize
+	beautiful.titlebar_maximized_button_focus_inactive	= button_maximize
+	beautiful.titlebar_minimize_button_normal			= button_minimize
+	beautiful.titlebar_minimize_button_focus			= button_minimize
+	beautiful.titlebar_bg  = theme["bg_light"]
+	beautiful.titlebar_bg_focus  = theme["focus"]
+	beautiful.titlebar_fg  = theme["fg"]
+	beautiful.titlebar_fg_focus  = theme["bg_dark"]
+	-- Menu Bar
+	beautiful.menubar_fg_focus = theme["focus"]
+	beautiful.menubar_bg_focus = theme["bg_light"]
+	-- Tasklist
+	beautiful.tasklist_bg_focus		= theme["bg_light"]
+	beautiful.tasklist_bg_normal	= theme["bg"]
+	beautiful.tasklist_bg_minimize	= beautiful.wibar_bg
+	-- Borders & Gaps
+	beautiful.border_normal = theme["bg"]
+	beautiful.border_focus  = theme["focus"]
+	beautiful.border_width  = dpi(4)
+	beautiful.useless_gap   = 5
+	-- Taglists
+	beautiful.taglist_bg_focus		= beautiful.wibar_bg
+	beautiful.taglist_squares_sel	= nil
+	beautiful.taglist_squares_unsel = nil
+	-- Notification
+	beautiful.notification_border_color = theme["focus"]
+	beautiful.notification_border_width = 3
 
 
 
--- Custom Images/Icons --
-local icon_clock = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
-local cr = cairo.Context(icon_clock)
-cr:set_source(gears.color(theme["icon_color"]))
-cr:rectangle(11, 5, 1, 6)
-cr:rectangle(11, 10, 3, 1)
-gears.shape.transform(gears.shape.radial_progress)
+	-- Custom Images/Icons --
+	local icon_clock = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
+	local cr = cairo.Context(icon_clock)
+	cr:set_source(gears.color(theme["icon_color"]))
+	cr:rectangle(11, 5, 1, 6)
+	cr:rectangle(11, 10, 3, 1)
+	gears.shape.transform(gears.shape.radial_progress)
 	:scale(0.6, 0.6)
 	:translate(10, 7)(cr, 20, 20)
 cr:fill()
@@ -1123,12 +1132,17 @@ function(c)
 		end)
 	)
 
-	awful.titlebar(c, {size = 25}):setup{
+	awful.titlebar(c, {size = 30}):setup{
 		{
 			buttons = buttons,
 			layout  = wibox.layout.fixed.horizontal
 		},
 		{
+			{ -- Title
+				align  = 'center',
+				font   = beautiful.font:match("(.+) %d+$") .. " 11",
+				widget = awful.titlebar.widget.titlewidget(c)
+			},
 			buttons = buttons,
 			layout  = wibox.layout.flex.horizontal
 		},

@@ -137,12 +137,10 @@
   (interactive)
   (select-window (split-window-vertically)))
 
-
 (defun scratch()
   "Open the scratch buffer"
   (interactive)
   (switch-to-buffer "*scratch*"))
-
 
 (defun script-header (&optional opt)
   "Add a comment header for information about a script,
@@ -184,7 +182,6 @@ template from Terminal For Life"
              (insert (format-time-string "Last Updated   - %a %_d %b %T %Z %Y"))
              (comment-line 1))))))
 
-
 (defun edit-config (config)
   "Edit a configuration file. Supports emacs's init-file and enabled theme,
 awesomewm, and the users shell's"
@@ -216,7 +213,6 @@ awesomewm, and the users shell's"
        files))))
   (find-file config))
 
-
 (defun get-system-clipboard ()
   "Get value of the system clipboard"
   (interactive)
@@ -224,7 +220,6 @@ awesomewm, and the users shell's"
        'CLIPBOARD
        (or x-select-request-type
            'UTF8_STRING)) ""))
-
 
 (defun close ()
   "Kill buffer when there's only one window displaying the buffer.
@@ -254,7 +249,6 @@ awesomewm, and the users shell's"
         (set-window-prev-buffers (selected-window) var)))
     (when del (delete-window))))
 (defalias 'q 'close)
-
 
 (defun run ()
   "Automatically compile (if needed) and execute the current program "
@@ -401,7 +395,9 @@ awesomewm, and the users shell's"
 ;;; HOOKS ;;;
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 (add-hook 'sh-mode-hook
-          (lambda () (sh-electric-here-document-mode 0)))
+          (lambda ()
+            (sh-electric-here-document-mode 0)
+            (when (= (buffer-size) 0) (insert "#!/bin/sh\n\n"))))
 (add-hook 'emacs-lisp-mode-hook
           (lambda () (setq-local indent-tabs-mode nil)))
 (add-hook 'completion-list-mode-hook
@@ -647,6 +643,10 @@ awesomewm, and the users shell's"
                                '(:with company-yasnippet))))
                    company-backends))))
 
+(use-package avy
+  :ensure t
+  :commands avy-goto-char
+  )
 
 ;; "Programming" Packages ;;
 (use-package format-all
@@ -837,7 +837,11 @@ awesomewm, and the users shell's"
               (evil-define-key 'emacs 'local ":" 'execute-extended-command)))
 
 
-  (evil-define-key 'motion 'global "zt" 'hs-toggle-hiding)
+  ;; Folding
+  (evil-define-key 'normal 'prog-mode-hook
+    " t" 'hs-toggle-hiding
+    " Th" 'hs-hide-all
+    " Ts" 'hs-show-all)
 
   (evil-define-key '(normal motion) 'global
     [return] 'push-button
@@ -853,6 +857,7 @@ awesomewm, and the users shell's"
     " h"  'help
     " l"  'global-display-line-numbers-mode
     " w"  'global-whitespace-mode
+    " ;"  'avy-goto-char-2
     " d"  (lambda () (interactive) (find-file note-file))
     " i"  (lambda () (interactive) (set-auto-mode))
     " s"  (lambda () (interactive) (switch-to-buffer "*scratch*"))

@@ -130,6 +130,11 @@
      ((,class (:foreground ,cyan :background ,bg2 :weight bold
                            :box (:line-width ,box-width :color ,bg2)))))
    ;;; External Packages
+   ;; Avy
+   `(avy-lead-face ((,class (:foreground ,bg :background ,orange :weight bold))))
+   `(avy-lead-face-0 ((,class (:foreground ,bg :background ,red :weight bold))))
+   `(avy-lead-face-1 ((,class (:foreground ,bg :background ,green :weight bold))))
+   `(avy-lead-face-2 ((,class (:foreground ,bg :background ,cyan :weight bold))))
    ;; Tree Sitter
    `(tree-sitter-hl-face:function.call ((,class (:foreground ,red :weight bold))))
    `(tree-sitter-hl-face:function.builtin ((,class (:foreground ,red :weight bold))))

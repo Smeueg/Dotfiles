@@ -26,16 +26,15 @@ fi
 
 
 # PROMPT #
-# Guaranteed to work on dash, bash, zsh, and ksh
+# Should work on dash, bash, zsh, and ksh
 print_prompt() {
 	ret=$?
 	symbol="➜"
-	bold="\033[1m"
-	dir_col="\033[38;5;11m"
-	branch_col="\033[38;5;8m"
-	failed_col="\033[38;5;1m"
-	success_col="\033[38;5;6m"
 	reset="\033[0m"
+	color_dir="\033[1;38;5;11m"
+	color_branch="\033[38;5;8m"
+	color_failed="\033[38;5;1m"
+	color_success="\033[38;5;6m"
 
 
 	tmp="$(tty)"
@@ -44,43 +43,41 @@ print_prompt() {
 	fi
 
 
-	if [ "${BASH}" ]; then
+	if [ "${BASH_VERSION}" ]; then
 		wrapper_start="\001"
 		wrapper_end="\002"
 	elif [ "${ZSH_NAME}" ]; then
 		wrapper_start="%{"
 		wrapper_end="%}"
 	elif ! [ "${KSH_VERSION}" ]; then
-		unset bold dir_col branch_col failed_col success_col reset
+		unset reset color_dir color_branch color_failed color_success
 	fi
 
 
-	if [ "${KSH_VERSION}" ] || { [ "${wrapper_start}" ] && [ "${wrapper_end}" ]; } ; then
-		bold="${wrapper_start}${bold}${wrapper_end}"
-		dir_col="${wrapper_start}${dir_col}${wrapper_end}"
-		branch_col="${wrapper_start}${branch_col}${wrapper_end}"
-		failed_col="${wrapper_start}${failed_col}${wrapper_end}"
-		success_col="${wrapper_start}${success_col}${wrapper_end}"
-		reset="${wrapper_start}${reset}${wrapper_end}"
+	if [ "${wrapper_start+x}" ] && [ "${wrapper_end+x}" ]; then
+		for var in reset color_dir color_branch color_failed color_sucess; do
+			eval "${var}=\"\${wrapper_start}\$${var}\${wrapper_end}\""
+		done
 	fi
 
 
 	if ! [ "${PWD%${HOME}*}" ]; then
-		printf '%b%b%s' "${bold}" "${dir_col}" "~${PWD#${HOME}}"
+		printf '%b%s' "${color_dir}" "~${PWD#${HOME}}"
 	else
-		printf '%b%b%s' "${bold}" "${dir_col}" "${PWD}"
+		printf '%b%s' "${color_dir}" "${PWD}"
 	fi
 
 
 	branch="$(git branch --show-current 2>&-)"
-	[ "${branch}" ] && printf '%b [ %s ]' "${branch_col}" "${branch}"
+	[ "${branch}" ] && printf '%b [ %s ]' "${color_branch}" "${branch}"
 
 
 	if [ ${ret} -eq 0 ]; then
-		printf '\n%b%s%b ' "${success_col}" "${symbol}" "${reset}"
+		printf '\n%b%s%b ' "${color_success}" "${symbol}" "${reset}"
 	else
-		printf '\n%b%s%b ' "${failed_col}" "${symbol}" "${reset}"
+		printf '\n%b%s%b ' "${color_failed}" "${symbol}" "${reset}"
 	fi
+	unset var wrapper_start wrapper_end
 }
 if [ "${BASH}" ] || [ "${ZSH_NAME}" ]; then
 	export PS1="\$(print_prompt)"
@@ -111,6 +108,7 @@ alias drav="droidcam-cli -a -v 192.168.18.44 4747"
 # Functions #
 colors() {
 	i=0
+	printf '\n'
 	case "${1}" in
 		"255")
 			while [ ${i} -ne 255 ]; do
@@ -187,9 +185,9 @@ compress_documents() {
 
 e() {
 	if [ "${EDITOR}" = "emacs" ] && [ "$(command -v emacsclient)" ]; then
-		emacsclient -a ${EDITOR} "$@" &
+		emacsclient -a ${EDITOR} $@ &
 	else
-		${EDITOR} "$@"
+		${EDITOR} $@
 	fi
 }
 
@@ -215,3 +213,4 @@ export LESS_TERMCAP_us=$'\033[1;4;31m'
 	. "${HOME}/.nix-profile/etc/profile.d/nix.sh"
 
 colors 16
+printf '\r\033[J'
