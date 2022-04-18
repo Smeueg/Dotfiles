@@ -1,20 +1,17 @@
 #!/bin/sh
 music_dir="${HOME}/Music"
-if [ "${1}" ]; then
-	if [ "${pl_url%%https://www.youtube.com/playlist\?list=*}" ]; then
-		printf '[\033[1;31mERROR\033[0m] Invalid URL\n'
-		exit 1
-	fi
 
-	pl_url=${1}
 
-else
+printf "Insert playlist url (Leave blank for smeusic playlist): "
+read pl_url
+
+if ! [ "${pl_url}" ]; then
+	printf "[\033[1;32mNOTICE\033[0m] Downloading Smeueg's playlist\n"
 	pl_url="https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc"
+elif [ "${pl_url%%https://www.youtube.com/playlist\?list=*}" ]; then
+	printf '[\033[1;31mERROR\033[0m] Invalid URL\n' >&2
+	exit 1
 fi
-newline="
-"
-
-[ "${pl_url%%https://www.youtube.com/playlist\?list=*}" ] && echo "invalid url"
 
 
 if ! [ "$(command -v youtube-dl)" ]; then
@@ -24,10 +21,9 @@ fi
 
 
 # Exit if "${music_dir}" doesn't exist and can't be created
-! [ -d "${music_dir}" ] &&
-	! mkdir -pv "${music_dir}" &&
-	exit 1
-
+if ! [ -d "${music_dir}" ]; then
+	mkdir -pv "${music_dir}" || exit 1
+fi
 
 
 replace() {
@@ -107,6 +103,9 @@ sync_remove() {
 		header
 }
 
+
+newline="
+"
 
 output=$(get_title_id)
 IFS=${newline} sync_download
