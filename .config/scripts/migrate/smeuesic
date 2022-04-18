@@ -19,7 +19,9 @@ fi
 
 
 if ! [ "${COLUMNS}" ]; then
-	COLUMNS=$(tput cols)
+	get_cols() { COLUMNS=$(stty size); COLUMNS=${COLUMNS#* }; }
+else
+	get_cols() { COLUMNS=${COLUMNS}; }
 fi
 
 
@@ -42,14 +44,15 @@ replace() {
 
 header() {
 	i=0
+	get_cols
 	while [ ${i} -ne ${COLUMNS} ]; do
 		str="${str}─"
 		i=$((i+1))
 	done
-		printf '\033[1;31m%s\033[0m' "${str}"
-		[ "${1}" ] &&
-			printf "\r\033[$(((COLUMNS - ${#1} - 2) / 2))C ${1} \n"
-		unset str
+	printf '\033[1;31m%s\033[0m' "${str}"
+	[ "${1}" ] &&
+		printf "\r\033[$(((COLUMNS - ${#1} - 2) / 2))C ${1} \n"
+	unset str
 }
 
 
