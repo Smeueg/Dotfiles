@@ -4,7 +4,7 @@
 # Author Name    - Smeueg
 # Author Email   - Smeueg@gmail.com
 # Author Gitlab  - https://gitlab.com/Smeueg
-# Last Updated   - Fri 15 Apr 11:02:33 WIB 2022
+# Last Updated   - Mon 18 Apr 19:03:15 WIB 2022
 # ------------------------------------------------
 # Variables #
 opts="\
@@ -70,36 +70,44 @@ elif [ "$(command -v wget)" ]; then
 	fetch() { wget --no-hsts "${1}" -O "${2}"; }
 fi
 
+
+if ! [ "${COLUMNS}" ]; then
+	get_cols() { COLUMNS=$(stty size); COLUMNS=${COLUMNS#* }; }
+else
+	get_cols() { COLUMNS=${COLUMNS}; }
+fi
+
+
 get_cur_row() {
-	# Get current cursor row
-	[ "${stty_settings+x}" ] && stty -icanon
-	printf '\033[6n'
-	while :; do
+		# Get current cursor row
+		[ "${stty_settings+x}" ] && stty -icanon
+		printf '\033[6n'
+		while :; do
 		read_char
-		[ "${opts_input}" = "R" ] && break
-		row="${row}${opts_input}"
-	done
-	row=${row#*\[}
-	row=${row%;*}
-	[ "${stty_settings+x}" ] && stty "${stty_settings}"
-	printf '\r\033[2K'
-}
+		   [ "${opts_input}" = "R" ] && break
+		   row="${row}${opts_input}"
+		done
+		row=${row#*\[}
+		row=${row%;*}
+		[ "${stty_settings+x}" ] && stty "${stty_settings}"
+		printf '\r\033[2K'
+	}
 
-printn() {
-	# print ${1}, ${2} times
-	i=0
-	while [ ${i} -ne ${2} ]; do
-		printf '%s' "${1}"
-		i=$((i+1))
-	done
-	unset i
-}
+	printn() {
+		# print ${1}, ${2} times
+		i=0
+		while [ ${i} -ne ${2} ]; do
+			printf '%s' "${1}"
+			i=$((i+1))
+		done
+		unset i
+	}
 
-confirm() {
-	# Prompt the user for a yes or no question, displaying ${1} as the question
-	printf '%s [Y\\n] ' "${1}"
-	read reply
-	case "${reply}" in
+	confirm() {
+		# Prompt the user for a yes or no question, displaying ${1} as the question
+		printf '%s [Y\\n] ' "${1}"
+		read reply
+		case "${reply}" in
 		[Yy][Ee][Ss]|[Yy]|"") unset reply; return 0;;
 		*) unset reply; return 1;;
 	esac
@@ -517,38 +525,43 @@ opts_print() {
 	printf "\r\033[J${opts_tmp_line_str}╮\n%${opts_width}s\r│\n" "│"
 	for opt in ${opts}; do
 		if ! [ "${opt%%== * ==}" ]; then
-		opts_tmp_tab=$((opts_tmp_tab + 1))
-		opts_tmp_line=0
+			opts_tmp_tab=$((opts_tmp_tab + 1))
+			opts_tmp_line=0
 
-		opt_tmp=${opt#== }
-		opt_tmp=${opt_tmp% ==}
+			opt_tmp=${opt#== }
+			opt_tmp=${opt_tmp% ==}
+			if [ ${opts_tmp_tab} -eq ${opts_chosen_tab} ]; then
+				opt_tmp="\033[1;7m${opt_tmp}"
+			fi
+			opts_tmp_header="${opts_tmp_header} \033[31m${opt_tmp}\033[0m ─"
+			continue
+		fi
+
+		opts_tmp_line=$((opts_tmp_line + 1))
 		if [ ${opts_tmp_tab} -eq ${opts_chosen_tab} ]; then
-			opt_tmp="\033[1;7m${opt_tmp}"
-		fi
-		opts_tmp_header="${opts_tmp_header} \033[31m${opt_tmp}\033[0m ─"
-		continue
-	fi
-
-	opts_tmp_line=$((opts_tmp_line + 1))
-	if [ ${opts_tmp_tab} -eq ${opts_chosen_tab} ]; then
-		if [ ${opts_tmp_line} -eq ${opts_chosen_line} ]; then
-			printf "%${opts_width}s\r│ \033[7m${opt%\|*}\n" "│"
-		else
-			printf "%${opts_width}s\r│ ${opt%\|*}\n" "│"
-		fi
+			if [ ${opts_tmp_line} -eq ${opts_chosen_line} ]; then
+				printf "%${opts_width}s\r│ \033[7m${opt%\|*}\n" "│"
+			else
+				printf "%${opts_width}s\r│ ${opt%\|*}\n" "│"
+			fi
 		fi
 	done
 	opts_tmp_header="\033[0m╭──${opts_tmp_header}"
 
-	# footer
-	printf "\
-\033[${row};0H${opts_tmp_header}\033[${opts_height}B
-\n%${opts_width}s\r│\n${opts_tmp_line_str}┤\
-\r\033[0m├── \033[33mj/↓:Down\033[0m ─ \033[33mk/↑:Up\033[0m ─ \033[33mq:quit\033[0m ─ \033[33mEnter/Space:Select\033[0m ─
-${opts_tmp_line_str}╯\r╰── \033[33mh/←:Select Left Tab\033[0m ─ \033[33ml/→:Select Right Tab\033[0m \n
-" "│"
+	# Print the footer while butchering code readability
+	printf "\033[${row};0H%b\033[${opts_height}B\n\n" "${opts_tmp_header}"
+	printf "%${opts_width}s\r│\n%s┤\r├\n" "│" "${opts_tmp_line_str}"
+	printf "%s╯\r╰\n" "${opts_tmp_line_str}"
+	printf '\r\033[2A\033[3C '
+	printf '\033[33mj/↓:Down\033[0m ─ \033[33mk/↑:Up\033[0m ─'
+	printf '\033[33mq:quit\033[0m ─ \033[33mEnter/Space:Select\033[0m ─\n\033[3C '
+	printf '\033[33mh/←:Select Left Tab\033[0m ─ '
+	printf '\033[33ml/→:Select Right Tab\033[0m \n'
+
+
 	unset opts_tmp_tab opts_tmp_line opt_tmp
 }
+
 
 opts_select() {
 	opts_tmp_tab=0
@@ -578,9 +591,10 @@ opts_select() {
 		fi
 	done
 	opts=${opts_tmp}
-	[ ${opts_chosen_line} -ne ${opts_height} ] && opts_chosen_line=$((opts_chosen_line + 1))
+	opts_chosen_line=$((opts_chosen_line + 1))
 	unset opts_tmp_tab opts_tmp_line opts_tmp
 }
+
 
 opts_handle_keypress() {
 	if [ "${stty_settings+x}" ]; then
@@ -604,47 +618,53 @@ opts_handle_keypress() {
 		fi
 
 		case "${opts_input}" in
-		 	"h") [ ${opts_chosen_tab} -ne 1 ] && opts_chosen_tab=$((opts_chosen_tab - 1)); opts_chosen_line=1;;
-		 	"k") [ ${opts_chosen_line} -ne 1 ] && opts_chosen_line=$((opts_chosen_line - 1));;
-		 	"j") [ ${opts_chosen_line} -ne ${opts_height} ] && opts_chosen_line=$((opts_chosen_line + 1));;
-		 	"l") [ ${opts_chosen_tab} -ne ${opts_tab_count} ] && opts_chosen_tab=$((opts_chosen_tab + 1)); opts_chosen_line=1;;
-			"q") opts_loop=false; unset opts ;;
-			" "|${newline}||"") IFS=${newline} opts_select;;
+		 	"h")
+				if [ ${opts_chosen_tab} -ne 1 ]; then
+					opts_chosen_tab=$((opts_chosen_tab - 1))
+					opts_chosen_line=1
+				fi ;;
+		 	"l")
+				if [ ${opts_chosen_tab} -ne ${opts_tab_count} ]; then
+					opts_chosen_tab=$((opts_chosen_tab + 1))
+					opts_chosen_line=1
+				fi ;;
+		 	"k") opts_chosen_line=$((opts_chosen_line - (opts_chosen_line != 1))) ;;
+		 	"j") opts_chosen_line=$((opts_chosen_line + (opts_chosen_line != opts_height))) ;;
+
+			"q") opts_loop=false ;;
+
+			" "|${newline}||"") IFS=${newline} opts_select ;;
 		esac
 		printf "\033[${row};0H"
 		IFS=${newline} opts_print
 	done
 	printf "\033[${row};0H\033[J"
+	[ "${stty_settings+x}" ] && stty "${stty_settings}"
 	unset opts_loop
-	if [ "${stty_settings+x}" ]; then
-		stty "${stty_settings}"
-	fi
 }
 
+
 opts_run() {
+	get_cols
 	for opt in ${opts}; do
 		[ "${opt%% \[X\]*}" ] && continue
 		printf '\n'
 		i=0
-		while [ ${i} -ne ${COLUMNS} ]; do
+		while [ ${i} -ne ${COLUMNS:-$(tput cols)} ]; do
 			printf '━'
 			i=$((i + 1))
 		done
 		opt_tmp_str=${opt# \[?\] }
 		opt_tmp_str=${opt_tmp_str% \\033*}
-		printf "\r\033[$(((COLUMNS - ${#opt_tmp_str}) / 2))C %s \n" "${opt_tmp_str}"
+		printf "\r\033[$(((${COLUMNS:-$(tput cols)} - ${#opt_tmp_str}) / 2))C %s \n" "${opt_tmp_str}"
 		unset i opt_tmp_str
 		${opt##*\|}
 	done
 }
 
 
-special=$(printf '\033')
-newline="
-"
 
-
-notice "If the terminal acts weird, then please run 'stty icanon'"
+notice "If the terminal acts weird, please run 'stty icanon'"
 IFS=${newline} opts_setup
 IFS=${newline} opts_print
 opts_handle_keypress
