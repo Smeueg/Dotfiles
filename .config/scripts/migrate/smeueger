@@ -4,7 +4,7 @@
 # Author Name    - Smeueg
 # Author Email   - Smeueg@gmail.com
 # Author Gitlab  - https://gitlab.com/Smeueg
-# Last Updated   - Mon 18 Apr 19:03:15 WIB 2022
+# Last Updated   - Tue 19 Apr 16:59:54 WIB 2022
 # ------------------------------------------------
 # Variables #
 opts="\
@@ -47,16 +47,6 @@ elif [ "${ZSH_NAME}" ]; then
 	emulate sh
 	read_char() { IFS= read -k 1 opts_input; }
 else
-	if ! [ "$(command -v stty)" ]; then
-		error "Command 'stty' not found."
-		exit
-	fi
-
-	if ! [ "$(command -v dd)" ]; then
-		error "Command 'dd' not found."
-		exit
-	fi
-
 	stty_settings=$(stty -g)
 	read_char() {
 		opts_input=$(dd bs=1 count=1 2>&1)
@@ -416,9 +406,13 @@ apt_enable_gh_cli() {
 
 
 apt_bootstrap_packages() {
-	packages="emacs awesome rofi"
+	packages="emacs awesome rofi sct"
 
-	printf 'This will install:\n - Emacs\n - AwesomeWM\n - Rofi\n'
+	printf 'This will install:\n'
+	for package in ${packages}; do
+		printf ' - %s\n' "${package}"
+		echo "${package}"
+	done
 	if ! confirm "Are you sure?"; then
 		notice "Won't install packages"
 		return
@@ -426,6 +420,7 @@ apt_bootstrap_packages() {
 
 	check_for_root
 	run_as_root "apt install emacs awesome rofi"
+	unset package packages
 }
 
 

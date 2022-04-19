@@ -10,11 +10,14 @@ music_dir="${HOME}/Music"
 printf "Insert playlist url (Leave blank for smeusic playlist): "
 read pl_url
 if ! [ "${pl_url}" ]; then
-	printf "[\033[1;32mNOTICE\033[0m] Downloading Smeueg's playlist\n"
+	printf '\033[A\r\033[2K\r'
+	printf "[\033[1;32mNOTICE\033[0m] Downloading Smeueg's playlist\n\n\n"
 	pl_url="https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc"
 elif [ "${pl_url%%https://www.youtube.com/playlist\?list=*}" ]; then
 	printf '[\033[1;31mERROR\033[0m] Invalid URL\n' >&2
 	exit 1
+else
+	printf '\033[A\r\033[2K\r'
 fi
 
 
