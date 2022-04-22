@@ -54,6 +54,9 @@
  hs-hide-comments-when-hiding-all nil)
 
 
+;;; Custom Filetype Modes
+(add-to-list 'auto-mode-alist '("\\.rasi\\'" . css-mode))
+
 
 ;;; INDENTATION CONFIGURATION ;;;
 (defvaralias 'c-basic-offset 'tab-width)
