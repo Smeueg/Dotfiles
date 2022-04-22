@@ -64,7 +64,7 @@ local browser        = os.getenv("BROWSER")
 -- Theming --
 local themes = {
 	["Smeueg"] = {
-		["wallpaper"] = home .. "/.config/rice/Shark Space.png",
+		["wallpaper"] = home .. "/.config/rice/Shell.png",
 		["yellow"]    = "#FEA34B",
 		["red"]       = "#C5483F",
 		["green"]     = "#819013",
@@ -124,55 +124,60 @@ local button_minimize = gears.surface.load_from_shape(
 beautiful.init()
 beautiful.fg_normal = theme["fg"]
 beautiful.fg_focus  = beautiful.fg_normal
-beautiful.bg_normal	= theme["bg"]
-beautiful.font		= theme["font"]
+beautiful.bg_normal = theme["bg"]
+beautiful.font      = theme["font"]
 -- Wibar
-beautiful.wibar_selected_tag	= theme["fg"]
-beautiful.wibar_unselected_tag	= theme["fg2"]
+beautiful.wibar_selected_tag    = theme["fg"]
+beautiful.wibar_unselected_tag  = theme["fg2"]
 -- Titlebar
-beautiful.titlebar_close_button_normal				= button_close
-beautiful.titlebar_close_button_focus				= button_close
-beautiful.titlebar_maximized_button_normal			= button_maximize
-beautiful.titlebar_maximized_button_normal_active	= button_maximize
+beautiful.titlebar_close_button_normal              = button_close
+beautiful.titlebar_close_button_focus               = button_close
+beautiful.titlebar_maximized_button_normal          = button_maximize
+beautiful.titlebar_maximized_button_normal_active   = button_maximize
 beautiful.titlebar_maximized_button_normal_inactive = button_maximize
-	beautiful.titlebar_maximized_button_focus			= button_maximize
-	beautiful.titlebar_maximized_button_focus_active	= button_maximize
-	beautiful.titlebar_maximized_button_focus_inactive	= button_maximize
-	beautiful.titlebar_minimize_button_normal			= button_minimize
-	beautiful.titlebar_minimize_button_focus			= button_minimize
-	beautiful.titlebar_bg  = theme["bg_light"]
-	beautiful.titlebar_bg_focus  = theme["focus"]
-	beautiful.titlebar_fg  = theme["fg"]
-	beautiful.titlebar_fg_focus  = theme["bg_dark"]
-	-- Menu Bar
-	beautiful.menubar_fg_focus = theme["focus"]
-	beautiful.menubar_bg_focus = theme["bg_light"]
-	-- Tasklist
-	beautiful.tasklist_bg_focus		= theme["bg_light"]
-	beautiful.tasklist_bg_normal	= theme["bg"]
-	beautiful.tasklist_bg_minimize	= beautiful.wibar_bg
-	-- Borders & Gaps
-	beautiful.border_normal = theme["bg"]
-	beautiful.border_focus  = theme["focus"]
-	beautiful.border_width  = dpi(4)
-	beautiful.useless_gap   = 5
-	-- Taglists
-	beautiful.taglist_bg_focus		= beautiful.wibar_bg
-	beautiful.taglist_squares_sel	= nil
-	beautiful.taglist_squares_unsel = nil
-	-- Notification
-	beautiful.notification_border_color = theme["focus"]
-	beautiful.notification_border_width = 3
+beautiful.titlebar_maximized_button_focus           = button_maximize
+beautiful.titlebar_maximized_button_focus_active    = button_maximize
+beautiful.titlebar_maximized_button_focus_inactive  = button_maximize
+beautiful.titlebar_minimize_button_normal           = button_minimize
+beautiful.titlebar_minimize_button_focus            = button_minimize
+beautiful.titlebar_bg       = theme["bg_light"]
+beautiful.titlebar_bg_focus = theme["fg2"]
+beautiful.titlebar_fg       = theme["fg"]
+beautiful.titlebar_fg_focus = theme["fg"]
+-- Tooltips
+beautiful.tooltip_bg = theme["bg_light"]
+beautiful.tooltip_fg = theme["fg"]
+beautiful.tooltip_border_color = theme["focus"]
+beautiful.tooltip_border_width = 1
+-- Menu Bar
+beautiful.menubar_fg_focus = theme["focus"]
+beautiful.menubar_bg_focus = theme["bg_light"]
+-- Tasklist
+beautiful.tasklist_bg_focus     = theme["bg_light"]
+beautiful.tasklist_bg_normal    = theme["bg"]
+beautiful.tasklist_bg_minimize  = beautiful.wibar_bg
+-- Borders & Gaps
+beautiful.border_normal = theme["bg"]
+beautiful.border_focus  = theme["focus"]
+beautiful.border_width  = dpi(4)
+beautiful.useless_gap   = 5
+-- Taglists
+beautiful.taglist_bg_focus      = beautiful.wibar_bg
+beautiful.taglist_squares_sel   = nil
+beautiful.taglist_squares_unsel = nil
+-- Notification
+beautiful.notification_border_color = theme["focus"]
+beautiful.notification_border_width = 3
 
 
 
-	-- Custom Images/Icons --
-	local icon_clock = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
-	local cr = cairo.Context(icon_clock)
-	cr:set_source(gears.color(theme["icon_color"]))
-	cr:rectangle(11, 5, 1, 6)
-	cr:rectangle(11, 10, 3, 1)
-	gears.shape.transform(gears.shape.radial_progress)
+-- Custom Images/Icons --
+local icon_clock = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
+local cr = cairo.Context(icon_clock)
+cr:set_source(gears.color(theme["icon_color"]))
+cr:rectangle(11, 5, 1, 6)
+cr:rectangle(11, 10, 3, 1)
+gears.shape.transform(gears.shape.radial_progress)
 	:scale(0.6, 0.6)
 	:translate(10, 7)(cr, 20, 20)
 cr:fill()
@@ -593,7 +598,6 @@ widget_volume = wibox.widget {
 			},
 			{
 				id     = "vol",
-				format = "%H:%M ",
 				widget = wibox.widget.textbox
 			},
 			layout = wibox.layout.fixed.horizontal,
@@ -617,28 +621,27 @@ widget_volume = wibox.widget {
 
 	ctrl = function(self, cmd)
 		local cmds = {
-			["+1"]      = "pactl set-sink-volume @DEFAULT_SINK@ +1%",
-			["-1"]      = "pactl set-sink-volume @DEFAULT_SINK@ -1%",
-			["+5"]      = "pactl set-sink-volume @DEFAULT_SINK@ +5%",
-			["-5"]      = "pactl set-sink-volume @DEFAULT_SINK@ -5%",
-			["toggle"]  = "pactl set-sink-mute   @DEFAULT_SINK@ toggle",
+			["+1"]      = "pactl set-sink-volume  @DEFAULT_SINK@ +1%",
+			["-1"]      = "pactl set-sink-volume  @DEFAULT_SINK@ -1%",
+			["+5"]      = "pactl set-sink-volume  @DEFAULT_SINK@ +5%",
+			["-5"]      = "pactl set-sink-volume  @DEFAULT_SINK@ -5%",
+			["toggle"]  = "pactl set-sink-mute    @DEFAULT_SINK@ toggle",
 			["default"] = "pactl set-sink-volume  @DEFAULT_SINK@ 40%"
 		}
+
 		awful.spawn.with_line_callback(
 			cmds[cmd],
-			{exit = function() widget_volume:update() end})
+			{ exit = function() widget_volume:update() end }
+		)
 	end,
 
 	update = function(self)
 		awful.spawn.easy_async(
-			"pactl list sinks",
-			function(stdout)
-				self:get_children_by_id("vol")[1].text = stdout:match("Volume:[^%%]+"):match("[0-9]+$") .. "% "
-				if stdout:match("Mute: [a-z]+\n"):match("no") then
-					self:get_children_by_id("icon")[1].image = icon_volume
-				else
-					self:get_children_by_id("icon")[1].image = icon_mute
-				end
+			"pactl list sinks", function(stdout)
+				self:get_children_by_id("vol")[1]
+					.text = stdout:match("(%d+%%)") .. " "
+				self:get_children_by_id("icon")[1]
+					.image = stdout:match("Mute: (%w+)") == "no" and icon_volume or icon_mute
 		end)
 
 		load_droidcam_module()
@@ -965,75 +968,75 @@ clientbuttons = gears.table.join(
 
 -- Signals --
 awful.screen.connect_for_each_screen(
-	-- Run function for every screen
+-- Run function for every screen
 	function(s)
-		set_wallpaper(s)
-		awful.tag(
-			{"1", "2", "3", "4", "5"},
-			s,
-			awful.layout.layouts[1]
-		)
+	set_wallpaper(s)
+	awful.tag(
+		{"1", "2", "3", "4", "5"},
+		s,
+		awful.layout.layouts[1]
+	)
 
 
-		-- Create a taglist widget
-		s.taglist = awful.widget.taglist {
-			screen  = s,
-			filter  = awful.widget.taglist.filter.all,
-			layout  = {
-				spacing = 2,
-				layout  = wibox.layout.fixed.horizontal
-			},
-			widget_template = {
+	-- Create a taglist widget
+	s.taglist = awful.widget.taglist {
+		screen  = s,
+		filter  = awful.widget.taglist.filter.all,
+		layout  = {
+			spacing = 2,
+			layout  = wibox.layout.fixed.horizontal
+		},
+		widget_template = {
+			{
 				{
 					{
 						{
 							{
-								{
-									markup = " ",
-									widget = wibox.widget.textbox,
-								},
-								margins = 3,
-								widget  = wibox.container.margin,
+								markup = " ",
+								widget = wibox.widget.textbox,
 							},
-							shape              = gears.shape.circle,
-							shape_border_width = 1,
-							widget             = wibox.container.background,
-							id                 = "icon"
+							margins = 3,
+							widget  = wibox.container.margin,
 						},
-						layout = wibox.layout.fixed.horizontal,
+						shape              = gears.shape.circle,
+						shape_border_width = 1,
+						widget             = wibox.container.background,
+						id                 = "icon"
 					},
-					left   = 7,
-					right  = 7,
-					widget = wibox.container.margin
+					layout = wibox.layout.fixed.horizontal,
 				},
-				id     = 'background_role',
-				widget = wibox.container.background,
-				create_callback = function(self, t, index, objects)
-					self.update_callback(self, t, index, objects)
-				end,
-
-				update_callback = function(self, t, index, objects)
-					if t.selected then
-						self:get_children_by_id("icon")[1].shape_border_color = beautiful.wibar_selected_tag
-					else
-						self:get_children_by_id("icon")[1].shape_border_color = beautiful.wibar_unselected_tag
-					end
-
-					if not next(t:clients()) then
-						self:get_children_by_id("icon")[1].bg = beautiful.wibar_bg
-					else
-						self:get_children_by_id("icon")[1].bg = self:get_children_by_id("icon")[1].shape_border_color
-					end
-				end
+				left   = 7,
+				right  = 7,
+				widget = wibox.container.margin
 			},
-			buttons = gears.table.join(
-				awful.button({}, 1, function(t) t:view_only() end),
-				awful.button({}, 3, function(t)
-						if client.focus then
-							client.focus:move_to_tag(t)
-						end
-				end),
-				awful.button({}, 4, function(t)awful.tag.viewprev(t.screen)end),
+			id     = 'background_role',
+			widget = wibox.container.background,
+			create_callback = function(self, t, index, objects)
+				self.update_callback(self, t, index, objects)
+			end,
+
+			update_callback = function(self, t, index, objects)
+				if t.selected then
+					self:get_children_by_id("icon")[1].shape_border_color = beautiful.wibar_selected_tag
+				else
+					self:get_children_by_id("icon")[1].shape_border_color = beautiful.wibar_unselected_tag
+				end
+
+				if not next(t:clients()) then
+					self:get_children_by_id("icon")[1].bg = beautiful.wibar_bg
+				else
+					self:get_children_by_id("icon")[1].bg = self:get_children_by_id("icon")[1].shape_border_color
+				end
+			end
+		},
+		buttons = gears.table.join(
+			awful.button({}, 1, function(t) t:view_only() end),
+			awful.button({}, 3, function(t)
+					if client.focus then
+						client.focus:move_to_tag(t)
+					end
+			end),
+			awful.button({}, 4, function(t)awful.tag.viewprev(t.screen)end),
 				awful.button({}, 5, function(t)awful.tag.viewnext(t.screen)end)
 			)
 		}
@@ -1084,9 +1087,7 @@ awful.screen.connect_for_each_screen(
 				layout = wibox.layout.fixed.horizontal
 			},
 			{ -- Center Widgets
-				{widget = wibox.widget.textbox},
 				s.mytasklist,
-				{widget = wibox.widget.textbox},
 				layout = wibox.layout.flex.horizontal
 			},
 			{ -- Right Widgets
@@ -1100,6 +1101,7 @@ awful.screen.connect_for_each_screen(
 			},
 		}
 end)
+
 -- Re-set wallpaper when a screen's geometry changes (e.g. different resolution)
 screen.connect_signal("property::geometry", set_wallpaper)
 
@@ -1186,7 +1188,7 @@ function(c)
 	end
 
 	if layout == awful.layout.suit.max then
-		c.border_width = dpi(0)
+		c.border_width = 0
 	end
 end)
 
@@ -1203,26 +1205,34 @@ gears.timer {
 
 
 do  -- Commands to execute in startup
-	local function run(cmd)
-		local str = cmd:match("^[A-Za-z0-9_-]+")
+
+	local cmds = {
+		"sct 6000K",
+		"xrandr --output DP-1 --mode 1280x1024 --scale 1.2x1.2",
+		"xset r rate 250 50",
+		"setxkbmap -option keypad:pointerkeys",
+		"xset s off -dpms",
+		"pactl set-sink-volume @DEFAULT_SINK@ 40%",
+		"xrdb " .. home .. "/.config/X11/Xresources",
+		"picom"
+	}
+
+
+	for _, cmd in pairs(cmds) do
+		local str = cmd:match("^[^ ]+")
 		if command_exists(str) then
 			awful.spawn(cmd)
 		else
-			local str = "Warning: " .. str .. " is not installed"
-			naughty.notify({title = str})
+			local str = "[ERROR]: " .. str .. " is not installed"
+			naughty.notify {title = str}
 		end
 	end
-	run("sct 6000K")
-	run("xrandr --output DP-1 --mode 1280x1024 --scale 1.2x1.2")
-	run("xset r rate 250 50")
-	run("setxkbmap -option keypad:pointerkeys")
-	run("xset s off -dpms")
 
-	awful.spawn.with_shell("xrdb $HOME/.config/X11/Xresources")
-	awful.spawn.with_shell("pidof pulseaudio || command -v pulseaudio && setsid --fork pulseaudio --start --exit-idle-time=-1")
-
-	awful.spawn.with_shell("export WINIT_X11_SCALE_FACTOR=1")
-	run("pactl set-sink-volume @DEFAULT_SINK@ 40%")
+	awful.spawn.with_shell(
+		"pidof pulseaudio ||" ..
+		"command -v pulseaudio &&" ..
+		"setsid --fork pulseaudio --start --exit-idle-time=-1"
+	)
 
 	set_layout_all(awful.layout.suit.tile.right)
 end
