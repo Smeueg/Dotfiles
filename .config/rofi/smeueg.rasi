@@ -3,14 +3,16 @@
 	theme that's included with rofi.
 */
 
+@import "gruvbox-common.rasi"
+
 * {
     /* Theme settings */
-    highlight: bold italic;
-    scrollbar: true;
+	scrollbar: true;
+	font: "JetBrainsMono Nerd Font Mono 12";
 
-    /* Gruvbox dark colors */
-    smeueg-bg:       #322638;
-    smeueg-bg-light: #382B3F;
+	/*  Colors */
+	smeueg-bg:       #322638;
+    smeueg-bg-light: #372B3F;
     smeueg-fg:       #E7DEC7;
     smeueg-red:      #C5483F;
     smeueg-yellow:   #FEA34B;
@@ -34,4 +36,11 @@
     selected-normal-foreground:  @smeueg-yellow;
 }
 
-@import "gruvbox-common.rasi"
+element { padding: 6; }
+
+
+window {
+    background-color: @background;
+    border:  4;
+    padding: 20;
+}
