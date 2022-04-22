@@ -1,0 +1,37 @@
+/*
+	Smeueg's custom rofi theme. Basically copied from the grubox-dark-soft
+	theme that's included with rofi.
+*/
+
+* {
+    /* Theme settings */
+    highlight: bold italic;
+    scrollbar: true;
+
+    /* Gruvbox dark colors */
+    smeueg-bg:       #322638;
+    smeueg-bg-light: #382B3F;
+    smeueg-fg:       #E7DEC7;
+    smeueg-red:      #C5483F;
+    smeueg-yellow:   #FEA34B;
+
+    /* Theme colors */
+    background:                  @smeueg-bg;
+    background-color:            @background;
+    foreground:                  @smeueg-fg;
+    border-color:                @smeueg-red;
+    separatorcolor:              @border-color;
+    scrollbar-handle:            @border-color;
+
+    normal-background:           @background;
+    normal-foreground:           @foreground;
+    alternate-normal-background: @background;
+    alternate-normal-foreground: @foreground;
+
+    normal-background:           @background;
+    normal-foreground:           @foreground;
+    selected-normal-background:  @smeueg-bg-light;
+    selected-normal-foreground:  @smeueg-yellow;
+}
+
+@import "gruvbox-common.rasi"
