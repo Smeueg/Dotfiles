@@ -1,10 +1,10 @@
-#!/bin/sh
+#!/bin/zsh
 # ------------------------------------------------
 # Script Name    - smeueger
 # Author Name    - Smeueg
 # Author Email   - Smeueg@gmail.com
 # Author Gitlab  - https://gitlab.com/Smeueg
-# Last Updated   - Fri 22 Apr 21:14:19 WIB 2022
+# Last Updated   - Sun 24 Apr 19:25:34 WIB 2022
 # ------------------------------------------------
 # Variables #
 opts="\
@@ -68,7 +68,7 @@ else
 fi
 
 
-get_cur_row() {
+get_row() {
 	# Get current cursor row
 	[ "${stty_settings+x}" ] && stty -icanon
 	printf '\033[6n'
@@ -81,6 +81,13 @@ get_cur_row() {
 	row=${row%;*}
 	[ "${stty_settings+x}" ] && stty "${stty_settings}"
 	printf '\r\033[2K'
+}
+
+get_size() {
+	size=$(stty size)
+	term_h=${size% *}
+	term_w=${size#* }
+	unset size
 }
 
 printn() {
@@ -427,7 +434,11 @@ apt_bootstrap_packages() {
 
 # UI Functions #
 opts_setup() {
+	opts_tab_w=0 # Width needed to display tabs
+	opts_w=0 # Width needed to display options + tabs
+	opts_h=0 # Height needed to display options
 	opts_tab_count=0
+	opts_line_idx=0
 	# Setup the options to determine whether the dependencies are met
 	_handle_or() {
 		for opt_dep in $1; do
@@ -452,10 +463,16 @@ opts_setup() {
 	# Check if dependencies are met
 	for opt in ${opts}; do
 		if ! [ "${opt%%== * ==}" ]; then
-			opt_tmp="${opt_tmp} Continue ${newline}${opt}${newline}"
+			opts_tmp="${opts_tmp} Continue ${newline}${opt}${newline}"
 			opts_tab_count=$((opts_tab_count + 1))
+			opt=${opt#==}
+			opt=${opt%==}
+			opts_tab_w=$((opts_tab_w + ${#opt} + 1))
+			[ ${opts_line_idx} -gt ${opts_h} ] && opts_h=${opts_line_idx}
+			opts_line_idx=0
 			continue
 		fi
+		opts_line_idx=$((opts_line_idx + 1))
 		opt_has_deps=false
 		opt_deps=${opt#*\[}
 		opt_deps=${opt_deps%\]*}
@@ -467,95 +484,76 @@ opts_setup() {
 		opt_back_tmp=${opt_back_tmp# }
 
 		if ${opt_has_deps}; then
-			opt_tmp="${opt_tmp} [ ] ${opt_front_tmp}"
+			opts_tmp="${opts_tmp} [ ] ${opt_front_tmp}"
+			[ $((${#opt_front_tmp} + 6)) -gt ${opts_w} ] &&
+				opts_w=$((${#opt_front_tmp} + 6))
 		else
-			opt_tmp="${opt_tmp}\033[31m [-] ${opt_front_tmp} [Dependencies: ${opt_deps}]"
+			opts_tmp="${opts_tmp}\033[31m [-] ${opt_front_tmp} [Dependencies: ${opt_deps}]"
+			[ $((${#opt_front_tmp} + ${#opt_deps} + 22)) -gt ${opts_w} ] &&
+				opts_w=$((${#opt_front_tmp} + ${#opt_deps} + 22))
 		fi
 
-		opt_tmp="${opt_tmp} \033[0m|${opt_back_tmp}${newline}"
+		opts_tmp="${opts_tmp} \033[0m|${opt_back_tmp}${newline}"
 	done
-	opts="${opt_tmp} Continue "
+	opts="${opts_tmp} Continue "
+
+	[ ${opts_tab_w} -gt ${opts_w} ] && opts_w=${opts_tab_w}
+	opts_h=$((opts_h + 3))
+	opts_w=$((opts_w + 3))
+
+
+	get_size
+	get_row
+	border_h=$(printn "─" $((opts_w - 1)))
+
+	diff=$((term_h - row))
+	if [ ${diff} -lt ${opts_h} ]; then
+		i=0
+		diff=$((opts_h - diff))
+		while [ ${i} -ne ${diff} ]; do
+			printf '\n'
+			i=$((i + 1))
+		done
+		printf "\033[${opts_h}A"
+		get_row
+	fi
 	unset -f _handle_comma _handle_or
-	unset opt_has_deps opt_dep opt_front_tmp opt_back_tmp
-	get_cur_row
+	unset opt_has_deps opt_dep opt_front_tmp opt_back_tmp opts_line_idx
+	unset opts_tab_w
 }
+
 
 
 opts_print() {
-	# Get Height and Width for the current tab
-	opts_tmp_line=0
-	opts_tmp_tab=0
-	opts_tmp_width=52
-	opts_tmp_header_width=0
+	idx_tab=0
+	idx_line=0
+
+	border_v=$(printf "%${opts_w}s\r%s" "│" "│")
+	printf "\033[${row};H"
 	for opt in ${opts}; do
 		if ! [ "${opt##== * ==}" ]; then
-			opts_tmp_header_width=$((opts_tmp_header_width + ${#opt} - 2))
-			opts_tmp_tab=$((opts_tmp_tab + 1))
+			idx_tab=$((idx_tab + 1))
+			opt=${opt#==}
+			opt=${opt%==}
+			[ ${idx_tab} -eq ${opts_chosen_tab} ] && opt="\033[7m${opt}"
+			header="${header}─\033[1;31m${opt}\033[0m"
 			continue
 		fi
 
-		if [ ${opts_tmp_tab} -eq ${opts_chosen_tab} ]; then
-			opts_tmp_line=$((opts_tmp_line + 1))
-			opt=${opt%\\033*}
-			opt=${opt#*\\033\[31m}
-			[ ${#opt} -gt ${opts_tmp_width} ] && opts_tmp_width=${#opt}
-		fi
+		[ ${idx_tab} -ne ${opts_chosen_tab} ] && continue
+		idx_line=$((idx_line + 1))
+
+		opt=${opt%\|*}
+		[ ${idx_line} -eq ${opts_chosen_line} ] &&
+			opt="\033[7m${opt}\033[0m"
+		output="${output}\033[2K${border_v}${opt}${newline}"
 	done
-	opts_height=${opts_tmp_line}
-
-	if [ ${opts_tmp_header_width} -gt ${opts_tmp_width} ]; then
-		opts_width=$((opts_tmp_header_width + 4))
-	else
-		opts_width=$((opts_tmp_width + 5))
-	fi
-
-	unset opts_tmp_line opts_tmp_tab opts_tmp_width opts_tmp_header_width
-	# Actually Print
-	opts_tmp_tab=0
-	opts_tmp_line=0
-	opts_tmp_header=""
-	opts_tmp_str=""
-	opts_tmp_line_str=$(printn "─" $((opts_width - 3)))
-
-	printf "\r\033[J${opts_tmp_line_str}╮\n%${opts_width}s\r│\n" "│"
-	for opt in ${opts}; do
-		if ! [ "${opt%%== * ==}" ]; then
-			opts_tmp_tab=$((opts_tmp_tab + 1))
-			opts_tmp_line=0
-
-			opt_tmp=${opt#== }
-			opt_tmp=${opt_tmp% ==}
-			if [ ${opts_tmp_tab} -eq ${opts_chosen_tab} ]; then
-				opt_tmp="\033[1;7m${opt_tmp}"
-			fi
-			opts_tmp_header="${opts_tmp_header} \033[31m${opt_tmp}\033[0m ─"
-			continue
-		fi
-
-		opts_tmp_line=$((opts_tmp_line + 1))
-		if [ ${opts_tmp_tab} -eq ${opts_chosen_tab} ]; then
-			if [ ${opts_tmp_line} -eq ${opts_chosen_line} ]; then
-				printf "%${opts_width}s\r│ \033[7m${opt%\|*}\n" "│"
-			else
-				printf "%${opts_width}s\r│ ${opt%\|*}\n" "│"
-			fi
-		fi
-	done
-	opts_tmp_header="\033[0m╭──${opts_tmp_header}"
-
-	# Print the footer while butchering code readability
-	printf "\033[${row};0H%b\033[${opts_height}B\n\n" "${opts_tmp_header}"
-	printf "%${opts_width}s\r│\n%s┤\r├\n" "│" "${opts_tmp_line_str}"
-	printf "%s╯\r╰\n" "${opts_tmp_line_str}"
-	printf '\r\033[2A\033[3C '
-	printf '\033[33mj/↓:Down\033[0m ─ \033[33mk/↑:Up\033[0m ─'
-	printf '\033[33mq:quit\033[0m ─ \033[33mEnter/Space:Select\033[0m ─\n\033[3C '
-	printf '\033[33mh/←:Select Left Tab\033[0m ─ '
-	printf '\033[33ml/→:Select Right Tab\033[0m \n'
-
-
-	unset opts_tmp_tab opts_tmp_line opt_tmp
+	opts_height=${idx_line}
+	output="\033[2K${border_h}╮\r╭${header}${newline}${output}${border_h}╯\r╰${newline}"
+	printf '%b\033[J' "${output}"
+	unset output header idx_tab idx_line border_v
 }
+
 
 
 opts_select() {
@@ -630,10 +628,8 @@ opts_handle_keypress() {
 
 			" "|${newline}||"") IFS=${newline} opts_select ;;
 		esac
-		printf "\033[${row};0H"
 		IFS=${newline} opts_print
 	done
-	printf "\033[${row};0H\033[J"
 	[ "${stty_settings+x}" ] && stty "${stty_settings}"
 	unset opts_loop
 }
@@ -660,6 +656,7 @@ opts_run() {
 
 
 notice "If the terminal acts weird, please run 'stty icanon'"
+printf '\n'
 IFS=${newline} opts_setup
 IFS=${newline} opts_print
 opts_handle_keypress
