@@ -5,7 +5,8 @@ set -o vi   # Vi mode, works on most shells
 export HISTFILE=/tmp/shell_history
 
 
-if [ "${BASH}" ]; then
+# Shell Options #
+if [ "${BASH_VERSION}" ]; then
 	# Bash Specific configuration
 	complete -c man which
 	complete -cf sudo
@@ -28,8 +29,9 @@ fi
 # PROMPT #
 # Should work on dash, bash, zsh, and ksh
 print_prompt() {
-	ret=$?
+	ret=${?}
 	symbol="➜"
+	symbol_backup=">"
 	reset="\033[0m"
 	color_dir="\033[1;38;5;11m"
 	color_branch="\033[38;5;8m"
@@ -39,23 +41,23 @@ print_prompt() {
 
 	tmp="$(tty)"
 	if ! [ "${tmp%%/dev/tty*}" ] || [ "${TERM}" = "dumb" ]; then
-		symbol=">"
+		symbol=${symbol_backup}
 	fi
 
 
 	if [ "${BASH_VERSION}" ]; then
-		wrapper_start="\001"
-		wrapper_end="\002"
+		wrapper="\001:\002"
 	elif [ "${ZSH_NAME}" ]; then
-		wrapper_start="%{"
-		wrapper_end="%}"
+		wrapper="%{:%}"
 	elif ! [ "${KSH_VERSION}" ]; then
 		unset reset color_dir color_branch color_failed color_success
 	fi
 
 
-	if [ "${wrapper_start+x}" ] && [ "${wrapper_end+x}" ]; then
-		for var in reset color_dir color_branch color_failed color_sucess; do
+	if [ "${wrapper+x}" ]; then
+		wrapper_start=${wrapper%%\:*}
+		wrapper_end=${wrapper##*\:}
+		for var in reset color_dir color_branch color_failed color_success; do
 			eval "${var}=\"\${wrapper_start}\$${var}\${wrapper_end}\""
 		done
 	fi
@@ -77,14 +79,12 @@ print_prompt() {
 	else
 		printf '\n%b%s%b ' "${color_failed}" "${symbol}" "${reset}"
 	fi
-	unset var wrapper_start wrapper_end
 }
 if [ "${BASH}" ] || [ "${ZSH_NAME}" ]; then
 	export PS1="\$(print_prompt)"
 else
 	export PS1="\$(print_prompt 1)"
 fi
-
 
 
 
@@ -174,10 +174,12 @@ compress_documents() {
 		printf '\033[1m\033[31m[ERROR]\033[0m "%s" does not exist, exiting.\n' "${HOME}/Documents"
 		return
 	fi
+
 	if [ "$(command -v tar)" ]; then
 		printf '\033[1m\033[31m[ERROR]\033[0m Command `tar` not found, exiting.\n'
 		return
 	fi
+
 	printf 'Compressing "%s" to %s\n' "${HOME}/Documents" "${HOME}/Documents.tar.gz"
 	tar cvf Documents.tar.gz ~/Documents -I "gzip --best"
 }
@@ -212,5 +214,11 @@ export LESS_TERMCAP_us=$'\033[1;4;31m'
 [ -f "${HOME}/.nix-profile/etc/profile.d/nix.sh" ] &&
 	. "${HOME}/.nix-profile/etc/profile.d/nix.sh"
 
-colors 16
-printf '\r\033[J'
+# Brew
+[ -f "/home/linuxbrew/.linuxbrew/bin/brew" ] &&
+	eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+
+if ! [ "${TERM}" = "linux" ]; then
+	printf '\r\033[H\033[J'
+	colors 16
+fi

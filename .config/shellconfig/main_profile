@@ -28,6 +28,8 @@ export NPM_CONFIG_USERCONFIG="$XDG_CONFIG_HOME"/npm/npmrc
 export XAUTHORITY="$XDG_RUNTIME_DIR"/Xauthority
 export PYLINTHOME="$XDG_CACHE_HOME"/pylint
 
+export WINIT_X11_SCALE_FACTOR=1
+
 [ "$(command -v emacs)" ] && export TERMINAL="emacs" && export EDITOR="emacs"
 [ "$(command -v zathura)" ]       && export READER="zathura"
 [ "$(command -v brave-browser)" ] && export BROWSER="brave-browser"
@@ -85,12 +87,10 @@ fi
 
 
 # Symlink / remove bash config file if needed
-if [ "${BASH}" ] && [ -f "${ENV}" ] && ! [ -L "${HOME}/.bashrc" ]; then
-	if [ -f "${HOME}/.bashrc" ] && ! [ -L "${HOME}/.bashrc" ]; then
-		mv "${HOME}/.bashrc" "${HOME}/.bashrc_old"
-	fi
+if [ "${BASH_VERSION}" ] && [ -f "${ENV}" ] && ! [ -L "${HOME}/.bashrc" ]; then
+	[ -f "${HOME}/.bashrc" ] && mv "${HOME}/.bashrc" "${HOME}/.bashrc_old"
 	ln -s "${ENV}" "${HOME}/.bashrc"
-elif ! [ "${BASH}" ] && [ -L "${HOME}/.bashrc" ]; then
+elif ! [ "${BASH_VERSION}" ] && [ -L "${HOME}/.bashrc" ]; then
 	rm "${HOME}/.bashrc"
 fi
 
@@ -101,6 +101,8 @@ elif ! [ "${ZSH_NAME}" ] && [ -L "${ZDOTDIR}/.zshrc" ]; then
 	rm "${ZDOTDIR}/.zshrc"
 fi
 
+# Source config file
+[ -f "${ENV}" ] && . "${ENV}"
 
 # Start xserver if in tty1
 if command -v startx >/dev/null && [ "$(tty)" = "/dev/tty1" ]; then
@@ -112,5 +114,3 @@ if command -v startx >/dev/null && [ "$(tty)" = "/dev/tty1" ]; then
 		*) echo "Will not run X server" ;;
 	esac
 fi
-
-. "${HOME}"/.config/shellconfig/main_rc

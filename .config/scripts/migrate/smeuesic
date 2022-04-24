@@ -120,3 +120,4 @@ output=$(get_title_id)
 IFS=${newline} sync_download
 printf '\n\n\n'
 IFS=${newline} sync_remove
+printf '\n'

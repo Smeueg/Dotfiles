@@ -4,7 +4,7 @@
 # Author Name    - Smeueg
 # Author Email   - Smeueg@gmail.com
 # Author Gitlab  - https://gitlab.com/Smeueg
-# Last Updated   - Tue 19 Apr 16:59:54 WIB 2022
+# Last Updated   - Fri 22 Apr 21:14:19 WIB 2022
 # ------------------------------------------------
 # Variables #
 opts="\
@@ -61,43 +61,43 @@ elif [ "$(command -v wget)" ]; then
 fi
 
 
-if ! [ "${COLUMNS}" ]; then
+if ! [ "${COLUMNS+x}" ]; then
 	get_cols() { COLUMNS=$(stty size); COLUMNS=${COLUMNS#* }; }
 else
-	get_cols() { COLUMNS=${COLUMNS}; }
+	get_cols() { :; }
 fi
 
 
 get_cur_row() {
-		# Get current cursor row
-		[ "${stty_settings+x}" ] && stty -icanon
-		printf '\033[6n'
-		while :; do
+	# Get current cursor row
+	[ "${stty_settings+x}" ] && stty -icanon
+	printf '\033[6n'
+	while :; do
 		read_char
-		   [ "${opts_input}" = "R" ] && break
-		   row="${row}${opts_input}"
-		done
-		row=${row#*\[}
-		row=${row%;*}
-		[ "${stty_settings+x}" ] && stty "${stty_settings}"
-		printf '\r\033[2K'
-	}
+		[ "${opts_input}" = "R" ] && break
+		row="${row}${opts_input}"
+	done
+	row=${row#*\[}
+	row=${row%;*}
+	[ "${stty_settings+x}" ] && stty "${stty_settings}"
+	printf '\r\033[2K'
+}
 
-	printn() {
-		# print ${1}, ${2} times
-		i=0
-		while [ ${i} -ne ${2} ]; do
-			printf '%s' "${1}"
-			i=$((i+1))
-		done
-		unset i
-	}
+printn() {
+	# print ${1}, ${2} times
+	i=0
+	while [ ${i} -ne ${2} ]; do
+		printf '%s' "${1}"
+		i=$((i+1))
+	done
+	unset i
+}
 
-	confirm() {
-		# Prompt the user for a yes or no question, displaying ${1} as the question
-		printf '%s [Y\\n] ' "${1}"
-		read reply
-		case "${reply}" in
+confirm() {
+	# Prompt the user for a yes or no question, displaying ${1} as the question
+	printf '%s [Y\\n] ' "${1}"
+	read reply
+	case ${reply} in
 		[Yy][Ee][Ss]|[Yy]|"") unset reply; return 0;;
 		*) unset reply; return 1;;
 	esac
@@ -127,7 +127,7 @@ check_for_root() {
 
 run_as_root() {
 	# Run the command, ${1}, as root
-	case "${opts_root_cmd}" in
+	case ${opts_root_cmd} in
 		"sudo") eval "sudo ${SHELL} -c '$@'" ;;
 		"su") eval "su -c '$@'" ;;
 	esac
@@ -604,7 +604,7 @@ opts_handle_keypress() {
 		if [ "${opts_input}" = "$(printf '\033')" ]; then
 		 	read_char
 		 	read_char
-		 	case "${opts_input}" in
+		 	case ${opts_input} in
 		 		"A") opts_input="k";;
 		 		"B") opts_input="j";;
 		 		"C") opts_input="l";;
@@ -612,7 +612,7 @@ opts_handle_keypress() {
 		 	esac
 		fi
 
-		case "${opts_input}" in
+		case ${opts_input} in
 		 	"h")
 				if [ ${opts_chosen_tab} -ne 1 ]; then
 					opts_chosen_tab=$((opts_chosen_tab - 1))

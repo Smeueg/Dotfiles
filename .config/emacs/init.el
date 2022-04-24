@@ -365,11 +365,12 @@ awesomewm, and the users shell's"
       (insert (propertize "Emacs" 'face  'splash-text-special))
       (insert (propertize " with some " 'face 'splash-text))
       (insert (propertize "Smeueg. " 'face  'splash-text-special))
-      (insert (propertize "Enjoy Your Stay\n" 'face 'splash-text)))
-    (switch-to-buffer splash-buffer)
-    (add-hook 'post-command-hook #'min-splash-align 0 t)
-    (add-hook 'window-state-change-hook #'min-splash-align 0 t)
-    (kill-buffer "*scratch*")))
+      (insert (propertize "Enjoy Your Stay\n" 'face 'splash-text))
+      (min-splash-align)
+      (add-hook 'post-command-hook #'min-splash-align 0 t)
+      (add-hook 'window-state-change-hook #'min-splash-align 0 t))
+    (get-buffer "*min-splash*")))
+
 (defun min-splash-align()
   (if (get-buffer "*min-splash*")
       (with-current-buffer "*min-splash*"
@@ -387,11 +388,7 @@ awesomewm, and the users shell's"
     (progn
       (remove-hook 'post-command-hook 'min-splash-align)
       (remove-hook 'window-state-change-hook 'min-splash-align))))
-(when (and (not (member "-no-splash"  command-line-args))
-           (not (member "--file"      command-line-args))
-           (not (member "--find-file" command-line-args))
-           (not (member "--insert"    command-line-args)))
-  (add-hook 'window-setup-hook 'min-splash))
+(setq-default initial-buffer-choice 'min-splash)
 
 
 
@@ -524,14 +521,32 @@ awesomewm, and the users shell's"
                               (electric-pair-local-mode 0)
                               (setq-local scroll-margin 0)))
   (define-key term-raw-map "\C-\\" 'term-esc-map)
-  (if (package-installed-p 'evil)
-      (define-key term-raw-map "\C-\\\C-n"
-        (lambda ()
-          (interactive)
-          (turn-on-evil-mode)
-          (evil-normal-state 1)
-          (term-line-mode)))
-    (define-key term-raw-map "\C-\\\C-n" 'term-line-mode))
+
+  ;; Hide mode line when in term-char-mode
+  (advice-add 'term-char-mode
+              :after (lambda () (setq-local mode-line-format nil)))
+  ;; Reenable mode line when in term-line-mode
+  (advice-add 'term-line-mode :after
+              (lambda ()
+                (setq-local mode-line-format (default-value 'mode-line-format))
+                (redraw-display)))
+
+  (define-key term-raw-map "\C-\\\C-n" 'term-line-mode)
+  (when (package-installed-p 'evil)
+    (advice-add 'term-line-mode :after
+                (lambda ()
+                  (turn-on-evil-mode)
+                  (evil-normal-state 1)))
+    (add-hook 'term-mode-hook
+              (lambda ()
+                (turn-off-evil-mode)
+                (setq-local evil-insert-state-cursor 'box)
+                (add-hook 'evil-insert-state-entry-hook
+                          (lambda ()
+                            (term-char-mode)
+                            (turn-off-evil-mode))
+                          0 t))))
+
   (define-key term-raw-map (kbd "C-S-v")
     (lambda ()
       (interactive)
@@ -663,6 +678,9 @@ awesomewm, and the users shell's"
   :ensure t
   :defer t
   :commands eglot-ensure
+  :config
+  (add-to-list 'eglot-server-programs
+               '(python-mode . ("pyright-langserver" "--stdio")))
   :init
   (use-package eglot-java
     :ensure t
@@ -742,7 +760,10 @@ awesomewm, and the users shell's"
   :init
   (use-package undo-fu :ensure t :commands (undo-fu-only-undo undo-fu-only-redo))
   (defvaralias 'evil-shift-width 'tab-width)
-  (setq-default evil-insert-state-cursor 'bar)
+  (setq-default evil-insert-state-cursor 'bar
+                evil-emacs-state-message nil
+                evil-insert-state-message nil
+                evil-replace-state-message nil)
   :config
   (evil-mode 1)
   (evil-define-key '(normal motion visual) 'global " " nil)
@@ -785,17 +806,6 @@ awesomewm, and the users shell's"
     (evil-define-key '(normal motion) 'global
       " R" (lambda () (interactive)
              (when (y-or-n-p "Restart Emacs?") (restart-emacs)))))
-
-  (when (locate-library "term")
-    (add-hook 'term-mode-hook
-              (lambda ()
-                (turn-off-evil-mode)
-                (setq-local evil-insert-state-cursor 'box)
-                (add-hook 'evil-insert-state-entry-hook
-                          (lambda ()
-                            (turn-off-evil-mode)
-                            (term-char-mode))
-                          0 t))))
 
   (when (fboundp 'run)
     (evil-define-key 'normal 'global "  " 'run))
