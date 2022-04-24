@@ -1,6 +1,6 @@
 <div align="center">
 <img src="./.config/rice/Smeueg.png" height=128 width=128>
-<h1>Very Smeueg Dotfiles For Linux</h1>
+<h1>Very Smeueg™ Dotfiles For Linux</h1>
 <img src="./.config/rice/Screenshot.png" height=512 width=512>
 </div>
 
