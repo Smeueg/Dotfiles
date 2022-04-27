@@ -261,26 +261,28 @@ awesomewm, and the users shell's"
     (org-export-dispatch)
     (user-error ""))
   (let ((command nil) (bin-path nil) (file-path nil))
-    (setq bin-path (concat "'/tmp/" (file-name-base buffer-file-name) "'"))
-    (setq file-path (concat "'" buffer-file-name "'"))
+    (setq bin-path (concat "'/tmp/%s'" (file-name-base buffer-file-name)))
+    (setq file-path (format "'%s'" buffer-file-name))
     (cond ((member major-mode '(c-mode c++mode)) ;; C & C++
-           (setq command (concat "cc " file-path " -o "
-                                 bin-path " && " bin-path "\n")))
-          ((or (derived-mode-p 'sh-mode))
+           (setq command (format "cc %s -o %s && %s"
+                                 file-path bin-path bin-path)))
+          ((derived-mode-p 'sh-mode)
            (executable-make-buffer-file-executable-if-script-p)
-           (setq command (concat file-path "\n")))
+           (setq command (format "%s" file-path)))
           ((derived-mode-p 'lua-mode)
-           (setq command (concat "lua " file-path "\n")))
+           (setq command (format "lua %s" file-path)))
           ((derived-mode-p 'rust-mode )
-           (setq command (concat "rustc -C prefer-dynamic " file-path " -o "
-                                 bin-path " && " bin-path "\n")))
+           (setq command (format "rustc -C prefer-dynamic %s -o %s && %s"
+                                 file-path bin-path bin-path)))
           ((derived-mode-p 'python-mode) ;; Python
-           (setq command (concat "python3 " file-path "\n")))
+           (setq command (format "python3 %s" file-path)))
           ((derived-mode-p 'html-mode)
-           (setq command (concat "${BROWSER} " file-path "; exit\n")))
-          ((derived-mode-p 'java-mode)
            (setq command
-                 (concat "java " file-path "\n")))
+                 (format
+                  "[ $(command -v ${BROWSER}) ] && { ${BROWSER} %s; exit; }n"
+                  file-path)))
+          ((derived-mode-p 'java-mode)
+           (setq command (format "java %s" file-path)))
           ((= 1 1)
            (message "Unsupported mode")))
     (when command
@@ -290,7 +292,7 @@ awesomewm, and the users shell's"
         (ansi-term (getenv "SHELL"))
         (set-window-prev-buffers (selected-window) '())
         (term-send-raw-string
-         (concat "clear;" command))))))
+         (format "clear; %s\n" command))))))
 
 
 
@@ -753,6 +755,14 @@ awesomewm, and the users shell's"
             (lambda () (setq indent-tabs-mode nil))))
 
 
+;; Misc ;;
+(use-package yaml-mode
+  :ensure t
+  :defer t
+  :init
+  (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-mode)))
+
+
 ;; Evil
 (use-package evil
   :ensure t
@@ -810,6 +820,12 @@ awesomewm, and the users shell's"
   (when (fboundp 'run)
     (evil-define-key 'normal 'global "  " 'run))
 
+  (progn
+    (evil-define-key 'motion Buffer-menu-mode-map [return] 'Buffer-menu-select)
+    (add-hook 'quit-window-hook (lambda () (kill-buffer "*Buffer List*")))
+    (advice-add 'Buffer-menu-select :after
+                (lambda () (kill-buffer "*Buffer List*"))))
+
 
   ;; Basic Keybindings ;;
   (fset 'evil-next-line     'evil-next-visual-line)
@@ -864,7 +880,8 @@ awesomewm, and the users shell's"
     ":"   'execute-extended-command
     " K"  'kill-buffer
     " a"  'mark-whole-buffer
-    " b"  'switch-to-buffer
+    ;; " b"  'switch-to-buffer
+    " b"  'buffer-menu-other-window
     " e"  'edit-config
     " f"  'find-file
     " h"  'help
