@@ -53,6 +53,10 @@ print_prompt() {
 		unset reset color_dir color_branch color_failed color_success
 	fi
 
+	# Change the directory color to red if the user doesn't own the directory
+	[ "$(stat -c '%U' ${PWD})" = "${USER}" ] ||
+		color_dir=${color_failed}
+
 
 	if [ "${wrapper+x}" ]; then
 		wrapper_start=${wrapper%%\:*}
@@ -68,7 +72,6 @@ print_prompt() {
 	else
 		printf '%b%s' "${color_dir}" "${PWD}"
 	fi
-
 
 	branch="$(git branch --show-current 2>&-)"
 	[ "${branch}" ] && printf '%b [ %s ]' "${color_branch}" "${branch}"
