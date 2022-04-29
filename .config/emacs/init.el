@@ -452,9 +452,10 @@ awesomewm, and the users shell's"
   (tab-bar-mode 1))
 
 (use-package server
-  :commands ansi-term
   :demand t
-  :config (unless (server-running-p) (server-start)))
+  :init
+  (add-hook 'term-mode-hook
+            (lambda () (unless (server-running-p) (server-start)))))
 
 (use-package dired
   :defer t
@@ -822,9 +823,12 @@ awesomewm, and the users shell's"
 
   (progn
     (evil-define-key 'motion Buffer-menu-mode-map [return] 'Buffer-menu-select)
-    (add-hook 'quit-window-hook (lambda () (kill-buffer "*Buffer List*")))
-    (advice-add 'Buffer-menu-select :after
-                (lambda () (kill-buffer "*Buffer List*"))))
+    (when (get-buffer-window "*Buffer List*")
+      (delete-window (get-buffer-window "*Buffer List*")))
+    (add-hook 'quit-window-hook
+              (lambda () (kill-buffer "*Buffer List*")))
+    (advice-add 'Buffer-menu-select :after (lambda ()
+                                             (kill-buffer "*Buffer List*"))))
 
 
   ;; Basic Keybindings ;;
@@ -876,7 +880,8 @@ awesomewm, and the users shell's"
     [return] 'push-button
     (kbd "C-S-k") 'text-scale-increase
     (kbd "C-S-j") 'text-scale-decrease
-    (kbd "C-S-l") (lambda () (interactive) (text-scale-adjust 0))
+    (kbd "C-S-l") (lambda () "Reset the face height"
+                    (interactive) (text-scale-adjust 0))
     ":"   'execute-extended-command
     " K"  'kill-buffer
     " a"  'mark-whole-buffer
