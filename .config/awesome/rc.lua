@@ -171,6 +171,7 @@ beautiful.notification_border_width = 3
 
 
 
+
 -- Custom Images/Icons --
 local icon_clock = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
 local cr = cairo.Context(icon_clock)
@@ -523,7 +524,26 @@ end
 
 
 -- Custom Widgets --
-widget_date = wibox.widget {
+widgets = {}
+
+
+widgets.layout = wibox.widget {
+	forced_height = 20,
+	font = beautiful.font:match("(.+) %d+$") .. " 20",
+	widget = wibox.widget.textbox
+}
+tag.connect_signal("property::layout", function(t)
+					   if t.layout == awful.layout.suit.tile.right then
+						   widgets.layout.text = " ⠶ "
+					   elseif t.layout == awful.layout.suit.max then
+						   widgets.layout.text = " ■ "
+					   elseif t.layout == awful.layout.suit.floating then
+						   widgets.layout.text = " ⠂ "
+					   end
+end)
+
+
+widgets.date = wibox.widget {
 	{
 		{
 			{
@@ -552,7 +572,7 @@ widget_date = wibox.widget {
 }
 
 
-widget_time = wibox.widget {
+widgets.time = wibox.widget {
 	{
 		{
 			{
@@ -581,7 +601,7 @@ widget_time = wibox.widget {
 }
 
 
-widget_volume = wibox.widget {
+widgets.volume = wibox.widget {
 	{
 		{
 			{
@@ -608,15 +628,15 @@ widget_volume = wibox.widget {
 	margins = 7,
 	widget  = wibox.container.margin,
 	buttons = gears.table.join(
-		awful.button({ }, 3, function() widget_volume:ctrl("toggle") end),
-		awful.button({ }, 4, function() widget_volume:ctrl("+1") end),
-		awful.button({ }, 5, function() widget_volume:ctrl("-1") end)
+		awful.button({ }, 3, function() widgets.volume:ctrl("toggle") end),
+		awful.button({ }, 4, function() widgets.volume:ctrl("+1") end),
+		awful.button({ }, 5, function() widgets.volume:ctrl("-1") end)
 	),
 
 	timer = gears.timer {
 		timeout = 5,
 		autostart = true,
-		callback = function() widget_volume:update() end
+		callback = function() widgets.volume:update() end
 	},
 
 	ctrl = function(self, cmd)
@@ -631,7 +651,7 @@ widget_volume = wibox.widget {
 
 		awful.spawn.with_line_callback(
 			cmds[cmd],
-			{ exit = function() widget_volume:update() end }
+			{ exit = function() widgets.volume:update() end }
 		)
 	end,
 
@@ -647,10 +667,10 @@ widget_volume = wibox.widget {
 		load_droidcam_module()
 	end
 }
-widget_volume:update()
+widgets.volume:update()
 
 
-widget_network = wibox.widget {
+widgets.network = wibox.widget {
 	{
 		{
 			{
@@ -681,7 +701,7 @@ widget_network = wibox.widget {
 	timer = gears.timer {
 		timeout = 10,
 		autostart = true,
-		callback = function() widget_network:update() end
+		callback = function() widgets.network:update() end
 	},
 
 	update = function(self)
@@ -748,7 +768,7 @@ widget_network = wibox.widget {
 		end)
 	end
 }
-widget_network:update()
+widgets.network:update()
 
 
 local function system()
@@ -798,12 +818,12 @@ globalkeys = gears.table.join( -- Keybindings
 			naughty.notify {title = screen[1].workarea.height}
 	end),
 	-- Volume
-	awful.key({ modkey }, "[", function() widget_volume:ctrl("-5") end),
-	awful.key({ modkey }, "]", function() widget_volume:ctrl("+5") end),
-	awful.key({ modkey, "Control" }, "[", function()widget_volume:ctrl("-1")end),
-	awful.key({ modkey, "Control" }, "]", function()widget_volume:ctrl("+1")end),
-	awful.key({ modkey }, "\\", function() widget_volume:ctrl("toggle") end),
-	awful.key({ modkey, "Shift" }, "\\", function() widget_volume:ctrl("default") end),
+	awful.key({ modkey }, "[", function() widgets.volume:ctrl("-5") end),
+	awful.key({ modkey }, "]", function() widgets.volume:ctrl("+5") end),
+	awful.key({ modkey, "Control" }, "[", function()widgets.volume:ctrl("-1")end),
+	awful.key({ modkey, "Control" }, "]", function()widgets.volume:ctrl("+1")end),
+	awful.key({ modkey }, "\\", function() widgets.volume:ctrl("toggle") end),
+	awful.key({ modkey, "Shift" }, "\\", function() widgets.volume:ctrl("default") end),
 	-- Clients
 	awful.key({ modkey }, "j",
 		function() awful.client.focus.byidx(-1) end), -- Focus previous window
@@ -1041,13 +1061,15 @@ awful.screen.connect_for_each_screen(
 			)
 		}
 
-		s.mytasklist = awful.widget.tasklist { -- Tasklist Widget
+		s.tasklist = awful.widget.tasklist { -- Tasklist Widget
 			screen   = s,
 			filter   = awful.widget.tasklist.filter.currenttags,
 			layout   = {layout = wibox.layout.fixed.horizontal},
 			buttons  = awful.button({ }, 1, function(c)
-					if   c == client.focus then c.minimized = true
-					else c:emit_signal("request::activate", "tasklist",
+					if c == client.focus then
+						c.minimized = true
+					else c:emit_signal("request::activate",
+									   "tasklist",
 									   {raise = true}) end; end),
 			widget_template = {
 				{
@@ -1079,22 +1101,26 @@ awful.screen.connect_for_each_screen(
 		}
 
 		s.wibox = awful.wibar { position = "top", screen = s, height = 50 }
+		s.layoutbox = awful.widget.layoutbox(s)
 
 		s.wibox:setup { -- Wibox widgets
-			layout = wibox.layout.flex.horizontal,
+			layout = wibox.layout.align.horizontal,
+			expand = "none",
 			{ -- Left Widgets
 				s.taglist,
+				--s.layoutbox,
+				widgets.layout,
 				layout = wibox.layout.fixed.horizontal
 			},
 			{ -- Center Widgets
-				s.mytasklist,
-				layout = wibox.layout.flex.horizontal
+				s.tasklist,
+				layout = wibox.layout.fixed.horizontal
 			},
 			{ -- Right Widgets
-				widget_network,
-				widget_volume,
-				widget_date,
-				widget_time,
+				widgets.network,
+				widgets.volume,
+				widgets.date,
+				widgets.time,
 				wibox.widget.textbox(" "),
 				spacing = 5,
 				layout = wibox.layout.fixed.horizontal
