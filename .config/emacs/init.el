@@ -233,7 +233,6 @@ awesomewm, and the users shell's"
               (and (equal (current-buffer) (caar (window-prev-buffers)))
                    (= 1 (length (window-prev-buffers)))))
       (setq del t))
-
     (catch 'break
       (unless (= 1 (length (get-buffer-window-list)))
         (setq kill nil)
@@ -243,14 +242,21 @@ awesomewm, and the users shell's"
           (when (equal (current-buffer) (car buffer))
             (setq kill nil)
             (throw 'break nil)))))
-    (if kill (kill-buffer)
-      (let ((var '()) (cur (current-buffer)))
-        (switch-to-prev-buffer)
-        (dolist (buffer (window-prev-buffers))
-          (unless (eq cur (car buffer))
-            (push buffer var)))
-        (set-window-prev-buffers (selected-window) var)))
-    (when del (delete-window))))
+
+    (if (and (fboundp 'with-editor-cancel)
+             (string= (buffer-name) "COMMIT_EDITMSG"))
+        (with-editor-cancel)
+      (progn
+        (if kill (kill-buffer)
+          (let ((var '()) (cur (current-buffer)))
+            (switch-to-prev-buffer)
+            (dolist (buffer (window-prev-buffers))
+              (unless (eq cur (car buffer))
+                (push buffer var)))
+            (set-window-prev-buffers (selected-window) var)))
+        (when del (delete-window))))))
+
+
 (defalias 'q 'close)
 
 (defun run ()
@@ -283,6 +289,8 @@ awesomewm, and the users shell's"
                   file-path)))
           ((derived-mode-p 'java-mode)
            (setq command (format "java %s" file-path)))
+          ((derived-mode-p 'perl-mode)
+           (setq command (format "perl %s" file-path)))
           ((= 1 1)
            (message "Unsupported mode")))
     (when command
@@ -642,8 +650,8 @@ awesomewm, and the users shell's"
   :hook (prog-mode . global-company-mode)
   :init
   (use-package yasnippet
-    :defer t
     :ensure t
+    :defer t
     :init (use-package yasnippet-snippets :ensure t)
     :config (yas-global-mode))
   (setq-default
@@ -653,6 +661,7 @@ awesomewm, and the users shell's"
    company-require-match             nil
    company-tooltip-align-annotations t)
   :config
+  (define-key company-active-map (kbd "<C-return>") 'newline-and-indent)
   (when (package-installed-p 'yasnippet)
     (setq-default company-backends
                   (mapcar
@@ -666,8 +675,7 @@ awesomewm, and the users shell's"
 
 (use-package avy
   :ensure t
-  :commands avy-goto-char
-  )
+  :commands avy-goto-char)
 
 ;; "Programming" Packages ;;
 (use-package format-all
@@ -720,6 +728,10 @@ awesomewm, and the users shell's"
             (lambda ()
               (tree-sitter-mode 0)
               (tree-sitter-hl-mode 0))))
+
+(use-package git-modes
+  :ensure t
+  :demand t)
 
 ;; Html ;;
 (use-package impatient-mode
