@@ -1,19 +1,19 @@
 (deftheme Smeueg
   "Predominantly blue/cyan faces on a dark cyan background.")
 
-(setq bg      "#322638"
-      bg2     "#382B3F"
-      bg3     "#503C58"
-      fg      "#E7DEC7"
-      green   "#819013"
-      blue    "#4573A8"
-      cyan    "#459EA8"
-      yellow  "#FEA34B"
-      red     "#C5483F"
-      magenta "#953C9B"
-      orange  "#EAA651"
-      box-width 7)
-(let ((class '((class color) (min-colors 89))))
+(let ((class '((class color) (min-colors 89)))
+      (bg      "#322638")
+      (bg2     "#382B3F")
+      (bg3     "#503C58")
+      (fg      "#E7DEC7")
+      (green   "#819013")
+      (blue    "#4573A8")
+      (cyan    "#459EA8")
+      (yellow  "#FEA34B")
+      (red     "#C5483F")
+      (magenta "#953C9B")
+      (orange  "#EAA651")
+      (box-width 7))
   (custom-theme-set-faces
    'Smeueg
    ;; Ensure sufficient contrast on 256-color xterms.
