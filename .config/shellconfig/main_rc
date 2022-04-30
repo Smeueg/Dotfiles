@@ -38,7 +38,6 @@ print_prompt() {
 	color_failed="\033[38;5;1m"
 	color_success="\033[38;5;6m"
 
-
 	tmp="$(tty)"
 	if ! [ "${tmp%%/dev/tty*}" ] || [ "${TERM}" = "dumb" ]; then
 		symbol=${symbol_backup}
@@ -53,10 +52,6 @@ print_prompt() {
 		unset reset color_dir color_branch color_failed color_success
 	fi
 
-	# Change the directory color to red if the user doesn't own the directory
-	[ "$(stat -c '%U' ${PWD})" = "${USER}" ] ||
-		color_dir=${color_failed}
-
 
 	if [ "${wrapper+x}" ]; then
 		wrapper_start=${wrapper%%\:*}
@@ -66,28 +61,29 @@ print_prompt() {
 		done
 	fi
 
+	# Change the directory color to red if the user doesn't have permissions to
+	# write to the directory
+	[ -w "${PWD}" ] || color_dir=${color_failed}
 
+	# Current Directory
 	if ! [ "${PWD%${HOME}*}" ]; then
 		printf '%b%s' "${color_dir}" "~${PWD#${HOME}}"
 	else
 		printf '%b%s' "${color_dir}" "${PWD}"
 	fi
 
-	branch="$(git branch --show-current 2>&-)"
+	# Git Branch
+	branch=$(git branch --show-current 2>/dev/null)
 	[ "${branch}" ] && printf '%b [ %s ]' "${color_branch}" "${branch}"
 
-
+	# Symbol color
 	if [ ${ret} -eq 0 ]; then
 		printf '\n%b%s%b ' "${color_success}" "${symbol}" "${reset}"
 	else
 		printf '\n%b%s%b ' "${color_failed}" "${symbol}" "${reset}"
 	fi
 }
-if [ "${BASH}" ] || [ "${ZSH_NAME}" ]; then
-	export PS1="\$(print_prompt)"
-else
-	export PS1="\$(print_prompt 1)"
-fi
+export PS1="\$(print_prompt)"
 
 
 
@@ -152,27 +148,6 @@ dit() {
 	else
 		git --git-dir=$HOME/.local/dots/ --work-tree=$HOME "$@"
 	fi
-}
-
-
-fetsh() {
-	bin=$(command -v fet.sh)
-	if [ "${bin}" ]; then
-		url="https://github.com/6gk/fet.sh/raw/master/fet.sh"
-		if [ "$(command -v curl)" ]; then
-			{ curl -s -L -H "User-Agent: Mozilla/5.0"  "${url}" ||
-				  printf 'printf "Failed to get fet.sh with curl\\n"\n'; } | sh
-		elif [ "$(command -v wget)" ]; then
-			{ wget -U 'Mozilla/5.0' -qO- "${url}" ||
-				  printf 'printf "Failed to get fet.sh with wget\\n"\n'; } | sh
-		else
-			printf 'ERROR: Dependencies not met (curl or wget)\n' >&2
-		fi
-		unset url
-	else
-		"${bin}"
-	fi
-	unset bin
 }
 
 
