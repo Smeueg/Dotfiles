@@ -161,6 +161,11 @@ beautiful.border_normal = theme["bg"]
 beautiful.border_focus  = theme["focus"]
 beautiful.border_width  = dpi(4)
 beautiful.useless_gap   = 5
+beautiful.menu_width    = 30
+beautiful.menu_height   = 30
+beautiful.menu_bg_normal    = theme["bg_dark"]
+beautiful.menu_border_color = theme["fg2"]
+beautiful.menu_border_width = 3
 -- Taglists
 beautiful.taglist_bg_focus      = beautiful.wibar_bg
 beautiful.taglist_squares_sel   = nil
@@ -168,105 +173,6 @@ beautiful.taglist_squares_unsel = nil
 -- Notification
 beautiful.notification_border_color = theme["focus"]
 beautiful.notification_border_width = 3
-
-
-
-
--- Custom Images/Icons --
-local icon_clock = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
-local cr = cairo.Context(icon_clock)
-cr:set_source(gears.color(theme["icon_color"]))
-cr:rectangle(11, 5, 1, 6)
-cr:rectangle(11, 10, 3, 1)
-gears.shape.transform(gears.shape.radial_progress)
-	:scale(0.6, 0.6)
-	:translate(10, 7)(cr, 20, 20)
-cr:fill()
-
-local icon_calendar = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
-local cr = cairo.Context(icon_calendar)
-cr:set_source(gears.color(theme["icon_color"]))
-cr:rectangle(7, 4, 12, 12)
-cr:stroke()
-cr:rectangle(7, 5, 12, 3)
-cr:rectangle(9, 9, 2, 2)
-cr:rectangle(9, 12, 2, 2)
-cr:rectangle(12, 9, 2, 2)
-cr:rectangle(12, 12, 2, 2)
-cr:rectangle(15, 9, 2, 2)
-cr:rectangle(15, 12, 2, 2)
-cr:fill()
-
-local icon_volume = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
-local cr = cairo.Context(icon_volume)
-cr:set_source(gears.color(theme["icon_color"]))
-gears.shape.transform(gears.shape.rectangle)
-	:translate(3, 7.5)(cr, 3, 6)
-gears.shape.transform(gears.shape.isosceles_triangle)
-	:rotate_at(6, 6, -math.pi/2)
-	:translate(-4.5, 2)(cr, 12, 9)
-gears.shape.transform(gears.shape.arc)
-	:translate(1.8, 4.5)(cr, 12, 12, 1, -math.pi/6, math.pi/6, true, true)
-gears.shape.transform(gears.shape.arc)
-	:translate(2, 3)(cr, 15, 15, 1, -math.pi/4, math.pi/4, true, true)
-gears.shape.transform(gears.shape.arc)
-	:translate(2.2, 1.5)(cr, 18, 18, 1, -math.pi/3.5, math.pi/3.5, true, true)
-cr:fill()
-
-local icon_mute = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
-local cr = cairo.Context(icon_mute)
-cr:set_source(gears.color(theme["icon_color"]))
-gears.shape.transform(gears.shape.rectangle)
-	:translate(3, 7.5)(cr, 3, 6)
-gears.shape.transform(gears.shape.isosceles_triangle)
-	:rotate_at(6, 6, -math.pi/2)
-	:translate(-4.5, 2)(cr, 12, 9)
-gears.shape.transform(gears.shape.cross)
-	:rotate_at(4.5, 4.5, math.pi/4)
-	:translate(13, -4)(cr, 9, 9, 1)
-cr:fill()
-
-local icon_wifi = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
-local cr = cairo.Context(icon_wifi)
-cr:set_source(gears.color(theme["icon_color"]))
-gears.shape.transform(gears.shape.pie)
-	:scale(1.25, 1.5)
-	:translate(-1.5, 1.5)(cr, 20, 20, 1.25 * math.pi, 1.75* math.pi)
-cr:fill()
-
-local icon_ethernet = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
-local cr = cairo.Context(icon_ethernet)
-cr:set_source(gears.color(theme["icon_color"]))
-cr:rectangle(9, 2, 6, 6)
-cr:rectangle(4, 14, 6, 6)
-cr:rectangle(14, 14, 6, 6)
-cr:rectangle(11, 7, 2, 4)
-cr:rectangle(7, 10, 10, 2)
-cr:rectangle(6, 10, 2, 4)
-cr:rectangle(16, 10, 2, 4)
-cr:fill()
-
-local icon_no_network = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
-local cr = cairo.Context(icon_no_network)
-cr:set_source(gears.color(theme["icon_color"]))
-gears.shape.transform(gears.shape.pie)
-	:scale(1.15, 1.4)
-	:translate(-1.5, 1.8)(cr, 20, 20, 1.25 * math.pi, 1.75* math.pi)
-cr:stroke()
-
-local icon_menu = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
-local cr = cairo.Context(icon_menu)
-cr:set_source(gears.color(theme["menu_color"]))
-gears.shape.transform(gears.shape.losange)
-	:translate(6, 1)(cr, 8, 18)
-gears.shape.transform(gears.shape.losange)
-	:translate(1, 6)(cr, 18, 8)
-cr:fill()
-gears.shape.transform(gears.shape.losange)
-	:translate(1, 1)(cr, 18, 18)
-cr:stroke()
-
-cr = nil
 
 
 
@@ -528,19 +434,85 @@ widgets = {}
 
 
 widgets.layout = wibox.widget {
-	forced_height = 20,
-	font = beautiful.font:match("(.+) %d+$") .. " 20",
-	widget = wibox.widget.textbox
+	{
+		{
+			id = "icon",
+			widget = wibox.widget.imagebox
+		},
+		bg = theme["bg_dark"],
+		widget = wibox.container.background
+	},
+	margins = 10,
+	widget = wibox.container.margin,
+	icon = { },
+
+	buttons = gears.table.join(
+		awful.button({ }, 3, function()
+				widgets.layout:toggle_menu()
+		end)
+	),
+
+	toggle_menu = function(self)
+		if self.menu then
+			self.menu:hide()
+			self.menu = nil
+		else
+			self.menu = awful.menu {
+				items = {
+					{ "", function() set_layout_all(awful.layout.suit.floating) end, self.icon.floating },
+					{ "", function() set_layout_all(awful.layout.suit.tile.right) end, self.icon.tile },
+					{ "", function() set_layout_all(awful.layout.suit.max) end, self.icon.max }
+				}
+			}
+
+			self.menu:show()
+		end
+	end,
+
+	start = function(self)
+		self.icon = {
+			max      = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20),
+			tile     = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20),
+			floating = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
+		}
+
+		local cr
+		local fg = theme["fg2"]
+		cr = cairo.Context(self.icon.floating)
+		cr:set_source(gears.color(fg))
+		gears.shape.transform(gears.shape.rectangle):translate(4.5, 4.5)(cr, 8, 8)
+		gears.shape.transform(gears.shape.rectangle):translate(13.5, 7.5)(cr, 2, 8)
+		gears.shape.transform(gears.shape.rectangle):translate(7.5, 13.5)(cr, 8, 2)
+		cr:fill()
+
+		cr = cairo.Context(self.icon.tile)
+		cr:set_source(gears.color(fg))
+		gears.shape.transform(gears.shape.rectangle):translate(4.5, 4.5)(cr, 5, 5)
+		gears.shape.transform(gears.shape.rectangle):translate(10.5, 4.5)(cr, 5, 5)
+		gears.shape.transform(gears.shape.rectangle):translate(4.5,  10.5)(cr, 5, 5)
+		gears.shape.transform(gears.shape.rectangle):translate(10.5, 10.5)(cr, 5, 5)
+		cr:fill()
+
+		cr = cairo.Context(self.icon.max)
+		cr:set_source(gears.color(fg))
+		gears.shape.transform(gears.shape.rectangle):translate(4.5, 4.5)(cr, 11, 11)
+		cr:fill()
+
+		tag.connect_signal(
+			"property::layout",
+			function(t)
+				local layout = awful.layout.suit
+				local icon = self.icon
+				if t.layout == layout.tile.right then
+					self:get_children_by_id("icon")[1].image = icon.tile
+				elseif t.layout == layout.max then
+					self:get_children_by_id("icon")[1].image = icon.max
+				elseif t.layout == layout.floating then
+					self:get_children_by_id("icon")[1].image = icon.floating
+				end
+		end)
+	end
 }
-tag.connect_signal("property::layout", function(t)
-					   if t.layout == awful.layout.suit.tile.right then
-						   widgets.layout.text = " ⠶ "
-					   elseif t.layout == awful.layout.suit.max then
-						   widgets.layout.text = " ■ "
-					   elseif t.layout == awful.layout.suit.floating then
-						   widgets.layout.text = " ⠂ "
-					   end
-end)
 
 
 widgets.date = wibox.widget {
@@ -548,7 +520,7 @@ widgets.date = wibox.widget {
 		{
 			{
 				{
-					image = icon_calendar,
+					id = "icon",
 					forced_height = 25,
 					forced_width  = 25,
 					widget = wibox.widget.imagebox
@@ -568,7 +540,24 @@ widgets.date = wibox.widget {
 		widget = wibox.container.background
 	},
 	margins = 7,
-	widget = wibox.container.margin
+	widget = wibox.container.margin,
+	start = function(self)
+		local icon = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
+		local cr = cairo.Context(icon)
+		cr:set_source(gears.color(theme["icon_color"]))
+		cr:rectangle(7, 4, 12, 12)
+		cr:stroke()
+		cr:rectangle(7, 5, 12, 3)
+		cr:rectangle(9, 9, 2, 2)
+		cr:rectangle(9, 12, 2, 2)
+		cr:rectangle(12, 9, 2, 2)
+		cr:rectangle(12, 12, 2, 2)
+		cr:rectangle(15, 9, 2, 2)
+		cr:rectangle(15, 12, 2, 2)
+		cr:fill()
+
+		self:get_children_by_id("icon")[1].image = icon
+	end
 }
 
 
@@ -577,7 +566,7 @@ widgets.time = wibox.widget {
 		{
 			{
 				{
-					image = icon_clock,
+					id = "icon",
 					forced_height = 25,
 					forced_width  = 25,
 					widget = wibox.widget.imagebox
@@ -597,7 +586,20 @@ widgets.time = wibox.widget {
 		widget = wibox.container.background
 	},
 	margins = 7,
-	widget = wibox.container.margin
+	widget = wibox.container.margin,
+	start = function(self)
+		local icon = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
+		local cr = cairo.Context(icon)
+		cr:set_source(gears.color(theme["icon_color"]))
+		cr:rectangle(11, 5, 1, 6)
+		cr:rectangle(11, 10, 3, 1)
+		gears.shape.transform(gears.shape.radial_progress)
+			:scale(0.6, 0.6)
+			:translate(10, 7)(cr, 20, 20)
+		cr:fill()
+
+		self:get_children_by_id("icon")[1].image = icon
+	end
 }
 
 
@@ -661,13 +663,48 @@ widgets.volume = wibox.widget {
 				self:get_children_by_id("vol")[1]
 					.text = stdout:match("(%d+%%)") .. " "
 				self:get_children_by_id("icon")[1]
-					.image = stdout:match("Mute: (%w+)") == "no" and icon_volume or icon_mute
+					.image = stdout:match("Mute: (%w+)") == "no" and self.icon.volume or self.icon.mute
 		end)
 
 		load_droidcam_module()
+	end,
+
+	start = function(self)
+		local cr
+		self.icon = {
+			mute   = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20),
+			volume = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
+		}
+
+		cr = cairo.Context(self.icon.volume)
+		cr:set_source(gears.color(theme["icon_color"]))
+		gears.shape.transform(gears.shape.rectangle):translate(3, 7.5)(cr, 3, 6)
+		gears.shape.transform(gears.shape.isosceles_triangle)
+			:rotate_at(6, 6, -math.pi/2)
+			:translate(-4.5, 2)(cr, 12, 9)
+		gears.shape.transform(gears.shape.arc)
+			:translate(1.8, 4.5)(cr, 12, 12, 1, -math.pi/6, math.pi/6, true, true)
+		gears.shape.transform(gears.shape.arc)
+			:translate(2, 3)(cr, 15, 15, 1, -math.pi/4, math.pi/4, true, true)
+		gears.shape.transform(gears.shape.arc)
+			:translate(2.2, 1.5)(cr, 18, 18, 1, -math.pi/3.5, math.pi/3.5, true, true)
+		cr:fill()
+
+		cr = cairo.Context(self.icon.mute)
+		cr:set_source(gears.color(theme["icon_color"]))
+		gears.shape.transform(gears.shape.rectangle)
+			:translate(3, 7.5)(cr, 3, 6)
+		gears.shape.transform(gears.shape.isosceles_triangle)
+			:rotate_at(6, 6, -math.pi/2)
+			:translate(-4.5, 2)(cr, 12, 9)
+		gears.shape.transform(gears.shape.cross)
+			:rotate_at(4.5, 4.5, math.pi/4)
+			:translate(13, -4)(cr, 9, 9, 1)
+		cr:fill()
+
+		self:update()
 	end
 }
-widgets.volume:update()
 
 
 widgets.network = wibox.widget {
@@ -675,10 +712,10 @@ widgets.network = wibox.widget {
 		{
 			{
 				{
+					id            = "icon",
 					forced_height = 22,
 					forced_width  = 22,
-					id     = "icon",
-					widget = wibox.widget.imagebox
+					widget        = wibox.widget.imagebox
 				},
 				left   = 5,
 				right  = 7,
@@ -708,7 +745,6 @@ widgets.network = wibox.widget {
 		awful.spawn.easy_async(
 			"pidof NetworkManager", function(stdout)
 				if stdout == "" then return end
-
 				awful.spawn.easy_async(
 					"nmcli -t -f name,type connection show --active",
 					function(stdout)
@@ -718,9 +754,9 @@ widgets.network = wibox.widget {
 							str	= str .. net_name
 
 							if net_type:match("[^-]+$") == "wireless" then
-								self:get_children_by_id("icon")[1].image = icon_wifi
+								self:get_children_by_id("icon")[1].image = self.icon.wifi
 							else
-								self:get_children_by_id("icon")[1].image = icon_ethernet
+								self:get_children_by_id("icon")[1].image = self.icon.ethernet
 							end
 						end
 
@@ -729,46 +765,56 @@ widgets.network = wibox.widget {
 							self:get_children_by_id("text")[1].text	= str .. " "
 						else
 							self:get_children_by_id("text")[1].text	 = "No Network "
-							self:get_children_by_id("icon")[1].image = icon_no_network
+							self:get_children_by_id("icon")[1].image = self.icon.disconnect
 						end
 					end
 				)
 			end
 		)
+	end,
 
-		awful.spawn.easy_async(
-			"pidof connmand",
-			function(stdout)
-				if stdout == "" then return end
+	start = function(self)
+		local cr
+		self.icon = {
+			wifi       = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20),
+			ethernet   = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20),
+			disconnect = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
+		}
 
-				awful.spawn.easy_async(
-					"connmanctl services", function(stdout)
-						local str = ""
-						for match in stdout:gmatch("[*]A[A-Za-z] [^ ]*%s*...") do
-							if str == "" then
-								str = str .. match:match("^... [^ ]*"):match("[^ ]*$")
-							else
-								str = str .. " "
-								str = str .. match:match("^... [^ ]*"):match("[^ ]*$")
-							end
-							if match:match("wif") then
-								self.icon_margin.icon.image = icon_wifi
-							elseif match:match("eth")  then
-								self.icon_margin.icon.image = icon_ethernet
-							end
-						end
+		cr = cairo.Context(self.icon.wifi)
+		cr:set_source(gears.color(theme["icon_color"]))
+		gears.shape.transform(gears.shape.pie)
+			:scale(1.25, 1.5)
+			:translate(-1.5, 1.5)(cr, 20, 20, 1.25 * math.pi, 1.75* math.pi)
+		cr:fill()
 
-						if str == "" then
-							self.network.text = "Not Connected"
-							self.icon_margin.icon.image = icon_no_network
-						else
-							self.network.text = str
-						end
-				end)
-		end)
+		cr = cairo.Context(self.icon.ethernet)
+		cr:set_source(gears.color(theme["icon_color"]))
+		cr:rectangle(9, 2, 6, 6)
+		cr:rectangle(4, 14, 6, 6)
+		cr:rectangle(14, 14, 6, 6)
+		cr:rectangle(11, 7, 2, 4)
+		cr:rectangle(7, 10, 10, 2)
+		cr:rectangle(6, 10, 2, 4)
+		cr:rectangle(16, 10, 2, 4)
+		cr:fill()
+
+		cr = cairo.Context(disconnect)
+		cr:set_source(gears.color(theme["icon_color"]))
+		gears.shape.transform(gears.shape.pie)
+			:scale(1.15, 1.4)
+			:translate(-1.5, 1.8)(cr, 20, 20, 1.25 * math.pi, 1.75* math.pi)
+		cr:stroke()
+
+		self:update()
 	end
 }
-widgets.network:update()
+
+for _, widget in pairs(widgets) do
+	if widget.start ~= nil then
+		widget:start()
+	end
+end
 
 
 local function system()
