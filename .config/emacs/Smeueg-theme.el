@@ -173,10 +173,14 @@
    `(eterm-256color-bright-blue    ((,class (:foreground ,blue))))
    `(eterm-256color-bright-magenta ((,class (:foreground ,magenta))))
    `(eterm-256color-bright-cyan    ((,class (:foreground ,cyan))))
-   `(eterm-256color-bright-white   ((,class (:foreground ,fg))))))
+   `(eterm-256color-bright-white   ((,class (:foreground ,fg)))))
 
-(custom-theme-set-variables
- 'Smeueg
- `(ansi-color-names-vector [,bg3 ,red ,green ,yellow ,blue ,magenta ,cyan ,fg]))
+  ;; Company-quickhelp
+  (setq-default company-quickhelp-color-background bg2)
+  (setq-default company-quickhelp-color-foreground fg)
+  (custom-theme-set-variables
+   'Smeueg
+   `(ansi-color-names-vector [,bg3 ,red ,green ,yellow ,blue ,magenta ,cyan ,fg])))
+
 
 (provide-theme 'Smeueg)
