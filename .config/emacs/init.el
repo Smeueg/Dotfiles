@@ -147,7 +147,7 @@
 
 (defun script-header (&optional opt)
   "Add a comment header for information about a script,
-template from Terminal For Life"
+template from TerminalForLife"
   (interactive (list (completing-read "Action: " '("Add New" "Update"))))
   (cond ((string= opt "Add New")
          (save-excursion
@@ -162,7 +162,7 @@ template from Terminal For Life"
              "Author Name    - Smeueg\n"
              "Author Email   - Smeueg@gmail.com\n"
              "Author Gitlab  - https://gitlab.com/Smeueg\n"
-             (format-time-string "Last Updated   - %a %_d %b %T %Z %Y\n")))
+             (format-time-string "Last Updated   - %a %_d %b %Y\n")))
            (insert-char ?- 48)
            (insert-char ?\n 1)
            (comment-region point (point))))
@@ -179,11 +179,10 @@ template from Terminal For Life"
                                    ".+ Last Updated   - .+\n"
                                    ".+ -+\n")
                                   nil t)
-             (previous-line 2)
-             (re-search-forward ".* Last Updated +- " nil t)
-             (delete-region (progn (beginning-of-line) (point)) (progn (end-of-line) (point)))
-             (insert (format-time-string "Last Updated   - %a %_d %b %T %Z %Y"))
-             (comment-line 1))))))
+             (let ((saved-point (point)))
+               (previous-line 7)
+               (delete-region (point) saved-point))
+             (script-header "Add New"))))))
 
 (defun edit-config (config)
   "Edit a configuration file. Supports emacs's init-file and enabled theme,
@@ -225,8 +224,9 @@ awesomewm, and the users shell's"
            'UTF8_STRING)) ""))
 
 (defun close ()
-  "Kill buffer when there's only one window displaying the buffer.
-      Delete window when the current window has no previous buffers"
+  "Kill buffer when there's only one window displaying the buffer. Delete window
+when the current window has no previous buffers. This function aims to mimic how
+vim manages it's splits and tabs"
   (interactive)
   (let ((count 0) (del nil) (kill t))
     (when (or (= 0 (length (window-prev-buffers)))
@@ -255,8 +255,6 @@ awesomewm, and the users shell's"
                 (push buffer var)))
             (set-window-prev-buffers (selected-window) var)))
         (when del (delete-window))))))
-
-
 (defalias 'q 'close)
 
 (defun run ()
@@ -654,6 +652,11 @@ awesomewm, and the users shell's"
     :defer t
     :init (use-package yasnippet-snippets :ensure t)
     :config (yas-global-mode))
+  (use-package company-quickhelp
+    :ensure t
+    :demand t
+    :init
+    (company-quickhelp-mode))
   (setq-default
    company-minimum-prefix-length     2
    company-idle-delay                0
@@ -832,6 +835,12 @@ awesomewm, and the users shell's"
 
   (when (fboundp 'run)
     (evil-define-key 'normal 'global "  " 'run))
+
+  ;; Disable evil-complete-next and evil-complete-previous
+  (define-key evil-insert-state-map [14] nil)
+  (define-key evil-insert-state-map [16] nil)
+
+
 
   (progn
     (evil-define-key 'motion Buffer-menu-mode-map [return] 'Buffer-menu-select)
