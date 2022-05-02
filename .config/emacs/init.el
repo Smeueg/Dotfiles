@@ -129,6 +129,8 @@
 (defalias 'w 'save-buffer)
 (defalias 'd 'delete-window)
 (defalias 's 'replace-regexp)
+(defalias 'e 'find-file)
+(defalias 'b 'buffer-menu-other-window)
 
 ;; Actual Functions
 (defun hs()
@@ -214,6 +216,7 @@ awesomewm, and the users shell's"
                               '("" "c"))))
        files))))
   (find-file config))
+(defalias 'ec 'edit-config)
 
 (defun get-system-clipboard ()
   "Get value of the system clipboard"
@@ -906,10 +909,6 @@ vim manages it's splits and tabs"
     ":"   'execute-extended-command
     " K"  'kill-buffer
     " a"  'mark-whole-buffer
-    ;; " b"  'switch-to-buffer
-    " b"  'buffer-menu-other-window
-    " e"  'edit-config
-    " f"  'find-file
     " h"  'help
     " l"  'global-display-line-numbers-mode
     " w"  'global-whitespace-mode
