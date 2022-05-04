@@ -114,12 +114,13 @@
 ;; Make Emacs remember the last vistied line
 (when (fboundp 'save-place-mode) ;; Remember last place emacs visits
   (save-place-mode 1)
-  (setq-default save-place-file "/tmp/emacs_places"
-                save-place-forget-unreadable-files nil))
+  (setq-default save-place-forget-unreadable-files nil)
+  (when (and (file-directory-p "/tmp") (file-writable-p "/tmp"))
+    (setq-default save-place-file "/tmp/emacs_places")))
 
 ;; Disable "*Messages*" buffer
-(setq-default message-log-max nil)
-(kill-buffer "*Messages*")
+;; (setq-default message-log-max nil)
+;; (kill-buffer "*Messages*")
 
 
 
@@ -128,24 +129,20 @@
 (fset 'yes-or-no-p 'y-or-n-p)
 (defalias 'w 'save-buffer)
 (defalias 'd 'delete-window)
+(defalias 'dw 'delete-window)
+(defalias 'dt 'tab-close)
 (defalias 's 'replace-regexp)
-(defalias 'e 'find-file)
-(defalias 'b 'buffer-menu-other-window)
+(defalias 'tabe 'tab-new)
 
 ;; Actual Functions
-(defun hs()
-  "Split the buffer horizontally and focus on said window"
-  (interactive)
-  (select-window (split-window-horizontally)))
-(defun vs()
+(defun hs ()
+  "Split  the buffer horizontally and focus on said window"
+  (intera ctive)
+  (select -window (split-window-horizontally)))
+(defun vs ()
   "Split the buffer vertically and focus on said window"
   (interactive)
   (select-window (split-window-vertically)))
-
-(defun scratch()
-  "Open the scratch buffer"
-  (interactive)
-  (switch-to-buffer "*scratch*"))
 
 (defun script-header (&optional opt)
   "Add a comment header for information about a script,
@@ -216,7 +213,6 @@ awesomewm, and the users shell's"
                               '("" "c"))))
        files))))
   (find-file config))
-(defalias 'ec 'edit-config)
 
 (defun get-system-clipboard ()
   "Get value of the system clipboard"
@@ -276,6 +272,8 @@ vim manages it's splits and tabs"
           ((derived-mode-p 'sh-mode)
            (executable-make-buffer-file-executable-if-script-p)
            (setq command (format "%s" file-path)))
+          ((derived-mode-p 'js-mode)
+           (setq command (format "nodejs %s" file-path)))
           ((derived-mode-p 'lua-mode)
            (setq command (format "lua %s" file-path)))
           ((derived-mode-p 'rust-mode )
@@ -309,15 +307,91 @@ vim manages it's splits and tabs"
 (define-key key-translation-map [?\C-h] [?\C-?])
 (global-set-key [mouse-3] 'mouse-major-mode-menu)
 (define-key prog-mode-map [return] 'newline-and-indent)
-(global-set-key (kbd "C-S-v")
+(global-set-key [?\C-\S-v]
                 (lambda()
                   (interactive)
                   (insert (get-system-clipboard))))
 
 
 
+;;; HOOKS ;;;
+(add-hook 'before-save-hook 'delete-trailing-whitespace)
+(add-hook 'sh-mode-hook
+          (lambda ()
+            (sh-electric-here-document-mode 0)
+            (when (= (buffer-size) 0) (insert "#!/bin/sh\n\n"))))
+(add-hook 'emacs-lisp-mode-hook
+          (lambda () (setq-local indent-tabs-mode nil)))
+(add-hook 'completion-list-mode-hook
+          (lambda () (display-line-numbers-mode 0)))
+(add-hook 'minibuffer-exit-hook
+          (lambda () (when (get-buffer "*Completions*")
+                       (kill-buffer "*Completions*"))))
+(add-hook 'prog-mode-hook
+          (lambda ()
+            (hs-minor-mode)
+            (hs-hide-all)))
+(when (fboundp 'script-header)
+  (add-hook 'sh-mode-hook
+            (lambda () (add-hook 'before-save-hook 'script-header 0 t))))
+
+
+
+
+;;; CUSTOM SPLASH SCREEN ;;;
+;; Disable startup message
+(fset 'display-startup-echo-area-message (lambda () (message nil)))
+(defun min-splash ()
+  "A custom minimal emacs splash screen"
+  (interactive)
+  (let ((splash-buffer nil) (margin-size nil))
+    (setq splash-buffer (get-buffer-create "*min-splash*"))
+    (setq margin-size (/ (- (frame-width) 20) 2))
+    (with-current-buffer splash-buffer
+      (insert "▓█████▓ ███▄ ▄███▓▓█████  █    ██   ▄████    ██████\n")
+      (insert "▓█   ▀▓▓██▒▀█▀ ██▒▓█   ▀  ██  ▓██▒ ██▒ ▀█▒▒ ██    ▒\n")
+      (insert "▒███   ▓██    ▓██ ▒███   ▓██  ▒██░▒██░▄▄▄░░  ▓██▄ ░\n")
+      (insert "▒▓█  ▄ ▒██    ▒██ ▒▓█  ▄  ▓█  ░██░░▓█  ██▓   ▒  ██▒\n")
+      (insert "░▒████ ▒██▒   ░██ ░▒████▒ ▒█████▓ ░▒▓███▀  ██████ ▒\n")
+      (insert "░░ ▒░ ░░ ▒░   ░  ░ ░ ▒░ ░░▒▓▒ ▒ ▒  ░▒   ▒ ▒ ▒▓▒ ▒ ░\n")
+      (insert "░ ░  ░░  ░      ░ ░ ░  ░░░▒░ ░ ░   ░   ░ ░ ░▒  ░ ░░\n")
+      (insert "░   ░      ░           ░░░ ░ ░ ░ ░   ░ ░  ░  ░    ░\n")
+      (insert "░  ░       ░      ░  ░   ░           ░       ░    ░\n")
+      (insert (propertize "\n\n\nWelcome to " 'face 'splash-text))
+      (insert (propertize "Emeugs" 'face  'splash-text-special))
+      (insert-char ?\n 2)
+      (insert (propertize "Emacs" 'face  'splash-text-special))
+      (insert (propertize " with some " 'face 'splash-text))
+      (insert (propertize "Smeueg. " 'face  'splash-text-special))
+      (insert (propertize "Enjoy Your Stay\n" 'face 'splash-text))
+      (min-splash-align)
+      (add-hook 'post-command-hook #'min-splash-align 0 t)
+      (add-hook 'window-state-change-hook #'min-splash-align 0 t))
+    (get-buffer "*min-splash*")))
+
+(defun min-splash-align ()
+  (if (get-buffer "*min-splash*")
+      (with-current-buffer "*min-splash*"
+        (save-excursion
+          (let ((lines (count-lines (point-min) (point-max))))
+            (setq-local fill-column (- (window-body-width nil) 2))
+            (read-only-mode 0)
+            (with-temp-message "" (mark-whole-buffer))
+            (delete-blank-lines)
+            (deactivate-mark)
+            (goto-char 0)
+            (insert-char ?\n (/ (- (window-body-height nil) 15) 2))
+            (center-line 16)
+            (read-only-mode 1))))
+    (progn
+      (remove-hook 'post-command-hook 'min-splash-align)
+      (remove-hook 'window-state-change-hook 'min-splash-align))))
+(setq-default initial-buffer-choice 'min-splash)
+
+
+
 ;;; CUSTOM MODE-LINE ;;;
-(defun ml/align(left right)
+(defun ml/align (left right)
   "Add padding to mode line with arguments being LEFT, and RIGHT."
   (let ((space (length (format-mode-line right))))
     (when (and window-system (eq 'right (get-scroll-bar-mode)))
@@ -350,82 +424,6 @@ vim manages it's splits and tabs"
 
 
 
-
-;;; CUSTOM SPLASH SCREEN ;;;
-;; Disable startup message
-(fset 'display-startup-echo-area-message (lambda () (message nil)))
-(defun min-splash()
-  "A custom minimal emacs splash screen"
-  (interactive)
-  (let ((splash-buffer nil) (margin-size nil))
-    (setq splash-buffer (get-buffer-create "*min-splash*"))
-    (setq margin-size (/ (- (frame-width) 20) 2))
-    (with-current-buffer splash-buffer
-      (insert "▓█████▓ ███▄ ▄███▓▓█████  █    ██   ▄████    ██████\n")
-      (insert "▓█   ▀▓▓██▒▀█▀ ██▒▓█   ▀  ██  ▓██▒ ██▒ ▀█▒▒ ██    ▒\n")
-      (insert "▒███   ▓██    ▓██ ▒███   ▓██  ▒██░▒██░▄▄▄░░  ▓██▄ ░\n")
-      (insert "▒▓█  ▄ ▒██    ▒██ ▒▓█  ▄  ▓█  ░██░░▓█  ██▓   ▒  ██▒\n")
-      (insert "░▒████ ▒██▒   ░██ ░▒████▒ ▒█████▓ ░▒▓███▀  ██████ ▒\n")
-      (insert "░░ ▒░ ░░ ▒░   ░  ░ ░ ▒░ ░░▒▓▒ ▒ ▒  ░▒   ▒ ▒ ▒▓▒ ▒ ░\n")
-      (insert "░ ░  ░░  ░      ░ ░ ░  ░░░▒░ ░ ░   ░   ░ ░ ░▒  ░ ░░\n")
-      (insert "░   ░      ░           ░░░ ░ ░ ░ ░   ░ ░  ░  ░    ░\n")
-      (insert "░  ░       ░      ░  ░   ░           ░       ░    ░\n")
-      (insert (propertize "\n\n\nWelcome to " 'face 'splash-text))
-      (insert (propertize "Emeugs" 'face  'splash-text-special))
-      (insert-char ?\n 2)
-      (insert (propertize "Emacs" 'face  'splash-text-special))
-      (insert (propertize " with some " 'face 'splash-text))
-      (insert (propertize "Smeueg. " 'face  'splash-text-special))
-      (insert (propertize "Enjoy Your Stay\n" 'face 'splash-text))
-      (min-splash-align)
-      (add-hook 'post-command-hook #'min-splash-align 0 t)
-      (add-hook 'window-state-change-hook #'min-splash-align 0 t))
-    (get-buffer "*min-splash*")))
-
-(defun min-splash-align()
-  (if (get-buffer "*min-splash*")
-      (with-current-buffer "*min-splash*"
-        (save-excursion
-          (let ((lines (count-lines (point-min) (point-max))))
-            (setq-local fill-column (- (window-body-width nil) 2))
-            (read-only-mode 0)
-            (with-temp-message "" (mark-whole-buffer))
-            (delete-blank-lines)
-            (deactivate-mark)
-            (goto-char 0)
-            (insert-char ?\n (/ (- (window-body-height nil) 15) 2))
-            (center-line 16)
-            (read-only-mode 1))))
-    (progn
-      (remove-hook 'post-command-hook 'min-splash-align)
-      (remove-hook 'window-state-change-hook 'min-splash-align))))
-(setq-default initial-buffer-choice 'min-splash)
-
-
-
-;;; HOOKS ;;;
-(add-hook 'before-save-hook 'delete-trailing-whitespace)
-(add-hook 'sh-mode-hook
-          (lambda ()
-            (sh-electric-here-document-mode 0)
-            (when (= (buffer-size) 0) (insert "#!/bin/sh\n\n"))))
-(add-hook 'emacs-lisp-mode-hook
-          (lambda () (setq-local indent-tabs-mode nil)))
-(add-hook 'completion-list-mode-hook
-          (lambda () (display-line-numbers-mode 0)))
-(add-hook 'minibuffer-exit-hook
-          (lambda () (when (get-buffer "*Completions*")
-                       (kill-buffer "*Completions*"))))
-(add-hook 'prog-mode-hook
-          (lambda ()
-            (hs-minor-mode)
-            (hs-hide-all)))
-(when (fboundp 'script-header)
-  (add-hook 'sh-mode-hook
-            (lambda () (add-hook 'before-save-hook 'script-header 0 t))))
-
-
-
 ;; PACKAGES ;;
 (require 'package nil 'noerror)
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
@@ -454,11 +452,15 @@ vim manages it's splits and tabs"
 (use-package tab-bar
   :disabled t
   :init
+  (add-hook 'emacs-startup-hook 'redraw-display)
   (setq-default
-   tab-bar-close-button-show nil
+   tab-bar-close-button-show t
    tab-bar-new-button-show nil)
   :config
-  (tab-bar-mode 1))
+  (advice-add 'tab-bar-close-tab :after
+              (lambda (&rest r)
+                (when (= (length (tab-bar-tabs)) 1)
+                  (tab-bar-mode -1)))))
 
 (use-package server
   :demand t
@@ -522,8 +524,7 @@ vim manages it's splits and tabs"
   (defun term-vs ()
     "Open a terminal in a new vertical split."
     (interactive)
-    (split-window-below)
-    (other-window 1)
+    (select-window (split-window-below))
     (ansi-term (getenv "SHELL"))
     (set-window-prev-buffers (selected-window) '()))
   :config
@@ -532,7 +533,7 @@ vim manages it's splits and tabs"
                               (display-line-numbers-mode 0)
                               (electric-pair-local-mode 0)
                               (setq-local scroll-margin 0)))
-  (define-key term-raw-map "\C-\\" 'term-esc-map)
+  (define-key term-raw-map [?\C-\\] 'term-esc-map)
 
   ;; Hide mode line when in term-char-mode
   (advice-add 'term-char-mode
@@ -543,8 +544,8 @@ vim manages it's splits and tabs"
                 (setq-local mode-line-format (default-value 'mode-line-format))
                 (redraw-display)))
 
-  (define-key term-raw-map "\C-\\\C-n" 'term-line-mode)
-  (when (package-installed-p 'evil)
+  (define-key term-raw-map [?\C-\\?\C-n] 'term-line-mode)
+  (when (boundp 'evil-mode)
     (advice-add 'term-line-mode :after
                 (lambda ()
                   (turn-on-evil-mode)
@@ -559,7 +560,7 @@ vim manages it's splits and tabs"
                             (turn-off-evil-mode))
                           0 t))))
 
-  (define-key term-raw-map (kbd "C-S-v")
+  (define-key term-raw-map [?\C-\S-v]
     (lambda ()
       (interactive)
       (term-send-raw-string (get-system-clipboard)))))
@@ -667,7 +668,7 @@ vim manages it's splits and tabs"
    company-require-match             nil
    company-tooltip-align-annotations t)
   :config
-  (define-key company-active-map (kbd "<C-return>") 'newline-and-indent)
+  (define-key company-active-map [C-return] 'newline-and-indent)
   (when (package-installed-p 'yasnippet)
     (setq-default company-backends
                   (mapcar
@@ -787,7 +788,9 @@ vim manages it's splits and tabs"
   :ensure t
   :demand t
   :init
-  (use-package undo-fu :ensure t :commands (undo-fu-only-undo undo-fu-only-redo))
+  (use-package undo-fu
+    :ensure t
+    :commands (undo-fu-only-undo undo-fu-only-redo))
   (defvaralias 'evil-shift-width 'tab-width)
   (setq-default evil-insert-state-cursor 'bar
                 evil-emacs-state-message nil
@@ -803,10 +806,11 @@ vim manages it's splits and tabs"
       " i" 'org-display-inline-images
       [return] 'org-open-at-point
       [tab] 'org-cycle
-      (kbd "M-C-h") 'org-promote-subtree
-      (kbd "M-C-j") 'outline-move-subtree-down
-      (kbd "M-C-k") 'outline-move-subtree-up
-      (kbd "M-C-l") 'org-demote-subtree))
+      [?\M-\C-h] 'org-promote-subtree
+      [?\M-\C-j]  'outline-move-subtree-down
+      [?\M-\C-k]  'outline-move-subtree-up
+      [?\M-\C-l]  'org-demote-subtree
+      ))
 
   (when (package-installed-p 'bongo) ;; Bongo
     (evil-define-key 'normal 'global " m" 'bongo-playlist)
@@ -864,17 +868,17 @@ vim manages it's splits and tabs"
   ;; Re-add the alt-hjkl keys
   (evil-define-key
     '(insert normal visual operator motion replace) 'global
-    (kbd "M-h") (lambda () (interactive) (evil-normal-state 1) (evil-backward-char))
-    (kbd "M-j") (lambda () (interactive) (evil-normal-state 1) (evil-next-line))
-    (kbd "M-k") (lambda () (interactive) (evil-normal-state 1) (evil-previous-line))
-    (kbd "M-l") (lambda () (interactive) (evil-normal-state 1) (evil-forward-char)))
+    [?\M-h] (lambda () (interactive) (evil-normal-state 1) (evil-backward-char))
+    [?\M-j] (lambda () (interactive) (evil-normal-state 1) (evil-next-line))
+    [?\M-k] (lambda () (interactive) (evil-normal-state 1) (evil-previous-line))
+    [?\M-l] (lambda () (interactive) (evil-normal-state 1) (evil-forward-char)))
 
   ;; Clipboard/Copy/Paste
   (evil-define-key 'insert 'global
     "\C-k" 'evil-insert-digraph
-    (kbd "C-S-v") (lambda ()
-                    (interactive)
-                    (insert (get-system-clipboard))))
+    [?\C-\S-v] (lambda ()
+                 (interactive)
+                 (insert (get-system-clipboard))))
   (evil-define-key 'visual 'global " c"
     (lambda (beg end)
       (interactive "r")
@@ -902,11 +906,14 @@ vim manages it's splits and tabs"
 
   (evil-define-key '(normal motion) 'global
     [return] 'push-button
-    (kbd "C-S-k") 'text-scale-increase
-    (kbd "C-S-j") 'text-scale-decrease
-    (kbd "C-S-l") (lambda () "Reset the face height"
-                    (interactive) (text-scale-adjust 0))
+    [?\C-\S-k] 'text-scale-increase
+    [?\C-\S-j] 'text-scale-decrease
+    [?\C-\S-l] (lambda () "Reset the face height"
+                 (interactive) (text-scale-adjust 0))
     ":"   'execute-extended-command
+    " e"  'edit-config
+    " b"  'buffer-menu-other-window
+    " f"  'find-file
     " K"  'kill-buffer
     " a"  'mark-whole-buffer
     " h"  'help
