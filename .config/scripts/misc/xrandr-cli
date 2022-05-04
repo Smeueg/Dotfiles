@@ -4,13 +4,13 @@
 # Author Name    - Smeueg
 # Author Email   - Smeueg@gmail.com
 # Author Gitlab  - https://gitlab.com/Smeueg
-# Last Updated   - Sun  1 May 2022
+# Last Updated   - Wed  4 May 2022
 # ------------------------------------------------
-
+# ----------------------------------
 # ------------------------------------------------
 # Script to interactively change the resolution using xrandr
 
-if ! [ "$(command -v xrandr)" ]; then do
+if ! [ "$(command -v xrandr)" ]; then
 	printf "[\033[1;31mERROR\033[0m] The command 'xrandr' not found, exiting\n" 2>&1
 	exit 1
 fi
@@ -48,7 +48,7 @@ else
 	fi
 
 	stty_settings="$(stty -g)"
-	trap "stty '${stty_settings}'; exit 1" INT
+	trap 'stty "${stty_settings}"; exit 1' INT
 	stty -icanon
 	read_char() {
 		input=$(dd bs=1 count=1 2>&1)
