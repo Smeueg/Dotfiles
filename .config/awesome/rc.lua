@@ -130,16 +130,16 @@ beautiful.font      = theme["font"]
 beautiful.wibar_selected_tag    = theme["fg"]
 beautiful.wibar_unselected_tag  = theme["fg2"]
 -- Titlebar
-beautiful.titlebar_close_button_normal              = button_close
-beautiful.titlebar_close_button_focus               = button_close
+beautiful.titlebar_close_button_normal = button_close
+beautiful.titlebar_close_button_focus  = button_close
+beautiful.titlebar_minimize_button_normal = button_minimize
+beautiful.titlebar_minimize_button_focus  = button_minimize
 beautiful.titlebar_maximized_button_normal          = button_maximize
 beautiful.titlebar_maximized_button_normal_active   = button_maximize
 beautiful.titlebar_maximized_button_normal_inactive = button_maximize
 beautiful.titlebar_maximized_button_focus           = button_maximize
 beautiful.titlebar_maximized_button_focus_active    = button_maximize
 beautiful.titlebar_maximized_button_focus_inactive  = button_maximize
-beautiful.titlebar_minimize_button_normal           = button_minimize
-beautiful.titlebar_minimize_button_focus            = button_minimize
 beautiful.titlebar_bg       = theme["bg_light"]
 beautiful.titlebar_bg_focus = theme["fg2"]
 beautiful.titlebar_fg       = theme["fg"]
@@ -153,19 +153,22 @@ beautiful.tooltip_border_width = 1
 beautiful.menubar_fg_focus = theme["focus"]
 beautiful.menubar_bg_focus = theme["bg_light"]
 -- Tasklist
-beautiful.tasklist_bg_focus     = theme["bg_light"]
-beautiful.tasklist_bg_normal    = theme["bg"]
-beautiful.tasklist_bg_minimize  = beautiful.wibar_bg
--- Borders & Gaps
+beautiful.tasklist_bg_focus    = theme["bg_dark"]
+beautiful.tasklist_bg_normal   = theme["bg"]
+beautiful.tasklist_bg_minimize = beautiful.wibar_bg
+-- Borders
 beautiful.border_normal = theme["bg"]
 beautiful.border_focus  = theme["focus"]
 beautiful.border_width  = dpi(4)
-beautiful.useless_gap   = 5
-beautiful.menu_width    = 30
-beautiful.menu_height   = 30
+-- Menu
+beautiful.menu_width        = 30
+beautiful.menu_height       = 30
 beautiful.menu_bg_normal    = theme["bg_dark"]
+beautiful.menu_bg_focus     = theme["bg"]
 beautiful.menu_border_color = theme["fg2"]
 beautiful.menu_border_width = 3
+-- Gaps
+beautiful.useless_gap = 5
 -- Taglists
 beautiful.taglist_bg_focus      = beautiful.wibar_bg
 beautiful.taglist_squares_sel   = nil
@@ -173,7 +176,6 @@ beautiful.taglist_squares_unsel = nil
 -- Notification
 beautiful.notification_border_color = theme["focus"]
 beautiful.notification_border_width = 3
-
 
 
 -- Custom Functions --
@@ -257,175 +259,322 @@ end
 
 
 local function load_droidcam_module()
-	-- Load pulseaudio droidcam module
+	-- A function to load a pulseaudio droidcam module
 	if not command_exists("pactl") then return end
-	awful.spawn.easy_async(
-		"ps -C droidcam-cli --no-header -o 'cmd'",
-		function(stdout)
-			if not stdout:match("-a") then return end
-			awful.spawn.easy_async(
-				"pactl list short",
-				function(stdout)
-					local module_name = "DroidcamAudio"
-					if stdout:match(module_name) then return end
-					naughty.notify {title = "Loading Droidcam Audio Module"}
-					awful.spawn.easy_async(
-						"pactl load-module module-alsa-source device=hw:Loopback,1,0 source_properties=device.description=" .. module_name,
-						function(stdout)
-							awful.spawn.easy_async(
-								"pactl list short", function(stdout)
-									if not stdout:match(module_name) then return end
+	local module_name = "DroidcamAudio"
+	local functions
+	functions = {
+		{
+			"ps -C droidcam-cli --no-header -o 'cmd'",
+			function(stdout)
+				if stdout:match("-a") then
+					awful.spawn.easy_async(functions[2][1], functions[2][2])
+				end
+			end
+		},
+		{
+			"pactl list short",
+			function(stdout)
+				if not stdout:match(module_name) then
+					awful.spawn.easy_async(functions[3][1], functions[3][2])
+				end
+			end
+		},
+		{
+			"pactl load-module module-alsa-source device=hw:Loopback,1,0 source_properties=device.description=" .. module_name,
+			function(stdout)
+				awful.spawn.easy_async(functions[4][1], functions[4][2])
+			end
+		},
+		{
+			"pactl list short",
+			function(stdout)
+				if stdout:match(module_name) then
+					naughty.notify {title = "Successfully loaded Droidcam module"}
+					awful.spawn.with_shell("pactl set-default-source 'alsa_input.hw_Loopback_1_0' && pactl set-source-volume @DEFAULT_SINK@ 150%")
+				end
+			end
+		}
+	}
 
-									naughty.notify {title = "Successfully loaded Droidcam module"}
-									awful.spawn.with_shell("pactl set-default-source 'alsa_input.hw_Loopback_1_0' && pactl set-source-volume @DEFAULT_SINK@ 150%")
-							end)
-					end)
-			end)
-	end)
+	awful.spawn.easy_async(functions[1][1], functions[1][2])
 end
 
 
 local function toggle_popup(arg)
-	if not popup then
-		texts = {}
-		for i, opt in ipairs(arg) do
-			texts[i] = {
-				{
-					{
-						text   = opt[1],
-						widget = wibox.widget.textbox
-					},
-					top    = 15,
-					bottom = 15,
-					left   = 60,
-					right  = 60,
-					widget = wibox.container.margin
-				},
-				id     = "bg",
-				shape  = gears.shape.rectangle,
-				widget = wibox.container.background
+	-- A function to either remove the popup or create a new popup
+	if popup then
+		-- Get rid of popup if one was already made
+		popup.widget.keygrabber:stop()
+		popup.visible = false
+		popup = nil
+		return
+	end
+
+	-- Create a new popup
+	local cols = 1
+	local rows = 1
+	if arg.orientation == "horizontal" then
+		cols = #arg
+	elseif arg.orientation == "vertical" then
+		rows = #arg
+	end
+	local template
+	local margins = 15
+	local options = {
+		chosen  = 1,
+		margins = margins,
+		widget  = wibox.container.margins,
+		forced_num_cols = cols,
+		forced_num_rows = rows,
+		homogenus = true,
+		expand = true,
+		layout = wibox.layout.grid,
+		select_next = function(self)
+			self.chosen = self.chosen + 1
+			self:update()
+		end,
+		select_previous = function(self)
+			self.chosen = self.chosen - 1
+			self:update()
+		end,
+		update = function(self)
+			-- Update the selected background color
+			local options = self:get_children_by_id("option")
+			if     self.chosen > #options then self.chosen = #options
+			elseif self.chosen < 1        then self.chosen = 1 end
+			for i, option in ipairs(options) do
+				option.bg =
+					i == self.chosen and
+					beautiful.menu_bg_normal or
+					beautiful.menu_bg_focus
+			end
+		end,
+		pick = function(self)
+			-- Function to run when widget gets clicked
+			local func = self:get_children_by_id("option")[self.chosen].func
+			if func then func() end
+			self:close()
+		end,
+		close = function(self)
+			toggle_popup()
+		end
+	}
+
+
+	-- Add options from argument
+	if arg.cancel then table.insert(arg, {text = "Cancel"}) end
+	for i, v in ipairs(arg) do
+		if v.text then
+			template = {
+				text = v.text,
+				align = "center",
+				widget = wibox.widget.textbox
+			}
+		elseif v.image then
+			template = {
+				image = v.image,
+				forced_height = 40,
+				forced_width  = 40,
+				widget = wibox.widget.imagebox
 			}
 		end
-		texts.layout = wibox.layout.align.vertical
-		texts.widget = wibox.container.background
-
-		popup = awful.popup {
-			widget = {
+		table.insert(
+			options,
+			{
 				{
 					{
-						texts,
-						layout = wibox.layout.align.vertical,
-						widget = wibox.container.background
+						template,
+						margins = margins,
+						widget = wibox.container.margin,
 					},
-					{
-						{
-							{
-								text   = "Cancel",
-								widget = wibox.widget.textbox
-							},
-							top    = 15,
-							bottom = 15,
-							left   = 60,
-							right  = 60,
-							widget = wibox.container.margin
-						},
-						id     = "bg",
-						shape  = gears.shape.rectangle,
-						widget = wibox.container.background
-					},
-					layout = wibox.layout.align.vertical,
+					id = "option",
+					func = v.func,
 					widget = wibox.container.background
 				},
-				margins = 15,
-				widget  = wibox.container.margin,
-				update  = function(self)
-					local bgs = self:get_children_by_id("bg")
-					for i, _ in ipairs(bgs) do bgs[i].bg = theme["bg"] end
-					bgs[popup.selected].bg = theme["bg_light"]
-				end
-			},
-			border_width	= beautiful.border_width,
-			border_color	= beautiful.border_focus,
-			placement		= awful.placement.centered,
-			visible			= true,
-			ontop			= true
-		}
-		local bgs = popup.widget:get_children_by_id("bg")
-		for i, _ in ipairs(bgs) do
-			local func = load("popup.selected="..i..";popup.widget:update()")
-			bgs[i]:connect_signal("mouse::enter", func)
-		end
-		popup.widget.widget:connect_signal("button::press", function()
-											   popup.ctrl("select") end)
-		popup.selected = 1
-		popup.opts     = arg
-		popup.widget:update()
-		popup.keygrabber = awful.keygrabber {
-			keybindings = {
-				{{ },         "space",  function() popup.ctrl("select") end},
-				{{ },         "Return", function() popup.ctrl("select") end},
-				{{"Control"}, "j",      function() popup.ctrl("select") end},
-				{{ },         "j",      function() popup.ctrl("down") end},
-				{{ },         "k",      function() popup.ctrl("up") end},
-				{{ },         "Down",   function() popup.ctrl("down") end},
-				{{ },         "Up",     function() popup.ctrl("up") end},
-				{{"Control"}, "n",      function() popup.ctrl("down") end},
-				{{"Control"}, "p",      function() popup.ctrl("up") end},
-				{{"Control"}, "g",      function() toggle_popup(nil) end},
-				{{"Control"}, "c",      function() toggle_popup(nil) end}
-			},
-			autostart = true,
-		}
-
-		popup.ctrl = function(action)
-			local actions = {
-				["up"] = function()
-					if popup.selected ~= 1 then
-						popup.selected = popup.selected - 1
-					end
-					popup.widget:update()
-				end,
-				["down"] = function()
-					if popup.selected ~= #popup.opts + 1 then
-						popup.selected = popup.selected + 1
-					end
-					popup.widget:update()
-				end,
-				["select"] = function()
-					if popup.selected ~= #popup.opts + 1 then
-						local msg = popup.opts[popup.selected][3]
-						local cmd = popup.opts[popup.selected][2]
-						if msg and popup.opts.msg_after then
-							toggle_popup()
-							awful.spawn.easy_async_with_shell(
-								"sleep 0.1; " .. cmd .. " && printf 'y'",
-								function(stdout)
-									if stdout ~= 'y\n' then return end
-									naughty.notify(msg)
-								end
-							)
-						elseif msg then
-							toggle_popup()
-							naughty.notify(msg)
-							awful.spawn(cmd)
-						else
-							toggle_popup()
-							awful.spawn(cmd)
-						end
-					else
-						toggle_popup()
-					end
-				end,
+				margins = margins,
+				widget = wibox.container.margin,
 			}
-			actions[action]()
-		end
-	else
-		popup.keygrabber:stop()
-		popup.visible = false
-		popup         = nil
+		)
 	end
+	template = nil
+	margins = nil
+
+	-- The Keygrabber (widget keybindigns)
+	local keybindings = {
+		{{ "Control" }, "n", function() popup.widget:select_next() end},
+		{{ "Control" }, "p", function() popup.widget:select_previous() end},
+		{{ "Control" }, "g",      function() popup.widget:close() end},
+		{{ },           "q",      function() popup.widget:close() end},
+		{{ },           "Escape", function() popup.widget:close() end},
+		{{ "Control" }, "m",      function() popup.widget:pick() end},
+		{{ },           "Return", function() popup.widget:pick() end},
+		{{ },           " ",      function() popup.widget:pick() end}
+	}
+
+	if arg.orientation == "horizontal" then
+		table.insert(
+			keybindings,
+			{{ }, "l",  function() popup.widget:select_next() end}
+		)
+		table.insert(
+			keybindings,
+			{{ }, "h",  function() popup.widget:select_previous() end}
+		)
+		table.insert(
+			keybindings,
+			{{ }, "Right",  function() popup.widget:select_next() end}
+		)
+		table.insert(
+			keybindings,
+			{{ }, "Left",  function() popup.widget:select_previous() end}
+		)
+	else
+		table.insert(
+			keybindings,
+			{{ }, "j",  function() popup.widget:select_next() end}
+		)
+		table.insert(
+			keybindings,
+			{{ }, "k",  function() popup.widget:select_previous() end}
+		)
+		table.insert(
+			keybindings,
+			{{ }, "Down",  function() popup.widget:select_next() end}
+		)
+		table.insert(
+			keybindings,
+			{{ }, "Up",  function() popup.widget:select_previous() end}
+		)
+	end
+
+	options.keygrabber = awful.keygrabber {
+		keybindings = keybindings,
+		autostart = true
+	}
+
+
+
+	-- Create popup
+	popup = awful.popup {
+		border_width	= beautiful.border_width,
+		border_color	= beautiful.border_focus,
+		placement		= awful.placement.centered,
+		visible			= true,
+		ontop			= true,
+		widget = options
+	}
+
+	-- Add signals to each option
+	for i, option in ipairs(popup.widget:get_children_by_id("option")) do
+		option:connect_signal(
+			"mouse::enter",
+			function()
+				popup.widget.chosen = i
+				popup.widget:update()
+		end)
+		option:connect_signal("button::press", function() popup.widget:pick() end)
+	end
+	options = nil
+	popup.widget:update()
 end
 
+
+local function screenshot()
+	local screenshot
+	local whole
+	local region
+	local file
+	local msg
+
+	file = screenshot_dir .. os.date("%Y-%m-%d-%H:%M:%S") .. ".png"
+	msg = {
+		title = "Took a Screenshot",
+		text  = "In " .. file
+	}
+
+
+	if command_exists("import") then
+		screenshot = {
+			whole = "import -window root ",
+			region = "import "
+		}
+	elseif command_exists("scrot") then
+		screenshot = {
+			whole = "scrot -fs ",
+			region = "scrot "
+		}
+	end
+
+	if screenshot then
+		whole = function()
+			awful.spawn.easy_async(
+				screenshot.whole .. file,
+				function(stdout, stderr, reason, exit_code)
+					if exit_code == 0 then naughty.notify(msg) end
+				end
+			)
+		end
+		region = function()
+			awful.spawn.easy_async(
+				screenshot.region .. file,
+				function(stdout, stderr, reason, exit_code)
+					if exit_code == 0 then naughty.notify(msg) end
+				end
+			)
+		end
+	else
+		whole = function()
+			naughty.notify {
+				title = "No Screenshot Tool Found",
+				text = "Supported tools are 'scrot' and 'import' from imagemagick"
+			}
+		end
+		region = function()
+			naughty.notify {
+				title = "No Screenshot Tool Found",
+				text = "Supported tools are 'scrot' and 'import' from imagemagick"
+			}
+		end
+	end
+
+	toggle_popup {
+		{text = "Whole Screen", func = whole},
+		{text = "Region", func = region},
+		orientation = "vertical",
+		cancel = true
+	}
+end
+
+
+local function system()
+	-- Brings up a menu to suspend, shutdown, or reboot the system
+	toggle_popup {
+		{
+			text = "Suspend",
+			func = function()
+				naughty.notify {title = "Suspending System"}
+				awful.spawn("systemctl suspend")
+			end
+		},
+		{
+			text = "Shutdown",
+			func = function()
+				naughty.notify {title = "Suspending System"}
+				awful.spawn("systemctl poweroff")
+			end
+		},
+		{
+			text = "Reboot",
+			func = function()
+				naughty.notify {title = "Suspending System"}
+				awful.spawn("systemctl reboot")
+			end
+		},
+		orientation = "vertical",
+		cancel = true
+	}
+end
 
 
 
@@ -444,40 +593,26 @@ widgets.layout = wibox.widget {
 	},
 	margins = 10,
 	widget = wibox.container.margin,
-	icon = { },
-
 	buttons = gears.table.join(
 		awful.button({ }, 3, function()
-				widgets.layout:toggle_menu()
+				toggle_popup {
+					{image = widgets.layout.icon.tile, func = function() set_layout_all(awful.layout.suit.tile.right) end},
+					{image = widgets.layout.icon.max, func = function() set_layout_all(awful.layout.suit.max) end},
+					{image = widgets.layout.icon.floating, func = function() set_layout_all(awful.layout.suit.floating) end},
+					orientation = "horizontal",
+					cancel = false
+				}
 		end)
 	),
-
-	toggle_menu = function(self)
-		if self.menu then
-			self.menu:hide()
-			self.menu = nil
-		else
-			self.menu = awful.menu {
-				items = {
-					{ "", function() set_layout_all(awful.layout.suit.floating) end, self.icon.floating },
-					{ "", function() set_layout_all(awful.layout.suit.tile.right) end, self.icon.tile },
-					{ "", function() set_layout_all(awful.layout.suit.max) end, self.icon.max }
-				}
-			}
-
-			self.menu:show()
-		end
-	end,
-
 	start = function(self)
+		local cr
+		local fg = theme["fg2"]
 		self.icon = {
 			max      = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20),
 			tile     = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20),
 			floating = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
 		}
 
-		local cr
-		local fg = theme["fg2"]
 		cr = cairo.Context(self.icon.floating)
 		cr:set_source(gears.color(fg))
 		gears.shape.transform(gears.shape.rectangle):translate(4.5, 4.5)(cr, 8, 8)
@@ -487,9 +622,8 @@ widgets.layout = wibox.widget {
 
 		cr = cairo.Context(self.icon.tile)
 		cr:set_source(gears.color(fg))
-		gears.shape.transform(gears.shape.rectangle):translate(4.5, 4.5)(cr, 5, 5)
+		gears.shape.transform(gears.shape.rectangle):translate(4.5, 4.5)(cr, 5, 11)
 		gears.shape.transform(gears.shape.rectangle):translate(10.5, 4.5)(cr, 5, 5)
-		gears.shape.transform(gears.shape.rectangle):translate(4.5,  10.5)(cr, 5, 5)
 		gears.shape.transform(gears.shape.rectangle):translate(10.5, 10.5)(cr, 5, 5)
 		cr:fill()
 
@@ -511,8 +645,143 @@ widgets.layout = wibox.widget {
 					self:get_children_by_id("icon")[1].image = icon.floating
 				end
 		end)
+	end,
+	switch = function(self)
+		local widget_root = self
+		local margin      = 10
+		local template = function(image, func)
+			return {
+				{
+					{
+						id = "icon",
+						image = image,
+						forced_height = 40,
+						forced_width  = 40,
+						widget = wibox.widget.imagebox
+					},
+					margins = margin,
+					widget = wibox.container.margin,
+				},
+				id = "option",
+				func = func,
+				widget = wibox.container.background
+			}
+		end
+
+		if widget_root.popup then
+			widget_root.popup.widget.keygrabber:stop()
+			widget_root.popup.visible = false
+			widget_root.popup = nil
+			return
+		end
+		widget_root.popup = awful.popup {
+			widget = {
+				{
+					template(self.icon.tile,     function() set_layout_all(awful.layout.suit.tile.right) end),
+					template(self.icon.max,      function() set_layout_all(awful.layout.suit.max) end),
+					template(self.icon.floating, function() set_layout_all(awful.layout.suit.floating) end),
+					forced_num_cols = 3,
+					forced_num_rows = 1,
+					homogenus = true,
+					layout = wibox.layout.grid
+				},
+				margins = margin,
+				widget = wibox.container.margin,
+
+				update = function(self)
+					local options = self:get_children_by_id("option")
+					if self.chosen > #options then self.chosen = #options end
+					for i, option in ipairs(options) do
+						option.bg =
+							i == self.chosen and
+							beautiful.menu_bg_normal or
+							beautiful.menu_bg_focus
+					end
+				end,
+
+				start = function(self)
+					local options = self:get_children_by_id("option")
+					local widget_child = self
+					widget_child.chosen = 1
+
+					local ctrl = {
+						select_next = function()
+							widget_child.chosen = widget_child.chosen + 1
+							widget_child:update()
+						end,
+						select_previous = function()
+							if widget_child.chosen ~= 1 then
+								widget_child.chosen = widget_child.chosen - 1
+							end
+							widget_child:update()
+						end,
+						press = function()
+							widget_child:get_children_by_id("option")[widget_child.chosen]:func()
+							widget_child.keygrabber:stop()
+							widget_root.popup.visible = false
+							widget_root.popup = nil
+						end,
+						stop = function()
+							widget_child.keygrabber:stop()
+							widget_root.popup.visible = false
+							widget_root.popup = nil
+						end
+					}
+
+					widget_child.keygrabber = awful.keygrabber {
+						keybindings = {
+							{{ }, "Right", ctrl.select_next},
+							{{ }, "Left",  ctrl.select_previous},
+							{{ }, "l",     ctrl.select_next},
+							{{ }, "h",     ctrl.select_previous},
+							{{ "Control" }, "n", ctrl.select_next},
+							{{ "Control" }, "p", ctrl.select_previous},
+							{{ "Control" }, "g",      ctrl.stop},
+							{{ },           "q",      ctrl.stop},
+							{{ },           "Escape", ctrl.stop},
+							{{ "Control" }, "m",      ctrl.press},
+							{{ },           "Return", ctrl.press},
+							{{ },           " ",      ctrl.press}
+						},
+						autostart = true,
+					}
+
+					for i, option in ipairs(options) do
+						local f = {
+							enter = function(self)
+								widget_child.chosen = self.index
+								widget_child:update()
+							end,
+							leave = function()
+								widget_child:update()
+							end,
+							press = function()
+								option:func()
+								widget_child:update()
+								ctrl.stop()
+							end
+						}
+
+						option.index = i
+						option:connect_signal("mouse::enter", f.enter)
+						option:connect_signal("mouse::leave", f.leave)
+						option:connect_signal("button::press", f.press)
+					end
+
+					widget_child:update()
+				end
+			},
+			placement = awful.placement.centered,
+			border_color = beautiful.border_focus,
+			border_width = 5,
+			ontop = true,
+			visible = true
+		}
+
+		self.popup.widget:start()
 	end
 }
+
 
 
 widgets.date = wibox.widget {
@@ -764,7 +1033,7 @@ widgets.network = wibox.widget {
 						if str ~= "" then
 							self:get_children_by_id("text")[1].text	= str .. " "
 						else
-							self:get_children_by_id("text")[1].text	 = "No Network "
+							self:get_children_by_id("text")[1].text	 = "Offline "
 							self:get_children_by_id("icon")[1].image = self.icon.disconnect
 						end
 					end
@@ -799,7 +1068,7 @@ widgets.network = wibox.widget {
 		cr:rectangle(16, 10, 2, 4)
 		cr:fill()
 
-		cr = cairo.Context(disconnect)
+		cr = cairo.Context(self.icon.disconnect)
 		cr:set_source(gears.color(theme["icon_color"]))
 		gears.shape.transform(gears.shape.pie)
 			:scale(1.15, 1.4)
@@ -817,51 +1086,15 @@ for _, widget in pairs(widgets) do
 end
 
 
-local function system()
-	toggle_popup({
-			{"Suspend",  "systemctl suspend",  {title = "Suspending System"}},
-			{"Shutdown", "systemctl poweroff", {title = "Powering Off System"}},
-			{"Reboot",   "systemctl reboot",   {title = "Rebooting System"}},
-			msg_after = false
-	})
-end
-
-local function screenshot()
-	-- Take a screenshot of the screen
-	local file_name = screenshot_dir .. os.date("%Y-%m-%d-%H:%M:%S") .. ".png"
-	local msg_format = {
-		title = "Took a Screenshot",
-		text  = "In " .. file_name
-	}
-
-	local opts = {
-		{"Whole Screen", nil, msg_format},
-		{"Region of Screen", nil, msg_format},
-		msg_after = true
-	}
-
-	if command_exists("scrot") then
-		opts[1][2] = "scrot " .. file_name
-		opts[2][2] = "scrot -fs " .. file_name
-		toggle_popup(opts)
-	elseif command_exists("import") then
-		opts[1][2] = "import -window root " .. file_name
-		opts[2][2] = "import " .. file_name
-		toggle_popup(opts)
-	else
-		naughty.notify {
-			title = "Screenshot Tool Not Found",
-			text  = "Supported tools are `import from imagemagick` and scrot"
-		}
-	end
-end
 
 
 
 -- Key and Mouse Bindings --
 globalkeys = gears.table.join( -- Keybindings
 	awful.key({ modkey }, "y", function()
-			naughty.notify {title = screen[1].workarea.height}
+			package.loaded["test"] = false
+			require("test")
+			--test:f()
 	end),
 	-- Volume
 	awful.key({ modkey }, "[", function() widgets.volume:ctrl("-5") end),
@@ -1073,7 +1306,7 @@ awful.screen.connect_for_each_screen(
 				},
 				left   = 7,
 				right  = 7,
-				widget = wibox.container.margin
+				widget = wibox.container.margin,
 			},
 			id     = 'background_role',
 			widget = wibox.container.background,
@@ -1102,76 +1335,85 @@ awful.screen.connect_for_each_screen(
 						client.focus:move_to_tag(t)
 					end
 			end),
-			awful.button({}, 4, function(t)awful.tag.viewprev(t.screen)end),
-				awful.button({}, 5, function(t)awful.tag.viewnext(t.screen)end)
-			)
-		}
+			awful.button({}, 4, function(t) awful.tag.viewprev(t.screen) end),
+			awful.button({}, 5, function(t) awful.tag.viewnext(t.screen) end)
+		)
+	}
 
-		s.tasklist = awful.widget.tasklist { -- Tasklist Widget
-			screen   = s,
-			filter   = awful.widget.tasklist.filter.currenttags,
-			layout   = {layout = wibox.layout.fixed.horizontal},
-			buttons  = awful.button({ }, 1, function(c)
+	s.tasklist = awful.widget.tasklist { -- Tasklist Widget
+		screen   = s,
+		filter   = awful.widget.tasklist.filter.currenttags,
+		layout   = {layout = wibox.layout.fixed.horizontal},
+		buttons = gears.table.join(
+			awful.button({ }, 1, function(c)
 					if c == client.focus then
 						c.minimized = true
-					else c:emit_signal("request::activate",
-									   "tasklist",
-									   {raise = true}) end; end),
-			widget_template = {
+					else
+						c:emit_signal(
+							"request::activate",
+							"tasklist",
+							{raise = true}
+						)
+					end
+			end),
+			awful.button({ }, 4, function() awful.client.focus.byidx(-1) end),
+			awful.button({ }, 5, function() awful.client.focus.byidx(1) end)
+		),
+		widget_template = {
+			{
 				{
 					{
 						{
 							{
-								{
-									forced_height = 30,
-									forced_width  = 30,
-									id     = 'icon_role',
-									widget = wibox.widget.imagebox,
-								},
-								top     = 5,
-								left    = 5,
-								right   = 5,
-								widget  = wibox.container.margin,
+								forced_height = 30,
+								forced_width  = 30,
+								id     = 'icon_role',
+								widget = wibox.widget.imagebox,
 							},
-							layout = wibox.layout.fixed.horizontal,
+							top     = 5,
+							left    = 5,
+							right   = 5,
+							widget  = wibox.container.margin,
 						},
-						id     = 'background_role',
-						widget = wibox.container.background,
+						layout = wibox.layout.fixed.horizontal,
 					},
-					margins = 5,
-					widget = wibox.container.margin
+					id     = 'background_role',
+					widget = wibox.container.background,
 				},
-				bg     = beautiful.wibar_bg,
-				widget = wibox.container.background
-			}
+				margins = 5,
+				widget = wibox.container.margin
+			},
+			bg     = beautiful.wibar_bg,
+			widget = wibox.container.background
 		}
+	}
 
-		s.wibox = awful.wibar { position = "top", screen = s, height = 50 }
-		s.layoutbox = awful.widget.layoutbox(s)
+	s.wibox = awful.wibar { position = "top", screen = s, height = 50 }
+	s.layoutbox = awful.widget.layoutbox(s)
 
-		s.wibox:setup { -- Wibox widgets
-			layout = wibox.layout.align.horizontal,
-			expand = "none",
-			{ -- Left Widgets
-				s.taglist,
-				--s.layoutbox,
-				widgets.layout,
-				layout = wibox.layout.fixed.horizontal
-			},
-			{ -- Center Widgets
-				s.tasklist,
-				layout = wibox.layout.fixed.horizontal
-			},
-			{ -- Right Widgets
-				widgets.network,
-				widgets.volume,
-				widgets.date,
-				widgets.time,
-				wibox.widget.textbox(" "),
-				spacing = 5,
-				layout = wibox.layout.fixed.horizontal
-			},
-		}
+	s.wibox:setup { -- Wibox widgets
+		layout = wibox.layout.align.horizontal,
+		expand = "none",
+		{ -- Left Widgets
+			s.taglist,
+			--s.layoutbox,
+			widgets.layout,
+			layout = wibox.layout.fixed.horizontal
+		},
+		{ -- Center Widgets
+			s.tasklist,
+			layout = wibox.layout.fixed.horizontal
+		},
+		{ -- Right Widgets
+			widgets.network,
+			widgets.volume,
+			widgets.date,
+			widgets.time,
+			wibox.widget.textbox(" "),
+			spacing = 5,
+			layout = wibox.layout.fixed.horizontal
+		},
+	}
 end)
 
 -- Re-set wallpaper when a screen's geometry changes (e.g. different resolution)
