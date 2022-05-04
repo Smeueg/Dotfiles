@@ -4,9 +4,9 @@
 # Author Name    - Smeueg
 # Author Email   - Smeueg@gmail.com
 # Author Gitlab  - https://gitlab.com/Smeueg
-# Last Updated   - Sun 24 Apr 19:25:34 WIB 2022
+# Last Updated   - Wed  4 May 2022
 # ------------------------------------------------
-# Variables #
+# ------------------------------------------------# --# --# ---------------------------------# ----------------------------------------# ------------------------# ------------------------------# -------# ------------------------------# ------------------------------------------------# -----------# ------------------------------------------------# ------------------------------------------------# -----------------------------# ---------------# -------------# ------------------------------# ----------------------# Variables #
 opts="\
 == Rice ==
 Dotfiles              [git,mv]     | install_dotfiles
@@ -15,8 +15,6 @@ Wallpaper             [wget|curl]  | install_wallpaper
 == System Config ==
 Droidcam              [sudo|su,wget|curl,unzip,cc,make,uname] | install_droidcam
 Nix Package Manager   [wget|curl]                             | install_nix
-TFL's Simplify Ubuntu [wget|curl]                             | install_SU
-TFL's Ubuchk          [wget|curl]                             | install_ubuchk
 Mount tmpfs to /tmp   [sudo|su]                               | mktmpfs
 Create Swapfile       [sudo|su,mkswap,swapon,dd,chmod]        | mkswapfile
 "
@@ -26,9 +24,12 @@ opts_chosen_tab=1
 newline="
 "
 
+[ -d "/sbin" ] && PATH="${PATH}:/sbin"
+
 # If apt exists, add extra apt specific options
 if [ "$(command -v apt)" ]; then
-	opts="${opts}${newline}== Debian Misc Packages ==${newline}"
+	opts="${opts}${newline}== Debian/Ubuntu ==${newline}"
+	opts="${opts}TFL's Ubuchk         [wget|curl]              | install_ubuchk"
 	opts="${opts}Enable Brave Browser [sudo|su,wget|curl,dpkg] | apt_enable_brave${newline}"
 	opts="${opts}Enable Github Cli    [sudo|su,wget|curl,dpkg] | apt_enable_gh_cli${newline}"
 	opts="${opts}Bootstrap Packages   [sudo|su]                | apt_bootstrap_packages${newline}"
@@ -145,14 +146,26 @@ install_dotfiles() {
 	# Install and/or sync dotfiles
 	dotfile_dir="${HOME}/.local/dots"
 	dotfile_url="https://github.com/Smeueg/Dotfiles.git"
+	echo "${dotfile_dir}"
+	[ -d "${dotfile_dir}" ] && echo "yes"
 
 	dot_clone() {
 		# Clone as bare repo
 		notice 'Cloning bare repository'
-		if ! git clone --bare "${dotfile_url}" "${dotfile_dir}"; then
-			error "Failed to run 'git clone --bare ${dotfile_url} ${dotfile_dir}'"
+
+		if [ -d "${dotfile_dir}" ]; then
+			notice "Directory '${dotfile_dir}' exists, removing"
+			if ! rm -rf "${dotfile_dir}"; then
+				error "Failed to remove directory '${dotfile_dir}'"
+				return 1
+			fi
+		fi
+
+		if ! git clone --progress --bare "${dotfile_url}" "${dotfile_dir}"; then
+			error "Command failed to run: git clone --bare \"${dotfile_url}\" \"${dotfile_dir}\""
 			return 1
 		fi
+
 		# Do not show untracked files
 		notice 'Configuring repo to not show untracked files'
 		if ! git --git-dir="${dotfile_dir}" config status.showUntrackedFiles no; then
@@ -164,43 +177,48 @@ install_dotfiles() {
 	dot_sync() {
 		# Backup files that are different from the git repo
 		notice 'Backing up existing files'
-		tab_char=$(printf '\t')
-		while read -r file; do
-			file=${file#*${tab_char}}
-			dir="${HOME}/DotBackup/${file%/*}"
-			file="${HOME}/${file}"
+		for file in $(git --git-dir="${dotfile_dir}" --work-tree="${HOME}" ls-tree --full-tree -r --name-only HEAD); do
+			file="/${file}"
+			dir="${HOME}/DotBackup${file%/*}"
+			file="${HOME}${file}"
+			if [ -f "${file}" ]; then
+				if ! [ -d "${dir}" ]; then
+					echo "${dir}"
+					if ! mkdir -pv "${dir}"; then
+						error "Failed to create directory '${dir}'"
+						return 1
+					fi
+				fi
 
-			if ! [ -d "${dir}" ] && ! mkdir --parents --verbose "${dir}"; then
-				error "Failed to create directory '${dir}'\n"
-				return 1
+				if ! mv -v "${file}" "${dir}"; then
+					error "Failed to move '${file}' to '${dir}'"
+					return 1
+				fi
 			fi
-			mv --verbose "${file}" "${dir}"
-		done <<-EOF
-		$(git --git-dir=${dotfile_dir} --work-tree=$HOME diff --name-status)
-		EOF
-		unset file dir tab_char
+		done
+		unset file dir
 
 		# Sync bare repo
 		notice 'Syncing dotfiles'
-		if ! git --git-dir="${dotfile_dir}" --work-tree="${HOME}" checkout; then
-			error "Failed to run 'git --git-dir=${dotfile_dir} --work-tree=${HOME}'"
+		if ! git --git-dir="${dotfile_dir}" --work-tree="${HOME}" restore "${HOME}"; then
+			error "Failed to run 'git --git-dir=${dotfile_dir} --work-tree=${HOME}' restore \"${HOME}\""
 			return 1
 		fi
 	}
 
-	if ! [ "$(git --git-dir=${dotfile_dir} rev-parse 2>&1)" ]; then
-		if ! confirm "'${dotfile_dir}' is already a git repo, overwrite?"; then
+	if [ -d "${dotfile_dir}" ] && ! [ "$(git --git-dir="${dotfile_dir}" rev-parse 2>&1)" ]; then
+		if ! confirm "Directory '${dotfile_dir}' is already a git repo, overwrite?"; then
 			notice "Will not overwrite ${dotfile_dir}"
 			if confirm "Resync dotfiles?"; then
-				dot_sync
+				dot_sync || return 1
 			else
 				notice "Will not resync dotfiles"
 			fi
 			return
 		fi
 	fi
-	dot_clone
-	dot_sync
+	dot_clone || return 1
+	dot_sync || return 1
 
 	unset -f dot_clone dot_sync
 	unset dotfile_dir dotfile_url
@@ -215,6 +233,7 @@ install_font() {
 	# Create directory if doesn't exist and return if failed to create directory
 	[ -d "${font_dir}" ] || { mkdir -pv "${font_dir}" || return; }
 
+	notice "Downloading fonts"
 	url="https://github.com/ryanoasis/nerd-fonts/tree/master/patched-fonts/JetBrainsMono/Ligatures"
 	for line in $(fetch "${url}" -); do
 		[ "${line}" ] || continue
@@ -240,8 +259,8 @@ install_wallpaper() {
 	url="https://i.imgur.com/DVJsvfN.png"
 	[ -d "${wallpaper_dir}" ] || { mkdir -pv "${wallpaper_dir}" || return; }
 
-	fetch "${url}" "${wallpaper_dir}/Shark Space.png"
-	fetch "https://free4kwallpapers.com/uploads/originals/2021/05/25/meteor-shower-wallpaper.png" "${wallpaper_dir}/Meteor Shower.png"
+	notice "Downloading 'Shark Space.png'" && fetch "${url}" "${wallpaper_dir}/Shark Space.png"
+	notice "Downloading 'Meteor Shower.png'" && fetch "https://free4kwallpapers.com/uploads/originals/2021/05/25/meteor-shower-wallpaper.png" "${wallpaper_dir}/Meteor Shower.png"
 	unset url wallpaper_dir
 }
 
