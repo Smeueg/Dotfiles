@@ -82,7 +82,7 @@
 (make-face 'splash-text-special)
 
 ;; Custom theme
-(set-frame-font "JetBrainsMono Nerd Font Mono-12")
+(set-frame-font "JetBrainsMono Nerd Font Mono 12")
 (setq-default chosen-theme 'Smeueg)
 (when (member chosen-theme (custom-available-themes))
   (load-theme chosen-theme 1))
@@ -597,12 +597,13 @@ vim manages it's splits and tabs"
 (use-package vertico
   ;; Fancy-er `M-x'
   :ensure t
+  :config
+  (vertico-mode)
+  (define-key vertico-map "\C-n" 'vertico-next)
   :init
   (use-package marginalia
     :ensure t
-    :init (marginalia-mode))
-  (vertico-mode)
-  (define-key vertico-map "\C-n" 'vertico-next))
+    :init (marginalia-mode)))
 
 (use-package ranger
   :ensure t
