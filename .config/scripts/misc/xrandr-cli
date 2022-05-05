@@ -4,9 +4,9 @@
 # Author Name    - Smeueg
 # Author Email   - Smeueg@gmail.com
 # Author Gitlab  - https://gitlab.com/Smeueg
-# Last Updated   - Wed  4 May 2022
+# Last Updated   - Thu  5 May 2022
 # ------------------------------------------------
-# ----------------------------------
+# ----------------------# ----------------------------------
 # ------------------------------------------------
 # Script to interactively change the resolution using xrandr
 
@@ -108,10 +108,12 @@ loop() {
 			"j") [ ${chosen} -ne $((i - 1)) ] && chosen=$((chosen + 1));;
 			"k") [ ${chosen} -ne 0 ] && chosen=$((chosen - 1));;
 			"q") [ "${stty_settings+x}" ] && stty "${stty_settings}"
-				exit 0;;
+				 printf '\r'
+				 exit 0;;
 			""|" "|"${newline}")
 				printf "\033[$((i+2))A\r\033[J"
 				IFS=${newline} pick "${2}" "${3}"
+				printf '\r'
 				break;;
 		esac
 		printf "\r\033[2K\033[${i}A"
