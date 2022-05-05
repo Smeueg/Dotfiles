@@ -353,8 +353,8 @@ local function toggle_popup(arg)
 		pick = function(self)
 			-- Function to run when widget gets clicked
 			local func = self:get_children_by_id("option")[self.chosen].func
-			if func then func() end
 			self:close()
+			if func then func() end
 		end,
 		close = function(self)
 			toggle_popup()
@@ -560,14 +560,14 @@ local function system()
 		{
 			text = "Shutdown",
 			func = function()
-				naughty.notify {title = "Suspending System"}
+				naughty.notify {title = "Shutting Down System"}
 				awful.spawn("systemctl poweroff")
 			end
 		},
 		{
 			text = "Reboot",
 			func = function()
-				naughty.notify {title = "Suspending System"}
+				naughty.notify {title = "Rebooting System"}
 				awful.spawn("systemctl reboot")
 			end
 		},
@@ -1448,19 +1448,42 @@ function(c)
 		end)
 	)
 
-	awful.titlebar(c, {size = 30}):setup{
+	local titlebar = awful.titlebar(c, {size = 30})
+	titlebar:setup{
 		{
 			buttons = buttons,
 			layout  = wibox.layout.fixed.horizontal
 		},
 		{
-			{ -- Title
-				align  = 'center',
-				font   = beautiful.font:match("(.+) %d+$") .. " 11",
-				widget = awful.titlebar.widget.titlewidget(c)
+			{
+				{ -- Title
+					{ widget = wibox.container.background },
+					opacity = 0.1,
+					bg = "#000000",
+					id = "line_color",
+					shape  = gears.shape.hexagon,
+					widget = wibox.container.background
+				},
+				buttons = buttons,
+				margins = 10,
+				widget  = wibox.container.margin,
 			},
-			buttons = buttons,
-			layout  = wibox.layout.flex.horizontal
+			{
+				{ -- Title
+					{ widget = wibox.container.background },
+					opacity = 0.1,
+					bg = "#000000",
+					id = "line_color",
+					shape  = gears.shape.hexagon,
+					widget = wibox.container.background
+				},
+				buttons = buttons,
+				margins = 10,
+				widget  = wibox.container.margin,
+			},
+			margins = 10,
+			widget = wibox.container.margin,
+			layout = wibox.layout.flex.horizontal
 		},
 		{ -- Right
 			awful.titlebar.widget.minimizebutton(c),
@@ -1472,7 +1495,7 @@ function(c)
 end)
 
 client.connect_signal("focus",
-function(c) c.border_color = beautiful.border_focus end)
+					  function(c) c.border_color = beautiful.border_focus end)
 
 client.connect_signal("unfocus",
 function(c) c.border_color = beautiful.border_normal end)
@@ -1522,7 +1545,7 @@ do  -- Commands to execute in startup
 
 	local cmds = {
 		"sct 6000K",
-		"xrandr --output DP-1 --mode 1280x1024 --scale 1.2x1.2",
+		"xrandr --output DP-1 --mode 1280x1024 --scale 1.3x1.3",
 		"xset r rate 250 50",
 		"setxkbmap -option keypad:pointerkeys",
 		"xset s off -dpms",
