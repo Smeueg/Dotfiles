@@ -1,38 +1,16 @@
 #!/bin/sh
 
-if ! [ "$(command -v youtube-dl)" ]; then
-	printf "[\033[1;31mERROR\033[0m] 'youtube-dl' isn't installed. Exiting\n" >&2
-	exit 1
-fi
-
-
-music_dir="${HOME}/Music"
-printf "Insert playlist url (Leave blank for smeusic playlist): "
-read pl_url
-if ! [ "${pl_url}" ]; then
-	printf '\033[A\r\033[2K\r'
-	printf "[\033[1;32mNOTICE\033[0m] Downloading Smeueg's playlist\n\n\n"
-	pl_url="https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc"
-elif [ "${pl_url%%https://www.youtube.com/playlist\?list=*}" ]; then
-	printf '[\033[1;31mERROR\033[0m] Invalid URL\n' >&2
-	exit 1
-else
-	printf '\033[A\r\033[2K\r'
-fi
-
-
-if ! [ "${COLUMNS}" ]; then
-	get_cols() { COLUMNS=$(stty size); COLUMNS=${COLUMNS#* }; }
-else
+# Helper Functions
+if [ "${COLUMNS+x}" ]; then
 	get_cols() { COLUMNS=${COLUMNS}; }
+else
+	get_cols() { COLUMNS=$(stty size); COLUMNS=${COLUMNS#* }; }
 fi
-
-
-# Exit if "${music_dir}" doesn't exist and can't be created
-if ! [ -d "${music_dir}" ]; then
-	mkdir -pv "${music_dir}" || exit 1
-fi
-
+notice() { printf "[\033[1;32mNOTICE\033[0m] %s\n" "${1}"; }
+error() {
+	printf "[\033[1;31mERROR\033[0m] %s\n" "${1}" >&2
+	exit 1
+}
 
 replace() {
 	# Replace ${1} with ${2} in the variable ${3}
@@ -57,6 +35,69 @@ header() {
 		printf "\r\033[$(((COLUMNS - ${#1} - 2) / 2))C ${1} \n"
 	unset str
 }
+
+
+# Dependencies
+[ "$(command -v youtube-dl)" ] || error "'youtube-dl' isn't installed"
+[ "$(command -v ffmpeg)" ] || error "'ffmpeg' isn't installed"
+
+
+# Prompt for playlist url
+printf "Insert playlist url (Default is Smeueg's personal playlist): "
+read reply
+if ! [ "${reply}" ]; then
+	pl_url="https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc"
+elif [ "${reply%%https://www.youtube.com/playlist\?list=*}" ]; then
+	error "Invalid URL: ${reply}"
+else
+	pl_url=${reply}
+	printf '\033[A\r\033[2K\r'
+fi
+
+
+# Prompt for where to download the playlist (a directory)
+printf "Insert target directory (Default is '~/Music/'): "
+read reply
+if [ "${reply}" ]; then
+	[ -d "${reply}" ] || error "Directory ${reply} doesn't exist"
+	music_dir=${reply}
+else
+	music_dir="${HOME}/Music"
+fi
+
+
+# Ask whether to remove songs that don't exist
+remove=false
+printf "Remove local songs that aren't in the playlist? [\033[1;32my\033[0m/\033[1;31mN\033[0m] "
+read reply
+case ${reply} in
+	[Yy][Ee][Ss]|[Yy]) remove=true ;;
+esac
+
+
+# Overview for final confirmation
+printf "\033[3A\033[JOverview:\n"
+while read line; do
+	printf "  * %s\n" "${line}"
+done <<-EOF
+Playlist URL     : ${pl_url}
+Target Directory : ${music_dir}
+Remove Songs     : ${remove}
+EOF
+printf "Are you sure? [\033[1;32my\033[0m/\033[1;31mN\033[0m] "
+read reply
+case ${reply} in
+	[Yy][Ee][Ss]|[Yy]) ;;
+	*) exit 0;;
+esac
+
+
+# Exit if "${music_dir}" doesn't exist and can't be created
+if ! [ -d "${music_dir}" ]; then
+	mkdir -pv "${music_dir}" || exit 1
+fi
+
+
 
 
 get_title_id() {
@@ -97,6 +138,7 @@ sync_download() {
 
 sync_remove() {
 	# Remove song's that aren't in the playlist anymore
+	printf '\n\n'
 	header "Removing Songs No Longer In The Playlist"
 	ran=false
 	for file in "${music_dir%/}"/*; do
@@ -118,6 +160,5 @@ newline="
 
 output=$(get_title_id)
 IFS=${newline} sync_download
-printf '\n\n\n'
-IFS=${newline} sync_remove
+${remove} && IFS=${newline} sync_remove
 printf '\n'
