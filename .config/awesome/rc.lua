@@ -1,9 +1,4 @@
 -- Smeueg's Awesomewm configuration
---
--- TODO:
---   * Create a wallpaper (cube in the middle)
---   * Add a layout widget on the wibar
---
 
 
 -- Libraries --
@@ -42,33 +37,22 @@ end
 
 
 -- Variables --
-local function command_exists(cmd)
-	-- Check if a command can be ran
-	if not cmd then return false end
-	for dir in string.gmatch(os.getenv("PATH"), "([^:]+)") do
-		if gears.filesystem.file_executable(dir .. "/" .. cmd) then
-			return cmd
-		end
-	end
-	return false
-end
-
 local home           = os.getenv("HOME")
-local terminal       = os.getenv("TERMINAL") or "x-terminal-emulator"
 local editor         = os.getenv("EDITOR")
+local browser        = os.getenv("BROWSER")
+local terminal       = os.getenv("TERMINAL") or "x-terminal-emulator"
 local modkey         = "Mod4"
 local screenshot_dir = "/tmp/"
-local browser        = os.getenv("BROWSER")
 
 
 -- Theming --
 local themes = {
 	["Smeueg"] = {
-		["wallpaper"] = home .. "/.config/rice/Shell.png",
+		["wallpaper"] = "#2D2232",
 		["yellow"]    = "#FEA34B",
 		["red"]       = "#C5483F",
 		["green"]     = "#819013",
-		["bg_dark"]   = "#291F2E",
+		["bg_dark"]   = "#00000030",
 		["bg"]        = "#322638",
 		["bg_light"]  = "#382B3F",
 		["fg"]        = "#E7DEC7",
@@ -173,44 +157,74 @@ beautiful.useless_gap = 5
 beautiful.taglist_bg_focus      = beautiful.wibar_bg
 beautiful.taglist_squares_sel   = nil
 beautiful.taglist_squares_unsel = nil
+beautiful.wibar_selected_tag    = theme["yellow"]
 -- Notification
 beautiful.notification_border_color = theme["focus"]
 beautiful.notification_border_width = 3
 
 
 -- Custom Functions --
+local function command_exists(cmd)
+	-- Check if a command can be ran
+	if not cmd then return false end
+	for dir in string.gmatch(os.getenv("PATH"), "([^:]+)") do
+		if gears.filesystem.file_executable(dir .. "/" .. cmd) then
+			return cmd
+		end
+	end
+	return false
+end
+
+
 local function set_layout_all(layout)
 	-- Set layout for all tags
 	for _, t in pairs(root.tags()) do awful.layout.set(layout, t) end
-
+	if not saved_attr then
+		saved_attr = {
+			gap = beautiful.useless_gap,
+			border_color = beautiful.border_focus,
+			border_width = beautiful.border_width
+		}
+	end
+	-- Floating
 	if layout == awful.layout.suit.floating then
-		for _, c in pairs(client.get()) do awful.titlebar.show(c) end
-	else
+		beautiful.border_focus = beautiful.border_normal
 		for _, c in pairs(client.get()) do
-			if not c.floating then
-				awful.titlebar.hide(c)
-				c.minimized = false
-				c.maximized = false
-			end
+			awful.titlebar.show(c)
+			c.border_color = beautiful.border_normal
+		end
+	else
+		beautiful.border_focus = saved_attr.border_color
+		local c = client.focus
+		if c then c.border_color = beautiful.border_focus end
+		for _, c in pairs(client.get()) do
+			if not c.floating then awful.titlebar.hide(c) end
+			c.minimized = false
+			c.maximized = false
 		end
 	end
-
+	-- Tile
 	if layout == awful.layout.suit.tile.right then
-		if not saved_attr then
-			saved_attr = {
-				gap = beautiful.useless_gap,
-				border_w = beautiful.border_width
-			}
-		end
-
 		beautiful.useless_gap = saved_attr.gap
 		for _, c in pairs(client.get()) do
-			c.border_width = saved_attr.border_w
+			c.border_width = saved_attr.border_width
 		end
 	else
 		beautiful.useless_gap = 0
 		for _, c in pairs(client.get()) do
 			c.border_width = 0
+		end
+	end
+	-- Max
+	if layout == awful.layout.suit.max then
+		beautiful.border_width = 0
+		for _, c in pairs(client.get()) do
+			c.border_width = beautiful.border_width
+		end
+	else
+		beautiful.border_width = saved_attr.border_width
+		for _, c in pairs(client.get()) do
+			c.border_width = beautiful.border_width
 		end
 	end
 end
@@ -454,10 +468,9 @@ local function toggle_popup(arg)
 	}
 
 
-
 	-- Create popup
 	popup = awful.popup {
-		border_width	= beautiful.border_width,
+		border_width	= 3,
 		border_color	= beautiful.border_focus,
 		placement		= awful.placement.centered,
 		visible			= true,
@@ -1252,10 +1265,10 @@ awful.rules.rules = { -- Rules
 clientbuttons = gears.table.join(
 	awful.button({ }, 1, function (c)
 			c:emit_signal("request::activate", "mouse_click", {raise = true})
-								  end),
+	end),
     awful.button({ modkey }, 1, function (c)
-        c:emit_signal("request::activate", "mouse_click", {raise = true})
-        awful.mouse.client.move(c)
+			c:emit_signal("request::activate", "mouse_click", {raise = true})
+			awful.mouse.client.move(c)
     end),
     awful.button({ modkey }, 3, function (c)
         c:emit_signal("request::activate", "mouse_click", {raise = true})
@@ -1298,7 +1311,7 @@ awful.screen.connect_for_each_screen(
 							widget  = wibox.container.margin,
 						},
 						shape              = gears.shape.circle,
-						shape_border_width = 1,
+						shape_border_width = 2,
 						widget             = wibox.container.background,
 						id                 = "icon"
 					},
@@ -1395,9 +1408,8 @@ awful.screen.connect_for_each_screen(
 		layout = wibox.layout.align.horizontal,
 		expand = "none",
 		{ -- Left Widgets
-			s.taglist,
-			--s.layoutbox,
 			widgets.layout,
+			s.taglist,
 			layout = wibox.layout.fixed.horizontal
 		},
 		{ -- Center Widgets
@@ -1526,6 +1538,15 @@ function(c)
 
 	if layout == awful.layout.suit.max then
 		c.border_width = 0
+	end
+
+	if not c.icon then
+		local icon = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
+		local cr = cairo.Context(icon)
+		cr:set_source(gears.color(beautiful.titlebar_bg_focus))
+		gears.shape.transform(gears.shape.rectangle):translate(5, 5)(cr, 10, 10)
+		cr:fill()
+		c.icon = icon
 	end
 end)
 

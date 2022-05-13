@@ -13,6 +13,10 @@
 ;; reference to other people on what other people use. This configuration should
 ;; be able to run without a problem in other systems other than my current one,
 ;; although I haven't tested it yet.
+;;
+;;
+;; In Progress:
+;; (let ((bin (replace-regexp-in-string "#!\s*\\([/a-zA-Z0-9\\-]+\\).*" "\\1" "#! /bi9-n/sh"))))
 
 
 ;;; VARIABLES ;;;
@@ -31,6 +35,8 @@
  x-select-enable-clipboard nil
  ;; Enable every command
  disabled-command-function nil
+ ;; When using `function-other-window' open another window below
+ display-buffer-base-action '(display-buffer-below-selected)
  ;; Scratch Buffer will be empty by default
  initial-scratch-message ""
  ;; Disable line wrapping
@@ -60,14 +66,14 @@
 
 ;;; INDENTATION CONFIGURATION ;;;
 (defvaralias 'c-basic-offset 'tab-width)
+(defvaralias 'evil-shift-width 'tab-width)
 (setq-default indent-tabs-mode t
-              tab-always-indent nil
               tab-width 4
+              tab-always-indent nil
               backward-delete-char-untabify-method 'hungry)
 ;; Use spaces when aligning with align-regexp
 (defadvice align-regexp (around align-regexp-with-spaces activate)
   (let ((indent-tabs-mode nil)) ad-do-it))
-(add-hook 'html-mode-hook (lambda () (setq-local tab-width 2)))
 
 
 ;;; VISUAL CONFIGURATION ;;;
@@ -119,8 +125,11 @@
     (setq-default save-place-file "/tmp/emacs_places")))
 
 ;; Disable "*Messages*" buffer
-;; (setq-default message-log-max nil)
-;; (kill-buffer "*Messages*")
+(setq-default message-log-max nil)
+(kill-buffer "*Messages*")
+;; Create "*Messages*" buffer before `eval-buffer' is ran
+(advice-add 'eval-buffer :before
+            (lambda (&rest r) (get-buffer-create "*Messages*")))
 
 
 
@@ -284,7 +293,7 @@ vim manages it's splits and tabs"
           ((derived-mode-p 'html-mode)
            (setq command
                  (format
-                  "[ $(command -v ${BROWSER}) ] && { ${BROWSER} %s; exit; }n"
+                  "[ $(command -v ${BROWSER}) ] && { ${BROWSER} %s; exit; }\n"
                   file-path)))
           ((derived-mode-p 'java-mode)
            (setq command (format "java %s" file-path)))
@@ -584,6 +593,7 @@ vim manages it's splits and tabs"
   :ensure t
   :init (global-aggressive-indent-mode 1))
 
+
 (use-package rainbow-mode
   ;; Hex coloring
   :ensure t
@@ -635,8 +645,11 @@ vim manages it's splits and tabs"
   :init
   (setq-default bongo-mode-line-indicator-mode nil
                 bongo-insert-whole-directory-trees t
+                bongo-local-audio-file-track-icon nil
+                bongo-display-track-icons nil
+                bongo-display-header-icons nil
+                bongo-played-track-icon nil
                 bongo-logo nil
-                bongo-played-track-icon t
                 bongo-enabled-backends '(mpg123))
   (add-hook 'bongo-playlist-mode-hook ;; Automatically insert music dir
             (lambda ()
@@ -753,6 +766,11 @@ vim manages it's splits and tabs"
     (impatient-mode)
     (browse-url "http://localhost:8080/imp/")))
 
+(use-package sgml-mode ;; Builtin, doesn't need ':ensure t'
+  :defer t
+  :init
+  (add-hook 'html-mode-hook (lambda () (setq-local tab-width 2))))
+
 (use-package emmet-mode
   :ensure t
   :hook (html-mode . emmet-mode))
@@ -792,7 +810,11 @@ vim manages it's splits and tabs"
   (use-package undo-fu
     :ensure t
     :commands (undo-fu-only-undo undo-fu-only-redo))
-  (defvaralias 'evil-shift-width 'tab-width)
+  (use-package evil-surround
+    :ensure t
+    :config
+    (global-evil-surround-mode 1))
+
   (setq-default evil-insert-state-cursor 'bar
                 evil-emacs-state-message nil
                 evil-insert-state-message nil
