@@ -139,7 +139,6 @@
 (defalias 'w 'save-buffer)
 (defalias 'd 'delete-window)
 (defalias 'dw 'delete-window)
-(defalias 'dt 'tab-close)
 (defalias 's 'replace-regexp)
 (defalias 'tabe 'tab-new)
 
@@ -236,33 +235,53 @@ awesomewm, and the users shell's"
 when the current window has no previous buffers. This function aims to mimic how
 vim manages it's splits and tabs"
   (interactive)
-  (let ((count 0) (del nil) (kill t))
-    (when (or (= 0 (length (window-prev-buffers)))
-              (and (equal (current-buffer) (caar (window-prev-buffers)))
-                   (= 1 (length (window-prev-buffers)))))
-      (setq del t))
-    (catch 'break
-      (unless (= 1 (length (get-buffer-window-list)))
-        (setq kill nil)
-        (throw 'break nil))
-      (dolist (window (delete (selected-window) (window-list)))
-        (dolist (buffer (window-prev-buffers window))
-          (when (equal (current-buffer) (car buffer))
-            (setq kill nil)
-            (throw 'break nil)))))
-
-    (if (and (fboundp 'with-editor-cancel)
-             (string= (buffer-name) "COMMIT_EDITMSG"))
-        (with-editor-cancel)
-      (progn
-        (if kill (kill-buffer)
-          (let ((var '()) (cur (current-buffer)))
-            (switch-to-prev-buffer)
-            (dolist (buffer (window-prev-buffers))
-              (unless (eq cur (car buffer))
-                (push buffer var)))
-            (set-window-prev-buffers (selected-window) var)))
-        (when del (delete-window))))))
+  (catch 'return
+    ;; Ranger
+    (when (eq major-mode 'ranger-mode)
+      (ranger-close)
+      (throw 'return nil))
+    ;; When editing a commit message
+    (when (and (fboundp 'with-editor-cancel)
+               (string= (buffer-name) "COMMIT_EDITMSG"))
+      (with-editor-cancel)
+      (throw 'return nil))
+    ;; General Buffers
+    (let ((count 0) (kill-w nil) (kill-b t))
+      (when (bound-and-true-p tab-bar-mode)
+        (catch 'break
+          (dolist (tab (funcall tab-bar-tabs-function))
+            (let ((buffer-current (buffer-name))
+                  (buffers-prev (cdr (car (last (car (cddddr tab)))))))
+              (dolist (buffer buffers-prev)
+                (when (equal buffer-current (car buffer))
+                  (setq kill-b nil)
+                  (throw 'break nil)))))))
+      ;; Decide whether to delete window or not
+      (when (or (= 0 (length (window-prev-buffers)))
+                (and (equal (current-buffer) (caar (window-prev-buffers)))
+                     (= 1 (length (window-prev-buffers)))))
+        (setq kill-w t))
+      ;; Decide whether to kill buffer or not
+      (when kill-b
+        (catch 'break
+          (unless (= 1 (length (get-buffer-window-list)))
+            (setq kill-b nil)
+            (throw 'break nil))
+          (dolist (window (delete (selected-window) (window-list)))
+            (dolist (buffer (window-prev-buffers window))
+              (when (equal (current-buffer) (car buffer))
+                (setq kill-b nil)
+                (throw 'break nil))))))
+      ;; Kill buffer
+      (if kill-b (kill-buffer)
+        (let ((var '()) (cur (current-buffer)))
+          (switch-to-prev-buffer)
+          (dolist (buffer (window-prev-buffers))
+            (unless (eq cur (car buffer))
+              (push buffer var)))
+          (set-window-prev-buffers (selected-window) var)))
+      ;; Kill window
+      (when kill-w (delete-window)))))
 (defalias 'q 'close)
 
 (defun run ()
@@ -381,6 +400,7 @@ vim manages it's splits and tabs"
 (defun min-splash-align ()
   (if (get-buffer "*min-splash*")
       (with-current-buffer "*min-splash*"
+        (setq-local cursor-type nil)
         (save-excursion
           (let ((lines (count-lines (point-min) (point-max))))
             (setq-local fill-column (- (window-body-width nil) 2))
@@ -459,16 +479,15 @@ vim manages it's splits and tabs"
    tramp-persistency-file-name "/tmp/tramp"))
 
 (use-package tab-bar
-  :disabled t
   :init
-  (add-hook 'emacs-startup-hook 'redraw-display)
-  (setq-default
-   tab-bar-close-button-show t
-   tab-bar-new-button-show nil)
+  (defalias 'dt 'tab-bar-close-tab)
+  (defalias 'nt 'tab-new)
+  (setq-default tab-bar-close-button-show nil
+                tab-bar-new-button-show nil)
   :config
-  (advice-add 'tab-bar-close-tab :after
+  (advice-add 'tab-bar-close-tab :before
               (lambda (&rest r)
-                (when (= (length (tab-bar-tabs)) 1)
+                (when (= (length (tab-bar-tabs)) 2)
                   (tab-bar-mode -1)))))
 
 (use-package server
@@ -529,15 +548,20 @@ vim manages it's splits and tabs"
   (defun term-e ()
     "Open a terminal in a new buffer."
     (interactive)
-    (ansi-term (getenv "SHELL")))
+    (let ((tmp default-directory))
+      (when (eq major-mode 'ranger-mode) (ranger-close))
+      (let ((default-directory tmp))
+        (ansi-term (getenv "SHELL")))))
   (defun term-vs ()
     "Open a terminal in a new vertical split."
     (interactive)
     (select-window (split-window-below))
-    (ansi-term (getenv "SHELL"))
+    (term-e)
     (set-window-prev-buffers (selected-window) '()))
   :config
-  (defadvice term-handle-exit (after term-kill-buffer-on-exit activate) (close))
+  ;; Close the terminal on exit
+  (advice-add 'term-handle-exit :after (lambda (&rest r) (close)))
+  ;;(defadvice term-handle-exit (after term-kill-buffer-on-exit activate) (close))
   (add-hook 'term-mode-hook (lambda ()
                               (display-line-numbers-mode 0)
                               (electric-pair-local-mode 0)
@@ -832,8 +856,7 @@ vim manages it's splits and tabs"
       [?\M-\C-h] 'org-promote-subtree
       [?\M-\C-j]  'outline-move-subtree-down
       [?\M-\C-k]  'outline-move-subtree-up
-      [?\M-\C-l]  'org-demote-subtree
-      ))
+      [?\M-\C-l]  'org-demote-subtree))
 
   (when (package-installed-p 'bongo) ;; Bongo
     (evil-define-key 'normal 'global " m" 'bongo-playlist)
@@ -867,20 +890,17 @@ vim manages it's splits and tabs"
     (evil-define-key 'normal 'global "  " 'run))
 
   ;; Disable evil-complete-next and evil-complete-previous
-  (define-key evil-insert-state-map [14] nil)
-  (define-key evil-insert-state-map [16] nil)
+  (define-key evil-insert-state-map [?\C-n] nil)
+  (define-key evil-insert-state-map [?\C-p] nil)
 
-
-
-  (progn
-    (evil-define-key 'motion Buffer-menu-mode-map [return] 'Buffer-menu-select)
-    (when (get-buffer-window "*Buffer List*")
-      (delete-window (get-buffer-window "*Buffer List*")))
-    (add-hook 'quit-window-hook
+  ;; Buffer-Menu
+  (evil-define-key 'motion Buffer-menu-mode-map [return] 'Buffer-menu-select)
+  (when (get-buffer-window "*Buffer List*")
+    (delete-window (get-buffer-window "*Buffer List*")))
+  (add-hook 'quit-window-hook
+            (lambda () (kill-buffer "*Buffer List*")))
+  (advice-add 'Buffer-menu-select :after
               (lambda () (kill-buffer "*Buffer List*")))
-    (advice-add 'Buffer-menu-select :after (lambda ()
-                                             (kill-buffer "*Buffer List*"))))
-
 
   ;; Basic Keybindings ;;
   (fset 'evil-next-line     'evil-next-visual-line)
