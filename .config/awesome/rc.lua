@@ -160,7 +160,11 @@ beautiful.taglist_squares_unsel = nil
 beautiful.wibar_selected_tag    = theme["yellow"]
 -- Notification
 beautiful.notification_border_color = theme["focus"]
-beautiful.notification_border_width = 3
+naughty.config.defaults.border_width = 3
+naughty.config.defaults.margin = 10
+naughty.config.defaults.timout = 3
+naughty.config.spacing = 10
+
 
 
 -- Custom Functions --
@@ -247,7 +251,7 @@ local function find_or_spawn_emacs()
 			end
 		end
 
-		naughty.notify {title = "Opening emacs"}
+		naughty.notify {text = "Opening emacs"}
 		awful.spawn.raise_or_spawn(
 			"emacs --internal-border=20",
 			{},
@@ -304,7 +308,7 @@ local function load_droidcam_module()
 			"pactl list short",
 			function(stdout)
 				if stdout:match(module_name) then
-					naughty.notify {title = "Successfully loaded Droidcam module"}
+					naughty.notify {text = "Successfully loaded Droidcam module"}
 					awful.spawn.with_shell("pactl set-default-source 'alsa_input.hw_Loopback_1_0' && pactl set-source-volume @DEFAULT_SINK@ 150%")
 				end
 			end
@@ -560,36 +564,6 @@ local function screenshot()
 end
 
 
-local function system()
-	-- Brings up a menu to suspend, shutdown, or reboot the system
-	toggle_popup {
-		{
-			text = "Suspend",
-			func = function()
-				naughty.notify {title = "Suspending System"}
-				awful.spawn("systemctl suspend")
-			end
-		},
-		{
-			text = "Shutdown",
-			func = function()
-				naughty.notify {title = "Shutting Down System"}
-				awful.spawn("systemctl poweroff")
-			end
-		},
-		{
-			text = "Reboot",
-			func = function()
-				naughty.notify {title = "Rebooting System"}
-				awful.spawn("systemctl reboot")
-			end
-		},
-		orientation = "vertical",
-		cancel = true
-	}
-end
-
-
 
 -- Custom Widgets --
 widgets = {}
@@ -812,7 +786,7 @@ widgets.date = wibox.widget {
 				widget = wibox.container.margin
 			},
 			{
-				format = "%a, %d-%m-%y ",
+				format = "%a - %y/%m/%d ",
 				refresh = 300,
 				widget = wibox.widget.textclock
 			},
@@ -916,12 +890,12 @@ widgets.volume = wibox.widget {
 		awful.button({ }, 4, function() widgets.volume:ctrl("+1") end),
 		awful.button({ }, 5, function() widgets.volume:ctrl("-1") end)
 	),
-
+	default = "35%",
 	timer = gears.timer {
 		timeout = 5,
 		autostart = true,
 		callback = function() widgets.volume:update() end
-	},
+		},
 
 	ctrl = function(self, cmd)
 		local cmds = {
@@ -930,7 +904,7 @@ widgets.volume = wibox.widget {
 			["+5"]      = "pactl set-sink-volume  @DEFAULT_SINK@ +5%",
 			["-5"]      = "pactl set-sink-volume  @DEFAULT_SINK@ -5%",
 			["toggle"]  = "pactl set-sink-mute    @DEFAULT_SINK@ toggle",
-			["default"] = "pactl set-sink-volume  @DEFAULT_SINK@ 40%"
+			["default"] = "pactl set-sink-volume  @DEFAULT_SINK@ " .. self.default
 		}
 
 		awful.spawn.with_line_callback(
@@ -1092,6 +1066,259 @@ widgets.network = wibox.widget {
 	end
 }
 
+widgets.center = {
+	widgets = {
+		name = wibox.widget { -- Username@Hostname
+			font = beautiful.font:match("^[^0-9]+") .. "14",
+			widget = wibox.widget.textbox,
+			valign = "center",
+			align = "center",
+			markup = string.format(
+				"<b><span foreground='%s'>%s</span>@<span foreground='%s'>%s</span></b>",
+				beautiful.wibar_selected_tag,
+				os.getenv("USER"),
+				"#C5483F",
+				io.lines("/etc/hostname")()
+			)
+		},
+		info = wibox.widget {
+			widget = wibox.container.background,
+			layout = wibox.layout.grid,
+			vertical_spacing = 500,
+			forced_num_cols = 2,
+			homogeneous = false,
+			update = function(self)
+				-- Remove other widgets
+				local rows, cols = self:get_dimension()
+				self:remove_widgets_at(1, 1, rows, cols)
+
+
+				local add = function(label, value)
+					self:add(
+						wibox.widget {
+							font   = beautiful.font:match("^[^0-9]+") .. "12",
+							widget = wibox.widget.textbox,
+							align  = "right",
+							markup = string.format(
+								"  <b><span foreground='%s'>%s</span>:</b> ",
+								beautiful.border_focus,
+								label
+							)
+						},
+						wibox.widget {
+							font = beautiful.font:match("^[^0-9]+") .. "12",
+							markup = string.format(" <b>%s</b>  ", value),
+							widget = wibox.widget.textbox,
+						}
+					)
+				end
+
+				-- Resolution
+				local g = awful.screen.focused().geometry
+				add("Resolution", g.width .. "x" .. g.height)
+
+				-- Uptime
+				local f      = io.open("/proc/uptime", "r")
+				local uptime = f:read("*l"):match("^(%d*)."); f:close()
+				local hour   = math.floor(uptime / 3600)
+				local minute = (math.floor(uptime / 60) - hour * 60)
+				add("Uptime", hour .. " hours, " .. minute .. " minutes")
+
+				-- Memory
+				local mem = io.open("/proc/meminfo", "r")
+				local total = mem:read("*l"); mem:read("*l")
+				local used  = mem:read("*l"); mem:close()
+				total = tonumber(total:match("%d+")) / 1e6
+				used  = total - tonumber(used:match("%d+")) / 1e6
+				add("RAM", string.format("%.1fGB / %.1fGB", used, total))
+
+				-- OS
+				local f = io.open("/etc/os-release", "r")
+				add("OS", f:read("*l"):match("\"(.*)\""))
+				f:close()
+			end
+		},
+	},
+	power_create = function(self)
+		-- creates self.widgets.power
+		local opts = {
+			{
+				icon = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20),
+				func = function()
+					naughty.notify { text = "Suspending System" }
+					awful.spawn("systemctl suspend")
+				end
+			},
+			{
+				icon = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20),
+				func = function()
+					naughty.notify { text = "Powering Off System" }
+					awful.spawn("systemctl poweroff")
+				end
+			},
+			{
+				icon = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20),
+				func = function()
+					naughty.notify { text = "Rebooting System" }
+					awful.spawn("systemctl reboot")
+				end
+			},
+		}
+
+		local cr -- Draw Icons
+		cr = cairo.Context(opts[1].icon) -- suspend
+		cr:set_source(gears.color(beautiful.wibar_selected_tag))
+		gears.shape.transform(gears.shape.rounded_bar):translate(3, 3)(cr, 14, 14)
+		cr:fill()
+		cr:set_operator(cr, cairo.Operator.clear);
+		gears.shape.transform(gears.shape.rounded_bar):translate(9, 1)(cr, 11, 11)
+		cr:fill()
+
+		cr = cairo.Context(opts[2].icon) -- Shutdown
+		cr:set_source(gears.color(beautiful.wibar_selected_tag))
+		gears.shape.transform(gears.shape.arc):translate(3, 3)(cr, 14, 14, 2, -0.3 * math.pi, 1.3 * math.pi, true, true)
+		gears.shape.transform(gears.shape.rounded_bar):translate(9, 3)(cr, 2, 7)
+		cr:fill()
+
+		cr = cairo.Context(opts[3].icon) -- Reboot
+		cr:set_source(gears.color(beautiful.wibar_selected_tag))
+		gears.shape.transform(gears.shape.arc):translate(3, 3)(cr, 14, 14, 2, -0.1 * math.pi, 1.5 * math.pi, true, true)
+		gears.shape.transform(gears.shape.isosceles_triangle):translate(10, 3):rotate_at(11, 2 , -math.pi/8)(cr, 7, 7)
+		cr:fill()
+		cr = nil
+
+		-- Convert icons and functions to it's own widget
+		for i, _ in ipairs(opts) do
+			opts[i] = {
+				widget  = wibox.container.margin,
+				margins = 10,
+				{
+						widget = wibox.container.background,
+						shape  = gears.shape.rectangle,
+						func   = opts[i].func,
+						id     = "bg",
+						{
+							widget  = wibox.container.margin,
+							margins = 5,
+							{
+								widget = wibox.widget.imagebox,
+								image  = opts[i].icon,
+								forced_height = 30,
+								forced_width  = 30,
+							}
+						}
+					}
+			}
+		end
+
+		opts.widget = wibox.container.background
+		opts.layout = wibox.layout.fixed.horizontal
+		self.widgets.power = wibox.widget {
+			widget = wibox.container.place,
+			chosen = 1,
+			opts
+		}
+
+		-- Methods
+		self.widgets.power.update = function(self)
+			local widgets = self:get_children_by_id("bg")
+			for _, w in ipairs(widgets) do w.bg = nil end
+			if not self.chosen then self.chosen = 1 end
+			if self.chosen > #widgets then self.chosen = #widgets end
+			if self.chosen < 1        then self.chosen = 1 end
+			widgets[self.chosen].bg = "#00000020"
+		end
+		self.widgets.power.press = function()
+			local w = self.widgets.power
+			w:get_children_by_id("bg")[w.chosen]:func()
+			self:toggle()
+		end
+		self.widgets.power.select_next = function(self)
+			self.chosen = self.chosen + 1
+			self:update()
+		end
+		self.widgets.power.select_prev = function(self)
+			self.chosen = self.chosen - 1
+			self:update()
+		end
+		self.widgets.power:update()
+		-- Mouse Controls
+		for i, w in ipairs(self.widgets.power:get_children_by_id("bg")) do
+			w:connect_signal("button::press", function() self.widgets.power:press() end)
+			w:connect_signal(
+				"mouse::enter",
+				function()
+					self.widgets.power.chosen = i
+					self.widgets.power:update()
+				end
+			)
+		end
+
+		self.keygrabber = awful.keygrabber {
+			autostart  = true,
+			keybindings = {
+				{{ "Mod4" },    "q",      function() self:toggle() end},
+				{{ "Control" }, "g",      function() self:toggle() end},
+				{{ },           "q",      function() self:toggle() end},
+				{{ },           "Escape", function() self:toggle() end},
+				{{ "Control" }, "m",      function() self.widgets.power:press() end},
+				{{ },           "Return", function() self.widgets.power:press() end},
+				{{ },           " ",      function() self.widgets.power:press() end},
+				{{ "Control" }, "n", function() self.widgets.power:select_next() end},
+				{{ "Control" }, "p", function() self.widgets.power:select_prev() end},
+				{{ }, "l",           function() self.widgets.power:select_next() end},
+				{{ }, "h",           function() self.widgets.power:select_prev() end},
+				{{ }, "Right",       function() self.widgets.power:select_next() end},
+				{{ }, "Left",        function() self.widgets.power:select_prev() end}
+			}
+		}
+	end,
+	toggle = function(self)
+		if self.popup then
+			self.popup.visible = false
+			self.keygrabber:stop()
+			self.popup = nil
+			return
+		end
+
+		self.popup  = awful.popup {
+			visible = true,
+			ontop   = true,
+			placement = awful.placement.centered,
+			border_color = beautiful.border_focus,
+			border_width = 4,
+			widget = {
+				{
+					widget = wibox.container.background,
+					layout = wibox.layout.grid,
+					forced_num_cols = 1,
+					expand          = true,
+				},
+				widget = wibox.container.margin,
+				margins = 50,
+			}
+		}
+
+		local separator = wibox.widget {
+			forced_height = 0,
+			forced_width  = 0,
+			thickness     = 3,
+			widget        = wibox.widget.separator,
+			color         = "#ffffff07",
+		}
+
+		self:power_create()
+		self.widgets.info:update()
+		self.popup.widget.widget:add(
+			self.widgets.name,
+			separator,
+			self.widgets.info,
+			separator,
+			self.widgets.power
+		)
+	end
+}
+
 for _, widget in pairs(widgets) do
 	if widget.start ~= nil then
 		widget:start()
@@ -1170,10 +1397,10 @@ globalkeys = gears.table.join( -- Keybindings
 	-- Standard programs
 	awful.key({ modkey }, "b", function()
 			if browser then
-				naughty.notify { title = "Opening " .. browser }
+				naughty.notify {text = "Opening " .. browser}
 				awful.spawn(browser)
 			else
-				naughty.notify { title = "Error: browser not found" }
+				naughty.notify {text = "[ERROR]: browser not found"}
 			end
 	end),
 
@@ -1182,7 +1409,7 @@ globalkeys = gears.table.join( -- Keybindings
 			awful.spawn(terminal)
 	end),
 
-	awful.key({ modkey }, "q", system), -- Suspend, shutdown, or reboot
+	awful.key({ modkey }, "q", function() widgets.center:toggle() end), -- Suspend, shutdown, or reboot
 	awful.key({ modkey }, "s", screenshot)
 )
 
@@ -1281,7 +1508,7 @@ clientbuttons = gears.table.join(
 -- Signals --
 awful.screen.connect_for_each_screen(
 -- Run function for every screen
-	function(s)
+function(s)
 	set_wallpaper(s)
 	awful.tag(
 		{"1", "2", "3", "4", "5"},
@@ -1408,8 +1635,8 @@ awful.screen.connect_for_each_screen(
 		layout = wibox.layout.align.horizontal,
 		expand = "none",
 		{ -- Left Widgets
-			widgets.layout,
 			s.taglist,
+			widgets.layout,
 			layout = wibox.layout.fixed.horizontal
 		},
 		{ -- Center Widgets
@@ -1553,8 +1780,7 @@ end)
 
 -- Miscellaneous --
 gears.timer {
-	-- More frequent garbage collecting,
-	-- Better clean up those memory leaks
+	-- More frequent garbage collecting
 	timeout = 30,
 	autostart = true,
 	callback = collectgarbage
@@ -1570,7 +1796,7 @@ do  -- Commands to execute in startup
 		"xset r rate 250 50",
 		"setxkbmap -option keypad:pointerkeys",
 		"xset s off -dpms",
-		"pactl set-sink-volume @DEFAULT_SINK@ 40%",
+		"pactl set-sink-volume @DEFAULT_SINK@ " .. widgets.volume.default,
 		"xrdb " .. home .. "/.config/X11/Xresources",
 		"picom"
 	}
@@ -1582,7 +1808,7 @@ do  -- Commands to execute in startup
 			awful.spawn(cmd)
 		else
 			local str = "[ERROR]: " .. str .. " is not installed"
-			naughty.notify {title = str}
+			naughty.notify {text = str}
 		end
 	end
 
