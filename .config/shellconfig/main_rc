@@ -109,6 +109,22 @@ unset droidcam_ip droidcam_port
 
 
 # Functions #
+compress_documents() {
+	if [ -d "${HOME}/Documents" ]; then
+		printf "[\033[1;31mERROR\033[0m] '%s' does not exist\n" "${HOME}/Documents" >&2
+		return
+	fi
+
+	if [ "$(command -v tar)" ]; then
+		printf "[\033[1;31mERROR\033[0m] Command 'tar' not found\n" >&2
+		return
+	fi
+
+	printf "Compressing '%s' to %s\n" "${HOME}/Documents" "${HOME}/Documents.tar.gz"
+	tar cvf Documents.tar.gz ~/Documents -I "gzip --best"
+}
+
+
 colors() {
 	i=0
 	printf '\n'
@@ -133,6 +149,9 @@ colors() {
 }
 
 
+doar() { eval "su -c '$@'"; }
+
+
 dit() {
 	if [ "${1}" = "files" ]; then
 		printf "Red means that the file exists in the repo but doesn't in this machine.\n"
@@ -151,19 +170,24 @@ dit() {
 }
 
 
-compress_documents() {
-	if [ -d "${HOME}/Documents" ]; then
-		printf '\033[1m\033[31m[ERROR]\033[0m "%s" does not exist, exiting.\n' "${HOME}/Documents"
-		return
+mp() {
+	if ! [ "$(command -v jmtpfs)" ]; then
+		printf "[\033[1;31mERROR\033[0m] Command 'jmtpfs' not found" >&2
+		return 1
 	fi
 
-	if [ "$(command -v tar)" ]; then
-		printf '\033[1m\033[31m[ERROR]\033[0m Command `tar` not found, exiting.\n'
-		return
+	if ! jmtpfs -l | { read _; read line; [ "${line}" ]; }; then
+		printf "[\033[1;31mERROR\033[0m] Do device found" >&2
+		return 1
 	fi
 
-	printf 'Compressing "%s" to %s\n' "${HOME}/Documents" "${HOME}/Documents.tar.gz"
-	tar cvf Documents.tar.gz ~/Documents -I "gzip --best"
+	if ! [ -d "/tmp/jmtpfs" ]; then
+		mkdir "/tmp/jmtpfs"
+		jmtpfs "/tmp/jmtpfs"
+	else
+		umount "/tmp/jmtpfs"
+		rmdir "/tmp/jmtpfs"
+	fi
 }
 
 
@@ -175,12 +199,6 @@ e() {
 	fi
 }
 
-
-doar() { eval "su -c '$@'"; }
-
-
-# Misc ENV Variable Exporting
-export UEBERZUG_FIFO=/tmp/ueberzug-fifo
 
 # LESS (for man pages)
 export LESS_TERMCAP_mb=$'\033[1;32m'
