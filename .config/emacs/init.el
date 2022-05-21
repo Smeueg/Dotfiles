@@ -89,7 +89,7 @@
 
 ;; Custom theme
 (set-frame-font "JetBrainsMono Nerd Font Mono 12")
-(setq-default chosen-theme 'Smeueg)
+(setq-default chosen-theme 'Everblush)
 (when (member chosen-theme (custom-available-themes))
   (load-theme chosen-theme 1))
 
@@ -798,6 +798,12 @@ vim manages it's splits and tabs"
 (use-package emmet-mode
   :ensure t
   :hook (html-mode . emmet-mode))
+
+(use-package auto-rename-tag
+  :ensure t
+  :defer t
+  :init
+  (add-hook 'html-mode-hook 'auto-rename-tag))
 
 
 ;; Lua ;;

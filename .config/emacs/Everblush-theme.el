@@ -1,21 +1,20 @@
-(deftheme EverForest
-  "Predominantly blue/cyan faces on a dark cyan background.")
+(deftheme Everblush
+  "")
 
-(setq bg      "#3A454A"
-      bg2     "#445055"
-      bg3     "#7a8478"
-      fg      "#d3c6aa"
-      green   "#a7c080"
-      blue    "#7fbbb3"
-      cyan    "#83c092"
-      yellow  "#dbbc7f"
-      red     "#e67e80"
-      magenta "#d699b6"
-      orange  "#e69875"
+(setq bg      "#181f21"
+      bg2     "#22292b"
+      bg3     "#353F42"
+      fg      "#DADADA"
+      green   "#8ccf7e"
+      blue    "#67b0e8"
+      cyan    "#6cd0ca"
+      yellow  "#e5c76b"
+      red     "#e06e6e"
+      magenta "#c47fd5"
       box-width 7)
 (let ((class '((class color) (min-colors 89))))
   (custom-theme-set-faces
-   'EverForest
+   'Everblush
    ;; Ensure sufficient contrast on 256-color xterms.
    `(default ((((class color) (min-colors 4096))
 	           (:background ,bg :foreground ,fg))
@@ -41,21 +40,21 @@
    `(minibuffer-prompt
      ((,class (:background ,bg :foreground ,green :weight bold))))
    ;; Syntax
-   `(font-lock-variable-name-face ((,class (:foreground ,cyan))))
+   `(font-lock-variable-name-face ((,class (:foreground ,fg))))
    `(font-lock-builtin-face       ((,class (:foreground ,red))))
-   `(font-lock-constant-face      ((,class (:foreground ,cyan))))
-   `(font-lock-keyword-face       ((,class (:foreground ,red :weight bold))))
+   `(font-lock-constant-face      ((,class (:foreground ,blue))))
+   `(font-lock-keyword-face       ((,class (:foreground ,magenta :weight bold))))
    `(font-lock-string-face        ((,class (:foreground ,green))))
-   `(font-lock-type-face          ((,class (:foreground ,orange))))
+   `(font-lock-type-face          ((,class (:foreground ,blue))))
    `(font-lock-warning-face       ((,class (:foreground ,red :weight bold))))
    `(font-lock-comment-face       ((,class (:foreground ,bg3 :slant italic))))
    `(font-lock-function-name-face
      ((,class (:foreground ,red :weight bold))))
    `(sh-heredoc ((,class (:foreground ,green))))
    ;; Search
-   `(isearch        ((,class (:background ,orange :foreground ,bg :weight bold))))
+   `(isearch        ((,class (:background ,green :foreground ,bg :weight bold))))
    `(isearch-fail   ((,class (:background ,red :foreground ,bg :weight bold))))
-   `(lazy-highlight ((,class (:background, bg2 :foreground ,orange))))
+   `(lazy-highlight ((,class (:background, bg2 :foreground ,green))))
    ;; Flymake
    `(flymake-error   ((,class (:underline ,red))))
    `(flymake-note    ((,class (:underline ,green))))
@@ -74,13 +73,13 @@
      ((,class (:background ,bg :foreground ,bg3 :weight bold
                            :box (:line-width ,box-width :color ,bg2)))))
    `(ml/modified-face
-     ((,class (:background ,orange :foreground ,bg :weight bold
+     ((,class (:background ,green :foreground ,bg2 :weight bold
                            :box (:line-width ,box-width :color ,bg2)))))
    `(ml/normal-face
-     ((,class (:background ,bg3 :foreground ,bg :weight bold
+     ((,class (:background ,bg3 :foreground ,bg2 :weight bold
                            :box (:line-width ,box-width :color ,bg2)))))
    `(ml/read-only-face
-     ((,class (:background ,red :foreground ,bg :weight bold
+     ((,class (:background ,red :foreground ,bg2 :weight bold
                            :box (:line-width ,box-width :color ,bg2)))))
    ;; Tab-bar
    `(tab-bar ((,class (:foreground ,fg :background ,bg))))
@@ -134,9 +133,9 @@
    `(tree-sitter-hl-face:function.call ((,class (:foreground ,red :weight bold))))
    `(tree-sitter-hl-face:function.builtin ((,class (:foreground ,red :weight bold))))
    ;; Marginalia
-   `(marginalia-documentation ((,class (:foreground ,cyan :weight bold))))
+   `(marginalia-documentation ((,class (:foreground ,blue :weight bold))))
    `(marginalia-installed     ((,class (:foreground ,green :weight bold))))
-   `(marginalia-archive       ((,class (:foreground ,cyan :weight bold))))
+   `(marginalia-archive       ((,class (:foreground ,red :weight bold))))
    ;; visual-regexp
    `(vr/match-0 ((,class (:foreground ,bg :background ,orange :weight bold))))
    `(vr/match-1 ((,class (:foreground ,bg :background ,orange :weight bold))))
@@ -174,7 +173,7 @@
    `(eterm-256color-bright-white   ((,class (:foreground ,fg))))))
 
 (custom-theme-set-variables
- 'EverForest
+ 'Everblush
  `(ansi-color-names-vector [,bg3 ,red ,green ,yellow ,blue ,magenta ,cyan ,fg]))
 
-(provide-theme 'everforest)
+(provide-theme 'Everblush)
