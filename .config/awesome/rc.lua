@@ -1,6 +1,4 @@
 -- Smeueg's Awesomewm configuration
-
-
 -- Libraries --
 -- Make sure LuaRocks packages is loaded if installed
 pcall(require, "luarocks.loader")
@@ -59,29 +57,29 @@ local themes = {
 		["fg2"]       = "#493751",
 		["font"]      = "JetBrainsMono Nerd Font Mono 11",
 		["focus"]     = "red",
-		["icon_color"] = "bg_light",
-		["menu_color"] = "red"
+		["focus2"]    = "yellow",
+		["icon_color"] = "bg_light"
 	},
-	["EverForest"] = {
-		["wallpaper"]  = "#3A454A",
-		["yellow"]     = "#dbbc7f",
-		["red"]        = "#e67e80",
-		["green"]      = "#a7c080",
-		["cyan"]       = "#83c092",
-		["bg_dark"]    = "#3A454A",
-		["bg"]         = "#445055",
-		["bg_light"]   = "#4B585D",
-		["fg"]         = "#d3c6aa",
-		["fg2"]        = "#57666C",
+	["Everblush"] = {
+		["wallpaper"]  = "#181f21",
+		["yellow"]     = "#e5c76b",
+		["red"]        = "#e06e6e",
+		["green"]      = "#8ccf7e",
+		["cyan"]       = "#6cd0ca",
+		["bg_dark"]    = "#00000030",
+		["bg"]         = "#22292B",
+		["bg_light"]   = "#262D2F",
+		["fg"]         = "#dadada",
+		["fg2"]        = "#353F42",
 		["font"]       = "JetBrainsMono Nerd Font Mono 11",
-		["focus"]      = "cyan",
-		["icon_color"] = "cyan",
-		["menu_color"] = "green"
+		["focus"]      = "green",
+		["focus2"]     = "green",
+		["icon_color"] = "bg_light"
 	}
 }
-local theme = themes["Smeueg"]
+local theme = themes["Everblush"]
 theme["icon_color"] = theme[theme["icon_color"]]
-theme["menu_color"] = theme[theme["menu_color"]]
+theme["focus2"] = theme[theme["focus2"]]
 theme["focus"] = theme[theme["focus"]]
 
 
@@ -157,7 +155,7 @@ beautiful.useless_gap = 5
 beautiful.taglist_bg_focus      = beautiful.wibar_bg
 beautiful.taglist_squares_sel   = nil
 beautiful.taglist_squares_unsel = nil
-beautiful.wibar_selected_tag    = theme["yellow"]
+beautiful.wibar_selected_tag    = theme["focus2"]
 -- Notification
 beautiful.notification_border_color = theme["focus"]
 naughty.config.defaults.border_width = 3
@@ -264,12 +262,14 @@ end
 
 
 local function set_wallpaper(s)
-	if beautiful.wallpaper and gears.filesystem.file_readable(beautiful.wallpaper) then
+	local file_exists = gears.filesystem.file_readable
+	if beautiful.wallpaper and file_exists(beautiful.wallpaper) then
 		gears.wallpaper.maximized(beautiful.wallpaper, s, false)
 	elseif gears.filesystem.file_readable(theme["wallpaper"]) then
 		gears.wallpaper.maximized(theme["wallpaper"], s, false)
 	else
-		local tmp = #theme["wallpaper"]:match("^#[a-fA-F0-9]+")
+		local tmp = theme["wallpaper"]:match("^#[a-fA-F0-9]+")
+		tmp = #tmp
 		if not (tmp == 7 or tmp == 4) then return end
 		gears.wallpaper.set(theme["wallpaper"])
 	end
@@ -489,8 +489,14 @@ local function toggle_popup(arg)
 			function()
 				popup.widget.chosen = i
 				popup.widget:update()
-		end)
-		option:connect_signal("button::press", function() popup.widget:pick() end)
+			end
+		)
+		option:connect_signal(
+			"button::press",
+			function()
+				popup.widget:pick()
+			end
+		)
 	end
 	options = nil
 	popup.widget:update()
@@ -498,11 +504,7 @@ end
 
 
 local function screenshot()
-	local screenshot
-	local whole
-	local region
-	local file
-	local msg
+	local screenshot, whole, region, file, msg
 
 	file = screenshot_dir .. os.date("%Y-%m-%d-%H:%M:%S") .. ".png"
 	msg = {
@@ -541,18 +543,15 @@ local function screenshot()
 			)
 		end
 	else
-		whole = function()
+		local f = function()
 			naughty.notify {
 				title = "No Screenshot Tool Found",
-				text = "Supported tools are 'scrot' and 'import' from imagemagick"
+				text = "Supported tools are: " ..
+					"'import' from imagemagick and 'scrot'"
 			}
 		end
-		region = function()
-			naughty.notify {
-				title = "No Screenshot Tool Found",
-				text = "Supported tools are 'scrot' and 'import' from imagemagick"
-			}
-		end
+		whole = f
+		region = f
 	end
 
 	toggle_popup {
@@ -583,9 +582,24 @@ widgets.layout = wibox.widget {
 	buttons = gears.table.join(
 		awful.button({ }, 3, function()
 				toggle_popup {
-					{image = widgets.layout.icon.tile, func = function() set_layout_all(awful.layout.suit.tile.right) end},
-					{image = widgets.layout.icon.max, func = function() set_layout_all(awful.layout.suit.max) end},
-					{image = widgets.layout.icon.floating, func = function() set_layout_all(awful.layout.suit.floating) end},
+					{
+						image = widgets.layout.icon.tile,
+						func = function()
+							set_layout_all(awful.layout.suit.tile.right)
+						end
+					},
+					{
+						image = widgets.layout.icon.max,
+						func = function()
+							set_layout_all(awful.layout.suit.max)
+						end
+					},
+					{
+						image = widgets.layout.icon.floating,
+						func = function()
+							set_layout_all(awful.layout.suit.floating)
+						end
+					},
 					orientation = "horizontal",
 					cancel = false
 				}
@@ -600,23 +614,24 @@ widgets.layout = wibox.widget {
 			floating = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
 		}
 
+		local transform = gears.shape.transform
 		cr = cairo.Context(self.icon.floating)
 		cr:set_source(gears.color(fg))
-		gears.shape.transform(gears.shape.rectangle):translate(4.5, 4.5)(cr, 8, 8)
-		gears.shape.transform(gears.shape.rectangle):translate(13.5, 7.5)(cr, 2, 8)
-		gears.shape.transform(gears.shape.rectangle):translate(7.5, 13.5)(cr, 8, 2)
+		transform(gears.shape.rectangle):translate(4.5, 4.5)(cr, 8, 8)
+		transform(gears.shape.rectangle):translate(13.5, 7.5)(cr, 2, 8)
+		transform(gears.shape.rectangle):translate(7.5, 13.5)(cr, 8, 2)
 		cr:fill()
 
 		cr = cairo.Context(self.icon.tile)
 		cr:set_source(gears.color(fg))
-		gears.shape.transform(gears.shape.rectangle):translate(4.5, 4.5)(cr, 5, 11)
-		gears.shape.transform(gears.shape.rectangle):translate(10.5, 4.5)(cr, 5, 5)
-		gears.shape.transform(gears.shape.rectangle):translate(10.5, 10.5)(cr, 5, 5)
+		transform(gears.shape.rectangle):translate(4.5, 4.5)(cr, 5, 11)
+		transform(gears.shape.rectangle):translate(10.5, 4.5)(cr, 5, 5)
+		transform(gears.shape.rectangle):translate(10.5, 10.5)(cr, 5, 5)
 		cr:fill()
 
 		cr = cairo.Context(self.icon.max)
 		cr:set_source(gears.color(fg))
-		gears.shape.transform(gears.shape.rectangle):translate(4.5, 4.5)(cr, 11, 11)
+		transform(gears.shape.rectangle):translate(4.5, 4.5)(cr, 11, 11)
 		cr:fill()
 
 		tag.connect_signal(
@@ -634,8 +649,9 @@ widgets.layout = wibox.widget {
 		end)
 	end,
 	switch = function(self)
-		local widget_root = self
+		local w_root = self
 		local margin      = 10
+		local layouts = awful.layout.suit
 		local template = function(image, func)
 			return {
 				{
@@ -655,18 +671,25 @@ widgets.layout = wibox.widget {
 			}
 		end
 
-		if widget_root.popup then
-			widget_root.popup.widget.keygrabber:stop()
-			widget_root.popup.visible = false
-			widget_root.popup = nil
+		if w_root.popup then
+			w_root.popup.widget.keygrabber:stop()
+			w_root.popup.visible = false
+			w_root.popup = nil
 			return
 		end
-		widget_root.popup = awful.popup {
+
+		w_root.popup = awful.popup {
 			widget = {
 				{
-					template(self.icon.tile,     function() set_layout_all(awful.layout.suit.tile.right) end),
-					template(self.icon.max,      function() set_layout_all(awful.layout.suit.max) end),
-					template(self.icon.floating, function() set_layout_all(awful.layout.suit.floating) end),
+					template(self.icon.tile, function()
+								 set_layout_all(layouts.tile.right)
+					end),
+					template(self.icon.max, function()
+								 set_layout_all(layouts.max)
+					end),
+					template(self.icon.floating, function()
+								 set_layout_all(layouts.floating)
+					end),
 					forced_num_cols = 3,
 					forced_num_rows = 1,
 					homogenus = true,
@@ -688,34 +711,35 @@ widgets.layout = wibox.widget {
 
 				start = function(self)
 					local options = self:get_children_by_id("option")
-					local widget_child = self
-					widget_child.chosen = 1
+					local w_child = self
+					w_child.chosen = 1
 
 					local ctrl = {
 						select_next = function()
-							widget_child.chosen = widget_child.chosen + 1
-							widget_child:update()
+							w_child.chosen = w_child.chosen + 1
+							w_child:update()
 						end,
 						select_previous = function()
-							if widget_child.chosen ~= 1 then
-								widget_child.chosen = widget_child.chosen - 1
+							if w_child.chosen ~= 1 then
+								w_child.chosen = w_child.chosen - 1
 							end
-							widget_child:update()
+							w_child:update()
 						end,
 						press = function()
-							widget_child:get_children_by_id("option")[widget_child.chosen]:func()
-							widget_child.keygrabber:stop()
-							widget_root.popup.visible = false
-							widget_root.popup = nil
+							w_child:get_children_by_id("option")[w_child.chosen]
+								:func()
+							w_child.keygrabber:stop()
+							w_root.popup.visible = false
+							w_root.popup = nil
 						end,
 						stop = function()
-							widget_child.keygrabber:stop()
-							widget_root.popup.visible = false
-							widget_root.popup = nil
+							w_child.keygrabber:stop()
+							w_root.popup.visible = false
+							w_root.popup = nil
 						end
 					}
 
-					widget_child.keygrabber = awful.keygrabber {
+					w_child.keygrabber = awful.keygrabber {
 						keybindings = {
 							{{ }, "Right", ctrl.select_next},
 							{{ }, "Left",  ctrl.select_previous},
@@ -736,15 +760,15 @@ widgets.layout = wibox.widget {
 					for i, option in ipairs(options) do
 						local f = {
 							enter = function(self)
-								widget_child.chosen = self.index
-								widget_child:update()
+								w_child.chosen = self.index
+								w_child:update()
 							end,
 							leave = function()
-								widget_child:update()
+								w_child:update()
 							end,
 							press = function()
 								option:func()
-								widget_child:update()
+								w_child:update()
 								ctrl.stop()
 							end
 						}
@@ -755,7 +779,7 @@ widgets.layout = wibox.widget {
 						option:connect_signal("button::press", f.press)
 					end
 
-					widget_child:update()
+					w_child:update()
 				end
 			},
 			placement = awful.placement.centered,
@@ -860,31 +884,31 @@ widgets.time = wibox.widget {
 
 
 widgets.volume = wibox.widget {
+	widget  = wibox.container.margin,
+	margins = 7,
 	{
+		widget = wibox.container.background,
+		bg     = theme["bg_dark"],
 		{
+			layout = wibox.layout.fixed.horizontal,
 			{
 				{
+					widget        = wibox.widget.imagebox,
 					id            = "icon",
 					forced_height = 23,
-					forced_width  = 23,
-					widget        = wibox.widget.imagebox
+					forced_width  = 23
 				},
+				widget = wibox.container.margin,
 				left   = 4,
 				right  = 7,
-				top    = 7,
-				widget = wibox.container.margin
+				top    = 7
 			},
 			{
-				id     = "vol",
-				widget = wibox.widget.textbox
-			},
-			layout = wibox.layout.fixed.horizontal,
+				widget = wibox.widget.textbox,
+				id     = "vol"
+			}
 		},
-		bg     = theme["bg_dark"],
-		widget = wibox.container.background
 	},
-	margins = 7,
-	widget  = wibox.container.margin,
 	buttons = gears.table.join(
 		awful.button({ }, 3, function() widgets.volume:ctrl("toggle") end),
 		awful.button({ }, 4, function() widgets.volume:ctrl("+1") end),
@@ -895,8 +919,7 @@ widgets.volume = wibox.widget {
 		timeout = 5,
 		autostart = true,
 		callback = function() widgets.volume:update() end
-		},
-
+	},
 	ctrl = function(self, cmd)
 		local cmds = {
 			["+1"]      = "pactl set-sink-volume  @DEFAULT_SINK@ +1%",
@@ -904,7 +927,7 @@ widgets.volume = wibox.widget {
 			["+5"]      = "pactl set-sink-volume  @DEFAULT_SINK@ +5%",
 			["-5"]      = "pactl set-sink-volume  @DEFAULT_SINK@ -5%",
 			["toggle"]  = "pactl set-sink-mute    @DEFAULT_SINK@ toggle",
-			["default"] = "pactl set-sink-volume  @DEFAULT_SINK@ " .. self.default
+			["default"] = "pactl set-sink-volume  @DEFAULT_SINK@ "..self.default
 		}
 
 		awful.spawn.with_line_callback(
@@ -912,21 +935,27 @@ widgets.volume = wibox.widget {
 			{ exit = function() widgets.volume:update() end }
 		)
 	end,
-
 	update = function(self)
 		awful.spawn.easy_async(
-			"pactl list sinks", function(stdout)
-				self:get_children_by_id("vol")[1]
-					.text = stdout:match("(%d+%%)") .. " "
-				self:get_children_by_id("icon")[1]
-					.image = stdout:match("Mute: (%w+)") == "no" and self.icon.volume or self.icon.mute
-		end)
+			"pactl list sinks",
+			function(stdout)
+				local icon = self.icon.volume
+				local vol  = stdout:match("(%d+%%)") .. " "
 
+				if stdout:match("Mute: (%w+)") == "yes" then
+					icon = self.icon.mute
+				end
+
+				self:get_children_by_id("icon")[1].image = icon
+				self:get_children_by_id("vol")[1].text = vol
+			end
+		)
 		load_droidcam_module()
 	end,
-
 	start = function(self)
 		local cr
+		local pi = math.pi
+		local transform = gears.shape.transform
 		self.icon = {
 			mute   = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20),
 			volume = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
@@ -934,28 +963,28 @@ widgets.volume = wibox.widget {
 
 		cr = cairo.Context(self.icon.volume)
 		cr:set_source(gears.color(theme["icon_color"]))
-		gears.shape.transform(gears.shape.rectangle):translate(3, 7.5)(cr, 3, 6)
-		gears.shape.transform(gears.shape.isosceles_triangle)
-			:rotate_at(6, 6, -math.pi/2)
+		transform(gears.shape.rectangle):translate(3, 7.5)(cr, 3, 6)
+		transform(gears.shape.isosceles_triangle)
+			:rotate_at(6, 6, pi / -2)
 			:translate(-4.5, 2)(cr, 12, 9)
-		gears.shape.transform(gears.shape.arc)
-			:translate(1.8, 4.5)(cr, 12, 12, 1, -math.pi/6, math.pi/6, true, true)
-		gears.shape.transform(gears.shape.arc)
-			:translate(2, 3)(cr, 15, 15, 1, -math.pi/4, math.pi/4, true, true)
-		gears.shape.transform(gears.shape.arc)
-			:translate(2.2, 1.5)(cr, 18, 18, 1, -math.pi/3.5, math.pi/3.5, true, true)
+		transform(gears.shape.arc)
+			:translate(1.8, 4.5)(cr, 12, 12, 2, pi / -6, pi / 6, true, true)
+		transform(gears.shape.arc)
+			:translate(2, 3)(cr, 15, 15, 2, pi / -4, pi / 4, true, true)
+		transform(gears.shape.arc)
+			:translate(2.2, 1.5)(cr, 18, 18, 2, pi / -3.5, pi / 3.5, true, true)
 		cr:fill()
 
 		cr = cairo.Context(self.icon.mute)
 		cr:set_source(gears.color(theme["icon_color"]))
-		gears.shape.transform(gears.shape.rectangle)
+		transform(gears.shape.rectangle)
 			:translate(3, 7.5)(cr, 3, 6)
-		gears.shape.transform(gears.shape.isosceles_triangle)
-			:rotate_at(6, 6, -math.pi/2)
+		transform(gears.shape.isosceles_triangle)
+			:rotate_at(6, 6, pi / -2)
 			:translate(-4.5, 2)(cr, 12, 9)
-		gears.shape.transform(gears.shape.cross)
-			:rotate_at(4.5, 4.5, math.pi/4)
-			:translate(13, -4)(cr, 9, 9, 1)
+		transform(gears.shape.cross)
+			:rotate_at(4.5, 4.5, pi / 4)
+			:translate(13, -4)(cr, 9, 9, 3)
 		cr:fill()
 
 		self:update()
@@ -964,76 +993,75 @@ widgets.volume = wibox.widget {
 
 
 widgets.network = wibox.widget {
+	widget  = wibox.container.margin,
+	margins = 7,
 	{
+		widget = wibox.container.background,
+		bg = theme["bg_dark"],
 		{
+			layout = wibox.layout.fixed.horizontal,
 			{
 				{
-					id            = "icon",
+					widget        = wibox.widget.imagebox,
 					forced_height = 22,
 					forced_width  = 22,
-					widget        = wibox.widget.imagebox
+					id            = "icon"
 				},
-				left   = 5,
-				right  = 7,
+				widget = wibox.container.margin,
 				top    = 8,
-				widget = wibox.container.margin
+				right  = 7,
+				left   = 5
 			},
 			{
+				widget = wibox.widget.textbox,
 				format = "%H:%M ",
-				id     = "text",
-				widget = wibox.widget.textbox
-			},
-			layout = wibox.layout.fixed.horizontal,
-		},
-		bg = theme["bg_dark"],
-		widget = wibox.container.background
+				id     = "text"
+			}
+		}
 	},
-	margins = 7,
-	widget = wibox.container.margin,
-
 	timer = gears.timer {
 		timeout = 10,
 		autostart = true,
 		callback = function() widgets.network:update() end
 	},
-
 	update = function(self)
+		local w = self
+		local parse = function(stdout)
+			local str = ""
+			for net_name, net_type in stdout:gmatch("([^:]+):([^\n]+)") do
+				if str ~= "" then str = str .. " " end
+				str	= str .. net_name
+
+				if net_type:match("[^-]+$") == "wireless" then
+					self:get_children_by_id("icon")[1].image = self.icon.wifi
+				else
+					self:get_children_by_id("icon")[1].image = self.icon.eth
+				end
+			end
+
+			if str ~= "" then
+				self:get_children_by_id("text")[1].text = str .. " "
+			else
+				self:get_children_by_id("text")[1].text = "Offline "
+				self:get_children_by_id("icon")[1].image = self.icon.disconnect
+			end
+		end
+
 		awful.spawn.easy_async(
 			"pidof NetworkManager", function(stdout)
 				if stdout == "" then return end
 				awful.spawn.easy_async(
 					"nmcli -t -f name,type connection show --active",
-					function(stdout)
-						local str = ""
-						for net_name, net_type in stdout:gmatch("([^:]+):([^\n]+)") do
-							if str ~= "" then str = str .. " " end
-							str	= str .. net_name
-
-							if net_type:match("[^-]+$") == "wireless" then
-								self:get_children_by_id("icon")[1].image = self.icon.wifi
-							else
-								self:get_children_by_id("icon")[1].image = self.icon.ethernet
-							end
-						end
-
-
-						if str ~= "" then
-							self:get_children_by_id("text")[1].text	= str .. " "
-						else
-							self:get_children_by_id("text")[1].text	 = "Offline "
-							self:get_children_by_id("icon")[1].image = self.icon.disconnect
-						end
-					end
+					parse
 				)
 			end
 		)
 	end,
-
 	start = function(self)
 		local cr
 		self.icon = {
 			wifi       = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20),
-			ethernet   = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20),
+			eth = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20),
 			disconnect = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
 		}
 
@@ -1044,7 +1072,7 @@ widgets.network = wibox.widget {
 			:translate(-1.5, 1.5)(cr, 20, 20, 1.25 * math.pi, 1.75* math.pi)
 		cr:fill()
 
-		cr = cairo.Context(self.icon.ethernet)
+		cr = cairo.Context(self.icon.eth)
 		cr:set_source(gears.color(theme["icon_color"]))
 		cr:rectangle(9, 2, 6, 6)
 		cr:rectangle(4, 14, 6, 6)
@@ -1067,26 +1095,59 @@ widgets.network = wibox.widget {
 }
 
 widgets.center = {
-	widgets = {
-		name = wibox.widget { -- Username@Hostname
-			font = beautiful.font:match("^[^0-9]+") .. "14",
-			widget = wibox.widget.textbox,
-			valign = "center",
-			align = "center",
-			markup = string.format(
-				"<b><span foreground='%s'>%s</span>@<span foreground='%s'>%s</span></b>",
-				beautiful.wibar_selected_tag,
-				os.getenv("USER"),
-				"#C5483F",
-				io.lines("/etc/hostname")()
-			)
+	wibar = wibox.widget {
+		widget  = wibox.container.margin,
+		margins = 7,
+		{
+			widget = wibox.container.background,
+			bg     = theme["bg_dark"],
+			{
+				widget = wibox.container.margin,
+				left   = 4,
+				right  = 7,
+				top    = 7,
+				{
+					widget        = wibox.widget.imagebox,
+					id            = "icon",
+					forced_height = 23,
+					forced_width  = 23
+				}
+			},
 		},
-		info = wibox.widget {
+
+	},
+	widgets = {
+		name = { -- Username@Hostname
+			font   = beautiful.font:match("^[^0-9]+") .. "14",
+			widget = wibox.widget.textbox,
+			id     = "widget",
+			valign = "center",
+			align  = "center",
+			create = function(self)
+				local hostname, user, f
+				user     = os.getenv("USER")
+				f        = io.open("/etc/hostname")
+				hostname = f:read("*l"); f:close()
+				user = string.format(
+					"<span foreground='%s'>%s</span>",
+					beautiful.wibar_selected_tag,
+					user
+				)
+				hostname = string.format(
+					"<span foreground='%s'>%s</span>",
+					beautiful.border_focus,
+					hostname
+				)
+				self.markup = "<b>" .. user .. "@" .. hostname .. "</b>"
+			end
+		},
+		info = {
 			widget = wibox.container.background,
 			layout = wibox.layout.grid,
 			vertical_spacing = 500,
 			forced_num_cols = 2,
 			homogeneous = false,
+			id = "widget",
 			update = function(self)
 				-- Remove other widgets
 				local rows, cols = self:get_dimension()
@@ -1095,22 +1156,22 @@ widgets.center = {
 
 				local add = function(label, value)
 					self:add(
-						wibox.widget {
-							font   = beautiful.font:match("^[^0-9]+") .. "12",
-							widget = wibox.widget.textbox,
-							align  = "right",
-							markup = string.format(
-								"  <b><span foreground='%s'>%s</span>:</b> ",
-								beautiful.border_focus,
-								label
-							)
-						},
-						wibox.widget {
-							font = beautiful.font:match("^[^0-9]+") .. "12",
-							markup = string.format(" <b>%s</b>  ", value),
-							widget = wibox.widget.textbox,
-						}
-					)
+							wibox.widget {
+								font   = beautiful.font:match("^[^0-9]+") .. "12",
+								widget = wibox.widget.textbox,
+								align  = "right",
+								markup = string.format(
+									"  <b><span foreground='%s'>%s</span>:</b> ",
+									beautiful.border_focus,
+									label
+								)
+							},
+							wibox.widget {
+								font = beautiful.font:match("^[^0-9]+") .. "12",
+								markup = string.format(" <b>%s</b>  ", value),
+								widget = wibox.widget.textbox,
+							}
+						)
 				end
 
 				-- Resolution
@@ -1138,147 +1199,121 @@ widgets.center = {
 				f:close()
 			end
 		},
-	},
-	power_create = function(self)
-		-- creates self.widgets.power
-		local opts = {
+		power = {
 			{
-				icon = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20),
-				func = function()
-					naughty.notify { text = "Suspending System" }
-					awful.spawn("systemctl suspend")
-				end
-			},
-			{
-				icon = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20),
-				func = function()
-					naughty.notify { text = "Powering Off System" }
-					awful.spawn("systemctl poweroff")
-				end
-			},
-			{
-				icon = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20),
-				func = function()
-					naughty.notify { text = "Rebooting System" }
-					awful.spawn("systemctl reboot")
-				end
-			},
-		}
-
-		local cr -- Draw Icons
-		cr = cairo.Context(opts[1].icon) -- suspend
-		cr:set_source(gears.color(beautiful.wibar_selected_tag))
-		gears.shape.transform(gears.shape.rounded_bar):translate(3, 3)(cr, 14, 14)
-		cr:fill()
-		cr:set_operator(cr, cairo.Operator.clear);
-		gears.shape.transform(gears.shape.rounded_bar):translate(9, 1)(cr, 11, 11)
-		cr:fill()
-
-		cr = cairo.Context(opts[2].icon) -- Shutdown
-		cr:set_source(gears.color(beautiful.wibar_selected_tag))
-		gears.shape.transform(gears.shape.arc):translate(3, 3)(cr, 14, 14, 2, -0.3 * math.pi, 1.3 * math.pi, true, true)
-		gears.shape.transform(gears.shape.rounded_bar):translate(9, 3)(cr, 2, 7)
-		cr:fill()
-
-		cr = cairo.Context(opts[3].icon) -- Reboot
-		cr:set_source(gears.color(beautiful.wibar_selected_tag))
-		gears.shape.transform(gears.shape.arc):translate(3, 3)(cr, 14, 14, 2, -0.1 * math.pi, 1.5 * math.pi, true, true)
-		gears.shape.transform(gears.shape.isosceles_triangle):translate(10, 3):rotate_at(11, 2 , -math.pi/8)(cr, 7, 7)
-		cr:fill()
-		cr = nil
-
-		-- Convert icons and functions to it's own widget
-		for i, _ in ipairs(opts) do
-			opts[i] = {
-				widget  = wibox.container.margin,
-				margins = 10,
+				widget = wibox.container.background,
 				{
-						widget = wibox.container.background,
-						shape  = gears.shape.rectangle,
-						func   = opts[i].func,
-						id     = "bg",
-						{
+					widget = wibox.widget.textbox,
+					text = "foo"
+				}
+			},
+			widget = wibox.container.place,
+			id     = "widget",
+			create = function(self)
+				local surface_create = cairo.ImageSurface.create
+				local transform = gears.shape.transform
+				local opts = {
+					{
+						icon = surface_create(cairo.Format.ARGB32, 20, 20),
+						func = function()
+							naughty.notify { text = "Suspending System" }
+							awful.spawn("systemctl suspend")
+						end
+					},
+					{
+						icon = surface_create(cairo.Format.ARGB32, 20, 20),
+						func = function()
+							naughty.notify { text = "Powering Off System" }
+							awful.spawn("systemctl poweroff")
+						end
+					},
+					{
+						icon = surface_create(cairo.Format.ARGB32, 20, 20),
+						func = function()
+							naughty.notify { text = "Rebooting System" }
+							awful.spawn("systemctl reboot")
+						end
+					},
+				}
+
+				local cr -- Draw Icons
+				cr = cairo.Context(opts[1].icon) -- suspend
+				cr:set_source(gears.color(beautiful.wibar_selected_tag))
+				transform(gears.shape.rounded_bar):translate(3, 3)(cr, 14, 14)
+				cr:fill()
+				cr:set_operator(cr, cairo.Operator.clear);
+				transform(gears.shape.rounded_bar):translate(9, 1)(cr, 11, 11)
+				cr:fill()
+
+				local pi = math.pi
+				local angle_start = -0.3 * pi
+				local angle_end = 1.3 * pi
+				cr = cairo.Context(opts[2].icon) -- Shutdown
+				cr:set_source(gears.color(beautiful.wibar_selected_tag))
+				transform(gears.shape.arc)
+					:translate(3, 3)(cr, 14, 14, 2, -0.3*pi, 1.3*pi, true, true)
+				transform(gears.shape.rounded_bar):translate(9, 3)(cr, 2, 7)
+				cr:fill()
+
+				cr = cairo.Context(opts[3].icon) -- Reboot
+				cr:set_source(gears.color(beautiful.wibar_selected_tag))
+				gears.shape.transform(gears.shape.arc)
+					:translate(3, 3)(cr, 14, 14, 2, -0.1*pi, 1.5*pi, true, true)
+				gears.shape.transform(gears.shape.isosceles_triangle)
+					:translate(10, 3):rotate_at(11, 2 , -pi / 8)(cr, 7, 7)
+				cr:fill()
+				cr = nil
+
+				-- Convert icons and functions to it's own widget
+				for i, _ in ipairs(opts) do
+						opts[i] = {
 							widget  = wibox.container.margin,
-							margins = 5,
+							margins = 10,
 							{
-								widget = wibox.widget.imagebox,
-								image  = opts[i].icon,
-								forced_height = 30,
-								forced_width  = 30,
+								widget = wibox.container.background,
+								shape  = gears.shape.rectangle,
+								func   = opts[i].func,
+								id     = "option",
+								{
+									widget  = wibox.container.margin,
+									margins = 5,
+									{
+										widget = wibox.widget.imagebox,
+										image  = opts[i].icon,
+										forced_height = 30,
+										forced_width  = 30,
+									}
+								}
 							}
 						}
-					}
-			}
-		end
+					end
 
-		opts.widget = wibox.container.background
-		opts.layout = wibox.layout.fixed.horizontal
-		self.widgets.power = wibox.widget {
-			widget = wibox.container.place,
-			chosen = 1,
-			opts
+					opts.widget = wibox.container.background
+					opts.layout = wibox.layout.fixed.horizontal
+					self[1] = opts
+			end
 		}
-
-		-- Methods
-		self.widgets.power.update = function(self)
-			local widgets = self:get_children_by_id("bg")
-			for _, w in ipairs(widgets) do w.bg = nil end
-			if not self.chosen then self.chosen = 1 end
-			if self.chosen > #widgets then self.chosen = #widgets end
-			if self.chosen < 1        then self.chosen = 1 end
-			widgets[self.chosen].bg = "#00000020"
-		end
-		self.widgets.power.press = function()
-			local w = self.widgets.power
-			w:get_children_by_id("bg")[w.chosen]:func()
-			self:toggle()
-		end
-		self.widgets.power.select_next = function(self)
-			self.chosen = self.chosen + 1
-			self:update()
-		end
-		self.widgets.power.select_prev = function(self)
-			self.chosen = self.chosen - 1
-			self:update()
-		end
-		self.widgets.power:update()
-		-- Mouse Controls
-		for i, w in ipairs(self.widgets.power:get_children_by_id("bg")) do
-			w:connect_signal("button::press", function() self.widgets.power:press() end)
-			w:connect_signal(
-				"mouse::enter",
-				function()
-					self.widgets.power.chosen = i
-					self.widgets.power:update()
-				end
-			)
-		end
-
-		self.keygrabber = awful.keygrabber {
-			autostart  = true,
-			keybindings = {
-				{{ "Mod4" },    "q",      function() self:toggle() end},
-				{{ "Control" }, "g",      function() self:toggle() end},
-				{{ },           "q",      function() self:toggle() end},
-				{{ },           "Escape", function() self:toggle() end},
-				{{ "Control" }, "m",      function() self.widgets.power:press() end},
-				{{ },           "Return", function() self.widgets.power:press() end},
-				{{ },           " ",      function() self.widgets.power:press() end},
-				{{ "Control" }, "n", function() self.widgets.power:select_next() end},
-				{{ "Control" }, "p", function() self.widgets.power:select_prev() end},
-				{{ }, "l",           function() self.widgets.power:select_next() end},
-				{{ }, "h",           function() self.widgets.power:select_prev() end},
-				{{ }, "Right",       function() self.widgets.power:select_next() end},
-				{{ }, "Left",        function() self.widgets.power:select_prev() end}
-			}
-		}
-	end,
+	},
 	toggle = function(self)
 		if self.popup then
 			self.popup.visible = false
 			self.keygrabber:stop()
 			self.popup = nil
 			return
+		end
+
+		local separator = {
+			forced_height = 0,
+			forced_width  = 0,
+			thickness     = 3,
+			widget        = wibox.widget.separator,
+			color         = "#ffffff07",
+		}
+
+
+		-- Create widgets
+		for _, w in pairs(self.widgets) do
+			if w.create then w:create() end
 		end
 
 		self.popup  = awful.popup {
@@ -1289,44 +1324,97 @@ widgets.center = {
 			border_width = 4,
 			widget = {
 				{
+					self.widgets.name,
+					separator,
+					self.widgets.info,
+					separator,
+					self.widgets.power,
 					widget = wibox.container.background,
 					layout = wibox.layout.grid,
 					forced_num_cols = 1,
-					expand          = true,
+					expand          = true
 				},
 				widget = wibox.container.margin,
-				margins = 50,
+				margins = 50
 			}
 		}
 
-		local separator = wibox.widget {
-			forced_height = 0,
-			forced_width  = 0,
-			thickness     = 3,
-			widget        = wibox.widget.separator,
-			color         = "#ffffff07",
-		}
+		-- Update widgets that need updating
+		for i, w in ipairs(self.popup.widget:get_children_by_id("widget")) do
+			if w.update then w:update(self.widgets) end
+		end
 
-		self:power_create()
-		self.widgets.info:update()
-		self.popup.widget.widget:add(
-			self.widgets.name,
-			separator,
-			self.widgets.info,
-			separator,
-			self.widgets.power
-		)
+		-- Mouse Controls for buttons
+		for i, w in ipairs(self.popup.widget:get_children_by_id("option")) do
+			w:connect_signal("button::press", function() self:press() end)
+			w:connect_signal(
+				"mouse::enter",
+				function()
+					self.chosen = i
+					self:update()
+				end
+			)
+		end
+
+		-- Keyboard Controls for buttons
+		self.keygrabber = awful.keygrabber {
+			autostart  = true,
+			keybindings = {
+				{{ modkey },    "q",      function() self:toggle()      end},
+				{{ "Control" }, "g",      function() self:toggle()      end},
+				{{ },           "q",      function() self:toggle()      end},
+				{{ },           "Escape", function() self:toggle()      end},
+				{{ "Control" }, "m",      function() self:press()       end},
+				{{ },           "Return", function() self:press()       end},
+				{{ },           " ",      function() self:press()       end},
+				{{ "Control" }, "n",      function() self:select_next() end},
+				{{ "Control" }, "p",      function() self:select_prev() end},
+				{{ }, "l",                function() self:select_next() end},
+				{{ }, "h",                function() self:select_prev() end},
+				{{ }, "Right",            function() self:select_next() end},
+				{{ }, "Left",             function() self:select_prev() end}
+			}
+		}
+		self.chosen = 1
+		self:update()
+	end,
+	update = function(self)
+		local widgets = self.popup.widget:get_children_by_id("option")
+		for _, w in ipairs(widgets) do w.bg = nil end
+		if not self.chosen then self.chosen = 1 end
+		if self.chosen > #widgets then self.chosen = #widgets end
+		if self.chosen < 1        then self.chosen = 1 end
+		widgets[self.chosen].bg = "#00000020"
+	end,
+	press  = function(self)
+		self.popup.widget:get_children_by_id("option")[self.chosen]:func()
+		self:toggle()
+	end,
+	select_next = function(self)
+		self.chosen = self.chosen + 1
+		self:update()
+	end,
+	select_prev = function(self)
+		self.chosen = self.chosen - 1
+		self:update()
+	end,
+	start = function(self)
+		local icon = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
+		local cr = cairo.Context(icon)
+
+		cr:set_source(gears.color(beautiful.wibar_selected_tag))
+		gears.shape.transform(gears.shape.rectangle):translate(5, 4)(cr, 12, 12)
+		gears.shape.transform(gears.shape.rectangle):translate(2, 9)(cr, 20, 3)
+		cr:fill()
+
+		self.wibar:get_children_by_id("icon")[1].image = icon
 	end
 }
 
-for _, widget in pairs(widgets) do
-	if widget.start ~= nil then
-		widget:start()
-	end
+
+for _, w in pairs(widgets) do
+	if type(w.start) == "function" then w:start() end
 end
-
-
-
 
 
 -- Key and Mouse Bindings --
@@ -1334,68 +1422,78 @@ globalkeys = gears.table.join( -- Keybindings
 	awful.key({ modkey }, "y", function()
 			package.loaded["test"] = false
 			require("test")
-			--test:f()
 	end),
 	-- Volume
-	awful.key({ modkey }, "[", function() widgets.volume:ctrl("-5") end),
-	awful.key({ modkey }, "]", function() widgets.volume:ctrl("+5") end),
-	awful.key({ modkey, "Control" }, "[", function()widgets.volume:ctrl("-1")end),
-	awful.key({ modkey, "Control" }, "]", function()widgets.volume:ctrl("+1")end),
+	awful.key({ modkey }, "[",  function() widgets.volume:ctrl("-5") end),
+	awful.key({ modkey }, "]",  function() widgets.volume:ctrl("+5") end),
 	awful.key({ modkey }, "\\", function() widgets.volume:ctrl("toggle") end),
-	awful.key({ modkey, "Shift" }, "\\", function() widgets.volume:ctrl("default") end),
+	awful.key({ modkey, "Control" }, "[", function()
+			widgets.volume:ctrl("-1")
+	end),
+	awful.key({ modkey, "Control" }, "]", function()
+			widgets.volume:ctrl("+1")
+	end),
+	awful.key({ modkey, "Shift" }, "\\", function()
+			widgets.volume:ctrl("default")
+	end),
 	-- Clients
-	awful.key({ modkey }, "j",
-		function() awful.client.focus.byidx(-1) end), -- Focus previous window
-	awful.key({ modkey }, "k",
-		function() awful.client.focus.byidx(1) end), -- Focus previous window
-	awful.key({ modkey, "Shift" }, "j",
-		function() awful.client.swap.byidx(-1) end), -- Swap with next window
-	awful.key({ modkey, "Shift" }, "k",
-		function() awful.client.swap.byidx(1) end), -- Swap with next window
+	awful.key({ modkey }, "j", function() -- Focus previous window
+			awful.client.focus.byidx(-1)
+	end),
+	awful.key({ modkey }, "k", function() -- Focus next window
+			awful.client.focus.byidx(1)
+	end),
+	awful.key({ modkey, "Shift" }, "j", function() -- Swap with next window
+			awful.client.swap.byidx(-1)
+	end),
+	awful.key({ modkey, "Shift" }, "k", function() -- Swap with next window
+			awful.client.swap.byidx(1)
+	end),
 	-- Screens
-	awful.key({ modkey, "Control" }, "j",
-		function() awful.screen.focus_relative(-1) end), -- Focus previous screen
-
-	awful.key({ modkey, "Control" }, "k",
-		function() awful.screen.focus_relative(1) end), -- Focus next screen
+	awful.key({ modkey, "Control" }, "j", function() -- Focus previous screen
+			awful.screen.focus_relative(-1)
+	end),
+	awful.key({ modkey, "Control" }, "k", function() -- Focus next screen
+			awful.screen.focus_relative(1)
+	end),
 	-- Layout
-	awful.key({ modkey }, "l", -- Increase master width
-		function()
+	awful.key({ modkey }, "t", function()
+			set_layout_all(awful.layout.suit.tile.right)
+	end),
+	awful.key({ modkey }, "m", function()
+			set_layout_all(awful.layout.suit.max)
+	end),
+	awful.key({ modkey }, "f", function()
+			set_layout_all(awful.layout.suit.floating)
+	end),
+	awful.key({ modkey }, "l", function() -- Increase master width
 			if client.focus and client.focus.first_tag.layout == awful.layout.suit.tile.right then
 				awful.tag.incmwfact(0.05)
 			end
 	end),
-	awful.key({ modkey }, "h", -- Decrease master width
-		function()
-			if client.focus and client.focus.first_tag.layout == awful.layout.suit.tile.right then
+	awful.key({ modkey }, "h", function() -- Decrease master width
+			local c = client.focus
+			if c and c.first_tag.layout == awful.layout.suit.tile.right then
 				awful.tag.incmwfact(-0.05)
 			end
 	end),
-	awful.key({ modkey }, "t",
-		function() set_layout_all(awful.layout.suit.tile.right) end),
-	awful.key({ modkey }, "m",
-		function() set_layout_all(awful.layout.suit.max) end),
-	awful.key({ modkey }, "f",
-		function() set_layout_all(awful.layout.suit.floating) end),
 	-- Awesome Functions
 	awful.key({ modkey, "Control" }, "r", awesome.restart),
 	awful.key({ modkey, "Shift" }, "q", awesome.quit),
-	awful.key({ modkey, "Shift" }, "b",
-		function()
+	awful.key({ modkey, "Shift" }, "b", function()
 			local s = awful.screen.focused()
-			if not s.wibox then return end
 			s.wibox.visible = not s.wibox.visible
 	end),
 	-- Menubar
 	awful.key({ modkey }, "p", function()
 			if command_exists("rofi") then
 				awful.spawn("rofi -show drun")
-			else
-				menubar.show()
+				return
 			end
+			menubar.show()
 	end),
 	-- Standard programs
-	awful.key({ modkey }, "b", function()
+	awful.key({ modkey }, "b", function() -- Spawn a browser
 			if browser then
 				naughty.notify {text = "Opening " .. browser}
 				awful.spawn(browser)
@@ -1403,62 +1501,78 @@ globalkeys = gears.table.join( -- Keybindings
 				naughty.notify {text = "[ERROR]: browser not found"}
 			end
 	end),
-
-	awful.key({ modkey }, "Return", function()
-			if terminal == "emacs" then find_or_spawn_emacs(); return; end
+	awful.key({ modkey }, "Return", function() -- Spawn Emacs
+			if terminal == "emacs" then find_or_spawn_emacs(); return end
 			awful.spawn(terminal)
 	end),
-
-	awful.key({ modkey }, "q", function() widgets.center:toggle() end), -- Suspend, shutdown, or reboot
+	awful.key({ modkey }, "q", function() widgets.center:toggle() end),
 	awful.key({ modkey }, "s", screenshot)
 )
 
 
 clientkeys = gears.table.join( -- Key Bindings That Activate Per-client
-    awful.key({ modkey, "Shift" }, "f",
-        function(c)
-            c.fullscreen = not c.fullscreen
-            c:raise()
-        end),
-    awful.key({ modkey, "Shift" }, "c", function(c) c:kill() end),
-    awful.key({ modkey, "Shift" }, "space",  function(c) c.floating = not c.floating end),
+	awful.key({ modkey, "Shift" }, "f", function(c)
+			c.fullscreen = not c.fullscreen
+			c:raise()
+	end),
+	awful.key({ modkey, "Shift" }, "c", function(c) c:kill() end),
+	awful.key({ modkey, "Shift" }, "space", function(c)
+			c.floating = not c.floating
+	end),
 	awful.key({ modkey, "Shift" }, "t", function(c) c.ontop = not c.ontop end),
-	awful.key({ modkey }, "space", function(c) c:swap(awful.client.getmaster()) end),
-	awful.key({ modkey }, "o",     function(c) c:move_to_screen() end),
-	awful.key({ modkey }, "Down",  function(c) c:relative_move(  0,  10,   0, 0) end),
-	awful.key({ modkey }, "Up",    function(c) c:relative_move(  0, -10,   0, 0) end),
-	awful.key({ modkey }, "Left",  function(c) c:relative_move(-10,   0,   0, 0) end),
-	awful.key({ modkey }, "Right", function(c) c:relative_move( 10,   0,   0, 0) end),
-	awful.key({ modkey, "Shift" }, "Down",  function(c) c:relative_move(0, 0,   0,  10) end),
-	awful.key({ modkey, "Shift" }, "Up",    function(c) c:relative_move(0, 0,   0, -10) end),
-	awful.key({ modkey, "Shift" }, "Left",  function(c) c:relative_move(0, 0, -10,   0) end),
-	awful.key({ modkey, "Shift" }, "Right", function(c) c:relative_move(0, 0,  10,   0) end)
+	awful.key({ modkey }, "space", function(c)
+			c:swap(awful.client.getmaster())
+	end),
+	awful.key({ modkey }, "o", function(c) c:move_to_screen() end),
+	awful.key({ modkey }, "Down", function(c)
+			c:relative_move(0, 10, 0, 0)
+	end),
+	awful.key({ modkey }, "Up", function(c)
+			c:relative_move(0, -10, 0, 0)
+	end),
+	awful.key({ modkey }, "Left", function(c)
+			c:relative_move(-10, 0, 0, 0)
+	end),
+	awful.key({ modkey }, "Right", function(c)
+			c:relative_move(10, 0, 0, 0)
+	end),
+	awful.key({ modkey, "Shift" }, "Down", function(c)
+			c:relative_move(0, 0, 0, 10)
+	end),
+	awful.key({ modkey, "Shift" }, "Up", function(c)
+			c:relative_move(0, 0, 0, -10)
+	end),
+	awful.key({ modkey, "Shift" }, "Left", function(c)
+			c:relative_move(0, 0, -10, 0)
+	end),
+	awful.key({ modkey, "Shift" }, "Right", function(c)
+			c:relative_move(0, 0, 10, 0)
+	end)
 )
 
 -- Bind Keybindings to Tags
 for i = 1, 5 do
-    globalkeys = gears.table.join(globalkeys,
-        -- View tag only.
-        awful.key({ modkey }, "#" .. i + 9,
-                  function ()
-					  local tag = awful.screen.focused().tags[i]
-					  if tag then tag:view_only() end
-                  end),
-        -- Toggle tag display.
-        awful.key({ modkey, "Control" }, "#" .. i + 9,
-                  function ()
-                      local tag = awful.screen.focused().tags[i]
-                      if tag then awful.tag.viewtoggle(tag) end
-                  end),
-        -- Move client to tag.
-        awful.key({ modkey, "Shift" }, "#" .. i + 9,
-                  function ()
-                      if client.focus then
-                          local tag = client.focus.screen.tags[i]
-                          if tag then client.focus:move_to_tag(tag) end
-					  end
-                  end)
-    )
+	globalkeys = gears.table.join(
+		globalkeys,
+		-- View tag only.
+		awful.key({ modkey }, "#" .. i + 9, function()
+				local tag = awful.screen.focused().tags[i]
+				if tag then tag:view_only() end
+		end),
+		-- Toggle tag display.
+		awful.key({ modkey, "Control" }, "#" .. i + 9, function()
+				local tag = awful.screen.focused().tags[i]
+				if tag then awful.tag.viewtoggle(tag) end
+		end),
+		-- Move client to tag.
+		awful.key(
+			{ modkey, "Shift" }, "#" .. i + 9, function()
+				if not client.focus then return end
+				local tag = client.focus.screen.tags[i]
+				if tag then client.focus:move_to_tag(tag) end
+			end
+		)
+	)
 end
 root.keys(globalkeys)
 
@@ -1471,18 +1585,19 @@ awful.layout.layouts = { -- For layouts
 }
 
 awful.rules.rules = { -- Rules
-	{ rule = {},
-	  properties = {
-		  border_width = beautiful.border_width,
-		  border_color = beautiful.border_normal,
-		  size_hints_honor = false,
-		  focus = awful.client.focus.filter,
-		  raise = true,
-		  keys = clientkeys,
-		  buttons = clientbuttons,
-		  screen = awful.screen.preferred,
-		  placement = awful.placement.no_overlap+awful.placement.no_offscreen
-	  }
+	{
+		rule = {},
+		properties = {
+			border_width = beautiful.border_width,
+			border_color = beautiful.border_normal,
+			size_hints_honor = false,
+			focus = awful.client.focus.filter,
+			raise = true,
+			keys = clientkeys,
+			buttons = clientbuttons,
+			screen = awful.screen.preferred,
+			placement = awful.placement.no_overlap+awful.placement.no_offscreen
+		}
 	}
 }
 
@@ -1493,91 +1608,81 @@ clientbuttons = gears.table.join(
 	awful.button({ }, 1, function (c)
 			c:emit_signal("request::activate", "mouse_click", {raise = true})
 	end),
-    awful.button({ modkey }, 1, function (c)
+	awful.button({ modkey }, 1, function (c)
 			c:emit_signal("request::activate", "mouse_click", {raise = true})
 			awful.mouse.client.move(c)
-    end),
-    awful.button({ modkey }, 3, function (c)
-        c:emit_signal("request::activate", "mouse_click", {raise = true})
-        awful.mouse.client.resize(c)
-    end)
+	end),
+	awful.button({ modkey }, 3, function (c)
+			c:emit_signal("request::activate", "mouse_click", {raise = true})
+			awful.mouse.client.resize(c)
+	end)
 )
 
 
 
 -- Signals --
-awful.screen.connect_for_each_screen(
--- Run function for every screen
-function(s)
-	set_wallpaper(s)
-	awful.tag(
-		{"1", "2", "3", "4", "5"},
-		s,
-		awful.layout.layouts[1]
-	)
+awful.screen.connect_for_each_screen(function(s)
+		set_wallpaper(s)
+		awful.tag({"1", "2", "3", "4", "5"}, s, awful.layout.layouts[1])
 
-
-	-- Create a taglist widget
-	s.taglist = awful.widget.taglist {
-		screen  = s,
-		filter  = awful.widget.taglist.filter.all,
-		layout  = {
-			spacing = 2,
-			layout  = wibox.layout.fixed.horizontal
-		},
-		widget_template = {
-			{
+		-- Create a taglist widget
+		s.taglist = awful.widget.taglist {
+			screen  = s,
+			filter  = awful.widget.taglist.filter.all,
+			layout  = { spacing = 2, layout  = wibox.layout.fixed.horizontal },
+			widget_template = {
 				{
 					{
 						{
 							{
-								markup = " ",
-								widget = wibox.widget.textbox,
+								{
+									markup = " ",
+									widget = wibox.widget.textbox,
+								},
+								margins = 3,
+								widget  = wibox.container.margin,
 							},
-							margins = 3,
-							widget  = wibox.container.margin,
+							shape              = gears.shape.circle,
+							shape_border_width = 2,
+							widget             = wibox.container.background,
+							id                 = "icon"
 						},
-						shape              = gears.shape.circle,
-						shape_border_width = 2,
-						widget             = wibox.container.background,
-						id                 = "icon"
+						layout = wibox.layout.fixed.horizontal,
 					},
-					layout = wibox.layout.fixed.horizontal,
+					left   = 7,
+					right  = 7,
+					widget = wibox.container.margin,
 				},
-				left   = 7,
-				right  = 7,
-				widget = wibox.container.margin,
-			},
-			id     = 'background_role',
-			widget = wibox.container.background,
-			create_callback = function(self, t, index, objects)
-				self.update_callback(self, t, index, objects)
-			end,
+				id     = 'background_role',
+				widget = wibox.container.background,
+				create_callback = function(self, t, index, objects)
+					self:update_callback(t, index, objects)
+				end,
 
-			update_callback = function(self, t, index, objects)
-				if t.selected then
-					self:get_children_by_id("icon")[1].shape_border_color = beautiful.wibar_selected_tag
-				else
-					self:get_children_by_id("icon")[1].shape_border_color = beautiful.wibar_unselected_tag
-				end
-
-				if not next(t:clients()) then
-					self:get_children_by_id("icon")[1].bg = beautiful.wibar_bg
-				else
-					self:get_children_by_id("icon")[1].bg = self:get_children_by_id("icon")[1].shape_border_color
-				end
-			end
-		},
-		buttons = gears.table.join(
-			awful.button({}, 1, function(t) t:view_only() end),
-			awful.button({}, 3, function(t)
-					if client.focus then
-						client.focus:move_to_tag(t)
+				update_callback = function(self, t, index, objects)
+					local icon = self:get_children_by_id("icon")[1]
+					if t.selected then
+						icon.shape_border_color = beautiful.wibar_selected_tag
+					else
+						icon.shape_border_color = beautiful.wibar_unselected_tag
 					end
-			end),
-			awful.button({}, 4, function(t) awful.tag.viewprev(t.screen) end),
-			awful.button({}, 5, function(t) awful.tag.viewnext(t.screen) end)
-		)
+
+					if not next(t:clients()) then
+						icon.bg = beautiful.wibar_bg
+					else
+						icon.bg = self:get_children_by_id("icon")[1].shape_border_color
+					end
+				end
+			},
+			buttons = gears.table.join(
+				awful.button({}, 1, function(t) t:view_only() end),
+				awful.button({}, 3, function(t)
+						local c = client.focus
+						if c then c:move_to_tag(t) end
+				end),
+				awful.button({}, 4, function(t)awful.tag.viewprev(t.screen)end),
+				awful.button({}, 5, function(t)awful.tag.viewnext(t.screen)end)
+			)
 	}
 
 	s.tasklist = awful.widget.tasklist { -- Tasklist Widget
@@ -1592,7 +1697,7 @@ function(s)
 						c:emit_signal(
 							"request::activate",
 							"tasklist",
-							{raise = true}
+							{ raise = true }
 						)
 					end
 			end),
@@ -1635,6 +1740,7 @@ function(s)
 		layout = wibox.layout.align.horizontal,
 		expand = "none",
 		{ -- Left Widgets
+			widgets.center.wibar,
 			s.taglist,
 			widgets.layout,
 			layout = wibox.layout.fixed.horizontal
@@ -1658,129 +1764,147 @@ end)
 -- Re-set wallpaper when a screen's geometry changes (e.g. different resolution)
 screen.connect_signal("property::geometry", set_wallpaper)
 
-client.connect_signal("manage",
-function(c)
--- Set the windows at the slave,
--- i.e. put it at the end of others instead of setting
--- it master. If not awesome.startup then
--- awful.client.setslave(c) end
-	if awesome.startup
-		and not c.size_hints.user_position
-		and not c.size_hints.program_position then
-		-- Prevent clients from being unreachable after
-		-- screen count changes.
-		awful.placement.no_offscreen(c)
+client.connect_signal(
+	"manage",
+	function(c)
+		-- Set the windows at the slave,
+		-- i.e. put it at the end of others instead of setting
+		-- it master. If not awesome.startup then
+		-- awful.client.setslave(c) end
+		if awesome.startup then
+			-- Prevent clients from being unreachable after
+			-- screen count changes.
+			if c.size_hints.user_position then return end
+			if c.size_hints.program_position then return end
+			awful.placement.no_offscreen(c)
+		end
 	end
-end)
+)
 
-client.connect_signal("request::titlebars",
-function(c)
-	-- Add a titlebar when requested (and when titlebars_enabled is true)
-	local buttons = gears.table.join(
-		awful.button({ }, 1, function()
-				c:emit_signal("request::activate", "titlebar", {raise = true})
-				awful.mouse.client.move(c)
-		end),
-		awful.button({ }, 3, function()
-				c:emit_signal("request::activate", "titlebar", {raise = true})
-				awful.mouse.client.resize(c)
-		end)
-	)
+client.connect_signal(
+	"request::titlebars",
+	function(c)
+		-- Add a titlebar when requested (and when titlebars_enabled is true)
+		local buttons = gears.table.join(
+			awful.button({ }, 1, function()
+					awful.mouse.client.move(c)
+					c:emit_signal(
+						"request::activate",
+						"titlebar",
+						{ raise = true })
+			end),
+			awful.button({ }, 3, function()
+					awful.mouse.client.resize(c)
+					c:emit_signal(
+						"request::activate",
+						"titlebar",
+						{ raise = true }
+					)
+			end)
+		)
 
-	local titlebar = awful.titlebar(c, {size = 30})
-	titlebar:setup{
-		{
-			buttons = buttons,
-			layout  = wibox.layout.fixed.horizontal
-		},
-		{
+		local titlebar = awful.titlebar(c, {size = 30})
+		titlebar:setup{
 			{
-				{ -- Title
-					{ widget = wibox.container.background },
-					opacity = 0.1,
-					bg = "#000000",
-					id = "line_color",
-					shape  = gears.shape.hexagon,
-					widget = wibox.container.background
-				},
 				buttons = buttons,
-				margins = 10,
-				widget  = wibox.container.margin,
+				layout  = wibox.layout.fixed.horizontal
 			},
 			{
-				{ -- Title
-					{ widget = wibox.container.background },
-					opacity = 0.1,
-					bg = "#000000",
-					id = "line_color",
-					shape  = gears.shape.hexagon,
-					widget = wibox.container.background
+				{
+					{ -- Title
+						{ widget = wibox.container.background },
+						opacity = 0.1,
+						bg = "#000000",
+						id = "line_color",
+						shape  = gears.shape.hexagon,
+						widget = wibox.container.background
+					},
+					buttons = buttons,
+					margins = 10,
+					widget  = wibox.container.margin,
 				},
-				buttons = buttons,
+				{
+					{ -- Title
+						{ widget = wibox.container.background },
+						opacity = 0.1,
+						bg = "#000000",
+						id = "line_color",
+						shape  = gears.shape.hexagon,
+						widget = wibox.container.background
+					},
+					buttons = buttons,
+					margins = 10,
+					widget  = wibox.container.margin,
+				},
 				margins = 10,
-				widget  = wibox.container.margin,
+				widget = wibox.container.margin,
+				layout = wibox.layout.flex.horizontal
 			},
-			margins = 10,
-			widget = wibox.container.margin,
-			layout = wibox.layout.flex.horizontal
-		},
-		{ -- Right
-			awful.titlebar.widget.minimizebutton(c),
-			awful.titlebar.widget.maximizedbutton(c),
-			awful.titlebar.widget.closebutton(c),
-			layout = wibox.layout.fixed.horizontal
-		},
-		layout = wibox.layout.align.horizontal}
-end)
+			{ -- Right
+				awful.titlebar.widget.minimizebutton(c),
+				awful.titlebar.widget.maximizedbutton(c),
+				awful.titlebar.widget.closebutton(c),
+				layout = wibox.layout.fixed.horizontal
+			},
+			layout = wibox.layout.align.horizontal}
+	end
+)
 
-client.connect_signal("focus",
-					  function(c) c.border_color = beautiful.border_focus end)
+client.connect_signal( -- Window border color when focused
+	"focus",
+	function(c)
+		c.border_color = beautiful.border_focus
+	end
+)
 
-client.connect_signal("unfocus",
-function(c) c.border_color = beautiful.border_normal end)
+client.connect_signal( -- Window border color when not focused
+	"unfocus",
+	function(c)
+		c.border_color = beautiful.border_normal
+	end
+)
 
-client.connect_signal("property::floating",
-function(c)
-	if c.floating then
-		awful.titlebar.show(c)
-	else
+client.connect_signal( -- Enable titlebars when floating
+	"property::floating",
+	function(c)
+		if c.floating then
+			awful.titlebar.show(c)
+			return
+		end
 		awful.titlebar.hide(c)
 	end
-end)
+)
 
-client.connect_signal("mouse::enter",
--- Enable sloppy focus, so that focus follows mouse.
-function(c)
-	c:emit_signal("request::activate", "mouse_enter", {raise = false})
-end)
-
-client.connect_signal("manage",
-function(c)
-	local layout = awful.screen.focused().selected_tag.layout
-	if c.floating or layout == awful.layout.suit.floating then
-		awful.titlebar.show(c)
-	else
-		awful.titlebar.hide(c)
+client.connect_signal( -- Enable sloppy focus (window focus follows mouse)
+	"mouse::enter",
+	function(c)
+		c:emit_signal(
+			"request::activate",
+			"mouse_enter",
+			{ raise = false }
+		)
 	end
+)
 
-	if layout == awful.layout.suit.max then
-		c.border_width = 0
-	end
+client.connect_signal(
+	"manage",
+	function(c)
+		local layout = awful.screen.focused().selected_tag.layout
+		if c.floating or layout == awful.layout.suit.floating then
+			awful.titlebar.show(c)
+		else
+			awful.titlebar.hide(c)
+		end
 
-	if not c.icon then
-		local icon = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
-		local cr = cairo.Context(icon)
-		cr:set_source(gears.color(beautiful.titlebar_bg_focus))
-		gears.shape.transform(gears.shape.rectangle):translate(5, 5)(cr, 10, 10)
-		cr:fill()
-		c.icon = icon
+		if layout == awful.layout.suit.max then
+			c.border_width = 0
+		end
 	end
-end)
+)
 
 
 -- Miscellaneous --
-gears.timer {
-	-- More frequent garbage collecting
+gears.timer { -- More frequent garbage collecting
 	timeout = 30,
 	autostart = true,
 	callback = collectgarbage
@@ -1789,7 +1913,6 @@ gears.timer {
 
 
 do  -- Commands to execute in startup
-
 	local cmds = {
 		"sct 6000K",
 		"xrandr --output DP-1 --mode 1280x1024 --scale 1.3x1.3",
@@ -1798,17 +1921,14 @@ do  -- Commands to execute in startup
 		"xset s off -dpms",
 		"pactl set-sink-volume @DEFAULT_SINK@ " .. widgets.volume.default,
 		"xrdb " .. home .. "/.config/X11/Xresources",
-		"picom"
 	}
 
-
 	for _, cmd in pairs(cmds) do
-		local str = cmd:match("^[^ ]+")
-		if command_exists(str) then
+		local bin = cmd:match("^[^ ]+")
+		if command_exists(bin) then
 			awful.spawn(cmd)
 		else
-			local str = "[ERROR]: " .. str .. " is not installed"
-			naughty.notify {text = str}
+			naughty.notify { text = "[ERROR]: " .. bin .. " is not installed" }
 		end
 	end
 
@@ -1817,6 +1937,4 @@ do  -- Commands to execute in startup
 		"command -v pulseaudio &&" ..
 		"setsid --fork pulseaudio --start --exit-idle-time=-1"
 	)
-
-	set_layout_all(awful.layout.suit.tile.right)
 end
