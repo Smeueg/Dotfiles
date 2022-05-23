@@ -60,24 +60,24 @@ local themes = {
 		["focus2"]    = "yellow",
 		["icon_color"] = "bg_light"
 	},
-	["Everblush"] = {
-		["wallpaper"]  = "#181f21",
-		["yellow"]     = "#e5c76b",
-		["red"]        = "#e06e6e",
-		["green"]      = "#8ccf7e",
-		["cyan"]       = "#6cd0ca",
+	["Gruvbox"] = {
+		["wallpaper"]  = "#282828",
+		["yellow"]     = "#fabd2f",
+		["red"]        = "#FE8019",
+		["green"]      = "#B8BB26",
+		["cyan"]       = "#8EC07C",
 		["bg_dark"]    = "#00000030",
-		["bg"]         = "#22292B",
-		["bg_light"]   = "#262D2F",
-		["fg"]         = "#DADADA",
-		["fg2"]        = "#353F42",
+		["bg"]         = "#32302f",
+		["bg_light"]   = "#3c3836",
+		["fg"]         = "#EBDBB2",
+		["fg2"]        = "#504945",
 		["font"]       = "JetBrainsMono Nerd Font Mono 11",
-		["focus"]      = "green",
-		["focus2"]     = "green",
+		["focus"]      = "red",
+		["focus2"]     = "yellow",
 		["icon_color"] = "bg_light"
 	}
 }
-local theme = themes["Everblush"]
+local theme = themes["Gruvbox"]
 theme["icon_color"] = theme[theme["icon_color"]]
 theme["focus2"] = theme[theme["focus2"]]
 theme["focus"] = theme[theme["focus"]]
@@ -1407,7 +1407,11 @@ widgets.center = {
 		gears.shape.transform(gears.shape.rectangle):translate(2, 9)(cr, 20, 3)
 		cr:fill()
 
+		local buttons = gears.table.join(
+			awful.button({}, 1, function() self:toggle() end)
+		)
 		self.wibar:get_children_by_id("icon")[1].image = icon
+		self.wibar:get_children_by_id("icon")[1]:buttons(buttons)
 	end
 }
 

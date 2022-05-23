@@ -89,9 +89,9 @@
 
 ;; Custom theme
 (set-frame-font "JetBrainsMono Nerd Font Mono 12")
-(setq-default chosen-theme 'Everblush)
-(when (member chosen-theme (custom-available-themes))
-  (load-theme chosen-theme 1))
+;; (setq-default chosen-theme 'Smeueg)
+;; (when (member chosen-theme (custom-available-themes))
+;;   (load-theme chosen-theme 1))
 
 ;; Modes
 (menu-bar-mode 0)           ;; Disable menu bar
@@ -617,7 +617,6 @@ vim manages it's splits and tabs"
   :ensure t
   :init (global-aggressive-indent-mode 1))
 
-
 (use-package rainbow-mode
   ;; Hex coloring
   :ensure t
@@ -721,6 +720,111 @@ vim manages it's splits and tabs"
 (use-package avy
   :ensure t
   :commands avy-goto-char)
+
+(use-package gruvbox-theme
+  :ensure t
+  :config
+  (load-theme 'gruvbox-dark-soft)
+
+  (set-face-attribute 'splash-text-special nil :foreground
+                      (face-attribute 'font-lock-builtin-face :foreground))
+
+
+  (set-face-attribute 'internal-border nil :background
+                      (face-attribute 'default :background))
+
+  (set-face-attribute 'mode-line nil
+                      :background
+                      (face-attribute 'mode-line-inactive :background)
+                      :foreground (face-attribute 'mode-line :background)
+                      :weight 'bold
+                      :box
+                      `(:line-width 7 :color
+                                    ,(face-attribute 'mode-line-inactive
+                                                     :background)))
+
+  (set-face-attribute 'mode-line-inactive nil
+                      :background (face-attribute 'default :background)
+                      :foreground (face-attribute 'default :foreground)
+                      :weight (face-attribute 'mode-line :weight)
+                      :box
+                      (face-attribute 'mode-line :box))
+
+  (set-face-attribute 'ml/normal-face nil
+                      :background (face-attribute 'default :foreground)
+                      :foreground (face-attribute 'default :background)
+                      :weight (face-attribute 'mode-line :weight)
+                      :box (face-attribute 'mode-line :box))
+
+  (set-face-attribute 'ml/read-only-face nil
+                      :background
+                      (face-attribute 'font-lock-keyword-face :foreground)
+                      :foreground (face-attribute 'default :background)
+                      :weight (face-attribute 'mode-line :weight)
+                      :box (face-attribute 'mode-line :box))
+
+  (set-face-attribute 'ml/modified-face nil
+                      :background
+                      (face-attribute 'font-lock-builtin-face :foreground)
+                      :foreground (face-attribute 'default :background)
+                      :weight (face-attribute 'mode-line :weight)
+                      :box (face-attribute 'mode-line :box))
+  (set-face-attribute 'vertico-current nil
+                      :background (face-attribute 'mode-line :background))
+
+  (add-hook 'bongo-mode-hook
+            (lambda ()
+              (set-face-attribute 'bongo-track-title nil
+                                  :weight 'bold
+                                  :foreground
+                                  (face-attribute 'font-lock-builtin-face
+                                                  :foreground))))
+
+  (add-hook 'eterm-256color-mode-hook
+            (lambda ()
+              (set-face-attribute 'eterm-256color-black nil :foreground
+                                  (face-attribute 'term-color-black
+                                                  :background))
+              (set-face-attribute 'eterm-256color-red nil :foreground
+                                  (face-attribute 'term-color-red :foreground))
+              (set-face-attribute 'eterm-256color-green nil :foreground
+                                  (face-attribute 'term-color-green
+                                                  :foreground))
+              (set-face-attribute 'eterm-256color-yellow nil :foreground
+                                  (face-attribute 'term-color-yellow
+                                                  :foreground))
+              (set-face-attribute 'eterm-256color-blue nil :foreground
+                                  (face-attribute 'term-color-blue :foreground))
+              (set-face-attribute 'eterm-256color-magenta nil :foreground
+                                  (face-attribute 'term-color-magenta
+                                                  :foreground))
+              (set-face-attribute 'eterm-256color-cyan nil :foreground
+                                  (face-attribute 'term-color-cyan :foreground))
+              (set-face-attribute 'eterm-256color-white nil :foreground
+                                  (face-attribute 'default :foreground))
+              (set-face-attribute 'eterm-256color-bright-black nil :foreground
+                                  (face-attribute 'eterm-256color-black
+                                                  :foreground))
+              (set-face-attribute 'eterm-256color-bright-red nil :foreground
+                                  (face-attribute 'eterm-256color-red
+                                                  :foreground))
+              (set-face-attribute 'eterm-256color-bright-green nil :foreground
+                                  (face-attribute 'eterm-256color-green
+                                                  :foreground))
+              (set-face-attribute 'eterm-256color-bright-yellow nil :foreground
+                                  (face-attribute 'font-lock-builtin-face :foreground))
+              (set-face-attribute 'eterm-256color-bright-blue nil :foreground
+                                  (face-attribute 'eterm-256color-blue
+                                                  :foreground))
+              (set-face-attribute 'eterm-256color-bright-magenta nil :foreground
+                                  (face-attribute 'eterm-256color-magenta
+                                                  :foreground))
+              (set-face-attribute 'eterm-256color-bright-cyan nil :foreground
+                                  (face-attribute 'eterm-256color-cyan
+                                                  :foreground))
+              (set-face-attribute 'eterm-256color-bright-white nil :foreground
+                                  (face-attribute 'eterm-256color-white
+                                                  :foreground)))))
 
 ;; "Programming" Packages ;;
 (use-package format-all
