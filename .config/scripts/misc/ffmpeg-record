@@ -1,0 +1,72 @@
+#!/bin/sh
+# ------------------------------------------------
+# Script Name    - ffmpeg-record
+# Author Name    - Smeueg
+# Author Email   - Smeueg@gmail.com
+# Author Gitlab  - https://gitlab.com/Smeueg
+# Last Updated   - Thu 26 May 2022
+# ------------------------------------------------
+# A script to record desktop screen and desktop audio when specified using
+# 'ffmpeg' and Pulseaudio
+
+error() {
+	printf "[\033[1;31mERROR\033[0m]: %s\n" "${1}" >&2
+	exit 1
+}
+
+# Argument handling
+audio=false
+while [ "${1}" ]; do
+	case ${1} in
+		-a|--audio) audio=true ;;
+		-*) error "Unknown option '${1}'" ;;
+		*) [ "${file+x}" ] && error "Multiple filenames provided, please only provide one"
+		   file=${1}
+		   ;;
+	esac
+	shift
+done
+[ "${file}" ] || error "Filename not provided, please provide one"
+
+
+# Dependency checking
+[ "$(pidof pulseaudio)" ] || error "Pulseaudio isn't running"
+for dep in "pactl" "ffmpeg"; do
+	[ "$(command -v ${dep})" ] && continue
+	error "Command '${dep}' not found"
+done
+
+
+# Get default pulse source
+source=$(
+	pactl info | {
+		while read line; do
+			[ "${line%%Default Source: *}" ] && continue
+			line=${line##Default Source: }
+			printf '%s' "${line}"
+			break
+		done
+	}
+)
+
+
+# ffmpeg command to record
+if ${audio}; then
+	ffmpeg \
+		-f x11grab \
+		-framerate 30 \
+		-i :0.0 \
+		-f pulse \
+		-i "${source}" \
+		-preset ultrafast \
+		-crf 18 \
+		-pix_fmt yuv420p "${1}"
+else
+	ffmpeg \
+		-f x11grab \
+		-framerate 30 \
+		-i :0.0 \
+		-preset ultrafast \
+		-crf 18 \
+		-pix_fmt yuv420p "${1}"
+fi

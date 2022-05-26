@@ -1,0 +1,46 @@
+/*
+	Gruvbox's custom rofi theme. Basically copied from the grubox-dark-soft
+	theme that's included with rofi.
+*/
+
+@import "gruvbox-common.rasi"
+
+* {
+    /* Theme settings */
+	scrollbar: true;
+	font: "JetBrainsMono Nerd Font Mono 12";
+
+	/*  Colors */
+	gruvbox-bg:       #32302f;
+    gruvbox-bg-light: #3c3836;
+    gruvbox-fg:       #EBDBB2;
+    gruvbox-red:      #FE8019;
+    gruvbox-yellow:   #FABD2F;
+
+    /* Theme colors */
+    background:                  @gruvbox-bg;
+    background-color:            @background;
+    foreground:                  @gruvbox-fg;
+    border-color:                @gruvbox-red;
+    separatorcolor:              @border-color;
+    scrollbar-handle:            @border-color;
+
+    normal-background:           @background;
+    normal-foreground:           @foreground;
+    alternate-normal-background: @background;
+    alternate-normal-foreground: @foreground;
+
+    normal-background:           @background;
+    normal-foreground:           @foreground;
+    selected-normal-background:  @gruvbox-bg-light;
+    selected-normal-foreground:  @gruvbox-yellow;
+}
+
+element { padding: 6; }
+
+
+window {
+    background-color: @background;
+    border:  4;
+    padding: 20;
+}
