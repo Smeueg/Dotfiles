@@ -1,0 +1,80 @@
+#!/bin/sh
+# ------------------------------------------------
+# Script Name    - install-grapejuice
+# Author Name    - Smeueg
+# Author Email   - Smeueg@gmail.com
+# Author Gitlab  - https://gitlab.com/Smeueg
+# Last Updated   - Fri 27 May 2022
+# ------------------------------------------------
+# A script to automatically install grapejuice, a wrapper around wine to install
+# run Roblox on Linux.
+#
+
+error() {
+	printf "\033[1;31m::\033[0m %s\n" "${1}" >&2
+	exit 1
+}
+
+notice() {
+	printf "\033[1;32m::\033[0m %s\n" "${1}"
+}
+
+prompt() {
+	printf "%s [Y/n] " "${1}"
+	read reply
+	case ${reply} in
+		[Yy][Ee][Ss]|[Yy]|"") return 0 ;;
+	esac
+	return 1
+}
+
+
+if [ "$(command -v curl)" ]; then
+	get() { curl -L "${1}" -o -; }
+elif [ "$(command -v wget)" ]; then
+	get() { wget "${1}" -O-; }
+else
+	error "Command 'curl' and 'wget' isn't installed. Please install one of them"
+fi
+
+
+if [ "$(command -v apt)" ]; then
+	[ "$(command -v python3)" ] || error "python3 isn't installed"
+
+	# Add i386 architecture if it wasn't already added
+	add_arch=true
+	for arch in $(dpkg --print-foreign-architectures); do
+		[ "${arch}" = "i386" ] || continue
+		add_arch=false
+	done
+	if ${add_arch}; then
+		notice "Adding 32bit suppport"
+		if sudo dpkg --add-architecture i386; then
+			notice "Successfully added 32bit support"
+		else
+			error "Failed to add 32bit support"
+		fi
+	fi
+
+	# Add Grapejuice's keyring
+	key_url="https://gitlab.com/brinkervii/grapejuice/-/raw/master/ci_scripts/signing_keys/public_key.gpg"
+	key_location="/usr/share/keyrings/grapejuice-archive-keyring.gpg"
+	notice "Adding Grapejuice's keyring"
+	if get "${key_url}" | sudo tee "${key_location}" > /dev/null; then
+		notice "Successfully added keyring"
+	else
+		error "Failed to add keyring"
+	fi
+
+	# Add Grapejuice's repository
+	notice "Adding Grapejuice's repository"
+	printf 'deb [signed-by=/usr/share/keyrings/grapejuice-archive-keyring.gpg] https://brinkervii.gitlab.io/grapejuice/repositories/debian/ universal main\n' |
+		sudo tee /etc/apt/sources.list.d/grapejuice.list > /dev/null &&
+		notice "Successfully added repository" || error "Failed to add repository"
+
+	prompt "Automatically update repository list and install 'wine' and 'grapejuice'?" &&
+		sudo apt update && sudo apt install wine grapejuice -y
+
+	notice "Installng patched 'wine'"
+	get https://pastebin.com/raw/5SeVb005 | python3
+fi
