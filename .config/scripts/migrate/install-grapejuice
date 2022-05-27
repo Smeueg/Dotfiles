@@ -77,4 +77,6 @@ if [ "$(command -v apt)" ]; then
 
 	notice "Installng patched 'wine'"
 	get https://pastebin.com/raw/5SeVb005 | python3
+else
+	error "This script only works on distrobutions that use the 'apt' package manager"
 fi
