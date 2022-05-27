@@ -726,9 +726,11 @@ vim manages it's splits and tabs"
   :config
   (load-theme 'gruvbox-dark-soft)
 
-  (set-face-attribute 'splash-text-special nil :foreground
-                      (face-attribute 'font-lock-builtin-face :foreground))
-
+  (set-face-attribute 'splash-text-special nil
+                      :weight 'bold
+                      :foreground
+                      (face-attribute 'font-lock-function-name-face
+                                      :foreground))
 
   (set-face-attribute 'internal-border nil :background
                       (face-attribute 'default :background))
@@ -742,38 +744,82 @@ vim manages it's splits and tabs"
                       `(:line-width 7 :color
                                     ,(face-attribute 'mode-line-inactive
                                                      :background)))
-
   (set-face-attribute 'mode-line-inactive nil
                       :background (face-attribute 'default :background)
-                      :foreground (face-attribute 'default :foreground)
+                      :foreground (face-attribute 'mode-line :foreground)
                       :weight (face-attribute 'mode-line :weight)
                       :box
                       (face-attribute 'mode-line :box))
 
   (set-face-attribute 'ml/normal-face nil
-                      :background (face-attribute 'default :foreground)
-                      :foreground (face-attribute 'default :background)
+                      :overline t
+                      :foreground (face-attribute 'mode-line :foreground)
                       :weight (face-attribute 'mode-line :weight)
                       :box (face-attribute 'mode-line :box))
 
   (set-face-attribute 'ml/read-only-face nil
-                      :background
+                      :overline
                       (face-attribute 'font-lock-keyword-face :foreground)
-                      :foreground (face-attribute 'default :background)
+                      :foreground (face-attribute 'mode-line :foreground)
                       :weight (face-attribute 'mode-line :weight)
                       :box (face-attribute 'mode-line :box))
 
   (set-face-attribute 'ml/modified-face nil
-                      :background
+                      :overline
                       (face-attribute 'font-lock-builtin-face :foreground)
-                      :foreground (face-attribute 'default :background)
+                      :foreground (face-attribute 'mode-line :foreground)
                       :weight (face-attribute 'mode-line :weight)
                       :box (face-attribute 'mode-line :box))
-  (set-face-attribute 'vertico-current nil
-                      :background (face-attribute 'mode-line :background))
+
+  (set-face-attribute 'tab-bar nil
+                      :foreground (face-attribute 'default :background)
+                      :background (face-attribute 'default :background))
+
+  (set-face-attribute 'tab-bar-tab nil
+                      :weight 'bold
+                      :background (face-attribute 'mode-line :foreground)
+                      :foreground (face-attribute 'font-lock-function-name-face
+                                                  :foreground)
+                      :box
+                      `(:line-width 5 :color ,(face-attribute 'mode-line
+                                                              :foreground)))
+
+  (set-face-attribute 'tab-bar-tab-inactive nil
+                      :weight 'bold
+                      :foreground (face-attribute 'mode-line :foreground)
+                      :background (face-attribute 'mode-line :background)
+                      :box
+                      `(:line-width 5 :color ,(face-attribute 'mode-line
+                                                              :background)))
+
+  (set-face-attribute 'line-number nil
+                      :background (face-attribute 'default :background))
+
+  (set-face-attribute 'line-number-current-line nil
+                      :weight 'bold
+                      :background (face-attribute 'default :background))
+
+  (add-hook 'vertico-mode-hook
+            (lambda ()
+              (set-face-attribute 'vertico-current nil
+                                  :background
+                                  (face-attribute 'mode-line :background))))
 
   (add-hook 'bongo-mode-hook
             (lambda ()
+              (set-face-attribute 'bongo-artist nil
+                                  :weight 'bold
+                                  :foreground
+                                  (face-attribute 'font-lock-comment-face
+                                                  :foreground))
+
+              (set-face-attribute 'bongo-album-title nil
+                                  :weight 'bold
+                                  :foreground
+                                  (face-attribute 'font-lock-function-name-face
+                                                  :foreground
+                                                  ))
+
               (set-face-attribute 'bongo-track-title nil
                                   :weight 'bold
                                   :foreground
@@ -812,7 +858,8 @@ vim manages it's splits and tabs"
                                   (face-attribute 'eterm-256color-green
                                                   :foreground))
               (set-face-attribute 'eterm-256color-bright-yellow nil :foreground
-                                  (face-attribute 'font-lock-builtin-face :foreground))
+                                  (face-attribute 'font-lock-builtin-face
+                                                  :foreground))
               (set-face-attribute 'eterm-256color-bright-blue nil :foreground
                                   (face-attribute 'eterm-256color-blue
                                                   :foreground))

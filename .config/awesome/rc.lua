@@ -62,7 +62,7 @@ local themes = {
 	},
 	["Gruvbox"] = {
 		["wallpaper"]  = "#282828",
-		["yellow"]     = "#fabd2f",
+		["yellow"]     = "#FABD2F",
 		["red"]        = "#FE8019",
 		["green"]      = "#B8BB26",
 		["cyan"]       = "#8EC07C",
@@ -503,67 +503,6 @@ local function toggle_popup(arg)
 end
 
 
-local function screenshot()
-	local screenshot, whole, region, file, msg
-
-	file = screenshot_dir .. os.date("%Y-%m-%d-%H:%M:%S") .. ".png"
-	msg = {
-		title = "Took a Screenshot",
-		text  = "In " .. file
-	}
-
-
-	if command_exists("import") then
-		screenshot = {
-			whole = "import -window root ",
-			region = "import "
-		}
-	elseif command_exists("scrot") then
-		screenshot = {
-			whole = "scrot -fs ",
-			region = "scrot "
-		}
-	end
-
-	if screenshot then
-		whole = function()
-			awful.spawn.easy_async(
-				screenshot.whole .. file,
-				function(stdout, stderr, reason, exit_code)
-					if exit_code == 0 then naughty.notify(msg) end
-				end
-			)
-		end
-		region = function()
-			awful.spawn.easy_async(
-				screenshot.region .. file,
-				function(stdout, stderr, reason, exit_code)
-					if exit_code == 0 then naughty.notify(msg) end
-				end
-			)
-		end
-	else
-		local f = function()
-			naughty.notify {
-				title = "No Screenshot Tool Found",
-				text = "Supported tools are: " ..
-					"'import' from imagemagick and 'scrot'"
-			}
-		end
-		whole = f
-		region = f
-	end
-
-	toggle_popup {
-		{text = "Whole Screen", func = whole},
-		{text = "Region", func = region},
-		orientation = "vertical",
-		cancel = true
-	}
-end
-
-
-
 -- Custom Widgets --
 widgets = {}
 
@@ -634,19 +573,21 @@ widgets.layout = wibox.widget {
 		transform(gears.shape.rectangle):translate(4.5, 4.5)(cr, 11, 11)
 		cr:fill()
 
-		tag.connect_signal(
-			"property::layout",
-			function(t)
-				local layout = awful.layout.suit
-				local icon = self.icon
-				if t.layout == layout.tile.right then
-					self:get_children_by_id("icon")[1].image = icon.tile
-				elseif t.layout == layout.max then
-					self:get_children_by_id("icon")[1].image = icon.max
-				elseif t.layout == layout.floating then
-					self:get_children_by_id("icon")[1].image = icon.floating
-				end
-		end)
+		local update = function()
+			local l = root.tags()[1].layout
+			local layout = awful.layout.suit
+			local icon = self.icon
+			if l == layout.tile.right then
+				self:get_children_by_id("icon")[1].image = icon.tile
+			elseif l == layout.max then
+				self:get_children_by_id("icon")[1].image = icon.max
+			elseif l == layout.floating then
+				self:get_children_by_id("icon")[1].image = icon.floating
+			end
+		end
+
+		self:get_children_by_id("icon")[1].image = self.icon.tile
+		tag.connect_signal("property::layout", update)
 	end,
 	switch = function(self)
 		local w_root = self
@@ -1094,7 +1035,7 @@ widgets.network = wibox.widget {
 	end
 }
 
-widgets.center = {
+widgets.dashboard = {
 	wibar = wibox.widget {
 		widget  = wibox.container.margin,
 		margins = 7,
@@ -1153,7 +1094,6 @@ widgets.center = {
 				local rows, cols = self:get_dimension()
 				self:remove_widgets_at(1, 1, rows, cols)
 
-
 				local add = function(label, value)
 					self:add(
 							wibox.widget {
@@ -1174,32 +1114,48 @@ widgets.center = {
 						)
 				end
 
-				-- Resolution
-				local g = awful.screen.focused().geometry
-				add("Resolution", g.width .. "x" .. g.height)
-
+				do -- Resolution
+					local resolution = awful.screen.focused().geometry
+					add(
+						"Resolution",
+						resolution.width .. "x" .. resolution.height
+					)
+				end
 				-- Uptime
-				local f      = io.open("/proc/uptime", "r")
-				local uptime = f:read("*l"):match("^(%d*)."); f:close()
-				local hour   = math.floor(uptime / 3600)
-				local minute = (math.floor(uptime / 60) - hour * 60)
-				add("Uptime", hour .. " hours, " .. minute .. " minutes")
-
+				if gears.filesystem.file_readable("/proc/uptime") then
+					local f      = io.open("/proc/uptime", "r")
+					local uptime = f:read("*l"):match("^(%d*)."); f:close()
+					local hour   = math.floor(uptime / 3600)
+					local minute = (math.floor(uptime / 60) - hour * 60)
+					add("Uptime", hour .. " hours, " .. minute .. " minutes")
+				end
 				-- Memory
-				local mem = io.open("/proc/meminfo", "r")
-				local total = mem:read("*l"); mem:read("*l")
-				local used  = mem:read("*l"); mem:close()
-				total = tonumber(total:match("%d+")) / 1e6
-				used  = total - tonumber(used:match("%d+")) / 1e6
-				add("RAM", string.format("%.1fGB / %.1fGB", used, total))
+				if gears.filesystem.file_readable("/proc/meminfo") then
+					local f = io.open("/proc/meminfo", "r")
+					local total = f:read("*l"); f:read("*l")
+					local used  = f:read("*l")
+					f:close()
+					total = tonumber(total:match("%d+")) / 1e6
+					used  = total - tonumber(used:match("%d+")) / 1e6
+					add("RAM", string.format("%.1fGB / %.1fGB", used, total))
+				end
 
-				-- OS
-				local f = io.open("/etc/os-release", "r")
-				add("OS", f:read("*l"):match("\"(.*)\""))
-				f:close()
+				if gears.filesystem.file_readable("/etc/os-release") then
+					local f = io.open("/etc/os-release", "r")
+					add("OS", f:read("*l"):match("\"(.*)\""))
+					f:close()
+				end
+
+				if gears.filesystem.file_readable("/proc/version") then
+					local f = io.open("/proc/version")
+					add("Kernel", f:read("*l"):match("^%w* %w* ([^ ]*)"))
+					f:close()
+				end
 			end
 		},
 		power = {
+			widget = wibox.container.place,
+			id     = "widget",
 			{
 				widget = wibox.container.background,
 				{
@@ -1207,8 +1163,6 @@ widgets.center = {
 					text = "foo"
 				}
 			},
-			widget = wibox.container.place,
-			id     = "widget",
 			create = function(self)
 				local surface_create = cairo.ImageSurface.create
 				local transform = gears.shape.transform
@@ -1310,7 +1264,6 @@ widgets.center = {
 			color         = "#ffffff07",
 		}
 
-
 		-- Create widgets
 		for _, w in pairs(self.widgets) do
 			if w.create then w:create() end
@@ -1323,19 +1276,19 @@ widgets.center = {
 			border_color = beautiful.border_focus,
 			border_width = 4,
 			widget = {
+				widget = wibox.container.margin,
+				margins = 50,
 				{
+					forced_num_cols = 1,
+					expand          = true,
+					widget = wibox.container.background,
+					layout = wibox.layout.grid,
 					self.widgets.name,
 					separator,
 					self.widgets.info,
 					separator,
-					self.widgets.power,
-					widget = wibox.container.background,
-					layout = wibox.layout.grid,
-					forced_num_cols = 1,
-					expand          = true
-				},
-				widget = wibox.container.margin,
-				margins = 50
+					self.widgets.power
+				}
 			}
 		}
 
@@ -1358,7 +1311,7 @@ widgets.center = {
 
 		-- Keyboard Controls for buttons
 		self.keygrabber = awful.keygrabber {
-			autostart  = true,
+			autostart   = true,
 			keybindings = {
 				{{ modkey },    "q",      function() self:toggle()      end},
 				{{ "Control" }, "g",      function() self:toggle()      end},
@@ -1375,6 +1328,7 @@ widgets.center = {
 				{{ }, "Left",             function() self:select_prev() end}
 			}
 		}
+
 		self.chosen = 1
 		self:update()
 	end,
@@ -1402,9 +1356,10 @@ widgets.center = {
 		local icon = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
 		local cr = cairo.Context(icon)
 
-		cr:set_source(gears.color(beautiful.wibar_selected_tag))
-		gears.shape.transform(gears.shape.rectangle):translate(5, 4)(cr, 12, 12)
-		gears.shape.transform(gears.shape.rectangle):translate(2, 9)(cr, 20, 3)
+		cr:set_source(gears.color(beautiful.wibar_unselected_tag))
+		gears.shape.transform(gears.shape.rectangle):translate(4, 3)(cr, 15, 3)
+		gears.shape.transform(gears.shape.rectangle):translate(4, 9)(cr, 15, 3)
+		gears.shape.transform(gears.shape.rectangle):translate(4, 15)(cr, 15, 3)
 		cr:fill()
 
 		local buttons = gears.table.join(
@@ -1416,13 +1371,155 @@ widgets.center = {
 }
 
 
+widgets.screenshot = {
+	screenshot = function(self, method)
+		local cmd = {}
+		local file = string.format(
+			"/tmp/Screenshot - %s.png",
+			os.date("%Y-%m-%d - %H:%M:%S")
+		)
+		if command_exists("scrot") then
+			cmd = {
+				["whole"] = "scrot",
+				["partial"] = "scrot -fs"
+			}
+		elseif command_exists("import") then
+			cmd = {
+				["whole"] = "import -window root",
+				["partial"] = "import"
+			}
+		else
+			naughty.notify {
+				title = "No Screenshot Tool Found",
+				text = "Supported tools are 'scrot' and 'import' from imagemagick"
+			}
+			return
+		end
+
+		awful.spawn.easy_async_with_shell(
+			string.format("sleep 0.05; %s '%s'", cmd[method], file),
+			function(stdout, stderr, reason, exit_code)
+				if exit_code ~= 0 then return end
+				naughty.notify {
+					title = "Took Screenshot",
+					text = "As " .. file
+				}
+			end
+		)
+	end,
+	update = function(self)
+		local widgets = self.popup.widget:get_children_by_id("bg")
+		for _, w in ipairs(widgets) do w.bg = nil end
+		if self.chosen > #widgets then self.chosen = #widgets end
+		if self.chosen < 1 then self.chosen = 1 end
+		widgets[self.chosen].bg =  "#ffffff10"
+	end,
+	press = function(self)
+		local widgets = self.popup.widget:get_children_by_id("bg")
+		self.popup.visible = false
+		if widgets[self.chosen].func then
+			widgets[self.chosen]:func()
+		end
+		self:toggle()
+	end,
+	select_next = function(self)
+		self.chosen = self.chosen + 1
+		self:update()
+	end,
+	select_prev = function(self)
+		self.chosen = self.chosen - 1
+		self:update()
+	end,
+	toggle = function(self)
+		if self.popup then
+			self.keygrabber:stop()
+			self.popup.visible = false
+			self.popup = nil
+			return
+		end
+
+		local template = function(text, func)
+			return {
+				widget = wibox.container.background,
+				func = func,
+				id = "bg",
+				{
+					widget = wibox.container.margin,
+					margins = 30,
+					{
+						widget = wibox.widget.textbox,
+						align = "center",
+						text = text
+					}
+				}
+		}
+		end
+
+		self.popup = awful.popup {
+			border_color = beautiful.border_focus,
+			border_width = 4,
+			placement = awful.placement.centered,
+			visible = true,
+			ontop = true,
+			widget = {
+				widget = wibox.container.margin,
+				margins = 15,
+				{
+					forced_num_cols = 1,
+					homogeneous = true,
+					layout = wibox.layout.grid,
+					expand = true,
+					template("Whole Screen", function() self:screenshot("whole") end),
+					template("Partial", function() self:screenshot("partial") end),
+					template("Cancel", nil)
+				}
+			}
+		}
+
+		-- Mouse Support for widgets
+		for i, w in ipairs(self.popup.widget:get_children_by_id("bg")) do
+			w:connect_signal("button::press", function() self:press() end)
+			w:connect_signal(
+				"mouse::enter", function()
+					self.chosen = i
+					self:update()
+				end
+			)
+		end
+
+		-- Keyboard controls
+		self.keygrabber = awful.keygrabber {
+			autostart   = true,
+			keybindings = {
+				{{ modkey },    "s",      function() self:toggle()      end},
+				{{ "Control" }, "g",      function() self:toggle()      end},
+				{{ },           "q",      function() self:toggle()      end},
+				{{ },           "Escape", function() self:toggle()      end},
+				{{ "Control" }, "m",      function() self:press()       end},
+				{{ },           "Return", function() self:press()       end},
+				{{ },           " ",      function() self:press()       end},
+				{{ "Control" }, "n",      function() self:select_next() end},
+				{{ "Control" }, "p",      function() self:select_prev() end},
+				{{ }, "j",                function() self:select_next() end},
+				{{ }, "k",                function() self:select_prev() end},
+				{{ }, "Down",             function() self:select_next() end},
+				{{ }, "Up",               function() self:select_prev() end}
+			}
+		}
+
+		self.chosen = 1
+		self:update()
+	end
+}
+
+
 for _, w in pairs(widgets) do
 	if type(w.start) == "function" then w:start() end
 end
 
 
 -- Key and Mouse Bindings --
-globalkeys = gears.table.join( -- Keybindings
+local globalkeys = gears.table.join( -- Keybindings
 	awful.key({ modkey }, "y", function()
 			package.loaded["test"] = false
 			require("test")
@@ -1509,12 +1606,12 @@ globalkeys = gears.table.join( -- Keybindings
 			if terminal == "emacs" then find_or_spawn_emacs(); return end
 			awful.spawn(terminal)
 	end),
-	awful.key({ modkey }, "q", function() widgets.center:toggle() end),
-	awful.key({ modkey }, "s", screenshot)
+	awful.key({ modkey }, "q", function() widgets.dashboard:toggle() end),
+	awful.key({ modkey }, "s", function() widgets.screenshot:toggle() end)
 )
 
 
-clientkeys = gears.table.join( -- Key Bindings That Activate Per-client
+local clientkeys = gears.table.join( -- Key Bindings That Activate Per-client
 	awful.key({ modkey, "Shift" }, "f", function(c)
 			c.fullscreen = not c.fullscreen
 			c:raise()
@@ -1744,7 +1841,7 @@ awful.screen.connect_for_each_screen(function(s)
 		layout = wibox.layout.align.horizontal,
 		expand = "none",
 		{ -- Left Widgets
-			widgets.center.wibar,
+			widgets.dashboard.wibar,
 			s.taglist,
 			widgets.layout,
 			layout = wibox.layout.fixed.horizontal
@@ -1913,7 +2010,6 @@ gears.timer { -- More frequent garbage collecting
 	autostart = true,
 	callback = collectgarbage
 }
-
 
 
 do  -- Commands to execute in startup
