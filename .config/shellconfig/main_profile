@@ -5,14 +5,8 @@ export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:="$HOME/.config"}
 export XDG_DESKTOP_DIR="${HOME}"
 
 # Add directories to PATH if they don't exist already
-for dir in /sbin/ \
-			   "${HOME}"/.config/scripts/ \
-			   "${HOME}"/.config/scripts/*/ \
-			   "${HOME}"/.local/bin/ \
-			   "${HOME}"/.local/bin/*/
-do
+for dir in /sbin/ "${HOME}"/.local/bin/; do
 	[ "${PATH##*${dir%/}*}" ] || continue
-	[ -d "${dir}" ] || continue
 	PATH="${dir%/}:${PATH}"
 done
 export PATH

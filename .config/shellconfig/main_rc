@@ -125,13 +125,27 @@ compress_documents() {
 }
 
 
+fix-time() {
+	# Fix time desync in Linux
+	err=false
+	for dep in ntpd hwclock sudo; do
+		[ "$(command -v ${dep})" ] && continue
+		printf "[\033[1;31mERROR\033[0m] Command '${dep}' not found\n" >&2
+		err=true
+	done
+	${err} && return 1
+	printf "Running 'ntpd -qg; hwclock --systohc'\n"
+	sudo "${SHELL}" -c  'ntpd -qg; hwclock --systohc'
+}
+
+
 colors() {
 	# Print terminal colors
 	if ! [ "${1##*[!0-9]*}" ]; then
-		printf "[\033[1;31mERROR\033[0m]: Not an integer\n" >&2
+		printf "[\033[1;31mERROR\033[0m] Not an integer\n" >&2
 		return 1
 	elif [ ${1} -gt 255 ]; then
-		printf "[\033[1;31mERROR\033[0m]: Number is greater than 255\n" >&2
+		printf "[\033[1;31mERROR\033[0m] Number is greater than 255\n" >&2
 		return 1
 	fi
 
@@ -177,14 +191,14 @@ dit() {
 }
 
 
-mp() {
+jmtpfs-auto-mount() {
 	if ! [ "$(command -v jmtpfs)" ]; then
-		printf "[\033[1;31mERROR\033[0m] Command 'jmtpfs' not found" >&2
+		printf "[\033[1;31mERROR\033[0m] Command 'jmtpfs' not found\n" >&2
 		return 1
 	fi
 
 	if ! jmtpfs -l | { read _; read line; [ "${line}" ]; }; then
-		printf "[\033[1;31mERROR\033[0m] Do device found" >&2
+		printf "[\033[1;31mERROR\033[0m] No devices found\n" >&2
 		return 1
 	fi
 
@@ -194,6 +208,17 @@ mp() {
 	else
 		umount "/tmp/jmtpfs"
 		rmdir "/tmp/jmtpfs"
+	fi
+}
+
+
+sx() {
+	# Start x server
+	xinitrc="${HOME}/.config/X11/xinitrc "
+	if [ -f "${xinitrc}" ]; then
+		startx "${xinitrc}"
+	else
+		startx
 	fi
 }
 
