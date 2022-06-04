@@ -145,8 +145,8 @@
 ;; Actual Functions
 (defun hs ()
   "Split  the buffer horizontally and focus on said window"
-  (intera ctive)
-  (select -window (split-window-horizontally)))
+  (interactive)
+  (select-window (split-window-horizontally)))
 (defun vs ()
   "Split the buffer vertically and focus on said window"
   (interactive)
@@ -292,7 +292,7 @@ vim manages it's splits and tabs"
     (org-export-dispatch)
     (user-error ""))
   (let ((command nil) (bin-path nil) (file-path nil))
-    (setq bin-path (concat "'/tmp/%s'" (file-name-base buffer-file-name)))
+    (setq bin-path (format "'/tmp/%s'" (file-name-base buffer-file-name)))
     (setq file-path (format "'%s'" buffer-file-name))
     (cond ((member major-mode '(c-mode c++mode)) ;; C & C++
            (setq command (format "cc %s -o %s && %s"
@@ -359,6 +359,7 @@ vim manages it's splits and tabs"
           (lambda ()
             (hs-minor-mode)
             (hs-hide-all)))
+(add-hook 'html-mode-hook (lambda () (setq-local tab-width 2)))
 (when (fboundp 'script-header)
   (add-hook 'sh-mode-hook
             (lambda () (add-hook 'before-save-hook 'script-header 0 t))))
@@ -376,42 +377,35 @@ vim manages it's splits and tabs"
     (setq splash-buffer (get-buffer-create "*min-splash*"))
     (setq margin-size (/ (- (frame-width) 20) 2))
     (with-current-buffer splash-buffer
-      (insert "▓█████▓ ███▄ ▄███▓▓█████  █    ██   ▄████    ██████\n")
-      (insert "▓█   ▀▓▓██▒▀█▀ ██▒▓█   ▀  ██  ▓██▒ ██▒ ▀█▒▒ ██    ▒\n")
-      (insert "▒███   ▓██    ▓██ ▒███   ▓██  ▒██░▒██░▄▄▄░░  ▓██▄ ░\n")
-      (insert "▒▓█  ▄ ▒██    ▒██ ▒▓█  ▄  ▓█  ░██░░▓█  ██▓   ▒  ██▒\n")
-      (insert "░▒████ ▒██▒   ░██ ░▒████▒ ▒█████▓ ░▒▓███▀  ██████ ▒\n")
-      (insert "░░ ▒░ ░░ ▒░   ░  ░ ░ ▒░ ░░▒▓▒ ▒ ▒  ░▒   ▒ ▒ ▒▓▒ ▒ ░\n")
-      (insert "░ ░  ░░  ░      ░ ░ ░  ░░░▒░ ░ ░   ░   ░ ░ ░▒  ░ ░░\n")
-      (insert "░   ░      ░           ░░░ ░ ░ ░ ░   ░ ░  ░  ░    ░\n")
-      (insert "░  ░       ░      ░  ░   ░           ░       ░    ░\n")
       (insert (propertize "\n\n\nWelcome to " 'face 'splash-text))
       (insert (propertize "Emeugs" 'face  'splash-text-special))
       (insert-char ?\n 2)
       (insert (propertize "Emacs" 'face  'splash-text-special))
       (insert (propertize " with some " 'face 'splash-text))
-      (insert (propertize "Smeueg. " 'face  'splash-text-special))
-      (insert (propertize "Enjoy Your Stay\n" 'face 'splash-text))
+      (insert (propertize "Smeueg" 'face  'splash-text-special))
+      (insert (propertize ". Enjoy Your Stay\n" 'face 'splash-text))
       (min-splash-align)
       (add-hook 'post-command-hook #'min-splash-align 0 t)
       (add-hook 'window-state-change-hook #'min-splash-align 0 t))
     (get-buffer "*min-splash*")))
-
 (defun min-splash-align ()
   (if (get-buffer "*min-splash*")
       (with-current-buffer "*min-splash*"
         (setq-local cursor-type nil)
         (save-excursion
-          (let ((lines (count-lines (point-min) (point-max))))
-            (setq-local fill-column (- (window-body-width nil) 2))
-            (read-only-mode 0)
-            (with-temp-message "" (mark-whole-buffer))
-            (delete-blank-lines)
-            (deactivate-mark)
+          (read-only-mode 0)
+          (goto-char 0)
+          (while (equal (thing-at-point 'line t) "\n")
+            (delete-char 1))
+          (goto-char (point-max))
+          (while (looking-back "^\n$")
+            (backward-delete-char 1))
+          (let ((lines (count-lines 1 (point-max)))
+                (fill-column (- (window-body-width nil) 2)))
             (goto-char 0)
-            (insert-char ?\n (/ (- (window-body-height nil) 15) 2))
-            (center-line 16)
-            (read-only-mode 1))))
+            (insert-char ?\n ( / (- (window-body-height nil) lines) 2))
+            (center-line lines))
+          (read-only-mode 1)))
     (progn
       (remove-hook 'post-command-hook 'min-splash-align)
       (remove-hook 'window-state-change-hook 'min-splash-align))))
@@ -954,7 +948,7 @@ vim manages it's splits and tabs"
   :ensure t
   :defer t
   :init
-  (add-hook 'html-mode-hook 'auto-rename-tag))
+  (add-hook 'html-mode-hook 'auto-rename-tag-mode))
 
 
 ;; Lua ;;
@@ -1052,12 +1046,12 @@ vim manages it's splits and tabs"
 
   ;; Buffer-Menu
   (evil-define-key 'motion Buffer-menu-mode-map [return] 'Buffer-menu-select)
-  (when (get-buffer-window "*Buffer List*")
-    (delete-window (get-buffer-window "*Buffer List*")))
-  (add-hook 'quit-window-hook
-            (lambda () (kill-buffer "*Buffer List*")))
-  (advice-add 'Buffer-menu-select :after
-              (lambda () (kill-buffer "*Buffer List*")))
+  ;; (when (get-buffer-window "*Buffer List*")
+  ;;   (delete-window (get-buffer-window "*Buffer List*")))
+  ;; (add-hook 'quit-window-hook
+  ;;           (lambda () (kill-buffer "*Buffer List*")))
+  ;; (advice-add 'Buffer-menu-select :after
+  ;;             (lambda () (kill-buffer "*Buffer List*")))
 
   ;; Basic Keybindings ;;
   (fset 'evil-next-line     'evil-next-visual-line)

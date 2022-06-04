@@ -34,7 +34,7 @@ print_prompt() {
 	symbol_backup=">"
 	reset="\033[0m"
 	color_dir="\033[1;38;5;11m"
-	color_branch="\033[38;5;8m"
+	color_branch="\033[38;5;4m"
 	color_failed="\033[38;5;1m"
 	color_success="\033[38;5;6m"
 

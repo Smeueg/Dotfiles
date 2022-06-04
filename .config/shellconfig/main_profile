@@ -100,7 +100,7 @@ fi
 
 # Start xserver if in tty1
 if command -v startx >/dev/null && [ "$(tty)" = "/dev/tty1" ]; then
-	printf '\033[1mStart X Session\033[0m [\033[1;32mY\033[0m/\033[1;31mn\033[0m] '
+	printf 'Start X Session [\033[1;32mY\033[0m/\033[1;31mn\033[0m] '
 	read opt
 
 	case ${opt} in

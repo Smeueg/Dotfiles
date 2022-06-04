@@ -502,6 +502,22 @@ local function toggle_popup(arg)
 	popup.widget:update()
 end
 
+local function spawn_browser()
+	local AppInfo = require("lgi").Gio.AppInfo
+	local app = AppInfo.get_default_for_type("text/html")
+
+	if app then
+		naughty.notify { text = "Opening " .. AppInfo.get_name(app) }
+		awful.spawn(AppInfo.get_executable(app))
+		return
+	end
+
+	naughty.notify {
+		title = "Error",
+		text = "No default browser found"
+	}
+end
+
 
 -- Custom Widgets --
 widgets = {}
@@ -751,7 +767,7 @@ widgets.date = wibox.widget {
 				widget = wibox.container.margin
 			},
 			{
-				format = "%a - %y/%m/%d ",
+				format = "%a - %d/%m/%y ",
 				refresh = 300,
 				widget = wibox.widget.textclock
 			},
@@ -1594,14 +1610,7 @@ local globalkeys = gears.table.join( -- Keybindings
 			menubar.show()
 	end),
 	-- Standard programs
-	awful.key({ modkey }, "b", function() -- Spawn a browser
-			if browser then
-				naughty.notify {text = "Opening " .. browser}
-				awful.spawn(browser)
-			else
-				naughty.notify {text = "[ERROR]: browser not found"}
-			end
-	end),
+	awful.key({ modkey }, "b", spawn_browser),
 	awful.key({ modkey }, "Return", function() -- Spawn Emacs
 			if terminal == "emacs" then find_or_spawn_emacs(); return end
 			awful.spawn(terminal)
@@ -2018,6 +2027,7 @@ do  -- Commands to execute in startup
 		"xrandr --output DP-1 --mode 1280x1024 --scale 1.3x1.3",
 		"xset r rate 250 50",
 		"setxkbmap -option keypad:pointerkeys",
+		"setxkbmap -option compose:paus",
 		"xset s off -dpms",
 		"pactl set-sink-volume @DEFAULT_SINK@ " .. widgets.volume.default,
 		"xrdb " .. home .. "/.config/X11/Xresources",
