@@ -152,44 +152,49 @@
   (interactive)
   (select-window (split-window-vertically)))
 
-(defun script-header (&optional opt)
-  "Add a comment header for information about a script,
-template from TerminalForLife"
-  (interactive (list (completing-read "Action: " '("Add New" "Update"))))
-  (cond ((string= opt "Add New")
-         (save-excursion
-           (let (point))
-           (goto-line 2)
-           (setq point (point))
-           (insert-char ?- 48)
-           (insert-char ?\n 1)
-           (insert
+(defun script-header ()
+  "Add a comment header for information about a script, template from
+TerminalForLife"
+  (interactive)
+  (if buffer-file-name
+      ;; "Error out" if buffer isn't a file
+      (message (concat (propertize "ERROR: " 'face 'error)
+                       "Buffer isn't a file"))
+    ;; Main function
+    (let ((string nil) (regex nil) (point-beg nil) (point-end nil) (border ""))
+      (while (<= (length border) 48)
+        (setq border (concat border "=")))
+      (setq string
             (concat
-             "Script Name    - " (file-name-nondirectory buffer-file-name) "\n"
-             "Author Name    - Smeueg\n"
-             "Author Email   - Smeueg@gmail.com\n"
-             "Author Gitlab  - https://gitlab.com/Smeueg\n"
-             (format-time-string "Last Updated   - %a %_d %b %Y\n")))
-           (insert-char ?- 48)
-           (insert-char ?\n 1)
-           (comment-region point (point))))
-        ((and (or (not opt) (string= opt "Update")) (buffer-modified-p))
-         (save-excursion
-           (goto-char 0)
-           (when
-               (re-search-forward (concat
-                                   ".+ -+\n"
-                                   ".+ Script Name    - .+\n"
-                                   ".+ Author Name    - .+\n"
-                                   ".+ Author Email   - .+\n"
-                                   ".+ Author Gitlab  - .+\n"
-                                   ".+ Last Updated   - .+\n"
-                                   ".+ -+\n")
-                                  nil t)
-             (let ((saved-point (point)))
-               (previous-line 7)
-               (delete-region (point) saved-point))
-             (script-header "Add New"))))))
+             border "\n"
+             "Script Name - " (file-name-nondirectory buffer-file-name) "\n"
+             "Author Name - Smeueg\n"
+             "Author Email - Smeueg@gmail.com\n"
+             "Author Gitlab - https://gitlab.com/Smeueg\n"
+             (format-time-string "Last Updated - %a, %_d %b %Y %S\n") border))
+      ;; Convert the string to a regex to match
+      (setq regex string)
+      (setq regex (replace-regexp-in-string "^" comment-start-skip regex))
+      (setq regex (replace-regexp-in-string "\s*-\s*.*" "\s*-\s*.*" regex))
+      (save-excursion
+        (goto-char (point-min))
+        (if (re-search-forward regex nil t)
+            (progn
+              ;; Update the header if it already exists
+              (kill-line (- 1 (length (split-string string "\n"))))
+              (setq point-beg (point))
+              (insert string)
+              (setq point-end (point))
+              (comment-region point-beg point-end)
+              (align-regexp point-beg point-end "\\(.\\)-"))
+          (when (yes-or-no-p "Header not found, create one?")
+            ;; Prompt to create the new header
+            (when (looking-at-p "#!/.*/") (next-line))
+            (setq point-beg (point))
+            (insert string)
+            (setq point-end (point))
+            (comment-region point-beg point-end)
+            (align-regexp point-beg point-end "\\(.\\)-")))))))
 
 (defun edit-config (config)
   "Edit a configuration file. Supports emacs's init-file and enabled theme,
@@ -555,7 +560,6 @@ vim manages it's splits and tabs"
   :config
   ;; Close the terminal on exit
   (advice-add 'term-handle-exit :after (lambda (&rest r) (close)))
-  ;;(defadvice term-handle-exit (after term-kill-buffer-on-exit activate) (close))
   (add-hook 'term-mode-hook (lambda ()
                               (display-line-numbers-mode 0)
                               (electric-pair-local-mode 0)
@@ -729,6 +733,7 @@ vim manages it's splits and tabs"
   (set-face-attribute 'internal-border nil :background
                       (face-attribute 'default :background))
 
+
   (set-face-attribute 'mode-line nil
                       :background
                       (face-attribute 'mode-line-inactive :background)
@@ -738,6 +743,9 @@ vim manages it's splits and tabs"
                       `(:line-width 7 :color
                                     ,(face-attribute 'mode-line-inactive
                                                      :background)))
+  (set-face-attribute 'highlight nil :background
+                      (face-attribute 'mode-line :background))
+
   (set-face-attribute 'mode-line-inactive nil
                       :background (face-attribute 'default :background)
                       :foreground (face-attribute 'mode-line :foreground)
@@ -1057,7 +1065,7 @@ vim manages it's splits and tabs"
   (fset 'evil-next-line     'evil-next-visual-line)
   (fset 'evil-previous-line 'evil-previous-visual-line)
   (evil-define-key 'normal 'global "gc" 'comment-line)
-  (evil-define-key 'visual 'global "gc" 'comment-region)
+  (evil-define-key 'visual 'global "gc" 'comment-dwim)
 
   ;; Re-add the alt-hjkl keys
   (evil-define-key
@@ -1084,7 +1092,11 @@ vim manages it's splits and tabs"
   (evil-define-key 'normal 'global "\M-p"
     (lambda () (interactive) (transpose-lines 1) (evil-previous-line 2)))
   (evil-define-key 'normal 'global "\M-n"
-    (lambda () (interactive) (evil-next-line) (transpose-lines 1) (evil-previous-line 1)))
+    (lambda ()
+      (interactive)
+      (evil-next-line)
+      (transpose-lines 1)
+      (evil-previous-line 1)))
 
   (evil-define-key 'motion 'Info-mode-map ":" 'execute-extended-command)
   (add-hook 'evil-emacs-state-entry-hook
@@ -1106,7 +1118,7 @@ vim manages it's splits and tabs"
                  (interactive) (text-scale-adjust 0))
     ":"   'execute-extended-command
     " e"  'edit-config
-    " b"  'buffer-menu-other-window
+    " b"  'switch-to-buffer
     " f"  'find-file
     " K"  'kill-buffer
     " a"  'mark-whole-buffer

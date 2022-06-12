@@ -887,10 +887,8 @@ widgets.volume = wibox.widget {
 			["default"] = "pactl set-sink-volume  @DEFAULT_SINK@ "..self.default
 		}
 
-		awful.spawn.with_line_callback(
-			cmds[cmd],
-			{ exit = function() widgets.volume:update() end }
-		)
+		awful.spawn(cmds[cmd])
+		self:update()
 	end,
 	update = function(self)
 		awful.spawn.easy_async(
@@ -2042,9 +2040,9 @@ do  -- Commands to execute in startup
 		end
 	end
 
-	awful.spawn.with_shell(
-		"pidof pulseaudio ||" ..
-		"command -v pulseaudio &&" ..
-		"setsid --fork pulseaudio --start --exit-idle-time=-1"
-	)
+	-- awful.spawn.with_shell(
+	-- 	"pidof pulseaudio ||" ..
+	-- 	"command -v pulseaudio &&" ..
+	-- 	"setsid --fork pulseaudio --start --exit-idle-time=-1"
+	-- )
 end
