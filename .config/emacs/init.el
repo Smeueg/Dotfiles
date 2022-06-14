@@ -19,6 +19,7 @@
 ;; (let ((bin (replace-regexp-in-string "#!\s*\\([/a-zA-Z0-9\\-]+\\).*" "\\1" "#! /bi9-n/sh"))))
 
 
+
 ;;; VARIABLES ;;;
 (setq-default
  ;; Do not create backup file i.e. file~
@@ -60,8 +61,10 @@
  hs-hide-comments-when-hiding-all nil)
 
 
-;;; Custom Filetype Modes
+
+;;; OTHER FILETYPES ;;;
 (add-to-list 'auto-mode-alist '("\\.rasi\\'" . css-mode))
+
 
 
 ;;; INDENTATION CONFIGURATION ;;;
@@ -89,9 +92,6 @@
 
 ;; Custom theme
 (set-frame-font "JetBrainsMono Nerd Font Mono 12")
-;; (setq-default chosen-theme 'Smeueg)
-;; (when (member chosen-theme (custom-available-themes))
-;;   (load-theme chosen-theme 1))
 
 ;; Modes
 (menu-bar-mode 0)           ;; Disable menu bar
@@ -140,30 +140,31 @@
 (defalias 'd 'delete-window)
 (defalias 'dw 'delete-window)
 (defalias 's 'replace-regexp)
-(defalias 'tabe 'tab-new)
+(defalias 'q 'kill-buffer)
 
 ;; Actual Functions
-(defun hs ()
-  "Split  the buffer horizontally and focus on said window"
+(defun split ()
+  "Split the buffer horizontally and move focus to the new split"
   (interactive)
   (select-window (split-window-horizontally)))
-(defun vs ()
-  "Split the buffer vertically and focus on said window"
+(defun vsplit ()
+  "Split the buffer horizontally and move focus to the new split"
   (interactive)
   (select-window (split-window-vertically)))
+(defalias 'sp 'split)
+(defalias 'vs 'vsplit)
 
-(defun script-header ()
+(defun script-header (&optional arg)
   "Add a comment header for information about a script, template from
 TerminalForLife"
-  (interactive)
-  (if buffer-file-name
+  (interactive '(t))
+  (if (not buffer-file-name)
       ;; "Error out" if buffer isn't a file
       (message (concat (propertize "ERROR: " 'face 'error)
                        "Buffer isn't a file"))
     ;; Main function
     (let ((string nil) (regex nil) (point-beg nil) (point-end nil) (border ""))
-      (while (<= (length border) 48)
-        (setq border (concat border "=")))
+      (setq border (make-string 48 ?=))
       (setq string
             (concat
              border "\n"
@@ -171,7 +172,8 @@ TerminalForLife"
              "Author Name - Smeueg\n"
              "Author Email - Smeueg@gmail.com\n"
              "Author Gitlab - https://gitlab.com/Smeueg\n"
-             (format-time-string "Last Updated - %a, %_d %b %Y %S\n") border))
+             (format-time-string "Last Updated - %a, %_d %b %Y\n")
+             border))
       ;; Convert the string to a regex to match
       (setq regex string)
       (setq regex (replace-regexp-in-string "^" comment-start-skip regex))
@@ -187,7 +189,7 @@ TerminalForLife"
               (setq point-end (point))
               (comment-region point-beg point-end)
               (align-regexp point-beg point-end "\\(.\\)-"))
-          (when (yes-or-no-p "Header not found, create one?")
+          (when (and arg (yes-or-no-p "Header not found, create one?"))
             ;; Prompt to create the new header
             (when (looking-at-p "#!/.*/") (next-line))
             (setq point-beg (point))
@@ -235,104 +237,40 @@ awesomewm, and the users shell's"
        (or x-select-request-type
            'UTF8_STRING)) ""))
 
-(defun close ()
-  "Kill buffer when there's only one window displaying the buffer. Delete window
-when the current window has no previous buffers. This function aims to mimic how
-vim manages it's splits and tabs"
+(defun run ()
+  "Automatically run (and compile if needed) the current buffer"
   (interactive)
   (catch 'return
-    ;; Ranger
-    (when (eq major-mode 'ranger-mode)
-      (ranger-close)
-      (throw 'return nil))
-    ;; When editing a commit message
-    (when (and (fboundp 'with-editor-cancel)
-               (string= (buffer-name) "COMMIT_EDITMSG"))
-      (with-editor-cancel)
-      (throw 'return nil))
-    ;; General Buffers
-    (let ((count 0) (kill-w nil) (kill-b t))
-      (when (bound-and-true-p tab-bar-mode)
-        (catch 'break
-          (dolist (tab (funcall tab-bar-tabs-function))
-            (let ((buffer-current (buffer-name))
-                  (buffers-prev (cdr (car (last (car (cddddr tab)))))))
-              (dolist (buffer buffers-prev)
-                (when (equal buffer-current (car buffer))
-                  (setq kill-b nil)
-                  (throw 'break nil)))))))
-      ;; Decide whether to delete window or not
-      (when (or (= 0 (length (window-prev-buffers)))
-                (and (equal (current-buffer) (caar (window-prev-buffers)))
-                     (= 1 (length (window-prev-buffers)))))
-        (setq kill-w t))
-      ;; Decide whether to kill buffer or not
-      (when kill-b
-        (catch 'break
-          (unless (= 1 (length (get-buffer-window-list)))
-            (setq kill-b nil)
-            (throw 'break nil))
-          (dolist (window (delete (selected-window) (window-list)))
-            (dolist (buffer (window-prev-buffers window))
-              (when (equal (current-buffer) (car buffer))
-                (setq kill-b nil)
-                (throw 'break nil))))))
-      ;; Kill buffer
-      (if kill-b (kill-buffer)
-        (let ((var '()) (cur (current-buffer)))
-          (switch-to-prev-buffer)
-          (dolist (buffer (window-prev-buffers))
-            (unless (eq cur (car buffer))
-              (push buffer var)))
-          (set-window-prev-buffers (selected-window) var)))
-      ;; Kill window
-      (when kill-w (delete-window)))))
-(defalias 'q 'close)
-
-(defun run ()
-  "Automatically compile (if needed) and execute the current program "
-  (interactive)
-  (save-buffer)
-  (when (derived-mode-p 'org-mode)
-    (org-export-dispatch)
-    (user-error ""))
-  (let ((command nil) (bin-path nil) (file-path nil))
-    (setq bin-path (format "'/tmp/%s'" (file-name-base buffer-file-name)))
-    (setq file-path (format "'%s'" buffer-file-name))
-    (cond ((member major-mode '(c-mode c++mode)) ;; C & C++
-           (setq command (format "cc %s -o %s && %s"
-                                 file-path bin-path bin-path)))
-          ((derived-mode-p 'sh-mode)
-           (executable-make-buffer-file-executable-if-script-p)
-           (setq command (format "%s" file-path)))
-          ((derived-mode-p 'js-mode)
-           (setq command (format "nodejs %s" file-path)))
-          ((derived-mode-p 'lua-mode)
-           (setq command (format "lua %s" file-path)))
-          ((derived-mode-p 'rust-mode )
-           (setq command (format "rustc -C prefer-dynamic %s -o %s && %s"
-                                 file-path bin-path bin-path)))
-          ((derived-mode-p 'python-mode) ;; Python
-           (setq command (format "python3 %s" file-path)))
-          ((derived-mode-p 'html-mode)
-           (setq command
-                 (format
-                  "[ $(command -v ${BROWSER}) ] && { ${BROWSER} %s; exit; }\n"
-                  file-path)))
-          ((derived-mode-p 'java-mode)
-           (setq command (format "java %s" file-path)))
-          ((derived-mode-p 'perl-mode)
-           (setq command (format "perl %s" file-path)))
-          ((= 1 1)
-           (message "Unsupported mode")))
-    (when command
-      (progn
-        (split-window-below)
-        (other-window 1)
+    (let ((mode-pair nil)
+          (mode-list nil)
+          (cmd nil)
+          (func nil)
+          (bin nil)
+          (file nil))
+      (unless buffer-file-name
+        (message "ERROR: Buffer isn't a file")
+        (throw 'return nil))
+      (setq bin (format "'/tmp/%s'" (file-name-base buffer-file-name)))
+      (setq file (format "'%s'" buffer-file-name))
+      (setq
+       mode-pair `((c-mode
+                    (:cmd . ,(format "cc %s -o %s && %s" file bin bin)))
+                   (sh-mode (:cmd . ,file) (:func . ,'executable-make-buffer-file-executable-if-script-p))
+                   (lua-mode (:cmd . ,(format "lua %s" file)))
+                   (java-mode (:cmd . ,(format "java %s; exit" file)))
+                   (html-mode (:cmd . ,(format "${BROWSER} %s; exit" file)))
+                   (python-mode (:cmd . ,(format "python3 %s" file)))))
+      (catch 'break
+        (dolist (mode mode-pair)
+          (when (derived-mode-p (car mode))
+            (setq mode-list (cdr mode))
+            (setq cmd (cdr (assq :cmd mode-list)))
+            (setq func (cdr (assq :func mode-list)))
+            (throw 'break nil))))
+      (when func (funcall func))
+      (when cmd
         (ansi-term (getenv "SHELL"))
-        (set-window-prev-buffers (selected-window) '())
-        (term-send-raw-string
-         (format "clear; %s\n" command))))))
+        (term-send-raw-string (format "clear; %s\n" cmd))))))
 
 
 
@@ -353,22 +291,20 @@ vim manages it's splits and tabs"
           (lambda ()
             (sh-electric-here-document-mode 0)
             (when (= (buffer-size) 0) (insert "#!/bin/sh\n\n"))))
-(add-hook 'emacs-lisp-mode-hook
-          (lambda () (setq-local indent-tabs-mode nil)))
-(add-hook 'completion-list-mode-hook
-          (lambda () (display-line-numbers-mode 0)))
+(add-hook 'emacs-lisp-mode-hook (lambda () (setq-local indent-tabs-mode nil)))
+(add-hook 'completion-list-mode-hook (lambda () (display-line-numbers-mode 0)))
 (add-hook 'minibuffer-exit-hook
           (lambda () (when (get-buffer "*Completions*")
                        (kill-buffer "*Completions*"))))
-(add-hook 'prog-mode-hook
-          (lambda ()
-            (hs-minor-mode)
-            (hs-hide-all)))
+(add-hook 'prog-mode-hook (lambda () (hs-minor-mode) (hs-hide-all)))
 (add-hook 'html-mode-hook (lambda () (setq-local tab-width 2)))
-(when (fboundp 'script-header)
-  (add-hook 'sh-mode-hook
-            (lambda () (add-hook 'before-save-hook 'script-header 0 t))))
-
+(add-hook 'sh-mode-hook
+          (lambda ()
+            (add-hook 'before-save-hook
+                      (lambda ()
+                        (when (fboundp 'script-header)
+                          (script-header)))
+                      0 t)))
 
 
 
@@ -452,14 +388,13 @@ vim manages it's splits and tabs"
 
 
 
-;; PACKAGES ;;
+;;; PACKAGES ;;;
 (require 'package nil 'noerror)
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
   (package-install 'use-package))
-
 
 ;; Regular Emacs Packages/features ;;
 (use-package flymake
@@ -481,6 +416,7 @@ vim manages it's splits and tabs"
   :init
   (defalias 'dt 'tab-bar-close-tab)
   (defalias 'nt 'tab-new)
+  (defalias 'tabe 'tab-new)
   (setq-default tab-bar-close-button-show nil
                 tab-bar-new-button-show nil)
   :config
@@ -559,7 +495,14 @@ vim manages it's splits and tabs"
     (set-window-prev-buffers (selected-window) '()))
   :config
   ;; Close the terminal on exit
-  (advice-add 'term-handle-exit :after (lambda (&rest r) (close)))
+  (add-hook 'term-exec-hook
+            (lambda ()
+              (let ((buff (current-buffer)))
+                (set-process-sentinel
+                 (get-buffer-process buff)
+                 `(lambda (process event)
+                    (if (string= event "finished\n")
+                        (kill-buffer ,buff)))))))
   (add-hook 'term-mode-hook (lambda ()
                               (display-line-numbers-mode 0)
                               (electric-pair-local-mode 0)
@@ -595,7 +538,6 @@ vim manages it's splits and tabs"
     (lambda ()
       (interactive)
       (term-send-raw-string (get-system-clipboard)))))
-
 
 ;; "Nice To Have" Packages
 (use-package cheat-sh
@@ -943,7 +885,7 @@ vim manages it's splits and tabs"
     (impatient-mode)
     (browse-url "http://localhost:8080/imp/")))
 
-(use-package sgml-mode ;; Builtin, doesn't need ':ensure t'
+(use-package sgml-mode ;; Builtin, hence this doesn't need ':ensure t'
   :defer t
   :init
   (add-hook 'html-mode-hook (lambda () (setq-local tab-width 2))))
@@ -958,7 +900,6 @@ vim manages it's splits and tabs"
   :init
   (add-hook 'html-mode-hook 'auto-rename-tag-mode))
 
-
 ;; Lua ;;
 (use-package lua-mode
   :defer t
@@ -966,7 +907,6 @@ vim manages it's splits and tabs"
   :init
   (setq-default lua-indent-level 4
                 lua-indent-string-contents t))
-
 
 ;; Rust ;;
 (use-package rust-mode
@@ -976,7 +916,6 @@ vim manages it's splits and tabs"
   (add-hook 'rust-mode-hook
             (lambda () (setq indent-tabs-mode nil))))
 
-
 ;; Misc ;;
 (use-package yaml-mode
   :ensure t
@@ -984,8 +923,7 @@ vim manages it's splits and tabs"
   :init
   (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-mode)))
 
-
-;; Evil
+;; Evil ;;
 (use-package evil
   :ensure t
   :demand t
