@@ -130,6 +130,7 @@ beautiful.tooltip_border_width = 1
 -- Menu Bar
 beautiful.menubar_fg_focus = theme["focus"]
 beautiful.menubar_bg_focus = theme["bg_light"]
+beautiful.menubar_fg_normal = beautiful.fg_normal
 -- Tasklist
 beautiful.tasklist_bg_focus = theme["bg_dark"]
 beautiful.tasklist_bg_normal = theme["bg"]
