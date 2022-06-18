@@ -13,10 +13,6 @@
 ;; reference to other people on what other people use. This configuration should
 ;; be able to run without a problem in other systems other than my current one,
 ;; although I haven't tested it yet.
-;;
-;;
-;; In Progress:
-;; (let ((bin (replace-regexp-in-string "#!\s*\\([/a-zA-Z0-9\\-]+\\).*" "\\1" "#! /bi9-n/sh"))))
 
 
 
@@ -81,8 +77,6 @@
 
 ;;; VISUAL CONFIGURATION ;;;
 ;; Mode Line
-(make-face 'ml/fill)
-(make-face 'ml/read-only-face)
 (make-face 'ml/modified-face)
 (make-face 'ml/normal-face)
 
@@ -160,8 +154,8 @@ TerminalForLife"
   (interactive '(t))
   (if (not buffer-file-name)
       ;; "Error out" if buffer isn't a file
-      (message (concat (propertize "ERROR: " 'face 'error)
-                       "Buffer isn't a file"))
+      (message (format "%s: Buffer isn't a file"
+                       (propertize "ERROR" 'face 'error)))
     ;; Main function
     (let ((string nil) (regex nil) (point-beg nil) (point-end nil) (border ""))
       (setq border (make-string 48 ?=))
@@ -218,27 +212,19 @@ awesomewm, and the users shell's"
               (funcall check-file "~/.bashrc")
               (funcall check-file "~/.profile")))
        ;; Awesomewm
-       (funcall check-file (concat config-dir "/awesome/rc.lua"))
+       (funcall check-file (format "%s/awesome/rc.lua" config-dir))
        ;; Emacs
        (funcall check-file (locate-user-emacs-file "init.el"))
        (dolist (theme custom-enabled-themes) ;; Enabled Themes
          (funcall check-file (locate-file
-                              (concat (symbol-name theme) "-theme.el")
+                              (format "%s-theme.el" (symbol-name theme))
                               (custom-theme--load-path)
                               '("" "c"))))
        files))))
   (find-file config))
 
-(defun get-system-clipboard ()
-  "Get value of the system clipboard"
-  (interactive)
-  (or (gui-get-selection
-       'CLIPBOARD
-       (or x-select-request-type
-           'UTF8_STRING)) ""))
-
 (defun run ()
-  "Automatically run (and compile if needed) the current buffer"
+  "Automatically save and run (and compile if needed) the current buffer"
   (interactive)
   (catch 'return
     (let ((mode-pair nil)
@@ -267,6 +253,7 @@ awesomewm, and the users shell's"
             (setq cmd (cdr (assq :cmd mode-list)))
             (setq func (cdr (assq :func mode-list)))
             (throw 'break nil))))
+      (save-buffer)
       (when func (funcall func))
       (when cmd
         (ansi-term (getenv "SHELL"))
@@ -279,9 +266,11 @@ awesomewm, and the users shell's"
 (global-set-key [mouse-3] 'mouse-major-mode-menu)
 (define-key prog-mode-map [return] 'newline-and-indent)
 (global-set-key [?\C-\S-v]
-                (lambda()
+                (lambda ()
+                  "Copy and paste from the GUI system clipboard"
                   (interactive)
-                  (insert (get-system-clipboard))))
+                  (let ((data-type (or x-select-request-type 'UTF8_STRING)))
+                    (insert (or (gui-get-selection 'CLIPBOARD data-type) "")))))
 
 
 
@@ -318,13 +307,13 @@ awesomewm, and the users shell's"
     (setq splash-buffer (get-buffer-create "*min-splash*"))
     (setq margin-size (/ (- (frame-width) 20) 2))
     (with-current-buffer splash-buffer
-      (insert (propertize "\n\n\nWelcome to " 'face 'splash-text))
-      (insert (propertize "Emeugs" 'face  'splash-text-special))
-      (insert-char ?\n 2)
-      (insert (propertize "Emacs" 'face  'splash-text-special))
-      (insert (propertize " with some " 'face 'splash-text))
-      (insert (propertize "Smeueg" 'face  'splash-text-special))
-      (insert (propertize ". Enjoy Your Stay\n" 'face 'splash-text))
+      (insert (concat
+               (propertize "\n\n\nWelcome to " 'face 'splash-text)
+               (propertize "Emeugs\n\n" 'face 'splash-text-special)
+               (propertize "Emacs" 'face 'splash-text-special)
+               (propertize " with some " 'face 'splash-text)
+               (propertize "Smeueg" 'face 'splash-text-special)
+               (propertize ". Enjoy your stay!\n" 'face 'splash-text)))
       (min-splash-align)
       (add-hook 'post-command-hook #'min-splash-align 0 t)
       (add-hook 'window-state-change-hook #'min-splash-align 0 t))
@@ -369,12 +358,15 @@ awesomewm, and the users shell's"
  '((:eval
     (ml/align
      `( ;; Left
-       ,(propertize (concat " " (buffer-name) " ") 'face
-                    (setq-local main-face
-                                (cond (buffer-read-only 'ml/read-only-face)
-                                      ((buffer-modified-p) 'ml/modified-face)
-                                      ((= 1 1) 'ml/normal-face))))
-       " %m")
+       ,(propertize
+         (format " %s  %%m" (buffer-name)) 'face
+         (setq-local main-face
+                     (cond
+                      (buffer-read-only
+                       `(:overline ,(face-attribute 'error :foreground)))
+                      ((buffer-modified-p)
+                       `(:overline ,(face-attribute 'font-lock-builtin-face
+                                                    :foreground)))))))
      `( ;; Right
        ,(cdr (assoc (or (and (boundp 'evil-state) (symbol-value 'evil-state)) t)
                     '((normal   . "Normal ")
@@ -395,6 +387,8 @@ awesomewm, and the users shell's"
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
   (package-install 'use-package))
+
+(require 'use-package)
 
 ;; Regular Emacs Packages/features ;;
 (use-package flymake
@@ -476,10 +470,6 @@ awesomewm, and the users shell's"
 (use-package term
   :commands ansi-term
   :init
-  (define-prefix-command 'term-esc-map)
-  (define-key global-map "\C-\\" 'term-esc-map)
-  (define-key global-map "\C-n" nil)
-  ;; Custom Functions ;;
   (defun term-e ()
     "Open a terminal in a new buffer."
     (interactive)
@@ -494,31 +484,40 @@ awesomewm, and the users shell's"
     (term-e)
     (set-window-prev-buffers (selected-window) '()))
   :config
-  ;; Close the terminal on exit
-  (add-hook 'term-exec-hook
-            (lambda ()
-              (let ((buff (current-buffer)))
-                (set-process-sentinel
-                 (get-buffer-process buff)
-                 `(lambda (process event)
-                    (if (string= event "finished\n")
-                        (kill-buffer ,buff)))))))
-  (add-hook 'term-mode-hook (lambda ()
-                              (display-line-numbers-mode 0)
-                              (electric-pair-local-mode 0)
-                              (setq-local scroll-margin 0)))
+  (define-prefix-command 'term-esc-map)
+  (define-key global-map "\C-\\" 'term-esc-map)
+  (define-key global-map "\C-n" nil)
   (define-key term-raw-map [?\C-\\] 'term-esc-map)
+  (define-key term-raw-map [?\C-\\?\C-n] 'term-line-mode)
+  (define-key term-raw-map [?\C-\S-v]
+    (lambda ()
+      "Copy and paste from the GUI system clipboard"
+      (interactive)
+      (let ((data-type (or x-select-request-type 'UTF8_STRING)))
+        (term-send-raw-string (or (gui-get-selection 'CLIPBOARD data-type) "")))))
 
-  ;; Hide mode line when in term-char-mode
-  (advice-add 'term-char-mode
-              :after (lambda () (setq-local mode-line-format nil)))
-  ;; Reenable mode line when in term-line-mode
+  ;; Advices
+  (advice-add 'term-handle-exit :after
+              (lambda (&rest r)
+                "Close the terminal on exit"
+                (kill-buffer)))
+
+  (add-hook 'term-mode-hook
+            (lambda ()
+              (display-line-numbers-mode 0)
+              (electric-pair-local-mode 0)
+              (setq-local scroll-margin 0)))
+
+  (advice-add 'term-char-mode :after
+              ;; Hide mode line when in term-char-mode
+              (lambda () (setq-local mode-line-format nil)))
+
   (advice-add 'term-line-mode :after
+              ;; Reenable mode line when in term-line-mode
               (lambda ()
                 (setq-local mode-line-format (default-value 'mode-line-format))
                 (redraw-display)))
 
-  (define-key term-raw-map [?\C-\\?\C-n] 'term-line-mode)
   (when (boundp 'evil-mode)
     (advice-add 'term-line-mode :after
                 (lambda ()
@@ -529,15 +528,8 @@ awesomewm, and the users shell's"
                 (turn-off-evil-mode)
                 (setq-local evil-insert-state-cursor 'box)
                 (add-hook 'evil-insert-state-entry-hook
-                          (lambda ()
-                            (term-char-mode)
-                            (turn-off-evil-mode))
-                          0 t))))
-
-  (define-key term-raw-map [?\C-\S-v]
-    (lambda ()
-      (interactive)
-      (term-send-raw-string (get-system-clipboard)))))
+                          (lambda () (term-char-mode) (turn-off-evil-mode))
+                          0 t)))))
 
 ;; "Nice To Have" Packages
 (use-package cheat-sh
@@ -616,28 +608,23 @@ awesomewm, and the users shell's"
                 bongo-enabled-backends '(mpg123))
   (add-hook 'bongo-playlist-mode-hook ;; Automatically insert music dir
             (lambda ()
-              (let ((music_dir (concat (getenv "HOME") "/Music")))
+              (let ((music_dir (format "%s/Music" (getenv "HOME"))))
                 (when (file-directory-p music_dir)
                   (bongo-insert-file music_dir))
                 (display-line-numbers-mode 0)
                 (goto-char 0)))))
 
+(use-package company-quickhelp
+  :ensure t
+  :after company
+  :init
+  (company-quickhelp-mode))
+
 (use-package company
   ;; Auto completion
   :ensure t
-  :demand t
-  :hook (prog-mode . global-company-mode)
   :init
-  (use-package yasnippet
-    :ensure t
-    :defer t
-    :init (use-package yasnippet-snippets :ensure t)
-    :config (yas-global-mode))
-  (use-package company-quickhelp
-    :ensure t
-    :demand t
-    :init
-    (company-quickhelp-mode))
+  (add-hook 'prog-mode-hook 'global-company-mode)
   (setq-default
    company-minimum-prefix-length     2
    company-idle-delay                0
@@ -645,21 +632,7 @@ awesomewm, and the users shell's"
    company-require-match             nil
    company-tooltip-align-annotations t)
   :config
-  (define-key company-active-map [C-return] 'newline-and-indent)
-  (when (package-installed-p 'yasnippet)
-    (setq-default company-backends
-                  (mapcar
-                   (lambda (backend)
-                     (if (and (listp backend)
-                              (member 'company-yasnippet backend))
-                         backend
-                       (append (if (consp backend) backend (list backend))
-                               '(:with company-yasnippet))))
-                   company-backends))))
-
-(use-package avy
-  :ensure t
-  :commands avy-goto-char)
+  (define-key company-active-map [C-return] 'newline-and-indent))
 
 (use-package gruvbox-theme
   :ensure t
@@ -697,20 +670,6 @@ awesomewm, and the users shell's"
 
   (set-face-attribute 'ml/normal-face nil
                       :overline t
-                      :foreground (face-attribute 'mode-line :foreground)
-                      :weight (face-attribute 'mode-line :weight)
-                      :box (face-attribute 'mode-line :box))
-
-  (set-face-attribute 'ml/read-only-face nil
-                      :overline
-                      (face-attribute 'font-lock-keyword-face :foreground)
-                      :foreground (face-attribute 'mode-line :foreground)
-                      :weight (face-attribute 'mode-line :weight)
-                      :box (face-attribute 'mode-line :box))
-
-  (set-face-attribute 'ml/modified-face nil
-                      :overline
-                      (face-attribute 'font-lock-builtin-face :foreground)
                       :foreground (face-attribute 'mode-line :foreground)
                       :weight (face-attribute 'mode-line :weight)
                       :box (face-attribute 'mode-line :box))
@@ -824,6 +783,12 @@ awesomewm, and the users shell's"
   :defer t
   :commands format-all-buffer)
 
+(use-package eglot-java
+  :ensure t
+  :after eglot
+  :config
+  (eglot-java-init))
+
 (use-package eglot
   ;; LSP Client
   :ensure t
@@ -833,45 +798,20 @@ awesomewm, and the users shell's"
   (add-to-list 'eglot-server-programs
                '(python-mode . ("pyright-langserver" "--stdio")))
   :init
-  (use-package eglot-java
-    :ensure t
-    :demand t
-    :init
-    (eval-after-load 'eglot-java
-      (progn
-        (require 'eglot-java)
-        '(eglot-java-init))))
-
   (setq-default gc-cons-threshold 100000000
-                read-process-output-max (* 4 1024 1024))
+                read-process-output-max (* 4 1024 1024)
+                eglot-events-buffer-size 0)
 
   (add-hook 'eglot-managed-mode-hook
             (lambda ()
               (when (fboundp 'evil-define-key)
                 (define-key eglot-mode-map [remap display-local-help] nil)
                 (evil-define-key 'normal 'local " g" 'display-local-help))
-              (when (package-installed-p 'company)
+              (when (boundp 'company-backends)
                 (setq company-backends (default-value 'company-backends)))))
 
-  (add-hook 'rust-mode-hook 'eglot-ensure)
-  (add-hook 'c-mode-common-hook 'eglot-ensure)
-  (add-hook 'python-mode-hook 'eglot-ensure))
-
-(use-package tree-sitter
-  :ensure t
-  :defer t
-  :init
-  (use-package tree-sitter-langs :ensure t :defer t)
-  (global-tree-sitter-mode)
-  (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode)
-  (add-hook 'html-mode-hook
-            (lambda ()
-              (tree-sitter-mode 0)
-              (tree-sitter-hl-mode 0))))
-
-(use-package git-modes
-  :ensure t
-  :demand t)
+  (dolist (hook '(rust-mode-hook c-mode-common-hook python-mode-hook))
+    (add-hook hook 'eglot-ensure)))
 
 ;; Html ;;
 (use-package impatient-mode
@@ -885,7 +825,7 @@ awesomewm, and the users shell's"
     (impatient-mode)
     (browse-url "http://localhost:8080/imp/")))
 
-(use-package sgml-mode ;; Builtin, hence this doesn't need ':ensure t'
+(use-package sgml-mode ; Builtin, hence this doesn't need ":ensure t"
   :defer t
   :init
   (add-hook 'html-mode-hook (lambda () (setq-local tab-width 2))))
@@ -906,7 +846,9 @@ awesomewm, and the users shell's"
   :ensure t
   :init
   (setq-default lua-indent-level 4
-                lua-indent-string-contents t))
+                lua-indent-string-contents t
+                lua-indent-close-paren-align nil
+                lua-indent-nested-block-content-align nil))
 
 ;; Rust ;;
 (use-package rust-mode
@@ -923,19 +865,22 @@ awesomewm, and the users shell's"
   :init
   (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-mode)))
 
+;; Undo Redo ;;
+(use-package undo-fu
+  :ensure t
+  :commands (undo-fu-only-undo undo-fu-only-redo))
+
 ;; Evil ;;
+(use-package evil-surround
+  :ensure t
+  :after evil
+  :config
+  (global-evil-surround-mode 1))
+
 (use-package evil
   :ensure t
   :demand t
   :init
-  (use-package undo-fu
-    :ensure t
-    :commands (undo-fu-only-undo undo-fu-only-redo))
-  (use-package evil-surround
-    :ensure t
-    :config
-    (global-evil-surround-mode 1))
-
   (setq-default evil-insert-state-cursor 'bar
                 evil-emacs-state-message nil
                 evil-insert-state-message nil
@@ -1017,8 +962,13 @@ awesomewm, and the users shell's"
   (evil-define-key 'insert 'global
     "\C-k" 'evil-insert-digraph
     [?\C-\S-v] (lambda ()
+                 "Copy and paste from the GUI system clipboard"
                  (interactive)
-                 (insert (get-system-clipboard))))
+                 (let ((data-type (or x-select-request-type 'UTF8_STRING)))
+                   (insert (or (gui-get-selection 'CLIPBOARD data-type) "")))))
+
+
+
   (evil-define-key 'visual 'global " c"
     (lambda (beg end)
       (interactive "r")
