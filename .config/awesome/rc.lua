@@ -80,20 +80,35 @@ theme["icon_color"] = theme[theme["icon_color"]]
 theme["focus2"] = theme[theme["focus2"]]
 theme["focus"] = theme[theme["focus"]]
 
--- Shapes --
-local titlebar_circle = gears.shape.transform(gears.shape.circle):scale(0.5, 0.5):translate(7, 10)
-local button_close = gears.surface.load_from_shape(20, 20, titlebar_circle, theme["red"])
+-- Titlebar Shapes --
+local button_close = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
+local button_maximize = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
+local button_minimize = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
+do
+	local cr
+	local transform = gears.shape.transform
+	local shape = gears.shape
+	cr = cairo.Context(button_close)
+	cr:set_source(gears.color(theme["red"]))
+	transform(shape.rectangle)
+		:translate(5, 6)
+		:rotate(math.pi/4)(cr, 10, 2)
+	transform(shape.rectangle)
+		:translate(11, 6)
+		:rotate(math.pi/4)(cr, 2, 10)
+	cr:fill()
 
-if false then -- Tests
-	local cr = cairo.Context(button_close)
-	cr:set_source(gears.color(theme["icon_color"]))
-	cr:rectangle(11, 5, 10, 6)
-	cr:rectangle(11, 10, 3, 1)
+	cr = cairo.Context(button_maximize)
+	cr:set_source(gears.color(theme["green"]))
+	transform(shape.rounded_rect)
+		:translate(6.25, 6.25)(cr, 7.5, 7.5, 1)
+	cr:stroke()
+
+	cr = cairo.Context(button_minimize)
+	cr:set_source(gears.color(theme["yellow"]))
+	transform(shape.rounded_rect):translate(7.5, 8.75)(cr, 7.5, 2.5, 1)
 	cr:fill()
 end
-
-local button_maximize = gears.surface.load_from_shape(20, 20, titlebar_circle, theme["green"])
-local button_minimize = gears.surface.load_from_shape(20, 20, titlebar_circle, theme["yellow"])
 
 -- Theme Variables --
 beautiful.init()
@@ -115,10 +130,8 @@ beautiful.titlebar_maximized_button_normal_inactive = button_maximize
 beautiful.titlebar_maximized_button_focus = button_maximize
 beautiful.titlebar_maximized_button_focus_active = button_maximize
 beautiful.titlebar_maximized_button_focus_inactive = button_maximize
-beautiful.titlebar_bg = theme["bg_light"]
-beautiful.titlebar_bg_focus = theme["fg2"]
-beautiful.titlebar_fg = theme["fg"]
-beautiful.titlebar_fg_focus = theme["fg"]
+beautiful.titlebar_bg = beautiful.bg_normal
+beautiful.titlebar_bg_focus = theme["bg_light"]
 -- Prompt
 beautiful.prompt_bg_cursor = beautiful.fg_normal
 -- beautiful.prompt_fg_cursor = beautiful.fg_normal
@@ -2140,50 +2153,22 @@ client.connect_signal("request::titlebars", function(c)
 	)
 
 	local titlebar = awful.titlebar(c, { size = 30 })
-	titlebar:setup({
-		{
-			buttons = buttons,
-			layout = wibox.layout.fixed.horizontal,
+	titlebar:setup {
+		layout = wibox.layout.align.horizontal,
+		{ -- Left
+			layout = wibox.layout.fixed.horizontal
 		},
-		{
-			{
-				{ -- Title
-					{ widget = wibox.container.background },
-					opacity = 0.1,
-					bg = "#000000",
-					id = "line_color",
-					shape = gears.shape.hexagon,
-					widget = wibox.container.background,
-				},
-				buttons = buttons,
-				margins = 10,
-				widget = wibox.container.margin,
-			},
-			{
-				{ -- Title
-					{ widget = wibox.container.background },
-					opacity = 0.1,
-					bg = "#000000",
-					id = "line_color",
-					shape = gears.shape.hexagon,
-					widget = wibox.container.background,
-				},
-				buttons = buttons,
-				margins = 10,
-				widget = wibox.container.margin,
-			},
-			margins = 10,
-			widget = wibox.container.margin,
+		{ -- Center
 			layout = wibox.layout.flex.horizontal,
+			buttons = buttons
 		},
 		{ -- Right
 			awful.titlebar.widget.minimizebutton(c),
 			awful.titlebar.widget.maximizedbutton(c),
 			awful.titlebar.widget.closebutton(c),
-			layout = wibox.layout.fixed.horizontal,
-		},
-		layout = wibox.layout.align.horizontal,
-	})
+			layout = wibox.layout.fixed.horizontal
+		}
+	}
 end)
 
 client.connect_signal( -- Window border color when focused
