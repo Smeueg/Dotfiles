@@ -153,13 +153,12 @@ function menu.open()
 		placement = awful.placement.centered,
 		border_color = beautiful.border_focus,
 		border_width = 3,
-		height = geometry.height / 3,
 		ontop = true,
 		widget = {
 			widget = wibox.container.margin,
 			margins = 20,
 			{
-				widget = wibox.layout.grid,
+				layout = wibox.layout.grid,
 				forced_num_cols = 1,
 				homogeneous = false,
 				{ widget = wibox.widget.textbox }, -- Prompt
