@@ -8,7 +8,6 @@
 These dotfiles consists of configuration for:
 - [AwesomeWM](https://awesomewm.org/)
 - [Emacs](https://emacs.org/)
-- [Rofi](https://github.com/davatorium/rofi) (Optional, AwesomeWM has it's own "menu")
 - And any POSIX compliant shell. (Screw you [Fish](https://fishshell.com/))
 
 There are also configuration files for programs that I used to use but no longer

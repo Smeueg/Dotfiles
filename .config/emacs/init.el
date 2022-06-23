@@ -32,8 +32,6 @@
  x-select-enable-clipboard nil
  ;; Enable every command
  disabled-command-function nil
- ;; When using `function-other-window' open another window below
- display-buffer-base-action '(display-buffer-below-selected)
  ;; Scratch Buffer will be empty by default
  initial-scratch-message ""
  ;; Disable line wrapping
@@ -73,6 +71,11 @@
 ;; Use spaces when aligning with align-regexp
 (defadvice align-regexp (around align-regexp-with-spaces activate)
   (let ((indent-tabs-mode nil)) ad-do-it))
+;; Remove the truncation arrows that show up on the left side when scrolled
+;; horizontally
+(setq-default fringe-indicator-alist
+              (add-to-list 'fringe-indicator-alist
+                           '(truncation nil right-arrow)))
 
 
 ;;; VISUAL CONFIGURATION ;;;
@@ -359,14 +362,15 @@ awesomewm, and the users shell's"
     (ml/align
      `( ;; Left
        ,(propertize
-         (format " %s  %%m" (buffer-name)) 'face
+         (format " %s " (buffer-name)) 'face
          (setq-local main-face
                      (cond
                       (buffer-read-only
                        `(:overline ,(face-attribute 'error :foreground)))
                       ((buffer-modified-p)
                        `(:overline ,(face-attribute 'font-lock-builtin-face
-                                                    :foreground)))))))
+                                                    :foreground))))))
+       " %m")
      `( ;; Right
        ,(cdr (assoc (or (and (boundp 'evil-state) (symbol-value 'evil-state)) t)
                     '((normal   . "Normal ")
@@ -474,7 +478,6 @@ awesomewm, and the users shell's"
     "Open a terminal in a new buffer."
     (interactive)
     (let ((tmp default-directory))
-      (when (eq major-mode 'ranger-mode) (ranger-close))
       (let ((default-directory tmp))
         (ansi-term (getenv "SHELL")))))
   (defun term-vs ()
@@ -532,6 +535,13 @@ awesomewm, and the users shell's"
                           0 t)))))
 
 ;; "Nice To Have" Packages
+
+(use-package dirvish
+  :ensure t
+  :demand t
+  :config
+  (dirvish-override-dired-mode))
+
 (use-package cheat-sh
   :ensure t
   :defer t)
@@ -569,29 +579,6 @@ awesomewm, and the users shell's"
   (use-package marginalia
     :ensure t
     :init (marginalia-mode)))
-
-(use-package ranger
-  :ensure t
-  :commands (ranger dired)
-  :config
-  (define-key ranger-mode-map ":"
-    (lambda () (interactive) (execute-extended-command nil)))
-  (define-key ranger-mode-map " "
-    (lambda () (interactive) (ranger-toggle-mark) (ranger-next-file 1)))
-  :init
-  (setq-default ranger-show-hidden  t
-                ranger-parent-depth 1
-                ranger-dont-show-binary t
-                ranger-excluded-extensions '("mkv" "iso" "mp4" "pdf")
-                ranger-dont-show-binary t)
-  (add-hook 'ranger-mode-hook
-            (lambda ()
-              (if (eq major-mode 'ranger-mode)
-                  (progn
-                    (setq-local ranger-show-literal nil) ;; Preview images by default
-                    (when (package-installed-p 'evil) ;; Turn off evil
-                      (turn-off-evil-mode)))
-                (hl-line-mode -1)))))
 
 (use-package bongo
   ;; Music player (requires mpg123)
@@ -907,11 +894,6 @@ awesomewm, and the users shell's"
       [return]  'bongo-dwim
       "c" 'bongo-pause/resume))
 
-  (evil-define-key 'normal 'global " F"
-    (lambda ()
-      (interactive)
-      (if (fboundp 'ranger) (ranger) (dired "."))))
-
   (when (package-installed-p 'flymake) ;; Flymake
     (evil-define-key 'normal flymake-mode-map
       "\C-n" 'flymake-goto-next-error
@@ -937,12 +919,6 @@ awesomewm, and the users shell's"
 
   ;; Buffer-Menu
   (evil-define-key 'motion Buffer-menu-mode-map [return] 'Buffer-menu-select)
-  ;; (when (get-buffer-window "*Buffer List*")
-  ;;   (delete-window (get-buffer-window "*Buffer List*")))
-  ;; (add-hook 'quit-window-hook
-  ;;           (lambda () (kill-buffer "*Buffer List*")))
-  ;; (advice-add 'Buffer-menu-select :after
-  ;;             (lambda () (kill-buffer "*Buffer List*")))
 
   ;; Basic Keybindings ;;
   (fset 'evil-next-line     'evil-next-visual-line)
@@ -1017,7 +993,6 @@ awesomewm, and the users shell's"
     " d"  (lambda () (interactive) (find-file note-file))
     " i"  (lambda () (interactive) (set-auto-mode))
     " s"  (lambda () (interactive) (switch-to-buffer "*scratch*"))
-    " r"  (lambda () (interactive) (load-theme chosen-theme 1))
     " 80" (lambda () (interactive) (move-to-column 80))
     " q"  (lambda ()
             (interactive) (when (y-or-n-p "Quit Emacs?") (kill-emacs)))))

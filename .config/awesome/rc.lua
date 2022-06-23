@@ -20,6 +20,7 @@ local menu = require("menu")
 local dashboard = require("dashboard")
 local screenshot = require("screenshot")
 local volume = require("volume")
+local layout = require("layout")
 
 -- Handle errors if there are any --
 do
@@ -58,32 +59,6 @@ local function command_exists(cmd)
 		end
 	end
 	return false
-end
-
-local function set_layout_all(layout)
-	-- Set layout for all tags
-	local layouts = awful.layout.suit
-	local titlebar_func = awful.titlebar.hide
-	local border = beautiful.border_width
-	local gap = 0
-
-	if layout == layouts.tile.right then
-		gap = beautiful.useless_gap
-	elseif layout == layouts.floating then
-		titlebar_func = awful.titlebar.show
-	elseif layout == layouts.max then
-		border = 0
-	end
-
-	for _, t in pairs(root.tags()) do
-		awful.layout.set(layout, t)
-		t.gap = gap
-	end
-
-	for _, c in ipairs(client.get()) do
-		titlebar_func(c)
-		c.border_width = border
-	end
 end
 
 local function find_or_spawn_emacs()
@@ -470,13 +445,13 @@ local globalkeys = gears.table.join( -- Keybindings
 	end),
 	-- Layout
 	awful.key({ modkey }, "t", function()
-		set_layout_all(awful.layout.suit.tile.right)
+			layout.set_all(awful.layout.suit.tile.right)
 	end),
 	awful.key({ modkey }, "m", function()
-		set_layout_all(awful.layout.suit.max)
+			layout.set_all(awful.layout.suit.max)
 	end),
 	awful.key({ modkey }, "f", function()
-		set_layout_all(awful.layout.suit.floating)
+			layout.set_all(awful.layout.suit.floating)
 	end),
 	awful.key({ modkey }, "l", function() -- Increase master width
 		if client.focus and client.focus.first_tag.layout == awful.layout.suit.tile.right then
@@ -628,7 +603,7 @@ clientbuttons = gears.table.join(
 	end)
 )
 
--- Signals --
+-- Wibar --
 awful.screen.connect_for_each_screen(function(s)
 	set_wallpaper(s)
 	awful.tag({ "1", "2", "3", "4", "5" }, s, awful.layout.layouts[1])
@@ -645,7 +620,7 @@ awful.screen.connect_for_each_screen(function(s)
 				spacing = 10,
 				dashboard.widget,
 				bar.taglist_create(s),
-				bar.layout,
+				layout.widget,
 			},
 			{ -- Center Widgets
 				layout = wibox.layout.fixed.horizontal,
@@ -762,11 +737,11 @@ client.connect_signal("manage", function(c)
 end)
 
 -- Miscellaneous --
-gears.timer({ -- More frequent garbage collecting
+gears.timer { -- More frequent garbage collecting
 	timeout = 30,
 	autostart = true,
 	callback = collectgarbage,
-})
+}
 
 do -- Commands to execute in startup
 	local cmds = {
@@ -787,10 +762,4 @@ do -- Commands to execute in startup
 			naughty.notify({ text = "[ERROR]: " .. bin .. " is not installed" })
 		end
 	end
-
-	-- awful.spawn.with_shell(
-	-- 	"pidof pulseaudio ||" ..
-	-- 	"command -v pulseaudio &&" ..
-	-- 	"setsid --fork pulseaudio --start --exit-idle-time=-1"
-	-- )
 end

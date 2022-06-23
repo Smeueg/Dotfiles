@@ -106,10 +106,6 @@ beautiful.tooltip_border_width = 1
 beautiful.menubar_fg_focus = theme["focus"]
 beautiful.menubar_bg_focus = theme["bg_light"]
 beautiful.menubar_fg_normal = beautiful.fg_normal
--- Tasklist
-beautiful.tasklist_bg_focus = theme["bg_dark"]
-beautiful.tasklist_bg_normal = theme["bg"]
-beautiful.tasklist_bg_minimize = beautiful.wibar_bg
 -- Borders
 beautiful.border_normal = theme["bg"]
 beautiful.border_focus = theme["focus"]
@@ -129,6 +125,11 @@ beautiful.taglist_bg_focus = beautiful.wibar_bg
 beautiful.taglist_squares_sel = nil
 beautiful.taglist_squares_unsel = nil
 beautiful.wibar_selected_tag = theme["focus2"]
+-- Tasklist
+beautiful.tasklist_shape = gears.shape.rounded_rect
+beautiful.tasklist_bg_focus = theme["bg_dark"]
+beautiful.tasklist_bg_normal = theme["bg"]
+beautiful.tasklist_bg_minimize = beautiful.wibar_bg
 -- Notification
 beautiful.notification_border_color = theme["focus"]
 naughty.config.defaults.border_width = 3
