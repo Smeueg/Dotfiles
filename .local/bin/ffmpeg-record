@@ -60,7 +60,7 @@ if ${audio}; then
 		-i "${source}" \
 		-preset ultrafast \
 		-crf 18 \
-		-pix_fmt yuv420p "${1}"
+		-pix_fmt yuv420p "${file}"
 else
 	ffmpeg \
 		-f x11grab \
@@ -68,5 +68,5 @@ else
 		-i :0.0 \
 		-preset ultrafast \
 		-crf 18 \
-		-pix_fmt yuv420p "${1}"
+		-pix_fmt yuv420p "${file}"
 fi

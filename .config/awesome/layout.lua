@@ -60,9 +60,9 @@ do
 	icon_floating = cairo_create(cairo_format, 20, 20)
 	cr = cairo_context(icon_floating)
 	cr:set_source(color)
-	transform(gears.shape.rectangle):translate(4, 4)(cr, 10, 10)
-	transform(gears.shape.rectangle):translate(6, 15)(cr, 10, 1)
-	transform(gears.shape.rectangle):translate(15, 6)(cr, 1, 10)
+	transform(gears.shape.rectangle):translate(4, 4)(cr, 8, 8)
+	transform(gears.shape.rectangle):translate(8, 14)(cr, 8, 2)
+	transform(gears.shape.rectangle):translate(14, 8)(cr, 2, 8)
 	cr:fill()
 end
 

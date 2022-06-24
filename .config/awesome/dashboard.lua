@@ -189,7 +189,8 @@ local widgets = {
 		-- Reboot
 		cr = cairo.Context(opts[3].icon)
 		cr:set_source(gears.color(beautiful.wibar_selected_tag))
-		gears.shape.transform(gears.shape.arc):translate(3, 3)(cr, 14, 14, 2, -0.1 * pi, 1.5 * pi, true, true)
+		gears.shape.transform(gears.shape.arc)
+			:translate(3, 3)(cr, 14, 14, 2, -0.1 * pi, 1.5 * pi, true, true)
 		gears.shape.transform(gears.shape.isosceles_triangle)
 			:translate(10, 3)
 			:rotate_at(11, 2, -pi / 8)(cr, 7, 7)
@@ -233,6 +234,7 @@ end
 
 local function options_press(opts, chosen)
 	opts[chosen].func()
+	module.toggle()
 end
 
 local function options_choose_next(opts)
@@ -303,11 +305,9 @@ function module.toggle()
 			{{}, "Escape", module.toggle},
 			{{}, "Return", function()
 					options_press(opts, module.chosen)
-					module.toggle()
 			end},
 			{{"Control"}, "m", function()
 					options_press(opts, module.chosen)
-					module.toggle()
 			end}
 		}
 	}
