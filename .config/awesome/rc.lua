@@ -1,19 +1,17 @@
 -- Smeueg's Awesomewm configuration
 -- Libraries --
--- Make sure LuaRocks packages is loaded if installed
-pcall(require, "luarocks.loader")
+pcall(require, "luarocks.loader") -- Make sure LuaRocks packages is loaded
 require("awful.autofocus")
 local gears = require("gears")
 local beautiful = require("beautiful")
 local awful = require("awful")
 local wibox = require("wibox")
 local naughty = require("naughty")
-local hotkeys_popup = require("awful.hotkeys_popup")
-local hotkeys_popup = require("awful.hotkeys_popup")
-local hotkeys_popup = awful.hotkeys_popup
-local cairo = require("lgi").cairo
+local notify = naughty.notify
+local lgi = require("lgi")
+local cairo = lgi.cairo
 local dpi = beautiful.xresources.apply_dpi
--- Personal Modules
+-- Other Modules
 require("theme")
 local bar = require("bar")
 local menu = require("menu")
@@ -25,42 +23,31 @@ local layout = require("layout")
 -- Handle errors if there are any --
 do
 	local in_error = false
-	awesome.connect_signal("debug::error", function(err)
-		if in_error then
-			return
+	awesome.connect_signal(
+		"debug::error",
+		function(err)
+			if in_error then return end
+			in_error = true
+			notify {
+				title = "Error",
+				bg = "#3c3836",
+				fg = "#FABD2F",
+				text = tostring(err),
+				timeout = 0
+			}
+			in_error = false
 		end
-		in_error = true
-		naughty.notify({
-			title = "Error",
-			bg = "#3c3836",
-			fg = "#FABD2F",
-			text = tostring(err),
-		})
-		in_error = false
-	end)
+	)
 end
 
 -- Variables --
 local home = os.getenv("HOME")
 local editor = os.getenv("EDITOR")
 local browser = os.getenv("BROWSER")
-local terminal = os.getenv("TERMINAL") or "x-terminal-emulator"
+local terminal = os.getenv("TERMINAL")
 local modkey = "Mod4"
 
 -- Custom Functions --
-local function command_exists(cmd)
-	-- Check if a command can be ran
-	if not cmd then
-		return false
-	end
-	for dir in string.gmatch(os.getenv("PATH"), "([^:]+)") do
-		if gears.filesystem.file_executable(dir .. "/" .. cmd) then
-			return cmd
-		end
-	end
-	return false
-end
-
 local function find_or_spawn_emacs()
 	-- Spawn Emacs if one is not already set as scratch_client,
 	-- else focus and move it to the current tag.
@@ -78,10 +65,10 @@ local function find_or_spawn_emacs()
 			end
 		end
 
-		naughty.notify({ text = "Opening emacs" })
+		notify { text = "Opening emacs" }
 		awful.spawn.raise_or_spawn("emacs --internal-border=20", {}, nil, nil, function(c)
-			scratch_client = c
-			find_or_spawn_emacs()
+				scratch_client = c
+				find_or_spawn_emacs()
 		end)
 	end
 end
@@ -98,422 +85,193 @@ local function set_wallpaper(s)
 	end
 end
 
-local function load_droidcam_module()
-	-- A function to load a pulseaudio droidcam module
-	if not command_exists("pactl") then
-		return
-	end
-	local module_name = "DroidcamAudio"
-	local functions
-	functions = {
-		{
-			"ps -C droidcam-cli --no-header -o 'cmd'",
-			function(stdout)
-				if stdout:match("-a") then
-					awful.spawn.easy_async(functions[2][1], functions[2][2])
-				end
-			end,
-		},
-		{
-			"pactl list short",
-			function(stdout)
-				if not stdout:match(module_name) then
-					awful.spawn.easy_async(functions[3][1], functions[3][2])
-				end
-			end,
-		},
-		{
-			"pactl load-module module-alsa-source device=hw:Loopback,1,0 source_properties=device.description="
-				.. module_name,
-			function(stdout)
-				awful.spawn.easy_async(functions[4][1], functions[4][2])
-			end,
-		},
-		{
-			"pactl list short",
-			function(stdout)
-				if stdout:match(module_name) then
-					naughty.notify({ text = "Successfully loaded Droidcam module" })
-					awful.spawn.with_shell(
-						"pactl set-default-source 'alsa_input.hw_Loopback_1_0' && pactl set-source-volume @DEFAULT_SINK@ 150%"
-					)
-				end
-			end,
-		},
-	}
-
-	awful.spawn.easy_async(functions[1][1], functions[1][2])
-end
-
-local function toggle_popup(arg)
-	-- A function to either remove the popup or create a new popup
-	if popup then
-		-- Get rid of popup if one was already made
-		popup.widget.keygrabber:stop()
-		popup.visible = false
-		popup = nil
-		return
-	end
-
-	-- Create a new popup
-	local cols = 1
-	local rows = 1
-	if arg.orientation == "horizontal" then
-		cols = #arg
-	elseif arg.orientation == "vertical" then
-		rows = #arg
-	end
-	local template
-	local margins = 15
-	local options = {
-		chosen = 1,
-		margins = margins,
-		widget = wibox.container.margins,
-		forced_num_cols = cols,
-		forced_num_rows = rows,
-		homogenus = true,
-		expand = true,
-		layout = wibox.layout.grid,
-		select_next = function(self)
-			self.chosen = self.chosen + 1
-			self:update()
-		end,
-		select_previous = function(self)
-			self.chosen = self.chosen - 1
-			self:update()
-		end,
-		update = function(self)
-			-- Update the selected background color
-			local options = self:get_children_by_id("option")
-			if self.chosen > #options then
-				self.chosen = #options
-			elseif self.chosen < 1 then
-				self.chosen = 1
-			end
-			for i, option in ipairs(options) do
-				option.bg = i == self.chosen and beautiful.menu_bg_normal or beautiful.menu_bg_focus
-			end
-		end,
-		pick = function(self)
-			-- Function to run when widget gets clicked
-			local func = self:get_children_by_id("option")[self.chosen].func
-			self:close()
-			if func then
-				func()
-			end
-		end,
-		close = function(self)
-			toggle_popup()
-		end,
-	}
-
-	-- Add options from argument
-	if arg.cancel then
-		table.insert(arg, { text = "Cancel" })
-	end
-	for i, v in ipairs(arg) do
-		if v.text then
-			template = {
-				text = v.text,
-				align = "center",
-				widget = wibox.widget.textbox,
-			}
-		elseif v.image then
-			template = {
-				image = v.image,
-				forced_height = 40,
-				forced_width = 40,
-				widget = wibox.widget.imagebox,
-			}
-		end
-		table.insert(options, {
-			{
-				{
-					template,
-					margins = margins,
-					widget = wibox.container.margin,
-				},
-				id = "option",
-				func = v.func,
-				widget = wibox.container.background,
-			},
-			margins = margins,
-			widget = wibox.container.margin,
-		})
-	end
-	template = nil
-	margins = nil
-
-	-- The Keygrabber (widget keybindigns)
-	local keybindings = {
-		{
-			{ "Control" },
-			"n",
-			function()
-				popup.widget:select_next()
-			end,
-		},
-		{
-			{ "Control" },
-			"p",
-			function()
-				popup.widget:select_previous()
-			end,
-		},
-		{
-			{ "Control" },
-			"g",
-			function()
-				popup.widget:close()
-			end,
-		},
-		{
-			{},
-			"q",
-			function()
-				popup.widget:close()
-			end,
-		},
-		{
-			{},
-			"Escape",
-			function()
-				popup.widget:close()
-			end,
-		},
-		{
-			{ "Control" },
-			"m",
-			function()
-				popup.widget:pick()
-			end,
-		},
-		{
-			{},
-			"Return",
-			function()
-				popup.widget:pick()
-			end,
-		},
-		{
-			{},
-			" ",
-			function()
-				popup.widget:pick()
-			end,
-		},
-	}
-
-	if arg.orientation == "horizontal" then
-		table.insert(keybindings, {
-			{},
-			"l",
-			function()
-				popup.widget:select_next()
-			end,
-		})
-		table.insert(keybindings, {
-			{},
-			"h",
-			function()
-				popup.widget:select_previous()
-			end,
-		})
-		table.insert(keybindings, {
-			{},
-			"Right",
-			function()
-				popup.widget:select_next()
-			end,
-		})
-		table.insert(keybindings, {
-			{},
-			"Left",
-			function()
-				popup.widget:select_previous()
-			end,
-		})
-	else
-		table.insert(keybindings, {
-			{},
-			"j",
-			function()
-				popup.widget:select_next()
-			end,
-		})
-		table.insert(keybindings, {
-			{},
-			"k",
-			function()
-				popup.widget:select_previous()
-			end,
-		})
-		table.insert(keybindings, {
-			{},
-			"Down",
-			function()
-				popup.widget:select_next()
-			end,
-		})
-		table.insert(keybindings, {
-			{},
-			"Up",
-			function()
-				popup.widget:select_previous()
-			end,
-		})
-	end
-
-	options.keygrabber = awful.keygrabber({
-		keybindings = keybindings,
-		autostart = true,
-	})
-
-	-- Create popup
-	popup = awful.popup({
-		border_width = 3,
-		border_color = beautiful.border_focus,
-		placement = awful.placement.centered,
-		visible = true,
-		ontop = true,
-		widget = options,
-	})
-
-	-- Add signals to each option
-	for i, option in ipairs(popup.widget:get_children_by_id("option")) do
-		option:connect_signal("mouse::enter", function()
-			popup.widget.chosen = i
-			popup.widget:update()
-		end)
-		option:connect_signal("button::press", function()
-			popup.widget:pick()
-		end)
-	end
-	options = nil
-	popup.widget:update()
-end
-
-local function spawn_browser()
-	local AppInfo = require("lgi").Gio.AppInfo
-	local app = AppInfo.get_default_for_type("text/html")
-
-	if app then
-		naughty.notify({ text = "Opening " .. AppInfo.get_name(app) })
-		awful.spawn(AppInfo.get_executable(app))
-		return
-	end
-
-	naughty.notify({
-		title = "Error",
-		text = "No default browser found",
-	})
-end
-
 
 -- Key and Mouse Bindings --
 local globalkeys = gears.table.join( -- Keybindings
 	awful.key({ modkey }, "y", function()
+			-- For testing purposes only in "./test.lua"
 			package.loaded["test"] = false
 			require("test")
 	end),
 	-- Volume
-	awful.key({ modkey }, "[", function() volume:ctrl("-5") end),
-	awful.key({ modkey }, "]", function() volume:ctrl("+5") end),
-	awful.key({ modkey }, "\\", function() volume:ctrl("toggle") end),
-	awful.key({ modkey, "Control" }, "[", function() volume:ctrl("-1") end),
-	awful.key({ modkey, "Control" }, "]", function() volume:ctrl("+1") end),
-	awful.key({ modkey, "Shift" }, "\\", function() volume:ctrl("default") end),
-	-- Clients
-	awful.key({ modkey }, "j", function() -- Focus previous window
-		awful.client.focus.byidx(-1)
-	end),
-	awful.key({ modkey }, "k", function() -- Focus next window
-		awful.client.focus.byidx(1)
-	end),
-	awful.key({ modkey, "Shift" }, "j", function() -- Swap with next window
-		awful.client.swap.byidx(-1)
-	end),
-	awful.key({ modkey, "Shift" }, "k", function() -- Swap with next window
-		awful.client.swap.byidx(1)
-	end),
+	awful.key(
+		{ modkey }, "[", function() volume:ctrl("-5") end,
+		{ group = "Volume", description = "Decrease volume by 5%" }
+	),
+	awful.key(
+		{ modkey }, "]", function() volume:ctrl("+5") end,
+		{ group = "Volume", description = "Increase volume by 5%" }
+	),
+	awful.key(
+		{ modkey, "Control" }, "[", function() volume:ctrl("-1") end,
+		{ group = "Volume", description = "Decrease volume by 1%"}
+	),
+	awful.key(
+		{ modkey, "Control" }, "]", function() volume:ctrl("+1") end,
+		{ group = "Volume", description = "Increase volume by 1%" }
+	),
+	awful.key(
+		{ modkey }, "\\", function() volume:ctrl("toggle") end,
+		{ group = "Volume", description = "Mute/Unmute" }
+	),
+	awful.key(
+		{ modkey, "Shift" }, "\\", function() volume:ctrl("default") end,
+		{ group = "Volume", description = "Set volume to default level" }
+	),
+	-- Client
+	awful.key( -- Focus previous window
+		{ modkey }, "j", function() awful.client.focus.byidx(-1) end,
+		{ group = "Client", description = "Focus previous client " }
+	),
+	awful.key( -- Focus next window
+		{ modkey }, "k", function() awful.client.focus.byidx(1) end,
+		{ group = "Client", description = "Focus next client" }
+	),
+	awful.key( -- Swap with next window
+		{ modkey, "Shift" }, "j", function() awful.client.swap.byidx(-1) end,
+		{
+			group = "Client",
+			description = "Swap the current client with the next client"
+		}
+	),
+	awful.key( -- Swap with next window
+		{ modkey, "Shift" }, "k", function() awful.client.swap.byidx(1) end,
+		{
+			group = "Client",
+			description = "Swap the current client with the previos client"
+		}
+	),
 	-- Screens
-	awful.key({ modkey, "Control" }, "j", function() -- Focus previous screen
-		awful.screen.focus_relative(-1)
-	end),
-	awful.key({ modkey, "Control" }, "k", function() -- Focus next screen
-		awful.screen.focus_relative(1)
-	end),
+	awful.key( -- Focus previous screen
+		{ modkey, "Control" }, "j", function()
+			awful.screen.focus_relative(-1)
+		end,
+		{
+			group = "Screen",
+			description = "Focus the previous screen"
+		}
+	),
+	awful.key( -- Focus next screen
+		{ modkey, "Control" }, "k", function()
+			awful.screen.focus_relative(1)
+		end,
+		{
+			group = "Screen",
+			description = "Focus the next screen"
+		}
+	),
 	-- Layout
-	awful.key({ modkey }, "t", function()
+	awful.key(
+		{ modkey }, "t", function()
 			layout.set_all(awful.layout.suit.tile.right)
-	end),
-	awful.key({ modkey }, "m", function()
+		end,
+		{
+			group = "Layout",
+			description = "Switch to the tiling layout"
+		}
+	),
+	awful.key(
+		{ modkey }, "m", function()
 			layout.set_all(awful.layout.suit.max)
-	end),
-	awful.key({ modkey }, "f", function()
+		end,
+		{
+			group = "Layout",
+			description = "Switch to the tiling layout"
+		}
+	),
+	awful.key(
+		{ modkey }, "f", function()
 			layout.set_all(awful.layout.suit.floating)
-	end),
-	awful.key({ modkey }, "l", function() -- Increase master width
-		if client.focus and client.focus.first_tag.layout == awful.layout.suit.tile.right then
-			awful.tag.incmwfact(0.05)
-		end
-	end),
-	awful.key({ modkey }, "h", function() -- Decrease master width
-		local c = client.focus
-		if c and c.first_tag.layout == awful.layout.suit.tile.right then
-			awful.tag.incmwfact(-0.05)
-		end
-	end),
+		end,
+		{
+			group = "Layout",
+			description = "Switch to the tiling layout"
+		}
+	),
+	-- Increase master width
+	awful.key(
+		{ modkey }, "l", function() layout.incmwfact(0.05) end,
+		{ group = "Layout", description = "Increase master width factor" }
+	),
+	-- Decrease master width
+	awful.key(
+		{ modkey }, "h", function() layout.incmwfact(-0.05) end,
+		{ group = "Layout", description = "Decrease master width factor" }
+	),
 	-- Awesome Functions
-	awful.key({ modkey, "Control" }, "r", awesome.restart),
-	awful.key({ modkey, "Shift" }, "q", awesome.quit),
-	awful.key({ modkey, "Shift" }, "b", function()
-		local s = awful.screen.focused()
-		s.wibox.visible = not s.wibox.visible
-	end),
-	-- Menubar
-	awful.key({ modkey }, "p", menu.open),
-	-- Standard programs
-	awful.key({ modkey }, "b", spawn_browser),
-	awful.key({ modkey }, "Return", function() -- Spawn Emacs
-		if terminal == "emacs" then
-			find_or_spawn_emacs()
-			return
-		end
-		awful.spawn(terminal)
-	end),
-	awful.key({ modkey }, "q", dashboard.toggle),
-	awful.key({ modkey }, "s", screenshot.toggle)
+	awful.key(
+		{ modkey, "Control" }, "r", awesome.restart,
+		{ group = "Awesome", description = "Restart Awesome" }
+	),
+	awful.key(
+		{ modkey, "Shift" }, "q", awesome.quit,
+		{ group = "Awesome", description = "Quit Awesome" }
+	),
+	awful.key(
+		{ modkey, "Shift" }, "b", function()
+			local wibar = awful.screen.focused().wibar
+			wibar.visible = not wibar.visible
+		end,
+		{ group = "Awesome", description = "Toggle bar visibility" }
+	),
+	-- Applications
+	awful.key(
+		{ modkey }, "p", menu.open,
+		{ group = "Applications" }
+	),
+	awful.key(
+		{ modkey }, "b", function() -- Open the default browser
+			local AppInfo = lgi.Gio.AppInfo
+			local app = AppInfo.get_default_for_type("text/html")
+			if app then
+				notify { text = "Opening " .. AppInfo.get_name(app)}
+				awful.spawn(AppInfo.get_executable(app))
+				return
+			end
+			notify {
+				title = "Error",
+				text = "No default browser found",
+			}
+		end,
+		{ group = "Applications", description = "Open the default browser" }
+	),
+	awful.key(
+		{ modkey }, "Return", function() -- Open the terminal
+			if terminal == "" then
+				notify {title = "Error", text == "$TERMINAL isn't set"}
+			elseif terminal == "emacs" then
+				notify {text = "Opening emacs"}
+				awful.spawn("emacs --internal-border=20")
+			else
+				awful.spawn(terminal)
+			end
+		end,
+		{ group = "Applications", description = "Open a \"terminal\"" }
+	),
+	-- Menus/Tools
+	awful.key(
+		{ modkey }, "q", dashboard.toggle,
+		{ group = "Menus/Tools", description = "Open the dashboard" }
+	),
+	awful.key(
+		{ modkey }, "s", screenshot.toggle,
+		{ group = "Menus/Tools", description = "Take a screenshot" }
+	)
 )
 
 local clientkeys = gears.table.join( -- Key Bindings That Activate Per-client
+	awful.key({ modkey, "Shift" }, "c", function(c) c:kill() end),
 	awful.key({ modkey, "Shift" }, "f", function(c)
-		c.fullscreen = not c.fullscreen
-		c:raise()
+			c.floating = not c.floating
 	end),
-	awful.key({ modkey, "Shift" }, "c", function(c)
-		c:kill()
-	end),
-	awful.key({ modkey, "Shift" }, "space", function(c)
-		c.floating = not c.floating
-	end),
-	awful.key({ modkey, "Shift" }, "t", function(c)
-		c.ontop = not c.ontop
-	end),
-	awful.key({ modkey }, "space", function(c)
-		c:swap(awful.client.getmaster())
-	end),
-	awful.key({ modkey }, "o", function(c)
-		c:move_to_screen()
-	end),
-	awful.key({ modkey }, "Down", function(c)
-		c:relative_move(0, 10, 0, 0)
-	end),
+	awful.key({ modkey, "Shift" }, "t", function(c) c.ontop = not c.ontop end),
+	awful.key({ modkey }, "o", function(c) c:move_to_screen() end),
+	awful.key({ modkey }, "Down", function(c) c:relative_move(0, 10, 0, 0) end),
 	awful.key({ modkey }, "Up", function(c)
-		c:relative_move(0, -10, 0, 0)
+			c:relative_move(0, -10, 0, 0)
 	end),
 	awful.key({ modkey }, "Left", function(c)
-		c:relative_move(-10, 0, 0, 0)
+			c:relative_move(-10, 0, 0, 0)
 	end),
 	awful.key({ modkey }, "Right", function(c)
 		c:relative_move(10, 0, 0, 0)
@@ -566,10 +324,24 @@ root.keys(globalkeys)
 
 -- Library Variables --
 awful.layout.layouts = { -- For layouts
-	awful.layout.suit.tile,
+	awful.layout.suit.tile.right,
 	awful.layout.suit.max,
 	awful.layout.suit.floating,
 }
+
+local clientbuttons = gears.table.join(
+	awful.button({}, 1, function(c)
+			c:emit_signal("request::activate", "mouse_click", { raise = true })
+	end),
+	awful.button({ modkey }, 1, function(c)
+			c:emit_signal("request::activate", "mouse_click", { raise = true })
+			awful.mouse.client.move(c)
+	end),
+	awful.button({ modkey }, 3, function(c)
+			c:emit_signal("request::activate", "mouse_click", { raise = true })
+			awful.mouse.client.resize(c)
+	end)
+)
 
 awful.rules.rules = { -- Rules
 	{
@@ -588,26 +360,11 @@ awful.rules.rules = { -- Rules
 	},
 }
 
--- Buttons --
-clientbuttons = gears.table.join(
-	awful.button({}, 1, function(c)
-		c:emit_signal("request::activate", "mouse_click", { raise = true })
-	end),
-	awful.button({ modkey }, 1, function(c)
-		c:emit_signal("request::activate", "mouse_click", { raise = true })
-		awful.mouse.client.move(c)
-	end),
-	awful.button({ modkey }, 3, function(c)
-		c:emit_signal("request::activate", "mouse_click", { raise = true })
-		awful.mouse.client.resize(c)
-	end)
-)
 
 -- Wibar --
 awful.screen.connect_for_each_screen(function(s)
 	set_wallpaper(s)
 	awful.tag({ "1", "2", "3", "4", "5" }, s, awful.layout.layouts[1])
-
 	s.wibar = awful.wibar { position = "top", screen = s, height = 50 }
 	s.wibar:setup { -- Wibox widgets
 		widget = wibox.container.margin,
@@ -641,23 +398,25 @@ end)
 -- Re-set wallpaper when a screen's geometry changes (e.g. different resolution)
 screen.connect_signal("property::geometry", set_wallpaper)
 
-client.connect_signal("manage", function(c)
-	-- Set the windows at the slave,
-	-- i.e. put it at the end of others instead of setting
-	-- it master. If not awesome.startup then
-	-- awful.client.setslave(c) end
-	if awesome.startup then
+client.connect_signal(
+	"manage",
+	function(c)
+		-- Remove client borders if the current layout is max
+		if c.first_tag.layout == awful.layout.suit.max then
+			c.border_width = 0
+		end
+		-- Set the windows at the slave,
+		-- i.e. put it at the end of others instead of setting
+		-- it master. If not awesome.startup then
+		-- awful.client.setslave(c) end
+		if not awesome.startup then return end
 		-- Prevent clients from being unreachable after
 		-- screen count changes.
-		if c.size_hints.user_position then
-			return
-		end
-		if c.size_hints.program_position then
-			return
-		end
+		if c.size_hints.user_position then return end
+		if c.size_hints.program_position then return end
 		awful.placement.no_offscreen(c)
 	end
-end)
+)
 
 client.connect_signal("request::titlebars", function(c)
 	-- Add a titlebar when requested (and when titlebars_enabled is true)
@@ -716,26 +475,6 @@ client.connect_signal( -- Enable titlebars when floating
 	end
 )
 
-client.connect_signal( -- Enable sloppy focus (window focus follows mouse)
-	"mouse::enter",
-	function(c)
-		c:emit_signal("request::activate", "mouse_enter", { raise = false })
-	end
-)
-
-client.connect_signal("manage", function(c)
-	local layout = awful.screen.focused().selected_tag.layout
-	if c.floating or layout == awful.layout.suit.floating then
-		awful.titlebar.show(c)
-	else
-		awful.titlebar.hide(c)
-	end
-
-	if layout == awful.layout.suit.max then
-		c.border_width = 0
-	end
-end)
-
 -- Miscellaneous --
 gears.timer { -- More frequent garbage collecting
 	timeout = 30,
@@ -744,6 +483,15 @@ gears.timer { -- More frequent garbage collecting
 }
 
 do -- Commands to execute in startup
+	local function command_exists(cmd)
+		for dir in string.gmatch(os.getenv("PATH"), "([^:]+)") do
+			if gears.filesystem.file_executable(dir .. "/" .. cmd) then
+				return cmd
+			end
+		end
+		return false
+	end
+
 	local cmds = {
 		"sct 6000K",
 		"xrandr --output DP-1 --mode 1280x1024 --scale 1.3x1.3",
@@ -757,9 +505,9 @@ do -- Commands to execute in startup
 	for _, cmd in pairs(cmds) do
 		local bin = cmd:match("^[^ ]+")
 		if command_exists(bin) then
-			awful.spawn(cmd)
+			awful.spawn(cmd, false)
 		else
-			naughty.notify({ text = "[ERROR]: " .. bin .. " is not installed" })
+			notify { title = "Warning", text = bin .. " isn't installed" }
 		end
 	end
 end

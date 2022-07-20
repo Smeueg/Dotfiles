@@ -5,9 +5,8 @@ local awful = require("awful")
 local layouts = awful.layout.suit
 local module = {}
 
--- "Utility" functions
+-- Set layout for all tags
 function module.set_all(layout)
-	-- Set layout for all tags
 	local titlebar_func = awful.titlebar.hide
 	local border = beautiful.border_width
 	local gap = 0
@@ -29,6 +28,12 @@ function module.set_all(layout)
 		titlebar_func(c)
 		c.border_width = border
 	end
+end
+
+-- Increase/decrease the master width factor for all tags
+function module.incmwfact(width)
+	if awful.layout.get() ~= layouts.tile.right then return end
+	for _, t in ipairs(root.tags()) do awful.tag.incmwfact(width, t) end
 end
 
 -- Icons

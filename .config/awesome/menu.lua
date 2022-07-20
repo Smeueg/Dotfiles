@@ -214,6 +214,7 @@ function menu.open()
 			}
 			awful.spawn.with_shell(cmd)
 		end,
+		completion_callback = awful.completion.shell,
 		keyreleased_callback = function(mod, key, cmd)
 			local entries = entries_sort(menu.entries_unsorted, cmd)
 			local page = menu.chosen_page
@@ -226,8 +227,11 @@ function menu.open()
 			menu.chosen_page = page
 			menu.chosen_index = index
 			entries_display(menu.popup.widget.widget, entries, page, index)
+		end,
+		completion_callback = function(command_before_comp, cur_pos_before_comp, ncomp)
+			return command_before_comp.."foo", cur_pos_before_comp+3, 1
 		end
-	}
+}
 end
 
 return menu

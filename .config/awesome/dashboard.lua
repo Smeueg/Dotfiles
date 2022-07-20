@@ -281,6 +281,7 @@ function module.toggle()
 		}
 	}
 
+
 	local opts = module.popup.widget:get_children_by_id("option")
 	options_update(opts, module.chosen)
 	for i, _ in ipairs(opts) do

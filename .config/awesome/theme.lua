@@ -117,7 +117,7 @@ beautiful.menu_height = 30
 beautiful.menu_bg_normal = theme["bg_dark"]
 beautiful.menu_bg_focus = theme["bg"]
 beautiful.menu_border_color = theme["fg2"]
-beautiful.menu_border_width = 3
+beautiful.menu_border_width = beautiful.border_width
 -- Gaps
 beautiful.useless_gap = 5
 -- Taglists
@@ -131,8 +131,9 @@ beautiful.tasklist_bg_focus = theme["bg_dark"]
 beautiful.tasklist_bg_normal = theme["bg"]
 beautiful.tasklist_bg_minimize = beautiful.wibar_bg
 -- Notification
-beautiful.notification_border_color = theme["focus"]
-naughty.config.defaults.border_width = 3
+naughty.config.defaults.shape = gears.shape.rounded_rect
 naughty.config.defaults.margin = 10
-naughty.config.defaults.timout = 3
+naughty.config.defaults.border_color = beautiful.border_focus
+naughty.config.defaults.border_width = beautiful.border_width
+naughty.config.defaults.timout = 10
 naughty.config.spacing = 10

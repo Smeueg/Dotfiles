@@ -8,6 +8,7 @@ local cairo_format = cairo.Format.ARGB32
 local cairo_create = cairo.ImageSurface.create
 local cairo_context = cairo.Context
 local transform = gears.shape.transform
+local animate = require("animate")
 local notify = require("naughty").notify
 local pi = math.pi
 
@@ -81,8 +82,7 @@ function bar.network()
 	cr:stroke()
 
 	local parse = function(stdout)
-		local widget_icon
-		local widget_text = ""
+		local widget_icon, widget_text = nil, ""
 		for net_name, net_type in stdout:gmatch("([^:]+):([^\n]+)") do
 			widget_text	= widget_text .. " " .. net_name
 			if net_type:match("[^-]+$") == "wireless" then
@@ -93,7 +93,7 @@ function bar.network()
 		end
 
 		widget_text = widget_text:match("^ (.*)")
-		if widget_text == "" then
+		if widget_text == "" or widget_text == nil then
 			widget_text = "Offline"
 			widget_icon = icon_offline
 		end
@@ -229,43 +229,54 @@ function bar.taglist_create(s)
 				{
 					{
 						{
-							{
-								markup = " ",
-								widget = wibox.widget.textbox,
-							},
-							margins = 3,
-							widget = wibox.container.margin,
+							markup = " ",
+							widget = wibox.widget.textbox,
 						},
-						shape = gears.shape.circle,
-						shape_border_width = 2,
-						widget = wibox.container.background,
-						id = "icon",
+						margins = 3,
+						widget = wibox.container.margin,
 					},
-					layout = wibox.layout.fixed.horizontal,
+					shape = gears.shape.circle,
+					shape_border_width = 2,
+					widget = wibox.container.background,
+					id = "icon",
 				},
-				left = 7,
-				right = 7,
-				widget = wibox.container.margin,
+				layout = wibox.layout.fixed.horizontal,
 			},
-			id = "background_role",
-			widget = wibox.container.background,
+			left = 7,
+			right = 7,
+			widget = wibox.container.margin,
 			create_callback = function(self, t, index, objects)
 				self:update_callback(t, index, objects)
 			end,
-
 			update_callback = function(self, t, index, objects)
 				local icon = self:get_children_by_id("icon")[1]
+				icon.bg_hex = icon.bg_hex or beautiful.bg_normal
+				icon.shape_border_color = icon.shape_border_color or
+						beautiful.wibar_unselected_tag
+
 				if t.selected then
-					icon.shape_border_color = beautiful.wibar_selected_tag
+					border = beautiful.wibar_selected_tag
 				else
-					icon.shape_border_color = beautiful.wibar_unselected_tag
+					border = beautiful.wibar_unselected_tag
 				end
 
-				if not next(t:clients()) then
-					icon.bg = beautiful.wibar_bg
+				if next(t:clients()) then
+					bg = border
 				else
-					icon.bg = self:get_children_by_id("icon")[1].shape_border_color
+					bg = beautiful.wibar_bg
 				end
+
+				animate.color_transition(
+					icon, "border", 0.25, icon.shape_border_color, border,
+					function(color) icon.shape_border_color = color end
+				)
+				animate.color_transition(
+					icon, "bg", 0.25, icon.bg_hex, bg,
+					function(color)
+						icon.bg = color
+						icon.bg_hex = color
+					end
+				)
 			end,
 		}
 	}
