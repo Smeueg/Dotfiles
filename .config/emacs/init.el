@@ -13,7 +13,10 @@
 ;; reference to other people on what other people use. This configuration should
 ;; be able to run without a problem in other systems other than my current one,
 ;; although I haven't tested it yet.
+;; Things to check out:
+;; - dirvish
 
+(setq-default woman-ignore nil)
 
 
 ;;; VARIABLES ;;;
@@ -55,12 +58,6 @@
  hs-hide-comments-when-hiding-all nil)
 
 
-
-;;; OTHER FILETYPES ;;;
-(add-to-list 'auto-mode-alist '("\\.rasi\\'" . css-mode))
-
-
-
 ;;; INDENTATION CONFIGURATION ;;;
 (defvaralias 'c-basic-offset 'tab-width)
 (defvaralias 'evil-shift-width 'tab-width)
@@ -98,7 +95,7 @@
 (tooltip-mode -1)           ;; Disable tooltips
 (fringe-mode 3)             ;; Disable fringes
 (scroll-bar-mode -1)        ;; Disable scroll bar
-(global-visual-line-mode 0) ;; Disable wrap
+(global-visual-line-mode 0) ;; Disable line wrapping
 (set-window-buffer nil (current-buffer))
 (setq-default cursor-in-non-selected-windows nil left-fringe-width 10)
 
@@ -242,13 +239,17 @@ awesomewm, and the users shell's"
       (setq bin (format "'/tmp/%s'" (file-name-base buffer-file-name)))
       (setq file (format "'%s'" buffer-file-name))
       (setq
-       mode-pair `((c-mode
-                    (:cmd . ,(format "cc %s -o %s && %s" file bin bin)))
-                   (sh-mode (:cmd . ,file) (:func . ,'executable-make-buffer-file-executable-if-script-p))
-                   (lua-mode (:cmd . ,(format "lua %s" file)))
-                   (java-mode (:cmd . ,(format "java %s; exit" file)))
-                   (html-mode (:cmd . ,(format "${BROWSER} %s; exit" file)))
-                   (python-mode (:cmd . ,(format "python3 %s" file)))))
+       mode-pair
+       `((c-mode (:cmd . ,(format "cc %s -o %s && %s" file bin bin)))
+         (lua-mode (:cmd . ,(format "lua %s" file)))
+         (java-mode (:cmd . ,(format "java %s; exit" file)))
+         (python-mode (:cmd . ,(format "python3 %s" file)))
+         (sh-mode
+          (:cmd . ,file)
+          (:func . ,'executable-make-buffer-file-executable-if-script-p))
+         (html-mode (:cmd . ,(format "gtk-launch %s %s; exit"
+                                     "$(xdg-settings get default-web-browser)"
+                                     file)))))
       (catch 'break
         (dolist (mode mode-pair)
           (when (derived-mode-p (car mode))
@@ -480,12 +481,6 @@ awesomewm, and the users shell's"
     (let ((tmp default-directory))
       (let ((default-directory tmp))
         (ansi-term (getenv "SHELL")))))
-  (defun term-vs ()
-    "Open a terminal in a new vertical split."
-    (interactive)
-    (select-window (split-window-below))
-    (term-e)
-    (set-window-prev-buffers (selected-window) '()))
   :config
   (define-prefix-command 'term-esc-map)
   (define-key global-map "\C-\\" 'term-esc-map)
@@ -535,13 +530,6 @@ awesomewm, and the users shell's"
                           0 t)))))
 
 ;; "Nice To Have" Packages
-
-(use-package dirvish
-  :ensure t
-  :demand t
-  :config
-  (dirvish-override-dired-mode))
-
 (use-package cheat-sh
   :ensure t
   :defer t)
@@ -635,6 +623,9 @@ awesomewm, and the users shell's"
   (set-face-attribute 'internal-border nil :background
                       (face-attribute 'default :background))
 
+  (set-face-attribute 'nobreak-hyphen nil
+                      :foreground
+                      (face-attribute 'font-lock-comment-face :foreground))
 
   (set-face-attribute 'mode-line nil
                       :background

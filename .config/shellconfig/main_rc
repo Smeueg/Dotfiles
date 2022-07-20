@@ -32,30 +32,33 @@ print_prompt() {
 	ret=${?}
 	symbol="➜"
 	symbol_backup=">"
-	reset="\033[0m"
-	color_dir="\033[1;38;5;11m"
-	color_branch="\033[38;5;4m"
-	color_failed="\033[38;5;1m"
-	color_success="\033[38;5;6m"
+	color=true
+	if [ "${BASH_VERSION}" ]; then
+		wrapper_start="\001"
+		wrapper_end="\002"
+	elif [ "${ZSH_NAME}" ]; then
+		wrapper_start="%{"
+		wrapper_end="%}"
+	elif ! [ "${KSH_VERSION}" ]; then
+		color=false
+		unset reset color_dir color_branch color_failed color_success
+	fi
+
+	if ${color}; then
+		reset="${wrapper_start}\033[0m${wrapper_end}"
+		color_dir="${wrapper_start}\033[38;5;11m${wrapper_end}"
+		color_branch="${wrapper_start}\033[38;5;4m${wrapper_end}"
+		color_failed="${wrapper_start}\033[38;5;1m${wrapper_end}"
+		color_success="${wrapper_start}\033[38;5;6m${wrapper_end}"
+	fi
 
 	tmp="$(tty)"
-	if ! [ "${tmp%%/dev/tty*}" ] || [ "${TERM}" = "dumb" ]; then
+	if [ "${TERM}" = "dumb" ] || ! [ "${tmp%%/dev/tty*}" ]; then
 		symbol=${symbol_backup}
 	fi
 
 
-	if [ "${BASH_VERSION}" ]; then
-		wrapper="\001:\002"
-	elif [ "${ZSH_NAME}" ]; then
-		wrapper="%{:%}"
-	elif ! [ "${KSH_VERSION}" ]; then
-		unset reset color_dir color_branch color_failed color_success
-	fi
-
-
 	if [ "${wrapper+x}" ]; then
-		wrapper_start=${wrapper%%\:*}
-		wrapper_end=${wrapper##*\:}
 		for var in reset color_dir color_branch color_failed color_success; do
 			eval "${var}=\"\${wrapper_start}\$${var}\${wrapper_end}\""
 		done
