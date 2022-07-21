@@ -431,7 +431,7 @@ client.connect_signal( -- Window border color when focused
 	function(c)
 		animate.color(
 			tostring(c),
-			0.25,
+			0.1,
 			c.border_color or beautiful.border_normal,
 			beautiful.border_focus,
 			function(color) c.border_color = color end
@@ -444,7 +444,7 @@ client.connect_signal( -- Window border color when not focused
 	function(c)
 		animate.color(
 			tostring(c),
-			0.25,
+			0.1,
 			c.border_color or beautiful.border_focus,
 			beautiful.border_normal,
 			function(color) c.border_color = color end

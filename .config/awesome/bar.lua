@@ -188,7 +188,7 @@ function bar.tasklist_create(s)
 		local widget = self:get_children_by_id("bg")[1]
 		local opacity = c == client.focus and 30 or 0
 		animate.simple(
-			tostring(widget), 0.25, widget.bg_opacity or 0, opacity,
+			tostring(widget), 0.1, widget.bg_opacity or 0, opacity,
 			function(value)
 				local h	= string.format("#000000%02i", math.ceil(value))
 				widget.bg = h
@@ -245,11 +245,11 @@ function bar.taglist_create(s)
 		local bg = next(t:clients()) and border or beautiful.wibar_bg
 
 		animate.color(
-			icon_str .. "border", 0.25, icon.shape_border_color, border,
+			icon_str .. "border", 0.1, icon.shape_border_color, border,
 			function(color) icon.shape_border_color = color end
 		)
 		animate.color(
-			icon_str .. "bg", 0.25, icon.bg_hex, bg,
+			icon_str .. "bg", 0.1, icon.bg_hex, bg,
 			function(color)
 				icon.bg = color
 				icon.bg_hex = color

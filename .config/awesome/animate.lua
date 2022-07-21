@@ -9,6 +9,7 @@ local function animation_prepare(id)
 	else
 		module.animations[id] = {}
 	end
+	module.animations[id].value = 0
 end
 
 function module.simple(id, duration, n_start, n_end, callback)
@@ -18,7 +19,6 @@ function module.simple(id, duration, n_start, n_end, callback)
 	local value = {}
 	for i=1, steps - 1 do value[i] = n_start + step * i end
 	value[steps] = n_end
-	module.animations[id].value = module.animations[id].value or 0
 	module.animations[id].timer = gears.timer {
 		timeout = duration / steps,
 		autostart = true,
@@ -56,7 +56,6 @@ function module.color(id, duration, hex_start, hex_end, callback)
 		colors[i] = string.format("#%02x%02x%02x", r_start, g_start, b_start)
 	end
 	colors[steps] = hex_end
-	module.animations[id].value = module.animations[id].value or 0
 	module.animations[id].timer = gears.timer {
 		timeout = duration / steps,
 		autostart = true,
