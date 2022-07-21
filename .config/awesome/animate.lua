@@ -36,7 +36,7 @@ function module.simple(id, duration, n_start, n_end, callback)
 	}
 end
 
-function module.color_transition(id, duration, hex_start, hex_end, callback)
+function module.color(id, duration, hex_start, hex_end, callback)
 	animation_prepare(id)
 	local steps = 10
 	local r_start = tonumber("0x"..string.sub(hex_start, 2, 3))

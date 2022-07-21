@@ -244,11 +244,11 @@ function bar.taglist_create(s)
 			beautiful.wibar_unselected_tag
 		local bg = next(t:clients()) and border or beautiful.wibar_bg
 
-		animate.color_transition(
+		animate.color(
 			icon_str .. "border", 0.25, icon.shape_border_color, border,
 			function(color) icon.shape_border_color = color end
 		)
-		animate.color_transition(
+		animate.color(
 			icon_str .. "bg", 0.25, icon.bg_hex, bg,
 			function(color)
 				icon.bg = color
