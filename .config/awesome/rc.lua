@@ -19,6 +19,7 @@ local dashboard = require("dashboard")
 local screenshot = require("screenshot")
 local volume = require("volume")
 local layout = require("layout")
+local animate = require("animate")
 
 -- Handle errors if there are any --
 do
@@ -453,14 +454,26 @@ end)
 client.connect_signal( -- Window border color when focused
 	"focus",
 	function(c)
-		c.border_color = beautiful.border_focus
+		animate.color(
+			tostring(c),
+			0.25,
+			c.border_color or beautiful.border_normal,
+			beautiful.border_focus,
+			function(color) c.border_color = color end
+		)
 	end
 )
 
 client.connect_signal( -- Window border color when not focused
 	"unfocus",
 	function(c)
-		c.border_color = beautiful.border_normal
+		animate.color(
+			tostring(c),
+			0.25,
+			c.border_color or beautiful.border_focus,
+			beautiful.border_normal,
+			function(color) c.border_color = color end
+		)
 	end
 )
 
