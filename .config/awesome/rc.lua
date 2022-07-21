@@ -49,31 +49,6 @@ local terminal = os.getenv("TERMINAL")
 local modkey = "Mod4"
 
 -- Custom Functions --
-local function find_or_spawn_emacs()
-	-- Spawn Emacs if one is not already set as scratch_client,
-	-- else focus and move it to the current tag.
-	if scratch_client and scratch_client.valid then
-		scratch_client.hidden = false
-		scratch_client.minimized = false
-		scratch_client:move_to_tag(awful.screen.focused().selected_tag)
-		awful.client.focus.byidx(0, scratch_client)
-	else -- Spawn emacs and make it the scratchpad client
-		for _, c in pairs(client.get()) do
-			if c.class == "Emacs" then
-				scratch_client = c
-				find_or_spawn_emacs()
-				return
-			end
-		end
-
-		notify { text = "Opening emacs" }
-		awful.spawn.raise_or_spawn("emacs --internal-border=20", {}, nil, nil, function(c)
-				scratch_client = c
-				find_or_spawn_emacs()
-		end)
-	end
-end
-
 local function set_wallpaper(s)
 	local file_exists = gears.filesystem.file_readable
 	if beautiful.wallpaper and file_exists(beautiful.wallpaper) then
