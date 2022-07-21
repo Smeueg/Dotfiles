@@ -184,6 +184,18 @@ function bar.tasklist_create(s)
 		awful.button({}, 4, function() awful.client.focus.byidx(-1) end),
 		awful.button({}, 5, function() awful.client.focus.byidx(1) end)
 	)
+	local update = function(self, c)
+		local widget = self:get_children_by_id("bg")[1]
+		local opacity = c == client.focus and 30 or 0
+		animate.simple(
+			tostring(widget), 0.25, widget.bg_opacity or 0, opacity,
+			function(value)
+				local h	= string.format("#000000%02i", math.ceil(value))
+				widget.bg = h
+				widget.bg_opacity = math.ceil(value)
+			end
+		)
+	end
 	return awful.widget.tasklist { -- Tasklist Widget
 		screen = s,
 		filter = awful.widget.tasklist.filter.currenttags,
@@ -195,7 +207,9 @@ function bar.tasklist_create(s)
 		widget_template = {
 			widget = wibox.container.background,
 			shape = gears.shape.rounded_rect,
-			id = "background_role",
+			create_callback = update,
+			update_callback = update,
+			id = "bg",
 			{
 				widget = wibox.container.margin,
 				margins = 4,
@@ -203,7 +217,7 @@ function bar.tasklist_create(s)
 					id = "icon_role",
 					widget = wibox.widget.imagebox
 				}
-			}
+			},
 		}
 	}
 end
@@ -218,7 +232,30 @@ function bar.taglist_create(s)
 		awful.button({}, 4, function(t) awful.tag.viewprev(t.screen) end),
 		awful.button({}, 5, function(t) awful.tag.viewnext(t.screen) end)
 	)
+	local update = function(self, t)
+		local icon = self:get_children_by_id("icon")[1]
+		local icon_str = tostring(icon)
+		icon.bg_hex = icon.bg_hex or beautiful.bg_normal
+		icon.shape_border_color = icon.shape_border_color or
+			beautiful.wibar_unselected_tag
 
+		local border = t.selected and
+			beautiful.wibar_selected_tag or
+			beautiful.wibar_unselected_tag
+		local bg = next(t:clients()) and border or beautiful.wibar_bg
+
+		animate.color_transition(
+			icon_str .. "border", 0.25, icon.shape_border_color, border,
+			function(color) icon.shape_border_color = color end
+		)
+		animate.color_transition(
+			icon_str .. "bg", 0.25, icon.bg_hex, bg,
+			function(color)
+				icon.bg = color
+				icon.bg_hex = color
+			end
+		)
+	end
 	return awful.widget.taglist {
 		screen = s,
 		filter = awful.widget.taglist.filter.all,
@@ -245,39 +282,8 @@ function bar.taglist_create(s)
 			left = 7,
 			right = 7,
 			widget = wibox.container.margin,
-			create_callback = function(self, t, index, objects)
-				self:update_callback(t, index, objects)
-			end,
-			update_callback = function(self, t, index, objects)
-				local icon = self:get_children_by_id("icon")[1]
-				icon.bg_hex = icon.bg_hex or beautiful.bg_normal
-				icon.shape_border_color = icon.shape_border_color or
-						beautiful.wibar_unselected_tag
-
-				if t.selected then
-					border = beautiful.wibar_selected_tag
-				else
-					border = beautiful.wibar_unselected_tag
-				end
-
-				if next(t:clients()) then
-					bg = border
-				else
-					bg = beautiful.wibar_bg
-				end
-
-				animate.color_transition(
-					icon, "border", 0.25, icon.shape_border_color, border,
-					function(color) icon.shape_border_color = color end
-				)
-				animate.color_transition(
-					icon, "bg", 0.25, icon.bg_hex, bg,
-					function(color)
-						icon.bg = color
-						icon.bg_hex = color
-					end
-				)
-			end,
+			create_callback = update,
+			update_callback = update,
 		}
 	}
 end
