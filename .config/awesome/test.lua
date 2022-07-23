@@ -9,5 +9,5 @@ local pr = function(str)
 	naughty.notify({ text = "" .. str })
 end
 
-
-animate.simple("f", 1, 5, 10, function(i) pr(i) end)
+local hotkeys_popup = require("awful.hotkeys_popup")
+hotkeys_popup.show_help()

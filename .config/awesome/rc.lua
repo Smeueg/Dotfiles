@@ -2,15 +2,16 @@
 -- Libraries --
 pcall(require, "luarocks.loader") -- Make sure LuaRocks packages is loaded
 require("awful.autofocus")
-local gears = require("gears")
+local hotkeys_popup = require("awful.hotkeys_popup")
 local beautiful = require("beautiful")
+local naughty = require("naughty")
+local gears = require("gears")
 local awful = require("awful")
 local wibox = require("wibox")
-local naughty = require("naughty")
-local notify = naughty.notify
 local lgi = require("lgi")
-local cairo = lgi.cairo
 local dpi = beautiful.xresources.apply_dpi
+local notify = naughty.notify
+local cairo = lgi.cairo
 -- Other Modules
 require("theme")
 local bar = require("bar")
@@ -152,7 +153,7 @@ local globalkeys = gears.table.join( -- Keybindings
 		end,
 		{
 			group = "Layout",
-			description = "Switch to the tiling layout"
+			description = "Switch to the monocle/max layout"
 		}
 	),
 	awful.key(
@@ -161,7 +162,7 @@ local globalkeys = gears.table.join( -- Keybindings
 		end,
 		{
 			group = "Layout",
-			description = "Switch to the tiling layout"
+			description = "Switch to the floating layout"
 		}
 	),
 	-- Increase master width
@@ -232,38 +233,90 @@ local globalkeys = gears.table.join( -- Keybindings
 	awful.key(
 		{ modkey }, "s", screenshot.toggle,
 		{ group = "Menus/Tools", description = "Take a screenshot" }
+	),
+	awful.key(
+		{ modkey }, "g", hotkeys_popup.show_help,
+		{ group = "Menus/Tools", description = "Show this popup" }
 	)
 )
 
 local clientkeys = gears.table.join( -- Key Bindings That Activate Per-client
-	awful.key({ modkey, "Shift" }, "c", function(c) c:kill() end),
-	awful.key({ modkey, "Shift" }, "f", function(c)
-			c.floating = not c.floating
-	end),
-	awful.key({ modkey, "Shift" }, "t", function(c) c.ontop = not c.ontop end),
-	awful.key({ modkey }, "o", function(c) c:move_to_screen() end),
-	awful.key({ modkey }, "Down", function(c) c:relative_move(0, 10, 0, 0) end),
-	awful.key({ modkey }, "Up", function(c)
-			c:relative_move(0, -10, 0, 0)
-	end),
-	awful.key({ modkey }, "Left", function(c)
-			c:relative_move(-10, 0, 0, 0)
-	end),
-	awful.key({ modkey }, "Right", function(c)
-		c:relative_move(10, 0, 0, 0)
-	end),
-	awful.key({ modkey, "Shift" }, "Down", function(c)
-		c:relative_move(0, 0, 0, 10)
-	end),
-	awful.key({ modkey, "Shift" }, "Up", function(c)
-		c:relative_move(0, 0, 0, -10)
-	end),
-	awful.key({ modkey, "Shift" }, "Left", function(c)
-		c:relative_move(0, 0, -10, 0)
-	end),
-	awful.key({ modkey, "Shift" }, "Right", function(c)
-		c:relative_move(0, 0, 10, 0)
-	end)
+	awful.key(
+		{ modkey, "Shift" }, "c", function(c) c:kill() end,
+		{ group = "Client", description = "Close the client" }
+	),
+	awful.key(
+		{ modkey, "Shift" }, "f", function(c) c.floating = not c.floating end,
+		{ group = "Client", description = "Toggle floating" }
+	),
+	awful.key(
+		{ modkey, "Shift" }, "t", function(c) c.ontop = not c.ontop end,
+		{ group = "Client", description = "Toggle ontop" }
+	),
+	awful.key(
+		{ modkey }, "o", function(c) c:move_to_screen() end,
+		{ group = "Client", description = "Move client to the current screen" }
+	),
+	awful.key(
+		{ modkey }, "Down", function(c) c:relative_move(0, 10, 0, 0) end,
+		{
+			group = "Client",
+			description = "Move the client downwards when floating"
+		}
+	),
+	awful.key(
+		{ modkey }, "Up", function(c) c:relative_move(0, -10, 0, 0) end,
+		{
+			group = "Client",
+			description = "Move the client upwards when floating"
+		}
+	),
+	awful.key(
+		{ modkey }, "Left", function(c) c:relative_move(-10, 0, 0, 0) end,
+		{
+			group = "Client",
+			description = "Move the client lef when floating"
+		}
+	),
+	awful.key(
+		{ modkey }, "Right", function(c) c:relative_move(10, 0, 0, 0) end,
+		{
+			group = "Client",
+			description = "Move the client right when floating"
+		}
+	),
+	awful.key(
+		{ modkey, "Shift" }, "Down",
+		function(c) c:relative_move(0, 0, 0, 10) end,
+		{
+			group = "Client",
+			description = "Resize the client downwards when floating"
+		}
+	),
+	awful.key(
+		{ modkey, "Shift" }, "Up",
+		function(c) c:relative_move(0, 0, 0, -10) end,
+		{
+			group = "Client",
+			description = "Resize the client upwards when floating"
+		}
+	),
+	awful.key(
+		{ modkey, "Shift" }, "Left",
+		function(c) c:relative_move(0, 0, -10, 0) end,
+		{
+			group = "Client",
+			description = "Resize the client left when floating"
+		}
+	),
+	awful.key(
+		{ modkey, "Shift" }, "Right",
+		function(c) c:relative_move(0, 0, 10, 0) end,
+		{
+			group = "Client",
+			description = "Resize the client right when floating"
+		}
+	)
 )
 
 -- Bind Keybindings to Tags
@@ -271,29 +324,33 @@ for i = 1, 5 do
 	globalkeys = gears.table.join(
 		globalkeys,
 		-- View tag only.
-		awful.key({ modkey }, "#" .. i + 9, function()
-			local tag = awful.screen.focused().tags[i]
-			if tag then
-				tag:view_only()
-			end
-		end),
+		awful.key(
+			{ modkey }, "#" .. i + 9,
+			function()
+				local tag = awful.screen.focused().tags[i]
+				if tag then tag:view_only() end
+			end,
+			{ group = "Tag", description = "Switch to tag " .. i }
+		),
 		-- Toggle tag display.
-		awful.key({ modkey, "Control" }, "#" .. i + 9, function()
-			local tag = awful.screen.focused().tags[i]
-			if tag then
-				awful.tag.viewtoggle(tag)
-			end
-		end),
+		awful.key(
+			{ modkey, "Control" }, "#" .. i + 9,
+			function()
+				local tag = awful.screen.focused().tags[i]
+				if tag then awful.tag.viewtoggle(tag) end
+			end,
+			{ group = "Tag", description = "Toggle view tag " .. i }
+		),
 		-- Move client to tag.
-		awful.key({ modkey, "Shift" }, "#" .. i + 9, function()
-			if not client.focus then
-				return
-			end
-			local tag = client.focus.screen.tags[i]
-			if tag then
-				client.focus:move_to_tag(tag)
-			end
-		end)
+		awful.key(
+			{ modkey, "Shift" }, "#" .. i + 9,
+			function()
+				if not client.focus then return end
+				local tag = client.focus.screen.tags[i]
+				if tag then client.focus:move_to_tag(tag) end
+			end,
+			{ group = "Tag", description = "Move client to tag " .. i }
+		)
 	)
 end
 root.keys(globalkeys)
@@ -394,37 +451,39 @@ client.connect_signal(
 	end
 )
 
-client.connect_signal("request::titlebars", function(c)
-	-- Add a titlebar when requested (and when titlebars_enabled is true)
-	local buttons = gears.table.join(
-		awful.button({}, 1, function()
-			awful.mouse.client.move(c)
-			c:emit_signal("request::activate", "titlebar", { raise = true })
-		end),
-		awful.button({}, 3, function()
-			awful.mouse.client.resize(c)
-			c:emit_signal("request::activate", "titlebar", { raise = true })
-		end)
-	)
-
-	local titlebar = awful.titlebar(c, { size = 30 })
-	titlebar:setup {
-		layout = wibox.layout.align.horizontal,
-		{ -- Left
-			layout = wibox.layout.fixed.horizontal
-		},
-		{ -- Center
-			layout = wibox.layout.flex.horizontal,
-			buttons = buttons
-		},
-		{ -- Right
-			awful.titlebar.widget.minimizebutton(c),
-			awful.titlebar.widget.maximizedbutton(c),
-			awful.titlebar.widget.closebutton(c),
-			layout = wibox.layout.fixed.horizontal
+client.connect_signal(
+	"request::titlebars",
+	function(c)
+		-- Add a titlebar when requested (and when titlebars_enabled is true)
+		local buttons = gears.table.join(
+			awful.button({}, 1, function()
+					awful.mouse.client.move(c)
+					c:emit_signal("request::activate", "titlebar", { raise = true })
+			end),
+			awful.button({}, 3, function()
+					awful.mouse.client.resize(c)
+					c:emit_signal("request::activate", "titlebar", { raise = true })
+			end)
+		)
+		local titlebar = awful.titlebar(c, { size = 30 })
+		titlebar:setup {
+			layout = wibox.layout.align.horizontal,
+			{ -- Left
+				layout = wibox.layout.fixed.horizontal,
+			},
+			{ -- Center
+				layout = wibox.layout.flex.horizontal,
+				buttons = buttons
+			},
+			{ -- Right
+				layout = wibox.layout.fixed.horizontal,
+				awful.titlebar.widget.minimizebutton(c),
+				awful.titlebar.widget.maximizedbutton(c),
+				awful.titlebar.widget.closebutton(c)
+			}
 		}
-	}
-end)
+	end
+)
 
 client.connect_signal( -- Window border color when focused
 	"focus",

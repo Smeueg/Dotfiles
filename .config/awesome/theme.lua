@@ -137,3 +137,14 @@ naughty.config.defaults.border_color = beautiful.border_focus
 naughty.config.defaults.border_width = beautiful.border_width
 naughty.config.defaults.timout = 10
 naughty.config.spacing = 10
+-- Hotkey Popup
+beautiful.hotkeys_bg = beautiful.bg_normal
+beautiful.hotkeys_fg = beautiful.fg_normal
+beautiful.hotkeys_border_width = beautiful.border_width
+beautiful.hotkeys_border_color = beautiful.border_focus
+beautiful.hotkeys_shape = gears.shape.rounded_rect
+beautiful.hotkeys_modifiers_fg = beautiful.fg_focus
+beautiful.hotkeys_label_fg = beautiful.hotkeys_bg
+beautiful.hotkeys_group_margin = 50
+beautiful.hotkeys_font = beautiful.font
+beautiful.hotkeys_description_font = beautiful.hotkeys_font
