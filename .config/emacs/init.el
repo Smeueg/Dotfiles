@@ -416,6 +416,7 @@ awesomewm, and the users shell's"
   (defalias 'dt 'tab-bar-close-tab)
   (defalias 'nt 'tab-new)
   (defalias 'tabe 'tab-new)
+  (defalias 'tabclose 'tab-bar-close-tab)
   (setq-default tab-bar-close-button-show nil
                 tab-bar-new-button-show nil)
   :config
@@ -903,6 +904,11 @@ awesomewm, and the users shell's"
 
   (when (fboundp 'run)
     (evil-define-key 'normal 'global "  " 'run))
+
+  ;; Tab Switching
+  (evil-define-key 'motion 'global
+    "gt" 'tab-bar-switch-to-next-tab
+    "gT" 'tab-bar-switch-to-prev-tab)
 
   ;; Disable evil-complete-next and evil-complete-previous
   (define-key evil-insert-state-map [?\C-n] nil)
