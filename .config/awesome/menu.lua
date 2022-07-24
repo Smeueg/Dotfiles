@@ -1,158 +1,141 @@
-local naughty = require("naughty")
+local notify = require("naughty").notify
 local beautiful = require("beautiful")
 local gears = require("gears")
 local wibox = require("wibox")
 local awful = require("awful")
 local Gio = require("lgi").Gio
 -- TODO --
--- - Add mouse support
--- - Add support for holding down keys (up and down)
+-- - Add scrolling support
+-- - Add animations
+local module = {}
+
+local function info_highlight(grid)
+	local i = 0
+	local widget
+	while true do
+		i = i + 1
+		widget = grid:get_widgets_at(i, 1)
+		if not widget then break end
+		widget = widget[1]
+
+		if i == module.index_entry then
+			widget.bg = beautiful.menubar_bg_focus
+			widget.widget.widget.markup = string.format(
+				"<span foreground='%s' font='12'>%s</span>",
+				beautiful.border_focus,
+				string.sub(widget.widget.widget.markup, 17, -8)
+			)
+		else
+			widget.bg = nil
+			widget.widget.widget.markup = string.format(
+				"<span font='12'>%s</span>",
+				widget.widget.widget.markup:match("^<span[^>]*>(.*)</span>$")
+			)
+		end
+
+		if module.index_start <= i and i <= module.index_start + 14 then
+			widget.visible = true
+		else
+			widget.visible = false
+		end
+
+	end
+	module.widget_page.text = string.format("%i/%i", module.index_entry, i - 1)
+end
+
+local function info_next(grid)
+	if module.index_entry ~= #module.entries_filtered then
+		module.index_entry = module.index_entry + 1
+	end
+
+	if module.index_entry > module.index_start + 14 then
+		module.index_start = module.index_start + 1
+	end
+	info_highlight(grid)
+end
+
+local function info_prev(grid)
+	module.index_entry = module.index_entry - 1
+	if module.index_start ~= 1 and module.index_entry < module.index_start then
+		module.index_start = module.index_start - 1
+	end
+	info_highlight(grid)
+end
+
+local function info_filter(grid, cmd)
+	-- Filter the desktop entries
+	if cmd then
+		module.entries_filtered = {}
+		for _, entry in ipairs(module.entries_unfiltered) do
+			if string.match(string.lower(entry.name), string.lower(cmd)) then
+				table.insert(module.entries_filtered, entry)
+			end
+		end
+	end
+	-- Clear the grid
+	grid:reset()
+	-- Add the filtered entriet to the grid
+	for i, entry in ipairs(module.entries_filtered) do
+		local widget = wibox.widget {
+			widget = wibox.container.background,
+			id = "bg",
+			{
+				widget = wibox.container.margin,
+				margins = 5,
+				{
+					widget = wibox.widget.textbox,
+					id = "text",
+					markup = string.format(
+						"<span font='12'>%s</span>",
+						entry.name
+					)
+				},
+			}
+		}
+		widget:connect_signal(
+			"mouse::enter",
+			function()
+				module.index_entry = i
+				info_highlight(grid)
+			end
+		)
+		grid:add(widget)
+	end
+	if module.index_entry > #module.entries_filtered then
+		module.index_entry = #module.entries_filtered
+	elseif module.index_entry < 1 then
+		module.index_entry = 1
+	end
+	info_highlight(grid)
+	collectgarbage()
+end
 
 
-local menu = {}
-
--- Functions --
--- Generate desktop entries
-local function entries_gen()
-	local entries = {}
+function module.open()
+	-- Reset the index and page
+	module.index_start = 1
+	module.index_entry = 1
+	-- Get desktop entries
+	module.entries_unfiltered = {}
 	for _, entry in ipairs(Gio.AppInfo.get_all()) do
 		if entry:should_show() then
 			local name = entry:get_name()
 			name = name:gsub("&", "&amp;")
 			name = name:gsub("<", "&lt;")
 			name = name:gsub("'", "&#39;")
-			table.insert(entries, {name = name, appinfo = entry})
+			table.insert(
+				module.entries_unfiltered,
+				{name = name, appinfo = entry}
+			)
 		end
 	end
-	return entries
-end
-
--- Sort the generated desktop entries with a search query into multiple pages
--- (15 entries per page)
-local function entries_sort(entries, search)
-	local entries_sorted = {}
-	search = string.lower(search or "")
-	for _, entry in ipairs(entries) do
-		if string.match(string.lower(entry.name), search) then
-			table.insert(entries_sorted, entry)
-		end
-	end
-
-	local tmp = {}
-	local page = 1
-	local index = 1
-	for _, entry in ipairs(entries_sorted)  do
-		if type(tmp[page]) ~= "table" then tmp[page] = {} end
-		tmp[page][index] = entry
-		index = index + 1
-		if index > 15 then
-			page = page + 1
-			index = 1
-		end
-	end
-	return tmp
-end
-
--- Display the entries onto the grid
-local function entries_display(grid, entries, page, index)
-	-- Display the sorted entries onto the menu
-	local widget_entries = grid:get_widgets_at(3, 1)[1]
-	do -- Remove the entries that were previously displayed
-		local i = 1
-		while widget_entries:remove_widgets_at(i, 1) do
-			i = i + 1
-		end
-	end
-
-	if entries[page] == nil then return end
-	for i, _ in ipairs(entries[page]) do
-		local bg = "#ffffff00"
-		local fg = beautiful.menubar_fg_normal or beautiful.fg_normal
-		if i == index then
-			bg = beautiful.menubar_bg_focus
-			fg = beautiful.menubar_fg_focus
-		end
-
-		local widget = {
-			widget = wibox.container.background,
-			bg = bg,
-			{
-				widget = wibox.container.margin,
-				margins = 5,
-				{
-					widget = wibox.widget.textbox,
-					markup = string.format(
-						"<span font='12' foreground='%s'>%s</span>",
-						fg,
-						entries[page][i].name
-					)
-				}
-			}
-		}
-		widget_entries:add(wibox.widget(widget))
-	end
-
-	local page_widget = grid:get_widgets_at(4, 1)[1]
-	page_widget.markup = string.format(
-		"<span font='11'>%s/%s</span>",
-		page,
-		#entries
-	)
-end
-
-local function choose_ensure(entries, page, index)
-	if page < 1 then
-		page = 1
-	else
-		tmp = entries or {}
-		tmp = #tmp
-		if page > tmp then page = tmp end
-	end
-	if index < 1 then
-		index = 1
-	else
-		tmp = entries[page] or {}
-		tmp = #tmp
-		if index > tmp then index = tmp end
-	end
-	return page, index
-end
-
-local function choose_next(entries, page, index)
-	local current_page = entries[page] or {}
-	if index == #current_page then
-		if page ~= #entries then
-			page = page + 2
-			index = 1
-		end
-	else
-		index = index + 1
-	end
-	return choose_ensure(entries, page, index)
-end
-
-local function choose_prev(entries, page, index)
-	if index == 1 then
-		if page ~= 1 then
-			page = page - 1
-			index = 15
-		end
-	else
-		index = index - 1
-	end
-	return choose_ensure(entries, page, index)
-end
-
-function menu.open()
+	-- Create the popup widget
 	local geometry = awful.screen.focused().geometry
-	menu.chosen_page = 1
-	menu.chosen_index = 1
-	menu.entries_unsorted = entries_gen()
-	menu.popup = awful.popup {
+	local popup = awful.popup {
 		shape = gears.shape.rounded_rect,
 		placement = awful.placement.centered,
 		border_color = beautiful.border_focus,
-		border_width = 3,
+		border_width = beautiful.border_width,
 		ontop = true,
 		widget = {
 			widget = wibox.container.margin,
@@ -176,6 +159,8 @@ function menu.open()
 				},
 				{ -- Entries
 					widget = wibox.layout.grid,
+					homogeneous = false,
+					expand = true,
 					forced_num_cols = 1
 				},
 				{ -- Page Info
@@ -185,53 +170,62 @@ function menu.open()
 			}
 		}
 	}
-
-	awful.prompt.run {
-		prompt = "Run: ",
-		textbox = menu.popup.widget.widget:get_widgets_at(1, 1)[1],
-		done_callback = function()
-			menu.popup.visible = false
-			menu.popup = nil
-		end,
-		exe_callback = function(cmd)
-			local page = menu.chosen_page
-			local index = menu.chosen_index
-			local entry = entries_sort(menu.entries_unsorted, cmd)[page]
-			if entry ~= nil then
-				entry = entry[index]
-				if entry ~= nil then
-					naughty.notify {
-						title = "Launching Application",
-						text = entry.name
-					}
-					entry.appinfo:launch()
-					return
-				end
-			end
-			naughty.notify {
-				title = "Running Command",
-				text = cmd
+	local grid = popup.widget.widget:get_widgets_at(3, 1)[1]
+	module.widget_page = popup.widget.widget:get_widgets_at(4, 1)[1]
+	grid:connect_signal(
+		"button::press",
+		function()
+			local entry = module.entries_filtered[module.index_entry]
+			awful.keygrabber.stop()
+			popup.visible = false
+			popup = nil
+			entry.appinfo:launch()
+			notify {
+				title = "Launching Application",
+				text = entry.name
 			}
-			awful.spawn.with_shell(cmd)
-		end,
-		completion_callback = awful.completion.shell,
-		keyreleased_callback = function(mod, key, cmd)
-			local entries = entries_sort(menu.entries_unsorted, cmd)
-			local page = menu.chosen_page
-			local index = menu.chosen_index
-			if key == "Down" or (mod.Control and key == "n") then
-				page, index = choose_next(entries, page, index)
-			elseif key == "Up" or (mod.Control and key == "p") then
-				page, index = choose_prev(entries, page, index)
-			end
-			menu.chosen_page = page
-			menu.chosen_index = index
-			entries_display(menu.popup.widget.widget, entries, page, index)
-		end,
-		completion_callback = function(command_before_comp, cur_pos_before_comp, ncomp)
-			return command_before_comp.."foo", cur_pos_before_comp+3, 1
 		end
-}
+	)
+
+	info_filter(grid, "")
+	awful.prompt.run {
+		prompt = "<span font='12'>Run: </span>",
+		textbox = popup.widget.widget:get_widgets_at(1, 1)[1],
+		done_callback = function() popup.visible = false; popup = nil; end,
+		changed_callback = function(cmd) info_filter(grid, cmd) end,
+		exe_callback = function(cmd)
+			local entry = module.entries_filtered[module.index_entry]
+			if entry then
+				entry.appinfo:launch()
+				notify {
+					title = "Launching Application",
+					text = entry.name
+				}
+			else
+				awful.spawn.with_shell(cmd)
+				notify {
+					title = "Running Command",
+					text = cmd
+				}
+			end
+		end,
+		keypressed_callback = function(mod, key, cmd)
+			notify {text = "a"}
+			if key == "Down" or (mod.Control and key == "n") then
+				info_next(grid)
+			elseif key == "Up" or (mod.Control and key == "p") then
+				info_prev(grid)
+			end
+		end,
+		completion_callback = function(cmd, pos, ncomp)
+			local str = module.entries_filtered[module.index_entry]
+			if str then
+				return str.name, #str.name + 1, {}
+			else
+				return awful.completion.shell(cmd, pos, ncomp)
+			end
+		end
+	}
 end
 
-return menu
+return module
