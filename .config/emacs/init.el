@@ -615,6 +615,7 @@ awesomewm, and the users shell's"
   :config
   (load-theme 'gruvbox-dark-soft)
 
+
   (set-face-attribute 'splash-text-special nil
                       :weight 'bold
                       :foreground
@@ -791,6 +792,35 @@ awesomewm, and the users shell's"
 
   (dolist (hook '(rust-mode-hook c-mode-common-hook python-mode-hook))
     (add-hook hook 'eglot-ensure)))
+
+(use-package markdown-mode
+  :ensure t
+  :defer t
+  :config
+  (let ((r (substring (face-attribute 'default :background) 1 3))
+        (g (substring (face-attribute 'default :background) 3 5))
+        (b (substring (face-attribute 'default :background) 5 7))
+        (step 5)
+        (color nil))
+    (setq r (string-to-number r 16))
+    (setq g (string-to-number g 16))
+    (setq b (string-to-number b 16))
+    (when (> r step) (setq r (- r step)))
+    (when (> g step) (setq g (- g step)))
+    (when (> b step) (setq b (- b step)))
+    (setq color (format "#%02X%02X%02X" r g b))
+    (set-face-attribute 'markdown-code-face nil
+                        :weight 'bold
+                        :foreground
+                        (face-attribute 'font-lock-keyword-face :foreground)
+                        :background color
+                        :font (face-attribute 'default :font)
+                        :box `(:line-width 2 :color ,color))
+    (set-face-attribute 'markdown-language-keyword-face nil
+                        :foreground
+                        (face-attribute 'markdown-code-face :foreground)
+                        :weight
+                        (face-attribute 'markdown-code-face :weight))))
 
 ;; Html ;;
 (use-package impatient-mode
