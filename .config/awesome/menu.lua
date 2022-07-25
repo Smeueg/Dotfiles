@@ -3,6 +3,7 @@ local beautiful = require("beautiful")
 local gears = require("gears")
 local wibox = require("wibox")
 local awful = require("awful")
+local icon = require("icon")
 local Gio = require("lgi").Gio
 -- TODO --
 -- - Add scrolling support
@@ -23,7 +24,7 @@ local function info_highlight(grid)
 			widget.widget.widget.markup = string.format(
 				"<span foreground='%s' font='12'>%s</span>",
 				beautiful.border_focus,
-				string.sub(widget.widget.widget.markup, 17, -8)
+				widget.widget.widget.markup:match("^<span[^>]*>(.*)</span>$")
 			)
 		else
 			widget.bg = nil
@@ -46,18 +47,19 @@ end
 local function info_next(grid)
 	if module.index_entry ~= #module.entries_filtered then
 		module.index_entry = module.index_entry + 1
-	end
-
-	if module.index_entry > module.index_start + 14 then
-		module.index_start = module.index_start + 1
+		if module.index_entry > module.index_start + 14 then
+			module.index_start = module.index_start + 1
+		end
 	end
 	info_highlight(grid)
 end
 
 local function info_prev(grid)
-	module.index_entry = module.index_entry - 1
-	if module.index_start ~= 1 and module.index_entry < module.index_start then
-		module.index_start = module.index_start - 1
+	if module.index_entry ~= 1 then
+		module.index_entry = module.index_entry - 1
+		if module.index_entry < module.index_start then
+			module.index_start = module.index_start - 1
+		end
 	end
 	info_highlight(grid)
 end
@@ -131,7 +133,8 @@ function module.open()
 	end
 	-- Create the popup widget
 	local geometry = awful.screen.focused().geometry
-	local popup = awful.popup {
+	local popup
+	popup = awful.popup {
 		shape = gears.shape.rounded_rect,
 		placement = awful.placement.centered,
 		border_color = beautiful.border_focus,
@@ -144,6 +147,17 @@ function module.open()
 				layout = wibox.layout.grid,
 				forced_num_cols = 1,
 				homogeneous = false,
+				{
+					widget = wibox.container.place,
+					halign = "right",
+					icon.close(
+						function()
+							awful.keygrabber.stop()
+							popup.visible = false
+							popup = nil
+						end
+					),
+				},
 				{ widget = wibox.widget.textbox }, -- Prompt
 				{ -- Separator
 					widget = wibox.container.margin,
@@ -164,33 +178,48 @@ function module.open()
 					forced_num_cols = 1
 				},
 				{ -- Page Info
-					widget = wibox.widget.textbox,
-					align = "right"
-				}
+						widget = wibox.widget.textbox,
+						align = "right"
+					}
 			}
 		}
 	}
-	local grid = popup.widget.widget:get_widgets_at(3, 1)[1]
-	module.widget_page = popup.widget.widget:get_widgets_at(4, 1)[1]
+	local grid = popup.widget.widget:get_widgets_at(4, 1)[1]
+
+	module.widget_page = popup.widget.widget:get_widgets_at(5, 1)[1]
 	grid:connect_signal(
 		"button::press",
-		function()
-			local entry = module.entries_filtered[module.index_entry]
-			awful.keygrabber.stop()
-			popup.visible = false
-			popup = nil
-			entry.appinfo:launch()
-			notify {
-				title = "Launching Application",
-				text = entry.name
-			}
+		function(_, _, _, button)
+			if button == 5 then
+					if module.index_start + 14 ~= #module.entries_filtered then
+						module.index_start = module.index_start + 1
+						module.index_entry = module.index_entry + 1
+					info_highlight(grid)
+				end
+			elseif button == 4 then
+				if module.index_start ~= 1 then
+					module.index_start = module.index_start - 1
+					module.index_entry = module.index_entry - 1
+					info_highlight(grid)
+				end
+			elseif button == 1 then
+				local entry = module.entries_filtered[module.index_entry]
+				awful.keygrabber.stop()
+				popup.visible = false
+				popup = nil
+				entry.appinfo:launch()
+				notify {
+					title = "Launching Application",
+					text = entry.name
+				}
+			end
 		end
 	)
 
 	info_filter(grid, "")
 	awful.prompt.run {
 		prompt = "<span font='12'>Run: </span>",
-		textbox = popup.widget.widget:get_widgets_at(1, 1)[1],
+		textbox = popup.widget.widget:get_widgets_at(2, 1)[1],
 		done_callback = function() popup.visible = false; popup = nil; end,
 		changed_callback = function(cmd) info_filter(grid, cmd) end,
 		exe_callback = function(cmd)
@@ -210,7 +239,6 @@ function module.open()
 			end
 		end,
 		keypressed_callback = function(mod, key, cmd)
-			notify {text = "a"}
 			if key == "Down" or (mod.Control and key == "n") then
 				info_next(grid)
 			elseif key == "Up" or (mod.Control and key == "p") then
