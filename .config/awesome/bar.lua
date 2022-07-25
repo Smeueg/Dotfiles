@@ -234,8 +234,8 @@ function bar.taglist_create(s)
 	)
 	local update = function(self, t)
 		local icon = self:get_children_by_id("icon")[1]
+		icon.bg = icon.bg or beautiful.bg_normal
 		local icon_str = tostring(icon)
-		icon.bg_hex = icon.bg_hex or beautiful.bg_normal
 		icon.shape_border_color = icon.shape_border_color or
 			beautiful.wibar_unselected_tag
 
@@ -244,15 +244,22 @@ function bar.taglist_create(s)
 			beautiful.wibar_unselected_tag
 		local bg = next(t:clients()) and border or beautiful.wibar_bg
 
+		local _, r, g, b = icon.bg:get_rgba()
+		local hex = string.format(
+			"#%02X%02X%02X",
+			math.floor(r * 255),
+			math.floor(g * 255),
+			math.floor(b * 255)
+		)
+
 		animate.color(
 			icon_str .. "border", 0.1, icon.shape_border_color, border,
 			function(color) icon.shape_border_color = color end
 		)
 		animate.color(
-			icon_str .. "bg", 0.1, icon.bg_hex, bg,
+			icon_str .. "bg", 0.1, hex, bg,
 			function(color)
 				icon.bg = color
-				icon.bg_hex = color
 			end
 		)
 	end
