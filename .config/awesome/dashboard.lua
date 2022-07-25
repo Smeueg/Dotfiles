@@ -332,14 +332,14 @@ do -- Widget for the wibar
 	local buttons = gears.table.join(awful.button({}, 1, module.toggle))
 
 	module.widget = {
-			widget = wibox.container.background,
-			bg = beautiful.tasklist_bg_focus,
-			shape = gears.shape.rounded_rect,
-			buttons = buttons,
-			{
-				widget = wibox.widget.imagebox,
-				image = icon
-			}
+		widget = wibox.container.background,
+		bg = beautiful.tasklist_bg_focus,
+		shape = gears.shape.rounded_rect,
+		buttons = buttons,
+		{
+			widget = wibox.widget.imagebox,
+			image = icon
+		}
 
 	}
 end

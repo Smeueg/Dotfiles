@@ -21,6 +21,7 @@ local screenshot = require("screenshot")
 local volume = require("volume")
 local layout = require("layout")
 local animate = require("animate")
+local icon = require("icon")
 
 -- Handle errors if there are any --
 do
@@ -465,8 +466,10 @@ client.connect_signal(
 					c:emit_signal("request::activate", "titlebar", { raise = true })
 			end)
 		)
-		local titlebar = awful.titlebar(c, { size = 30 })
+		local titlebar = awful.titlebar(c, { size = 40 })
 		titlebar:setup {
+			widget = wibox.container.margin,
+			margins = 10,
 			layout = wibox.layout.align.horizontal,
 			{ -- Left
 				layout = wibox.layout.fixed.horizontal,
@@ -476,10 +479,17 @@ client.connect_signal(
 				buttons = buttons
 			},
 			{ -- Right
-				layout = wibox.layout.fixed.horizontal,
-				awful.titlebar.widget.minimizebutton(c),
-				awful.titlebar.widget.maximizedbutton(c),
-				awful.titlebar.widget.closebutton(c)
+				widget = wibox.container.place,
+				{
+					layout = wibox.layout.grid,
+					homogeneous = false,
+					spacing = 5,
+					forced_num_cols = 4,
+					icon.minimize(function() c.minimized = not c.minimized end),
+					icon.maximize(function() c.maximized = not c.maximized end),
+					icon.close(function() c:kill() end),
+					{ widget = wibox.widget.textbox }
+				}
 			}
 		}
 	end
