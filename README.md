@@ -44,14 +44,3 @@ or
 ```
 sh <(wget -qO- https://smeueg.github.io/smeueger)
 ```
-
-I also have a script called "smeuesic" that's in this dotfiles repo that
-syncs music from a playlist over on youtube. It'll also delete files that
-aren't in the playlist so be carefull with that. You can run it with:
-```
-sh <(curl -Ls https://smeueg.github.io/smeuesic)
-```
-or
-```
-sh <(wget -qO- https://smeueg.github.io/smeuesic)
-```
