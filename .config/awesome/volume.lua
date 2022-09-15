@@ -143,17 +143,23 @@ module.timer = gears.timer {
 	timeout = 5,
 	callback = function()
 		awful.spawn.easy_async(
-			"pactl list sinks",
+			"pactl info",
 			function(stdout)
-				local vol = stdout:match("(%d+%%)") .. " "
-				local icon
-				if stdout:match("Mute: (%w+)") == "yes" then
-					icon = icon_mute
-				else
-					icon = icon_volume
-				end
-				module.widget:get_children_by_id("icon")[1].image = icon
-				module.widget:get_children_by_id("text")[1].text = vol
+				local sink = stdout:match("Default Sink: ([^\n]+)")
+				sink = sink:gsub("-", "[-]")
+				awful.spawn.easy_async(
+					"pactl list sinks",
+					function(stdout)
+						local regex, str, vol, icon
+						regex = ""
+						for i=1, 9 do regex = regex .. "[^\n]*\n" end
+						str = stdout:match("Name: " .. sink .. regex)
+						vol = str:match("(%d+%%)") .. " "
+						icon = str:find("Mute: no") and icon_volume or icon_mute
+						module.widget:get_children_by_id("icon")[1].image = icon
+						module.widget:get_children_by_id("text")[1].text = vol
+					end
+				)
 			end
 		)
 	end
