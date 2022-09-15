@@ -64,6 +64,7 @@ local function set_wallpaper(s)
 end
 
 
+
 -- Key and Mouse Bindings --
 local globalkeys = gears.table.join( -- Keybindings
 	awful.key({ modkey }, "y", function()
@@ -396,41 +397,45 @@ awful.rules.rules = { -- Rules
 
 
 -- Wibar --
-awful.screen.connect_for_each_screen(function(s)
-	set_wallpaper(s)
-	awful.tag({ "1", "2", "3", "4", "5" }, s, awful.layout.layouts[1])
-	s.wibar = awful.wibar { position = "top", screen = s, height = 50 }
-	s.wibar:setup { -- Wibox widgets
-		widget = wibox.container.margin,
-		margins = 7.5,
-		{
-			layout = wibox.layout.align.horizontal,
-			expand = "none",
-			{ -- Left Widgets
-				layout = wibox.layout.fixed.horizontal,
-				spacing = 10,
-				dashboard.widget,
-				bar.taglist_create(s),
-				layout.widget,
-			},
-			{ -- Center Widgets
-				layout = wibox.layout.fixed.horizontal,
-				spacing = 10,
-				bar.tasklist_create(s),
-			},
-			{ -- Right Widgets
-				layout = wibox.layout.fixed.horizontal,
-				volume.widget,
-				bar.network,
-				bar.date,
-				spacing = 10,
-			},
+awful.screen.connect_for_each_screen(
+	function(s)
+		set_wallpaper(s)
+		awful.tag({ "1", "2", "3", "4", "5" }, s, awful.layout.layouts[1])
+		s.wibar = awful.wibar { position = "top", screen = s, height = 50 }
+		s.wibar:setup { -- Wibox widgets
+			widget = wibox.container.margin,
+			margins = 7.5,
+			{
+				layout = wibox.layout.align.horizontal,
+				expand = "none",
+				{ -- Left Widgets
+					layout = wibox.layout.fixed.horizontal,
+					spacing = 10,
+					dashboard.widget,
+					bar.taglist_create(s),
+					layout.widget,
+				},
+				{ -- Center Widgets
+					layout = wibox.layout.fixed.horizontal,
+					spacing = 10,
+					bar.tasklist_create(s),
+				},
+				{ -- Right Widgets
+					layout = wibox.layout.fixed.horizontal,
+					volume.widget,
+					bar.network,
+					bar.date,
+					spacing = 10,
+				},
+			}
 		}
-	}
-end)
+	end
+)
 
--- Re-set wallpaper when a screen's geometry changes (e.g. different resolution)
-screen.connect_signal("property::geometry", set_wallpaper)
+screen.connect_signal(
+	"property::geometry",
+	set_wallpaper
+)
 
 client.connect_signal(
 	"manage",
@@ -479,20 +484,20 @@ client.connect_signal(
 				buttons = buttons
 			},
 			{ -- Right
-				widget = wibox.container.place,
-				{
-					layout = wibox.layout.grid,
-					homogeneous = false,
-					spacing = 5,
-					forced_num_cols = 4,
-					icon.minimize(function() c.minimized = not c.minimized end),
-					icon.maximize(function() c.maximized = not c.maximized end),
-					icon.close(function() c:kill() end),
-					{ widget = wibox.widget.textbox }
+					widget = wibox.container.place,
+					{
+						layout = wibox.layout.grid,
+						homogeneous = false,
+						spacing = 5,
+						forced_num_cols = 4,
+						icon.minimize(function() c.minimized = not c.minimized end),
+						icon.maximize(function() c.maximized = not c.maximized end),
+						icon.close(function() c:kill() end),
+						{ widget = wibox.widget.textbox }
+					}
 				}
 			}
-		}
-	end
+		end
 )
 
 client.connect_signal( -- Window border color when focused
