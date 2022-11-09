@@ -13,10 +13,7 @@
 ;; reference to other people on what other people use. This configuration should
 ;; be able to run without a problem in other systems other than my current one,
 ;; although I haven't tested it yet.
-;; Things to check out:
-;; - dirvish
 
-(setq-default woman-ignore nil)
 
 
 ;;; VARIABLES ;;;
@@ -105,6 +102,7 @@
 (electric-pair-mode 1) ;; Auto pairs
 (global-auto-revert-mode 1) ;; Autorefresh buffers
 (global-eldoc-mode -1)
+(setq-default woman-ignore nil)
 
 ;; Whitespace
 (global-whitespace-mode 1)
@@ -247,9 +245,9 @@ awesomewm, and the users shell's"
          (sh-mode
           (:cmd . ,file)
           (:func . ,'executable-make-buffer-file-executable-if-script-p))
-         (html-mode (:cmd . ,(format "gtk-launch %s %s; exit"
-                                     "$(xdg-settings get default-web-browser)"
-                                     file)))))
+         (mhtml-mode (:cmd . ,(format "gtk-launch %s %s; exit"
+                                      "$(xdg-settings get default-web-browser)"
+                                      file)))))
       (catch 'break
         (dolist (mode mode-pair)
           (when (derived-mode-p (car mode))
@@ -290,7 +288,8 @@ awesomewm, and the users shell's"
           (lambda () (when (get-buffer "*Completions*")
                        (kill-buffer "*Completions*"))))
 (add-hook 'prog-mode-hook (lambda () (hs-minor-mode) (hs-hide-all)))
-(add-hook 'html-mode-hook (lambda () (setq-local tab-width 2)))
+(add-hook 'mhtml-mode-hook (lambda () (setq-local tab-width 2)))
+(add-hook 'css-mode-hook (lambda () (setq-local tab-width 2)))
 (add-hook 'sh-mode-hook
           (lambda ()
             (add-hook 'before-save-hook
@@ -781,7 +780,6 @@ awesomewm, and the users shell's"
   (setq-default gc-cons-threshold 100000000
                 read-process-output-max (* 4 1024 1024)
                 eglot-events-buffer-size 0)
-
   (add-hook 'eglot-managed-mode-hook
             (lambda ()
               (when (fboundp 'evil-define-key)
@@ -789,7 +787,6 @@ awesomewm, and the users shell's"
                 (evil-define-key 'normal 'local " g" 'display-local-help))
               (when (boundp 'company-backends)
                 (setq company-backends (default-value 'company-backends)))))
-
   (dolist (hook '(rust-mode-hook c-mode-common-hook python-mode-hook))
     (add-hook hook 'eglot-ensure)))
 
@@ -834,11 +831,6 @@ awesomewm, and the users shell's"
     (impatient-mode)
     (browse-url "http://localhost:8080/imp/")))
 
-(use-package sgml-mode ; Builtin, hence this doesn't need ":ensure t"
-  :defer t
-  :init
-  (add-hook 'html-mode-hook (lambda () (setq-local tab-width 2))))
-
 (use-package emmet-mode
   :ensure t
   :hook (html-mode . emmet-mode))
@@ -847,7 +839,10 @@ awesomewm, and the users shell's"
   :ensure t
   :defer t
   :init
-  (add-hook 'html-mode-hook 'auto-rename-tag-mode))
+  (add-hook 'html-mode-hook
+            (lambda ()
+              (auto-rename-tag-mode 1)
+              (whitespace-mode 0))))
 
 ;; Lua ;;
 (use-package lua-mode
