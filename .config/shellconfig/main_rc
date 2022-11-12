@@ -103,7 +103,7 @@ alias rm="rm -i"
 alias cp="cp -i"
 alias ip="ip --color=auto"
 
-droidcam_ip="192.168.18.44"
+droidcam_ip="192.168.18.51"
 droidcam_port="4747"
 alias dra="droidcam-cli -a ${droidcam_ip} ${droidcam_port}"
 alias drav="droidcam-cli -a -v ${droidcam_ip} ${droidcam_port}"
@@ -186,7 +186,7 @@ dit() {
 				printf '\033[38;5;1m~/%b\033[0m\n' "${line}"
 			fi
 		done <<-EOF
-		$(cd "${HOME}"; git --git-dir="${HOME}"/.local/dots/ --work-tree="${HOME}" ls-tree -r master --name-only)
+		$(cd "${HOME}"; git --git-dir="${HOME}"/.local/dots/ --work-tree="${HOME}" ls-tree -r HEAD --name-only)
 		EOF
 	else
 		git --git-dir=$HOME/.local/dots/ --work-tree=$HOME "$@"
@@ -237,7 +237,7 @@ e() {
 
 # MISC #
 # Git
-git config --get-regexp "^alias\.graph" ||
+[ "$(git config --get-regexp ^alias\.graph)" ] ||
 	git config --global alias.graph "log --graph --oneline"
 
 # Less
