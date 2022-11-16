@@ -102,6 +102,7 @@ alias mv="mv -i"
 alias rm="rm -i"
 alias cp="cp -i"
 alias ip="ip --color=auto"
+alias dit="git --git-dir=${HOME}/.local/dots --work-tree=${HOME}"
 
 droidcam_ip="192.168.18.51"
 droidcam_port="4747"
@@ -174,24 +175,6 @@ colors() {
 
 
 doar() { eval "su -c '$@'"; }
-
-
-dit() {
-	if [ "${1}" = "files" ]; then
-		printf "Red means that the file exists in the repo but doesn't in this machine.\n"
-		while read line; do
-			if [ -f "$HOME/${line}" ]; then
-				printf '~/%b\n' "${line}"
-			else
-				printf '\033[38;5;1m~/%b\033[0m\n' "${line}"
-			fi
-		done <<-EOF
-		$(cd "${HOME}"; git --git-dir="${HOME}"/.local/dots/ --work-tree="${HOME}" ls-tree -r HEAD --name-only)
-		EOF
-	else
-		git --git-dir=$HOME/.local/dots/ --work-tree=$HOME "$@"
-	fi
-}
 
 
 jmtpfs-auto-mount() {
