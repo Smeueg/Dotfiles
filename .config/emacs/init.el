@@ -4,10 +4,8 @@
  auto-save-default nil
  auto-save-list-file-prefix nil
  create-lockfiles nil
+ x-select-enable-clipboard nil
  custom-file (make-temp-file ""))
-;; Removes *messages* from the buffer.
-(setq-default message-log-max nil)
-(kill-buffer "*Messages*")
 ;; Disable *Buffer list*
 (setq inhibit-startup-buffer-menu t)
 ;; Removes the *Completions* buffer
@@ -76,19 +74,6 @@
 
 ;;; HOOKS
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
-
-
-
-;;; ADVICES
-(advice-add 'eval-buffer :before
-            (lambda (&rest r)
-              (setq-default message-log-max 1000)
-              (get-buffer-create "*Messages*")))
-
-(advice-add 'eval-buffer :after
-            (lambda (&rest r)
-              (setq-default message-log-max nil)
-              (kill-buffer "*Messages*")))
 
 
 
@@ -430,7 +415,9 @@
 (use-package mhtml-mode
   :defer t
   :init
-  (add-hook 'mhtml-mode-hook (lambda () (setq-local tab-width 2))))
+  (add-hook 'mhtml-mode-hook (lambda ()
+                               (setq-local tab-width 2)
+                               (whitespace-mode 0))))
 
 (use-package emmet-mode
   :ensure t
