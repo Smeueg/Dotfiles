@@ -29,8 +29,7 @@ fi
 # Should work on dash, bash, zsh, and ksh
 print_prompt() {
 	ret=${?}
-	symbol="➜"
-	symbol_backup=">"
+	symbol=">"
 	color=true
 	if [ "${BASH_VERSION}" ]; then
 		wrapper_start="\001"
@@ -52,9 +51,6 @@ print_prompt() {
 	fi
 
 	tmp="$(tty)"
-	if [ "${TERM}" = "dumb" ] || ! [ "${tmp%%/dev/tty*}" ]; then
-		symbol=${symbol_backup}
-	fi
 
 
 	if [ "${wrapper+x}" ]; then
