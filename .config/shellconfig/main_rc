@@ -100,11 +100,29 @@ alias cp="cp -i"
 alias ip="ip --color=auto"
 alias dit="git --git-dir=${HOME}/.local/dots --work-tree=${HOME}"
 
-droidcam_ip="192.168.18.51"
-droidcam_port="4747"
-alias dra="droidcam-cli -a ${droidcam_ip} ${droidcam_port}"
-alias drav="droidcam-cli -a -v ${droidcam_ip} ${droidcam_port}"
-unset droidcam_ip droidcam_port
+dra() {
+	if ! [ "$(command -v droidcam-cli)" ]; then
+		printf "[\033[1;31mERROR\033[0m] 'droidcam-cli' isn't installed\n" >&2
+		return 127
+	fi
+
+	for arg in ${@}; do
+		if [ "${arg}" = "-a" ]; then
+			{
+				while sleep 1; do
+					[ "$(pidof droidcam-cli)" ] && break
+				done
+				printf "Loading alsa-module... "
+				pacmd load-module module-alsa-source device=hw:Loopback,1,0 &&
+					printf "\033[1;32m✓\033[0m\n" ||
+						printf "\033[1;31m✗\033[0m\n"
+			} &
+			break
+		fi
+	done
+
+	droidcam-cli ${@}
+}
 
 
 
@@ -125,7 +143,7 @@ compress_documents() {
 }
 
 
-fix-time() {
+fix_time() {
 	# Fix time desync in Linux
 	err=false
 	for dep in ntpd hwclock sudo; do
@@ -168,9 +186,6 @@ colors() {
 	printf '\n'
 	unset i
 }
-
-
-doar() { eval "su -c '$@'"; }
 
 
 jmtpfs-auto-mount() {
