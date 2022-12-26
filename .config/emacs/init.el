@@ -222,6 +222,19 @@
   :init
   (add-hook 'after-init-hook 'rainbow-mode))
 
+(use-package ranger
+  :ensure t
+  :commands (ranger)
+  :init
+  (setq-default
+   ranger-cleanup-eagerly t
+   ranger-show-hidden t
+   ranger-hide-cursor t
+   ranger-parent-depth 0
+   ranger-excluded-extensions '("mkv" "iso" "mp4" "mp3" "gif")
+   ranger-max-preview-size 10
+   ranger-dont-show-binary t))
+
 
 
 ;;; CONTROLS
@@ -284,7 +297,7 @@
 (tooltip-mode -1)           ;; Disable tooltips
 (fringe-mode 3)             ;; Disable fringes
 (scroll-bar-mode -1)        ;; Disable scroll bar
-(global-visual-line-mode 0) ;; Disable line wrapping
+(global-visual-line-mode 1) ;; Enable line wrapping
 (fringe-mode 3)             ;; Disable fringes
 (blink-cursor-mode 0)       ;; Disable cursor blinking
 (global-display-line-numbers-mode 0)
@@ -337,7 +350,20 @@
                       :weight 'bold
                       :box (face-attribute 'mode-line :box)
                       :background
-                      (face-attribute 'default :background)))
+                      (face-attribute 'default :background))
+  (eval-after-load 'flymake
+    (add-hook
+     'flymake-mode-hook
+     (lambda ()
+       (set-face-attribute
+        'flymake-error nil
+        :underline (face-attribute 'error :foreground))
+       (set-face-attribute
+        'flymake-note nil
+        :underline (face-attribute 'font-lock-doc-face :foreground))
+       (set-face-attribute
+        'flymake-warning nil :underline
+        (face-attribute 'font-lock-function-name-face :foreground))))))
 
 (use-package eterm-256color
   :ensure t
@@ -402,6 +428,15 @@
 
 
 ;;; PROGRAMMING
+(use-package flymake
+  :init
+  (add-hook 'after-init-hook
+            (lambda ()
+              (with-eval-after-load 'evil
+                (evil-define-key 'normal 'flymake-mode-map
+                  " n" 'flymake-goto-next-error
+                  " p" 'flymake-goto-prev-error)))))
+
 (use-package lua-mode
   :defer t
   :ensure t
@@ -440,6 +475,18 @@
   (add-hook 'emacs-lisp-mode-hook
 			(lambda () (setq-local indent-tabs-mode nil))))
 
+(use-package flymake-diagnostic-at-point
+  :after flymake
+  :ensure t
+  :config
+  (setq flymake-diagnostic-at-point-display-diagnostic-function
+        'flymake-diagnostic-at-point-display-minibuffer)
+  (add-hook 'flymake-mode-hook #'flymake-diagnostic-at-point-mode))
+
+(use-package prog-mode
+  :init
+  (add-hook 'prog-mode-hook ;; Disable wrap
+            (lambda () (visual-line-mode 0))))
 
 
 ;;; MISC
