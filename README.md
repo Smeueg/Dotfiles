@@ -1,6 +1,6 @@
 <h1>Very Smeueg™ Dotfiles For Linux</h1>
 <div align="center"><img src="https://smeueg.github.io/pfp.png" height=128 width=128></div>
-<div align="center"><img src="https://smeueg.github.io/Rice.png" height=512 width=512></div>
+<div align="center"><img src="https://smeueg.github.io/rice.png" height=512 width=512></div>
 
 ---
 
