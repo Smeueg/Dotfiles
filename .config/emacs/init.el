@@ -222,20 +222,23 @@
   :init
   (add-hook 'after-init-hook 'rainbow-mode))
 
-(use-package ranger
+(use-package dirvish
   :ensure t
-  :commands (ranger)
   :init
+  (dirvish-override-dired-mode)
+  (add-hook 'dirvish-find-entry-hook
+            (lambda (&rest _) (setq-local truncate-lines t)))
+  (add-hook 'dired-mode-hook
+            (lambda () (setq-local whitespace-style nil)))
+  (define-key dirvish-mode-map "h" 'dired-up-directory)
+  (define-key dirvish-mode-map "j" 'dired-next-line)
+  (define-key dirvish-mode-map "k" 'dired-previous-line)
+  (define-key dirvish-mode-map "l" 'dired-find-file)
+  :config
   (setq-default
-   ranger-cleanup-eagerly t
-   ranger-show-hidden t
-   ranger-hide-cursor t
-   ranger-parent-depth 0
-   ranger-excluded-extensions '("mkv" "iso" "mp4" "mp3" "gif")
-   ranger-max-preview-size 10
-   ranger-dont-show-binary t))
-
-
+   dirvish-default-layout '(0 0.4 0.6)
+   dirvish-attributes '(file-time file-size)
+   dired-listing-switches "-lAh --group-directories-first"))
 
 ;;; CONTROLS
 (setq mouse-wheel-scroll-amount '(1)
@@ -257,6 +260,9 @@
    evil-replace-state-message nil)
   (add-hook 'after-init-hook 'evil-mode)
   :config
+  (add-hook 'dired-mode-hook
+            (lambda () (setq-local evil-emacs-state-cursor '(bar . 0))))
+  (add-to-list 'evil-emacs-state-modes 'dired-mode)
   (fset 'evil-next-line 'evil-next-visual-line)
   (fset 'evil-previous-line 'evil-previous-visual-line)
   (evil-define-key '(normal motion visual) 'global " " nil)
@@ -273,14 +279,14 @@
   (evil-define-key '(normal motion) 'global
     ":" 'execute-extended-command
     "  " 'run
+    " d" (lambda () (interactive) (if (fboundp 'dirvish) (dirvish) (dired)))
     " b" 'switch-to-buffer
     " f" 'find-file
     " a" 'mark-whole-buffer
     " h" 'help
     " l" 'global-display-line-numbers-mode
     " w" 'global-whitespace-mode
-    " i" 'set-auto-mode
-    " s" (lambda () (interactive) (switch-to-buffer "*scratch*")))
+    " i" 'set-auto-mode)
   (evil-define-key 'visual 'global " c"
     (lambda (beg end)
       (interactive "r")
