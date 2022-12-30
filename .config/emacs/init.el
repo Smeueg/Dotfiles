@@ -336,7 +336,7 @@
 
 ;;; VISUALS
 (menu-bar-mode 0)
-(show-paren-mode)
+(show-paren-mode 1)
 (tool-bar-mode -1)          ;; Disable the toolbar
 (tooltip-mode -1)           ;; Disable tooltips
 (fringe-mode 3)             ;; Disable fringes
@@ -427,6 +427,20 @@
                      '(".+" (dired-move-to-filename) nil
                        (0 `(:foreground ,(aref ansi-color-names-vector 2)))))
                'append)
+  (set-face-attribute 'variable-pitch nil :font "JetBrainsMono Nerd Font Mono")
+  (set-face-attribute 'eww-form-submit nil
+                      :font "JetBrainsMono Nerd Font Mono"
+                      :foreground (face-attribute 'default :foreground)
+                      :background (face-attribute 'mode-line :background)
+                      :box
+                      (list
+                       :line-width 5
+                       :color (face-attribute 'mode-line :background)
+                       :style nil))
+  (set-face-attribute 'eww-form-text nil
+                      :background (face-attribute 'header-line :background)
+                      :box
+                      (list :line-width 2 :color (aref ansi-color-names-vector 3)))
   (eval-after-load 'flymake
     (add-hook
      'flymake-mode-hook
