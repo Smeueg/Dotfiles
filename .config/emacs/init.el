@@ -410,6 +410,10 @@
                       :box
                       (list :line-width 5 :color
                             (face-attribute 'secondary-selection :background)))
+  (set-face-attribute 'header-line nil
+                      :box
+                      (list :line-width 5 :color
+                            (face-attribute 'header-line :background)))
   (set-face-attribute 'dired-symlink nil
                       :foreground (aref ansi-color-names-vector 6))
   (add-to-list 'dired-font-lock-keywords ;; Recolor executables in dired
