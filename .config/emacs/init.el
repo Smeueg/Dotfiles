@@ -220,7 +220,7 @@
   :ensure t
   :defer t
   :init
-  (add-hook 'after-init-hook 'rainbow-mode))
+  (add-hook 'prog-mode-hook (lambda () (rainbow-mode 1))))
 
 (use-package dirvish
   :ensure t
