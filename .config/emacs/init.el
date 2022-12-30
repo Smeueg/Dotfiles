@@ -225,20 +225,52 @@
 (use-package dirvish
   :ensure t
   :init
+  (setq-default
+   dirvish-cache-dir "/tmp/dirvish/"
+   dirvish-emerge-groups '(("Directories" (predicate . directories))
+                           ("Executables" (predicate . executables))
+                           ("Documents" (extensions "pdf" "tex" "bib" "epub"))
+                           ("Video" (extensions "mp4" "mkv" "webm"))
+                           ("Pictures" (extensions "jpg" "png" "svg" "gif"))
+                           ("Audio" (extensions "mp3" "flac" "wav" "ape" "aac"))
+                           ("Archives" (extensions "gz" "rar" "zip"))))
   (dirvish-override-dired-mode)
+  (add-hook 'dired-mode-hook (lambda () (setq-local whitespace-style nil)))
   (add-hook 'dirvish-find-entry-hook
-            (lambda (&rest _) (setq-local truncate-lines t)))
-  (add-hook 'dired-mode-hook
-            (lambda () (setq-local whitespace-style nil)))
+            (lambda (&rest _)
+              (setq truncate-lines t)
+              (revert-buffer)))
+  (add-hook 'dirvish-directory-view-mode-hook
+            (lambda () (setq truncate-lines t)))
+  (add-hook 'dirvish-setup-hook 'dirvish-emerge-mode)
+  (advice-add 'dired-create-empty-file :after
+              (lambda (&rest _) (revert-buffer)))
+  (advice-add 'dired-create-directory :after
+              (lambda (&rest _) (revert-buffer)))
+  (defun dired-toggle-mark ()
+    "Toggle mark on the current file"
+    (interactive)
+    (save-excursion
+      (beginning-of-line)
+      (if (eq (following-char) dired-marker-char)
+          (dired-unmark 1)
+        (dired-mark 1)))
+    (dired-next-line 1))
+  :config
   (define-key dirvish-mode-map "h" 'dired-up-directory)
   (define-key dirvish-mode-map "j" 'dired-next-line)
   (define-key dirvish-mode-map "k" 'dired-previous-line)
   (define-key dirvish-mode-map "l" 'dired-find-file)
-  :config
+  (define-key dirvish-mode-map " " 'dired-toggle-mark)
+  (define-key dirvish-mode-map "p" 'dirvish-yank)
+  (define-key dirvish-mode-map "m" 'dirvish-move)
+  (define-key dirvish-mode-map "." 'dired-create-empty-file)
+  (define-key dirvish-mode-map "r" 'dired-do-rename)
   (setq-default
    dirvish-default-layout '(0 0.4 0.6)
    dirvish-attributes '(file-time file-size)
-   dired-listing-switches "-lAh --group-directories-first"))
+   dired-listing-switches "-lAh --group-directories-first"
+   dirvish-path-separators '("  ⌂" "  /" " ⋗ ")))
 
 ;;; CONTROLS
 (setq mouse-wheel-scroll-amount '(1)
