@@ -363,6 +363,10 @@
   (load-theme 'gruvbox-dark-soft t)
   (add-hook 'after-init-hook
             (lambda ()
+              (with-eval-after-load 'dirvish
+                (set-face-background
+                 'dirvish-hl-line
+                 (face-attribute 'mode-line :background)))
               (with-eval-after-load 'vertico
                 (set-face-background
                  'vertico-current
@@ -389,6 +393,30 @@
                       :box (face-attribute 'mode-line :box)
                       :background
                       (face-attribute 'default :background))
+  (set-face-attribute 'tab-bar-tab-inactive nil
+                      :foreground
+                      (face-attribute 'mode-line :foreground)
+                      :background
+                      (face-attribute 'mode-line :background)
+                      :box
+                      (list :line-width 5 :color
+                            (face-attribute 'secondary-selection :background)))
+  (set-face-attribute 'tab-bar-tab nil
+                      :foreground
+                      (face-attribute 'mode-line :foreground)
+                      :overline (aref ansi-color-names-vector 4)
+                      :background
+                      (face-attribute 'mode-line :background)
+                      :box
+                      (list :line-width 5 :color
+                            (face-attribute 'secondary-selection :background)))
+  (set-face-attribute 'dired-symlink nil
+                      :foreground (aref ansi-color-names-vector 6))
+  (add-to-list 'dired-font-lock-keywords ;; Recolor executables in dired
+               (list dired-re-exe
+                     '(".+" (dired-move-to-filename) nil
+                       (0 `(:foreground ,(aref ansi-color-names-vector 2)))))
+               'append)
   (eval-after-load 'flymake
     (add-hook
      'flymake-mode-hook
@@ -609,16 +637,18 @@
 (setq-default mode-line-format
               '(:eval
                 (let ((face '()) (mode nil))
-                  (setq face (cond
-                              (buffer-read-only `(:overline ,(aref ansi-color-names-vector 1)))
-                              ((buffer-modified-p) `(:overline ,(aref ansi-color-names-vector 3)))))
+                  (setq face
+                        (cond
+                         (buffer-read-only
+                          `(:overline ,(aref ansi-color-names-vector 1)))
+                         ((buffer-modified-p)
+                          `(:overline ,(aref ansi-color-names-vector 3)))))
                   (setq mode (cond))
                   (modeline/align
                    ;; Left
                    `(,(propertize (format  " %s " (buffer-name)) 'face face)
                      " "
-                     ,(symbol-name major-mode)
-                     )
+                     ,(symbol-name major-mode))
                    ;;Right
                    `(,(cdr (assoc (bound-and-true-p evil-state)
                                   '((normal . "Normal")
