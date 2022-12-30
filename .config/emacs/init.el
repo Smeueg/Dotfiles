@@ -149,9 +149,9 @@
             (lambda ()
               (with-eval-after-load 'evil
                 (evil-define-key 'normal 'global
-                  " t" 'hs-toggle-hiding
-                  " Ts" 'hs-show-all
-                  " Th" 'hs-hide-all)))))
+                  " t" '("Toggle Fold" . hs-toggle-hiding)
+                  " Ts" '("Open All Fold" . hs-show-all)
+                  " Th" '("Hide All Fold" . hs-hide-all))))))
 
 (use-package all-the-icons
   :defer t
@@ -272,6 +272,12 @@
    dired-listing-switches "-lAh --group-directories-first"
    dirvish-path-separators '("  ⌂" "  /" " ⋗ ")))
 
+(use-package which-key
+  :ensure t
+  :init
+  (setq which-key-idle-delay 0.25)
+  (which-key-mode 1))
+
 ;;; CONTROLS
 (setq mouse-wheel-scroll-amount '(1)
       mouse-wheel-progressive-speed nil)
@@ -298,11 +304,9 @@
   (fset 'evil-next-line 'evil-next-visual-line)
   (fset 'evil-previous-line 'evil-previous-visual-line)
   (evil-define-key '(normal motion visual) 'global " " nil)
-  (evil-define-key 'normal 'global "gc" 'comment-line)
-  (evil-define-key 'visual 'global "gc" 'comment-dwim)
-  (evil-define-key 'insert 'global
-    [?\C-n] nil
-    [?\C-p] nil)
+  (evil-define-key 'normal 'global "gc" '("(Un)Comment Line" . comment-line))
+  (evil-define-key 'visual 'global "gc" '("(Un)Comment Region" . comment-dwim))
+  (evil-define-key 'insert 'global [?\C-n] nil [?\C-p] nil)
   (evil-define-key '(insert normal visual operator motion replace) 'global
     [?\M-h] (lambda () (interactive) (evil-normal-state 1) (evil-backward-char))
     [?\M-j] (lambda () (interactive) (evil-normal-state 1) (evil-next-line))
@@ -310,21 +314,23 @@
     [?\M-l] (lambda () (interactive) (evil-normal-state 1) (evil-forward-char)))
   (evil-define-key '(normal motion) 'global
     ":" 'execute-extended-command
-    "  " 'run
-    " d" (lambda () (interactive) (if (fboundp 'dirvish) (dirvish) (dired)))
-    " b" 'switch-to-buffer
-    " f" 'find-file
-    " a" 'mark-whole-buffer
-    " h" 'help
-    " l" 'global-display-line-numbers-mode
-    " w" 'global-whitespace-mode
-    " i" 'set-auto-mode)
+    "  " '("Run/Execute current buffer" . run)
+    " d" '("Open Dired" . (lambda () (interactive)
+                            (if (fboundp 'dirvish) (dirvish) (dired))))
+    " b" '("Switch Buffers" . switch-to-buffer)
+    " f" '("Open File" . find-file)
+    " a" '("Mark Whole Buffer" . mark-whole-buffer)
+    " h" '("Open Help Menu" . help)
+    " l" '("Toggle Line Numbers" . global-display-line-numbers-mode)
+    " w" '("Toggle whitespace-mode" . global-whitespace-mode)
+    " i" '("Detect Major Mode" . set-auto-mode))
   (evil-define-key 'visual 'global " c"
-    (lambda (beg end)
-      (interactive "r")
-      (gui-set-selection
-       'CLIPBOARD (substring-no-properties (filter-buffer-substring beg end)))
-      (evil-normal-state 1))))
+    '("Copy to clipboard" .
+      (lambda (beg end)
+        (interactive "r")
+        (gui-set-selection
+         'CLIPBOARD (substring-no-properties (filter-buffer-substring beg end)))
+        (evil-normal-state 1)))))
 
 
 
@@ -504,8 +510,8 @@
             (lambda ()
               (with-eval-after-load 'evil
                 (evil-define-key 'normal 'flymake-mode-map
-                  " n" 'flymake-goto-next-error
-                  " p" 'flymake-goto-prev-error)))))
+                  " n" '("Goto Next Error" . flymake-goto-next-error)
+                  " p" '("Goto Previous Error" . flymake-goto-prev-error))))))
 
 (use-package lua-mode
   :defer t
