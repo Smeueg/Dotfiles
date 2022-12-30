@@ -428,32 +428,36 @@
                        (0 `(:foreground ,(aref ansi-color-names-vector 2)))))
                'append)
   (set-face-attribute 'variable-pitch nil :font "JetBrainsMono Nerd Font Mono")
-  (set-face-attribute 'eww-form-submit nil
-                      :font "JetBrainsMono Nerd Font Mono"
-                      :foreground (face-attribute 'default :foreground)
-                      :background (face-attribute 'mode-line :background)
-                      :box
-                      (list
-                       :line-width 5
-                       :color (face-attribute 'mode-line :background)
-                       :style nil))
-  (set-face-attribute 'eww-form-text nil
-                      :background (face-attribute 'header-line :background)
-                      :box
-                      (list :line-width 2 :color (aref ansi-color-names-vector 3)))
-  (eval-after-load 'flymake
-    (add-hook
-     'flymake-mode-hook
-     (lambda ()
-       (set-face-attribute
-        'flymake-error nil
-        :underline (face-attribute 'error :foreground))
-       (set-face-attribute
-        'flymake-note nil
-        :underline (face-attribute 'font-lock-doc-face :foreground))
-       (set-face-attribute
-        'flymake-warning nil :underline
-        (face-attribute 'font-lock-function-name-face :foreground))))))
+  (add-hook 'eww-mode-hook
+            (lambda ()
+              (set-face-attribute
+               'eww-form-submit nil
+               :font "JetBrainsMono Nerd Font Mono"
+               :foreground (face-attribute 'default :foreground)
+               :background (face-attribute 'mode-line :background)
+               :box
+               (list
+                :line-width 5
+                :color (face-attribute 'mode-line :background)
+                :style nil))
+              (set-face-attribute
+               'eww-form-text nil
+               :background (face-attribute 'header-line :background)
+               :box
+               (list :line-width 2 :color (aref ansi-color-names-vector 3)))))
+
+  (add-hook
+   'flymake-mode-hook
+   (lambda ()
+     (set-face-attribute
+      'flymake-error nil
+      :underline (face-attribute 'error :foreground))
+     (set-face-attribute
+      'flymake-note nil
+      :underline (face-attribute 'font-lock-doc-face :foreground))
+     (set-face-attribute
+      'flymake-warning nil :underline
+      (face-attribute 'font-lock-function-name-face :foreground)))))
 
 (use-package eterm-256color
   :ensure t
