@@ -36,7 +36,7 @@
 (defun w ()
   (interactive)
   "Save a buffer if modified or finish an edit (i.e. commit message)"
-  (if (string= "COMMIT_MSG" (file-name-base (or (buffer-file-name) "")))
+  (if (string= "COMMIT_EDITMSG" (file-name-base (or (buffer-file-name) "")))
       (call-interactively 'with-editor-finish)
     (call-interactively 'save-buffer)))
 
