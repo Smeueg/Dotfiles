@@ -498,6 +498,21 @@
                 (when (= (length (tab-bar-tabs)) 2)
                   (tab-bar-mode -1)))))
 
+(use-package magit
+  :ensure t
+  :defer t
+  :config
+  ;; Use '~/' as the working tree and '~/.local/dots' as the git directory when
+  ;; modifying a file that's inside '~/'.
+  (advice-add
+   'magit-process-environment :filter-return
+   (lambda (env)
+     (unless (vc-call-backend 'Git 'root default-directory)
+       (let ((work-tree "~/") (bare-repo "~/.local/dots/"))
+         (when (file-in-directory-p default-directory work-tree)
+           (message "Inside dotfiles repository, adding to env")
+           (push (format "GIT_WORK_TREE=%s" (expand-file-name work-tree)) env)
+           (push (format "GIT_DIR=%s" (expand-file-name bare-repo)) env)))))))
 
 ;;; ORG
 (use-package org
