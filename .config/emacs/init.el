@@ -30,9 +30,15 @@
 
 ;;; FUNCTIONS / ALIASES
 (setq disabled-command-function nil) ;; Enable all command/functions
-(defalias 'w 'save-buffer)
 (defalias 'q 'kill-buffer)
 (defalias 'dw 'delete-window)
+
+(defun w ()
+  (interactive)
+  "Save a buffer if modified or finish an edit (i.e. commit message)"
+  (if (string= "COMMIT_MSG" (file-name-base (or (buffer-file-name) "")))
+      (call-interactively 'with-editor-finish)
+    (call-interactively 'save-buffer)))
 
 (defun split ()
   "Split the buffer horizontally and move focus to the new split"
@@ -517,6 +523,8 @@
 (use-package magit
   :ensure t
   :defer t
+  :init
+  (setq magit-commit-show-diff nil)
   :config
   ;; Use '~/' as the working tree and '~/.local/dots' as the git directory when
   ;; modifying a file that's inside '~/'.
