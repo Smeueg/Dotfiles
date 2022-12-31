@@ -286,14 +286,14 @@
 (use-package evil
   :ensure t
   :init
-  (defvaralias 'evil-shift-width 'tab-width)
-  (setq-default
-   evil-undo-system 'undo-fu
-   evil-insert-state-cursor 'bar
-   evil-emacs-state-message nil
-   evil-insert-state-message nil
-   evil-replace-state-message nil)
   (add-hook 'after-init-hook 'evil-mode)
+  (defvaralias 'evil-shift-width 'tab-width)
+  (setq evil-undo-system 'undo-fu
+        evil-insert-state-cursor 'bar
+        evil-emacs-state-message nil
+        evil-insert-state-message nil
+        evil-replace-state-message nil
+        evil-want-keybinding nil)
   :config
   (add-hook 'dired-mode-hook
             (lambda () (setq-local evil-emacs-state-cursor '(bar . 0))))
@@ -328,6 +328,16 @@
         (gui-set-selection
          'CLIPBOARD (substring-no-properties (filter-buffer-substring beg end)))
         (evil-normal-state 1)))))
+
+(use-package evil-collection
+  :ensure t
+  :after evil
+  :config
+  (evil-collection-init 'magit)
+  (with-eval-after-load 'magit
+    (evil-define-key 'normal 'magit-diff-mode-map
+      "h" 'evil-backward-char
+      "l" 'evil-forward-char)))
 
 
 
