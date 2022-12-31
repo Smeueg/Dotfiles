@@ -15,6 +15,7 @@
               (kill-buffer "*Completions*"))))
 
 
+
 ;;; INDENTATION
 (defvaralias 'c-basic-offset 'tab-width)
 (setq-default
@@ -91,6 +92,7 @@
   (package-refresh-contents)
   (package-install 'use-package))
 (package-initialize)
+(setq use-package-always-defer t)
 
 
 
@@ -106,7 +108,6 @@
  scoll-margin 5
  use-dialog-box nil)
 (use-package saveplace
-  :defer t
   :custom
   (save-place-forget-unreadable-files nil)
   :init
@@ -131,19 +132,16 @@
   (add-hook 'after-init-hook 'global-aggressive-indent-mode))
 
 (use-package vertico
-  :defer t
   :ensure t
   :init
   (add-hook 'after-init-hook 'vertico-mode))
 
 (use-package marginalia
-  :defer t
   :ensure t
   :init
   (add-hook 'after-init-hook 'marginalia-mode))
 
 (use-package hideshow
-  :defer t
   :custom
   (hs-hide-comments-when-hiding-all nil)
   :init
@@ -160,11 +158,9 @@
                   " Th" '("Hide All Fold" . hs-hide-all))))))
 
 (use-package all-the-icons
-  :defer t
   :ensure t)
 
 (use-package all-the-icons-completion
-  :defer t
   :ensure t
   :init
   (setq inhibit-compacting-font-caches t)
@@ -172,7 +168,6 @@
   (add-hook 'marginalia-mode-hook #'all-the-icons-completion-marginalia-setup))
 
 (use-package undo-fu
-  :defer t
   :ensure t
   :commands (undo-fu-only-undo undo-fu-only-redo))
 
@@ -221,7 +216,6 @@
 
 (use-package rainbow-mode
   :ensure t
-  :defer t
   :init
   (add-hook 'prog-mode-hook (lambda () (rainbow-mode 1))))
 
@@ -282,6 +276,25 @@
   (setq which-key-idle-delay 0.25)
   (which-key-mode 1))
 
+(use-package magit
+  :ensure t
+  :commands magit
+  :init
+  (setq magit-commit-show-diff nil)
+  :config
+  ;; Use '~/' as the working tree and '~/.local/dots' as the git directory when
+  ;; modifying a file that's inside '~/'.
+  (advice-add
+   'magit-process-environment :filter-return
+   (lambda (env)
+     (unless (vc-call-backend 'Git 'root default-directory)
+       (let ((work-tree "~/") (bare-repo "~/.local/dots/"))
+         (when (file-in-directory-p default-directory work-tree)
+           (message "Inside dotfiles repository, adding to env")
+           (push (format "GIT_WORK_TREE=%s" (expand-file-name work-tree)) env)
+           (push (format "GIT_DIR=%s" (expand-file-name bare-repo)) env))))
+     env)))
+
 
 
 ;;; CONTROLS
@@ -294,6 +307,7 @@
     (insert (or (gui-get-selection 'CLIPBOARD 'UTF8_STRING) ""))))
 (use-package evil
   :ensure t
+  :demand t
   :init
   (add-hook 'after-init-hook 'evil-mode)
   (defvaralias 'evil-shift-width 'tab-width)
@@ -340,16 +354,17 @@
 
 (use-package evil-collection
   :ensure t
+  :demand t
   :after evil
   :config
-  (evil-collection-init 'magit)
-  (evil-define-key 'motion help-mode-map
-    "q" (lambda () (interactive) (quit-window 1)))
   (with-eval-after-load 'magit
+    (evil-collection-init 'magit)
     (evil-define-key 'normal magit-mode-map
       "q" (lambda () (interactive) (quit-window 1))
       "h" 'evil-backward-char
-      "l" 'evil-forward-char)))
+      "l" 'evil-forward-char))
+  (evil-define-key 'motion help-mode-map
+    "q" (lambda () (interactive) (quit-window 1))))
 
 
 
@@ -382,10 +397,12 @@
   :config
   (add-hook 'after-init-hook 'global-whitespace-mode))
 
+(use-package ansi-color :demand t)
+
 (use-package gruvbox-theme
   :ensure t
+  :demand t
   :init
-  (load-theme 'gruvbox-dark-soft t)
   (add-hook 'after-init-hook
             (lambda ()
               (with-eval-after-load 'dirvish
@@ -396,6 +413,7 @@
                 (set-face-background
                  'vertico-current
                  (face-attribute 'mode-line :background)))))
+  (load-theme 'gruvbox-dark-soft t)
   :config
   (set-face-attribute 'internal-border nil
 		              :background (face-attribute 'default :background))
@@ -480,7 +498,6 @@
 
 (use-package eterm-256color
   :ensure t
-  :defer t
   :init
   (add-hook 'term-mode-hook 'eterm-256color-mode)
   :config
@@ -520,28 +537,8 @@
                 (when (= (length (tab-bar-tabs)) 2)
                   (tab-bar-mode -1)))))
 
-(use-package magit
-  :ensure t
-  :defer t
-  :init
-  (setq magit-commit-show-diff nil)
-  :config
-  ;; Use '~/' as the working tree and '~/.local/dots' as the git directory when
-  ;; modifying a file that's inside '~/'.
-  (advice-add
-   'magit-process-environment :filter-return
-   (lambda (env)
-     (unless (vc-call-backend 'Git 'root default-directory)
-       (let ((work-tree "~/") (bare-repo "~/.local/dots/"))
-         (when (file-in-directory-p default-directory work-tree)
-           (message "Inside dotfiles repository, adding to env")
-           (push (format "GIT_WORK_TREE=%s" (expand-file-name work-tree)) env)
-           (push (format "GIT_DIR=%s" (expand-file-name bare-repo)) env))))
-     env)))
-
 ;;; ORG
 (use-package org
-  :defer t
   :custom
   (org-ellipsis " ▼")
   (org-startup-folded t)
@@ -569,7 +566,6 @@
                   " p" '("Goto Previous Error" . flymake-goto-prev-error))))))
 
 (use-package lua-mode
-  :defer t
   :ensure t
   :init
   (setq
@@ -579,7 +575,6 @@
    lua-indent-nested-block-content-align nil))
 
 (use-package mhtml-mode
-  :defer t
   :init
   (add-hook 'mhtml-mode-hook (lambda ()
                                (setq-local tab-width 2)
@@ -593,7 +588,6 @@
   (css-mode . emmet-mode))
 
 (use-package sh-script
-  :defer t
   :init
   (add-hook 'sh-mode-hook
 			(lambda ()
@@ -601,7 +595,6 @@
               (when (= (buffer-size) 0) (insert "#!/bin/sh\n\n")))))
 
 (use-package emacs-lisp
-  :defer t
   :init
   (add-hook 'emacs-lisp-mode-hook
 			(lambda () (setq-local indent-tabs-mode nil))))
@@ -623,8 +616,8 @@
 
 ;;; MISC
 (use-package bongo
-  :defer t
   :ensure t
+  :commands bongo-playlist
   :init
   (setq
    bongo-mode-line-indicator-mode nil
