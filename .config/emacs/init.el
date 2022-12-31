@@ -190,11 +190,8 @@
               (display-line-numbers-mode 0)
               (electric-pair-local-mode 0)
               (setq-local scroll-margin 0)))
-  (advice-add 'term-char-mode :after ;; Hide mode line when in term-char-mode
-              (lambda () (setq-local mode-line-format nil)))
   (advice-add 'term-line-mode :after ;; Enable mode line when in term-line-mode
               (lambda ()
-                (setq-local mode-line-format (default-value 'mode-line-format))
                 (redraw-display)))
   (when (boundp 'evil-mode)
     (advice-add 'term-line-mode :after
