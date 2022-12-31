@@ -222,8 +222,9 @@
 (use-package dirvish
   :ensure t
   :init
-  (setq-default
+  (setq
    dirvish-cache-dir "/tmp/dirvish/"
+   dirvish-reuse-session nil
    dirvish-emerge-groups '(("Directories" (predicate . directories))
                            ("Executables" (predicate . executables))
                            ("Documents" (extensions "pdf" "tex" "bib" "epub"))
@@ -336,6 +337,7 @@
   (evil-collection-init 'magit)
   (with-eval-after-load 'magit
     (evil-define-key 'normal 'magit-diff-mode-map
+      "q" (lambda () (interactive) (quit-window 1))
       "h" 'evil-backward-char
       "l" 'evil-forward-char)))
 
@@ -522,7 +524,8 @@
          (when (file-in-directory-p default-directory work-tree)
            (message "Inside dotfiles repository, adding to env")
            (push (format "GIT_WORK_TREE=%s" (expand-file-name work-tree)) env)
-           (push (format "GIT_DIR=%s" (expand-file-name bare-repo)) env)))))))
+           (push (format "GIT_DIR=%s" (expand-file-name bare-repo)) env))))
+     env)))
 
 ;;; ORG
 (use-package org
