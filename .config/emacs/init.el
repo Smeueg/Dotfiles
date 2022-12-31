@@ -276,6 +276,8 @@
   (setq which-key-idle-delay 0.25)
   (which-key-mode 1))
 
+
+
 ;;; CONTROLS
 (setq mouse-wheel-scroll-amount '(1)
       mouse-wheel-progressive-speed nil)
@@ -335,8 +337,10 @@
   :after evil
   :config
   (evil-collection-init 'magit)
+  (evil-define-key 'motion help-mode-map
+    "q" (lambda () (interactive) (quit-window 1)))
   (with-eval-after-load 'magit
-    (evil-define-key 'normal 'magit-diff-mode-map
+    (evil-define-key 'normal magit-mode-map
       "q" (lambda () (interactive) (quit-window 1))
       "h" 'evil-backward-char
       "l" 'evil-forward-char)))
@@ -552,7 +556,7 @@
   (add-hook 'after-init-hook
             (lambda ()
               (with-eval-after-load 'evil
-                (evil-define-key 'normal 'flymake-mode-map
+                (evil-define-key 'normal flymake-mode-map
                   " n" '("Goto Next Error" . flymake-goto-next-error)
                   " p" '("Goto Previous Error" . flymake-goto-prev-error))))))
 
@@ -606,6 +610,7 @@
   :init
   (add-hook 'prog-mode-hook ;; Disable wrap
             (lambda () (visual-line-mode 0))))
+
 
 
 ;;; MISC
