@@ -638,12 +638,29 @@
                 (let ((buf (get-buffer-create "*splash*")))
                   (with-current-buffer buf
                     (setq-local indent-tabs-mode nil)
-                    (let (face)
-                      (setq face (list :weight 'bold
-                                       :foreground
-                                       (aref ansi-color-names-vector 3)))
-                      (insert "\n\nWelcome to "
-                              (propertize "Emacs" 'face face)))
+                    (let ((face nil) (package-count-special nil)
+                          (emacs-special nil) (time-special nil))
+                      (setq
+                       face (list :weight 'bold
+                                  :foreground (aref ansi-color-names-vector 3))
+                       emacs-special (propertize "Emacs" 'face face)
+                       time-special (propertize (emacs-init-time) 'face face))
+                      (when (bound-and-true-p package-alist)
+                        (setq package-count-special
+                              (length package-activated-list))
+                        (if (= package-count-special 0)
+                            (setq package-count-special nil)
+                          (setq package-count-special
+                                (propertize
+                                 (number-to-string package-count-special) 'face
+                                 face))))
+                      (insert
+                       (format "Welcome To %s\n\n" emacs-special)
+                       (if package-count-special
+                           (format "%s Packages Loaded In %s"
+                                   package-count-special time-special)
+                         (format "%s Started In %s"
+                                 emacs-special time-special))))
                     (splash-align)
                     (add-hook 'window-state-change-hook 'splash-align))
                   buf)))
