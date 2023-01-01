@@ -6,6 +6,9 @@
  create-lockfiles nil
  x-select-enable-clipboard nil
  custom-file (make-temp-file ""))
+(let ((buffer "*Messages*")) ;; Disable *Messages* buffer
+  (setq-default message-log-max nil)
+  (when (get-buffer "*Messages*") (kill-buffer "*Messages*")))
 ;; Disable *Buffer list*
 (setq inhibit-startup-buffer-menu t)
 ;; Removes the *Completions* buffer
