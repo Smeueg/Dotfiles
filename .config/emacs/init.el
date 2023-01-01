@@ -692,6 +692,7 @@
                                  face))))
                       (insert
                        (format "Welcome To %s\n\n" emacs-special)
+                       "Enjoy Your Stay\n\n"
                        (if package-count-special
                            (format "%s Packages Loaded In %s"
                                    package-count-special time-special)
