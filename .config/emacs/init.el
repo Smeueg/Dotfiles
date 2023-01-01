@@ -538,6 +538,12 @@
                   (tab-bar-mode -1)))))
 
 ;;; ORG
+(use-package org-bullets
+  :ensure t
+  :init
+  (add-hook 'org-mode-hook 'org-bullets-mode)
+  (setq org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+
 (use-package org
   :custom
   (org-ellipsis " ▼")
