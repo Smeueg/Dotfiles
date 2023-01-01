@@ -637,7 +637,7 @@
 			  (let ((dir (format "%s/Music" (getenv "HOME"))))
 				(when (file-directory-p dir)
 				  (bongo-insert-file dir)
-				  (goto-char 0)))))
+				  (goto-char (point-min))))))
   :config
   (defalias 'bongo 'bongo-playlist))
 
@@ -649,14 +649,14 @@
       (with-current-buffer "*splash*"
         (let ((point (point)))
           (read-only-mode 0)
-          (goto-char 0)
+          (goto-char (point-min))
           (while (equal (thing-at-point 'line t) "\n")
             (delete-char 1))
           (goto-char (point-max))
           (while (looking-back "^\n$") (backward-delete-char 1))
           (let ((lines (count-lines 1 (point-max)))
                 (fill-column (- (window-body-width nil) 2)))
-            (goto-char 0)
+            (goto-char (point-min))
             (insert-char ?\n ( / (- (window-body-height nil) lines) 2))
             (center-line lines))
           (goto-char point)
