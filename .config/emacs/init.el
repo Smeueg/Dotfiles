@@ -393,11 +393,9 @@
 
 (use-package whitespace
   :init
-  (setq
-   whitespace-style '(face lines-tail)
-   whitespace-line-column 80)
-  :config
-  (add-hook 'after-init-hook 'global-whitespace-mode))
+  (add-hook 'after-init-hook 'global-whitespace-mode)
+  (setq whitespace-style '(face lines-tail)
+        whitespace-line-column 80))
 
 (use-package ansi-color :demand t)
 
