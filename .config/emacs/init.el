@@ -583,9 +583,8 @@
 (use-package emmet-mode
   :ensure t
   :init
-  :hook
-  (mhtml-mode . emmet-mode)
-  (css-mode . emmet-mode))
+  (add-hook 'mhtml-mode-hook 'emmet-mode)
+  (add-hook 'css-mode-hook 'emmet-mode))
 
 (use-package sh-script
   :init
