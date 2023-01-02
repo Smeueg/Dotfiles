@@ -538,7 +538,7 @@
   (advice-add 'tab-bar-close-tab :before
               (lambda (&rest r)
                 (when (= (length (tab-bar-tabs)) 2)
-                  (tab-bar-mode -1)))))
+                  (tab-bar-mode 0)))))
 
 ;;; ORG
 (use-package org-bullets
