@@ -325,8 +325,10 @@
       " Th" '("Hide All Fold" . hs-hide-all)))
   (fset 'evil-next-line 'evil-next-visual-line)
   (fset 'evil-previous-line 'evil-previous-visual-line)
-  (evil-define-key 'normal prog-mode-map "gc" '("(Un)Comment Line" . comment-line))
-  (evil-define-key 'visual prog-mode-map "gc" '("(Un)Comment Region" . comment-dwim))
+  (evil-define-key 'normal prog-mode-map
+    "gc" '("(Un)Comment Line" . comment-line))
+  (evil-define-key 'visual prog-mode-map
+    "gc" '("(Un)Comment Region" . comment-dwim))
   (evil-define-key 'insert 'global [?\C-n] nil [?\C-p] nil)
   (evil-define-key '(insert normal visual operator motion replace) 'global
     [?\M-h] (lambda () (interactive) (evil-normal-state 1) (evil-backward-char))
@@ -337,7 +339,8 @@
   (evil-define-key '(normal motion) 'global
     ":" 'execute-extended-command
     "  " '("Run/Execute current buffer" . run)
-    " d" '("Open Dired" . (lambda () (interactive)
+    " d" '("Open Dired" . (lambda ()
+                            (interactive)
                             (if (fboundp 'dirvish) (dirvish) (dired))))
     " b" '("Switch Buffers" . switch-to-buffer)
     " f" '("Open File" . find-file)
