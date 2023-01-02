@@ -102,7 +102,7 @@
 ;;; LIFE IMPROVEMENTS
 (electric-pair-mode 1) ;; Auto pairs
 (global-auto-revert-mode 1) ;; Autorefresh buffers
-(global-eldoc-mode -1) ;; Disable eldoc-mode
+(global-eldoc-mode 0) ;; Disable eldoc-mode
 (fset 'yes-or-no-p 'y-or-n-p) ;; Shorter version of prompt
 (setq
  require-final-newline t
@@ -373,10 +373,10 @@
 ;;; VISUALS
 (menu-bar-mode 0)
 (show-paren-mode 1)
-(tool-bar-mode -1)          ;; Disable the toolbar
-(tooltip-mode -1)           ;; Disable tooltips
+(tool-bar-mode 0)          ;; Disable the toolbar
+(tooltip-mode 0)           ;; Disable tooltips
 (fringe-mode 3)             ;; Disable fringes
-(scroll-bar-mode -1)        ;; Disable scroll bar
+(scroll-bar-mode 0)        ;; Disable scroll bar
 (global-visual-line-mode 1) ;; Enable line wrapping
 (fringe-mode 3)             ;; Disable fringes
 (blink-cursor-mode 0)       ;; Disable cursor blinking
