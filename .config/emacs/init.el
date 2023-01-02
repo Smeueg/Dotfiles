@@ -528,12 +528,17 @@
 
 (use-package tab-bar
   :init
-  (defalias 'dt 'tab-bar-close-tab)
-  (defalias 'nt 'tab-new)
-  (defalias 'tabe 'tab-new)
-  (defalias 'tabclose 'tab-bar-close-tab)
-  (setq-default tab-bar-close-button-show nil
-                tab-bar-new-button-show nil)
+  (defalias 'tc 'tab-bar-close-tab)
+  (defalias 'tn 'tab-new)
+  (setq tab-bar-close-button (propertize " ●" 'close-tab t 'display '(height 1))
+        tab-bar-new-button
+        (propertize " + "
+                    'close-tab t 'display '(height 1)
+                    'face (list
+                           :background
+                           (face-attribute 'tab-bar-tab-inactive :background)
+                           :foreground
+                           (aref ansi-color-names-vector 2))))
   :config
   (advice-add 'tab-bar-close-tab :before
               (lambda (&rest r)
