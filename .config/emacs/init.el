@@ -374,16 +374,13 @@
 
 
 ;;; VISUALS
+(blink-cursor-mode 0)
+(scroll-bar-mode 0)
+(tool-bar-mode 0)
 (menu-bar-mode 0)
+(tooltip-mode 0)
+(fringe-mode 3) ;; Disable fringes
 (show-paren-mode 1)
-(tool-bar-mode 0)          ;; Disable the toolbar
-(tooltip-mode 0)           ;; Disable tooltips
-(fringe-mode 3)             ;; Disable fringes
-(scroll-bar-mode 0)        ;; Disable scroll bar
-(global-visual-line-mode 1) ;; Enable line wrapping
-(fringe-mode 3)             ;; Disable fringes
-(blink-cursor-mode 0)       ;; Disable cursor blinking
-(global-display-line-numbers-mode 0)
 (set-window-buffer nil (current-buffer))
 (set-frame-font "JetBrainsMono Nerd Font Mono 12")
 (setq-default
