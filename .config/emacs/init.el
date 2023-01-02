@@ -35,7 +35,7 @@
 ;;; FUNCTIONS / ALIASES
 (setq disabled-command-function nil) ;; Enable all command/functions
 (defalias 'q 'kill-buffer)
-(defalias 'dw 'delete-window)
+(defalias 'wd 'delete-window)
 
 (defun w ()
   (interactive)
