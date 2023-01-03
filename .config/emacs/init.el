@@ -298,6 +298,23 @@
            (push (format "GIT_DIR=%s" (expand-file-name bare-repo)) env))))
      env)))
 
+(use-package ibuffer
+  :config
+  (defun ibuffer-toggle-mark ()
+    "Toggle mark on the current file"
+    (interactive)
+    (save-excursion
+      (beginning-of-line)
+      (if (eq (following-char) ibuffer-marked-char)
+          (call-interactively 'ibuffer-unmark-forward)
+        (call-interactively 'ibuffer-mark-forward)))
+    (dired-next-line 1))
+  (with-eval-after-load 'evil
+    (evil-define-key 'emacs ibuffer-mode-map
+      "j" 'ibuffer-forward-line
+      "k" 'ibuffer-backward-line
+      " " 'ibuffer-toggle-mark
+      "q" (lambda () (interactive) (quit-window 1)))))
 
 
 ;;; CONTROLS
