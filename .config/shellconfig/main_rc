@@ -231,8 +231,10 @@ e() {
 
 # MISC #
 # Git
-[ "$(git config --get-regexp ^alias\.graph)" ] ||
-	git config --global alias.graph "log --graph --oneline"
+if [ "$(command -v git)" ]; then
+	[ "$(git config --get-regexp ^alias\.graph)" ] &&
+		git config --global alias.graph "log --graph --oneline"
+fi
 
 # Less
 export LESS_TERMCAP_mb=$'\033[1;32m'
