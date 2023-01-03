@@ -353,9 +353,10 @@
     [?\M-j] (lambda () (interactive) (evil-normal-state 1) (evil-next-line))
     [?\M-k] (lambda () (interactive) (evil-normal-state 1) (evil-previous-line))
     [?\M-l] (lambda () (interactive) (evil-normal-state 1) (evil-forward-char)))
+  (evil-define-key '(normal motion visual emacs) 'global
+    ":" 'execute-extended-command)
   (evil-define-key '(normal motion visual) 'global " " nil)
   (evil-define-key '(normal motion) 'global
-    ":" 'execute-extended-command
     "  " '("Run/Execute current buffer" . run)
     " d" '("Open Dired" . (lambda ()
                             (interactive)
