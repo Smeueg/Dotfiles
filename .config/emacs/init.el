@@ -152,7 +152,13 @@
   (add-hook 'prog-mode-hook
             (lambda ()
               (hs-minor-mode)
-              (hs-hide-all))))
+              (hs-hide-all)))
+  :config
+  (with-eval-after-load 'evil
+    (evil-define-key 'normal hs-minor-mode-map
+      " t" '("Toggle Fold" . hs-toggle-hiding)
+      " Ts" '("Open All Fold" . hs-show-all)
+      " Th" '("Hide All Fold" . hs-hide-all))))
 
 (use-package all-the-icons
   :ensure t)
@@ -315,16 +321,11 @@
         evil-replace-state-message nil
         evil-want-keybinding nil)
   :config
+  (fset 'evil-next-line 'evil-next-visual-line)
+  (fset 'evil-previous-line 'evil-previous-visual-line)
   (add-to-list 'evil-emacs-state-modes 'dired-mode)
   (add-hook 'dired-mode-hook
             (lambda () (setq-local evil-emacs-state-cursor '(bar . 0))))
-  (with-eval-after-load 'hideshow
-    (evil-define-key 'normal hs-minor-mode-map
-      " t" '("Toggle Fold" . hs-toggle-hiding)
-      " Ts" '("Open All Fold" . hs-show-all)
-      " Th" '("Hide All Fold" . hs-hide-all)))
-  (fset 'evil-next-line 'evil-next-visual-line)
-  (fset 'evil-previous-line 'evil-previous-visual-line)
   (evil-define-key 'normal prog-mode-map
     "gc" '("(Un)Comment Line" . comment-line))
   (evil-define-key 'visual prog-mode-map
