@@ -167,7 +167,7 @@
   :ensure t
   :init
   (setq inhibit-compacting-font-caches t)
-  (add-hook 'after-init-hook 'all-the-icons-completion-mode)
+  (add-hook 'after-init-hook #'all-the-icons-completion-mode)
   (add-hook 'marginalia-mode-hook #'all-the-icons-completion-marginalia-setup))
 
 (use-package undo-fu
@@ -220,7 +220,7 @@
 (use-package rainbow-mode
   :ensure t
   :init
-  (add-hook 'prog-mode-hook (lambda () (rainbow-mode 1))))
+  (add-hook 'prog-mode-hook #'rainbow-mode))
 
 (use-package dirvish
   :ensure t
@@ -243,7 +243,7 @@
               (revert-buffer)))
   (add-hook 'dirvish-directory-view-mode-hook
             (lambda () (setq truncate-lines t)))
-  (add-hook 'dirvish-setup-hook 'dirvish-emerge-mode)
+  (add-hook 'dirvish-setup-hook #'dirvish-emerge-mode)
   (advice-add 'dired-create-empty-file :after
               (lambda (&rest _) (revert-buffer)))
   (advice-add 'dired-create-directory :after
@@ -334,7 +334,7 @@
   :ensure t
   :demand t
   :init
-  (add-hook 'after-init-hook 'evil-mode)
+  (add-hook 'after-init-hook #'evil-mode)
   (defvaralias 'evil-shift-width 'tab-width)
   (setq evil-undo-system 'undo-fu
         evil-insert-state-cursor 'bar
@@ -417,7 +417,7 @@
 
 (use-package whitespace
   :init
-  (add-hook 'after-init-hook 'global-whitespace-mode)
+  (add-hook 'after-init-hook #'global-whitespace-mode)
   (setq whitespace-style '(face lines-tail)
         whitespace-line-column 80))
 
@@ -523,7 +523,7 @@
 (use-package eterm-256color
   :ensure t
   :init
-  (add-hook 'term-mode-hook 'eterm-256color-mode)
+  (add-hook 'term-mode-hook #'eterm-256color-mode)
   :config
   (let ((colors [black red green yellow blue magenta cyan white]))
     (seq-mapn
@@ -570,7 +570,7 @@
 (use-package org-bullets
   :ensure t
   :init
-  (add-hook 'org-mode-hook 'org-bullets-mode)
+  (add-hook 'org-mode-hook #'org-bullets-mode)
   (setq org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
 (use-package org
@@ -618,8 +618,8 @@
 (use-package emmet-mode
   :ensure t
   :init
-  (add-hook 'mhtml-mode-hook 'emmet-mode)
-  (add-hook 'css-mode-hook 'emmet-mode))
+  (add-hook 'mhtml-mode-hook #'emmet-mode)
+  (add-hook 'css-mode-hook #'emmet-mode))
 
 (use-package sh-script
   :init
@@ -728,7 +728,7 @@
                          (format "%s Started In %s"
                                  emacs-special time-special))))
                     (splash-align)
-                    (add-hook 'window-state-change-hook 'splash-align))
+                    (add-hook 'window-state-change-hook #'splash-align))
                   buf)))
 
 
