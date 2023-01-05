@@ -316,6 +316,11 @@
       " " 'ibuffer-toggle-mark
       "q" (lambda () (interactive) (quit-window 1)))))
 
+(use-package visual-regexp
+  :ensure t
+  :init
+  (defalias 's 'vr/query-replace))
+
 
 ;;; CONTROLS
 (setq mouse-wheel-scroll-amount '(1)
