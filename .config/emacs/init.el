@@ -315,7 +315,11 @@
       "j" 'ibuffer-forward-line
       "k" 'ibuffer-backward-line
       " " 'ibuffer-toggle-mark
-      "q" (lambda () (interactive) (quit-window 1)))))
+      "q" (lambda () (interactive) (quit-window 1))
+      [return] (lambda ()
+                 (interactive)
+                 (call-interactively 'ibuffer-visit-buffer)
+                 (kill-buffer "*Ibuffer*")))))
 
 (use-package visual-regexp
   :ensure t
