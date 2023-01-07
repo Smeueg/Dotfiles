@@ -10,7 +10,8 @@
   (setq-default message-log-max nil)
   (when (get-buffer "*Messages*") (kill-buffer "*Messages*")))
 ;; Disable *Buffer list*
-(setq inhibit-startup-buffer-menu t)
+(setq inhibit-startup-buffer-menu t
+      inhibit-startup-message t)
 ;; Removes the *Completions* buffer
 (add-hook 'minibuffer-exit-hook
           (lambda ()
