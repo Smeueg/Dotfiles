@@ -651,6 +651,13 @@
   (add-hook 'prog-mode-hook ;; Disable wrap
             (lambda () (visual-line-mode 0))))
 
+(use-package flymake-shellcheck
+  :ensure t
+  :commands flymake-shellcheck-load
+  :init
+  (setq flymake-shellcheck-use-file t)
+  (add-hook 'sh-mode-hook 'flymake-shellcheck-load))
+
 
 
 ;;; MISC
