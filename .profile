@@ -1,1 +1,1 @@
-/home/smeueg/.config/shellconfig/main_profile
+.config/shellconfig/main_profile
