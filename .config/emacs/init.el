@@ -639,8 +639,8 @@
 			(lambda () (setq-local indent-tabs-mode nil))))
 
 (use-package flymake-diagnostic-at-point
-  :after flymake
   :ensure t
+  :after flymake
   :config
   (setq flymake-diagnostic-at-point-display-diagnostic-function
         'flymake-diagnostic-at-point-display-minibuffer)
