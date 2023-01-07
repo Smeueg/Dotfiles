@@ -658,23 +658,22 @@
   :ensure t
   :commands bongo-playlist
   :init
-  (setq
-   bongo-mode-line-indicator-mode nil
-   bongo-insert-whole-directory-trees t
-   bongo-local-audio-file-track-icon nil
-   bongo-display-track-icons nil
-   bongo-display-header-icons nil
-   bongo-played-track-icon nil
-   bongo-logo nil
-   bongo-enabled-backends '(mpg123))
+  (setq bongo-mode-line-indicator-mode nil
+        bongo-insert-whole-directory-trees t
+        bongo-local-audio-file-track-icon nil
+        bongo-display-track-icons nil
+        bongo-display-header-icons nil
+        bongo-played-track-icon nil
+        bongo-logo nil
+        bongo-enabled-backends '(mpg123))
+  (with-eval-after-load 'evil
+    (evil-define-key 'normal bongo-mode-map
+      "c" #'bongo-pause/resume
+      [return] #'bongo-dwim))
   (add-hook 'bongo-playlist-mode-hook
 			(lambda ()
 			  (display-line-numbers-mode 0)
-			  (when (bound-and-true-p evil-mode)
-				(evil-define-key 'normal 'local
-				  [return] 'bongo-dwim
-				  "c" 'bongo-pause/resume))
-			  (let ((dir (format "%s/Music" (getenv "HOME"))))
+			  (let ((dir "~/Music"))
 				(when (file-directory-p dir)
 				  (bongo-insert-file dir)
 				  (goto-char (point-min))))))
@@ -701,40 +700,34 @@
             (center-line lines))
           (goto-char point)
           (read-only-mode 1)))
-    (progn
-      (remove-hook 'window-state-change-hook 'splash-align))))
-(setq-default initial-buffer-choice
-              (lambda ()
-                (let ((buf (get-buffer-create "*splash*")))
-                  (with-current-buffer buf
-                    (setq-local indent-tabs-mode nil)
-                    (let ((face nil) (package-count-special nil)
-                          (emacs-special nil) (time-special nil))
-                      (setq
-                       face (list :weight 'bold
-                                  :foreground (aref ansi-color-names-vector 3))
-                       emacs-special (propertize "Emacs" 'face face)
-                       time-special (propertize (emacs-init-time) 'face face))
-                      (when (bound-and-true-p package-alist)
-                        (setq package-count-special
-                              (length package-activated-list))
-                        (if (= package-count-special 0)
-                            (setq package-count-special nil)
-                          (setq package-count-special
-                                (propertize
-                                 (number-to-string package-count-special) 'face
-                                 face))))
-                      (insert
-                       (format "Welcome To %s\n\n" emacs-special)
-                       "Enjoy Your Stay\n\n"
-                       (if package-count-special
-                           (format "%s Packages Loaded In %s"
-                                   package-count-special time-special)
-                         (format "%s Started In %s"
-                                 emacs-special time-special))))
-                    (splash-align)
-                    (add-hook 'window-state-change-hook #'splash-align))
-                  buf)))
+    (remove-hook 'window-state-change-hook 'splash-align)))
+(setq-default
+ initial-buffer-choice
+ (lambda ()
+   (let ((buf (get-buffer-create "*splash*")))
+     (with-current-buffer buf
+       (setq-local indent-tabs-mode nil)
+       (let (face str-package str-emacs str-time colors)
+         (setq colors ansi-color-names-vector)
+         (setq face `(:weight 'bold :foreground ,(aref colors 3))
+               str-emacs (propertize "Emacs" 'face face)
+               str-time (propertize (emacs-init-time) 'face face))
+         (when (bound-and-true-p package-alist)
+           (setq str-package (length package-activated-list))
+           (if (= str-package 0)
+               (setq str-package nil)
+             (setq str-package
+                   (propertize
+                    (number-to-string str-package) 'face face))))
+         (insert
+          (format "Welcome To %s\n\n" str-emacs)
+          "Enjoy Your Stay\n\n"
+          (if str-package
+              (format "%s Packages Loaded In %s" str-package str-time)
+            (format "%s Started In %s" str-emacs str-time))))
+       (splash-align)
+       (add-hook 'window-state-change-hook #'splash-align))
+     buf)))
 
 
 
@@ -752,7 +745,7 @@
             right)))
 (setq-default mode-line-format
               '(:eval
-                (let ((face '()) (mode nil))
+                (let (face)
                   (setq face
                         (cond
                          (buffer-read-only
