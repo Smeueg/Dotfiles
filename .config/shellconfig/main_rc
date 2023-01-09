@@ -125,30 +125,12 @@ dra() {
 }
 
 
-
-# FUNCTIONS #
-compress_documents() {
-	if [ -d "${HOME}/Documents" ]; then
-		printf "[\033[1;31mERROR\033[0m] '%s' does not exist\n" "${HOME}/Documents" >&2
-		return
-	fi
-
-	if [ "$(command -v tar)" ]; then
-		printf "[\033[1;31mERROR\033[0m] Command 'tar' not found\n" >&2
-		return
-	fi
-
-	printf "Compressing '%s' to %s\n" "${HOME}/Documents" "${HOME}/Documents.tar.gz"
-	tar cvf Documents.tar.gz ~/Documents -I "gzip --best"
-}
-
-
 fix_time() {
 	# Fix time desync in Linux
 	err=false
 	for dep in ntpd hwclock sudo; do
 		[ "$(command -v ${dep})" ] && continue
-		printf "[\033[1;31mERROR\033[0m] Command '${dep}' not found\n" >&2
+		printf "\033[1;31m|\033[0m Command '${dep}' not found\n" >&2
 		err=true
 	done
 	${err} && return 1
