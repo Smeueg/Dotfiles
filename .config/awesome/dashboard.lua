@@ -147,26 +147,33 @@ local widgets = {
 			naughty.notify { text = text }
 		end
 
+		local cmd = "systemctl"
+		for dir in string.gmatch(os.getenv("PATH"), "([^:]+)") do
+			if gears.filesystem.file_executable(dir .. "/loginctl") then
+				cmd = "loginctl"
+			end
+		end
+
 		local opts = {
 			{
 				icon = surface_create(cairo_format, 20, 20),
 				func = function()
 					notify("Suspending System")
-					awful.spawn("systemctl suspend")
+					awful.spawn(cmd .. " suspend")
 				end
 			},
 			{
 				icon = surface_create(cairo_format, 20, 20),
 				func = function()
 					notify("Powering Off System")
-					awful.spawn("systemctl poweroff")
+					awful.spawn(cmd .. " poweroff")
 				end
 			},
 			{
 				icon = surface_create(cairo_format, 20, 20),
 				func = function()
 					notify("Rebooting System")
-					awful.spawn("systemctl reboot")
+					awful.spawn(cmd .. " reboot")
 				end
 			}
 		}
