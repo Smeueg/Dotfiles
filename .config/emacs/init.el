@@ -299,6 +299,8 @@
 
 (use-package ibuffer
   :commands ibuffer
+  :init
+  (add-hook 'ibuffer-mode-hook #'ibuffer-auto-mode)
   :config
   (defun ibuffer-toggle-mark ()
     "Toggle mark on the current file"
