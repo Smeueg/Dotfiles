@@ -1,17 +1,16 @@
 ;;; CLEANER ENVIRONMENT
-(setq
- make-backup-files nil
- auto-save-default nil
- auto-save-list-file-prefix nil
- create-lockfiles nil
- x-select-enable-clipboard nil
- custom-file (make-temp-file ""))
+(setq make-backup-files nil
+      auto-save-default nil
+      auto-save-list-file-prefix nil
+      create-lockfiles nil
+      x-select-enable-clipboard nil
+      custom-file (make-temp-file ""))
 (let ((buffer "*Messages*")) ;; Disable *Messages* buffer
-  (setq-default message-log-max nil)
-  (when (get-buffer "*Messages*") (kill-buffer "*Messages*")))
-;; Disable *Buffer list*
-(setq inhibit-startup-buffer-menu t
-      inhibit-startup-message t)
+  (setq message-log-max nil)
+  (when (get-buffer buffer) (kill-buffer buffer)))
+(setq inhibit-startup-message t
+      inhibit-startup-buffer-menu t
+      inhibit-startup-echo-area-message t)
 ;; Removes the *Completions* buffer
 (add-hook 'minibuffer-exit-hook
           (lambda ()
@@ -84,7 +83,7 @@
 
 
 ;;; HOOKS
-(add-hook 'before-save-hook 'delete-trailing-whitespace)
+(add-hook 'before-save-hook #'delete-trailing-whitespace)
 
 
 
@@ -162,7 +161,8 @@
       " Th" '("Hide All Fold" . hs-hide-all))))
 
 (use-package all-the-icons
-  :ensure t)
+  :ensure t
+  :if (display-graphic-p))
 
 (use-package all-the-icons-completion
   :ensure t
@@ -171,9 +171,10 @@
   (add-hook 'after-init-hook #'all-the-icons-completion-mode)
   (add-hook 'marginalia-mode-hook #'all-the-icons-completion-marginalia-setup))
 
-(use-package undo-fu
+(use-package all-the-icons-ibuffer
   :ensure t
-  :commands (undo-fu-only-undo undo-fu-only-redo))
+  :init
+  (add-hook 'ibuffer-mode-hook #'all-the-icons-ibuffer-mode))
 
 (use-package term
   :commands term
@@ -195,10 +196,7 @@
               (display-line-numbers-mode 0)
               (electric-pair-local-mode 0)
               (setq-local scroll-margin 0)))
-  (advice-add 'term-line-mode :after ;; Enable mode line when in term-line-mode
-              (lambda ()
-                (redraw-display)))
-  (when (boundp 'evil-mode)
+  (with-eval-after-load 'evil
     (advice-add 'term-line-mode :after
                 (lambda ()
                   (turn-on-evil-mode)
@@ -278,7 +276,7 @@
   :ensure t
   :init
   (setq which-key-idle-delay 0.25)
-  (which-key-mode 1))
+  (add-hook 'after-init-hook #'which-key-mode))
 
 (use-package magit
   :ensure t
@@ -300,6 +298,7 @@
      env)))
 
 (use-package ibuffer
+  :commands ibuffer
   :config
   (defun ibuffer-toggle-mark ()
     "Toggle mark on the current file"
@@ -337,11 +336,10 @@
     (insert (or (gui-get-selection 'CLIPBOARD 'UTF8_STRING) ""))))
 (use-package evil
   :ensure t
-  :demand t
   :init
   (add-hook 'after-init-hook #'evil-mode)
   (defvaralias 'evil-shift-width 'tab-width)
-  (setq evil-undo-system 'undo-fu
+  (setq evil-undo-system 'undo-redo
         evil-insert-state-cursor 'bar
         evil-emacs-state-message nil
         evil-insert-state-message nil
@@ -371,7 +369,7 @@
     " d" '("Open Dired" . (lambda ()
                             (interactive)
                             (if (fboundp 'dirvish) (dirvish) (dired))))
-    " b" '("Switch Buffers" . switch-to-buffer)
+    " b" '("Open Ibuffer" . ibuffer)
     " f" '("Open File" . find-file)
     " a" '("Mark Whole Buffer" . mark-whole-buffer)
     " h" '("Open Help Menu" . help)
@@ -394,9 +392,10 @@
   (with-eval-after-load 'magit
     (evil-collection-init 'magit)
     (evil-define-key 'normal magit-mode-map
+      ":" #'execute-extended-command
       "q" (lambda () (interactive) (quit-window 1))
-      "h" 'evil-backward-char
-      "l" 'evil-forward-char))
+      "h" #'evil-backward-char
+      "l" #'evil-forward-char))
   (evil-define-key 'motion help-mode-map
     "q" (lambda () (interactive) (quit-window 1))))
 
@@ -733,7 +732,8 @@
               (format "%s Packages Loaded In %s" str-package str-time)
             (format "%s Started In %s" str-emacs str-time))))
        (splash-align)
-       (add-hook 'window-state-change-hook #'splash-align))
+       (add-hook 'window-state-change-hook #'splash-align)
+       (message ""))
      buf)))
 
 
@@ -750,16 +750,14 @@
               `((space :align-to
                        (- (+ right right-fringe right-margin) ,space)))))
             right)))
+
 (setq-default mode-line-format
               '(:eval
-                (let (face)
-                  (setq face
-                        (cond
-                         (buffer-read-only
-                          `(:overline ,(aref ansi-color-names-vector 1)))
-                         ((buffer-modified-p)
-                          `(:overline ,(aref ansi-color-names-vector 3)))))
-                  (setq mode (cond))
+                (let ((face (cond
+                             (buffer-read-only
+                              `(:overline ,(aref ansi-color-names-vector 1)))
+                             ((buffer-modified-p)
+                              `(:overline ,(aref ansi-color-names-vector 3))))))
                   (modeline/align
                    ;; Left
                    `(,(propertize (format  " %s " (buffer-name)) 'face face)
