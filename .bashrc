@@ -1,7 +1,6 @@
 #!/bin/sh
 # Basic interactive shell config that should work on every posix compliant shell
 set -o vi   # Vi mode, works on most shells
-[ "$(command -v stty)" ] && stty -ixon 	# Disable Ctrl-q and Ctrl-s
 export HISTFILE=/tmp/shell_history
 
 
@@ -111,15 +110,19 @@ dra() {
 	for arg in ${@}; do
 		if [ "${arg}" = "-a" ]; then
 			{
-				while sleep 1; do
-					[ "$(pidof droidcam-cli)" ] && break
-				done
-				pacmd load-module module-alsa-source device=hw:Loopback,1,0
-				if [ ${?} = 0 ]; then
-					printf "\033[1;32m|\033[0m Loaded pulseaudio module\n"
-				else
-					printf "\033[1;31m|\033[0m Failed to load pulseaudio module\n"
+				while sleep 1; do [ "$(ps -c droidcam-cli)" ] && break; done
+				if [ "$(pactl list short | grep "DroidcamAudio")" ]; then
+					pactl load-module module-alsa-source \
+						  device=hw:Loopback,1,0 \
+						  source_properties=device.description=DroidcamAudio
+					if [ ${?} = 0 ]; then
+						printf "\033[1;32m|\033[0m Loaded pulseaudio module\n"
+					else
+						printf "\033[1;31m|\033[0m Failed to load pulseaudio module\n" >&2
+					fi
 				fi
+				pactl set-default-source "alsa_input.hw_Loopback_1_0"
+				pactl set-source-volume @DEFAULT_SINK@ 150%
 			} &
 			break
 		fi
@@ -166,8 +169,8 @@ jmtpfs_auto_mount() {
 
 sx() {
 	# Start x server
-	if [ -f "${HOME}/.config/X11/xinitrc " ]; then
-		startx "${HOME}/.config/X11/xinitrc "
+	if [ -f "${HOME}/.config/X11/xinitrc" ]; then
+		startx "${HOME}/.config/X11/xinitrc"
 	else
 		startx
 	fi
@@ -258,13 +261,8 @@ export LESS_TERMCAP_se=$'\033[0m'
 export LESS_TERMCAP_ue=$'\033[0m'
 export LESS_TERMCAP_us=$'\033[1;4;31m'
 
-# Nix
-[ -f "${HOME}/.nix-profile/etc/profile.d/nix.sh" ] &&
-	. "${HOME}/.nix-profile/etc/profile.d/nix.sh"
 
-# Brew
-[ -f "/home/linuxbrew/.linuxbrew/bin/brew" ] &&
-	eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-
-
-[ "${TERM}" = "linux" ] || fetch
+if ! [ "${TERM}" = "linux" ]; then
+	printf '\033[H\033[J'
+	fetch
+fi
