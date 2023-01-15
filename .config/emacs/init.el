@@ -4,6 +4,7 @@
       auto-save-list-file-prefix nil
       create-lockfiles nil
       x-select-enable-clipboard nil
+      byte-compile-warnings nil
       custom-file (make-temp-file ""))
 (let ((buffer "*Messages*")) ;; Disable *Messages* buffer
   (setq message-log-max nil)
@@ -93,8 +94,8 @@
 (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
-  (package-install 'use-package))
-(package-initialize)
+  (package-install 'use-package)
+  (package-initialize))
 (setq use-package-always-defer t)
 
 
@@ -300,7 +301,14 @@
 (use-package ibuffer
   :commands ibuffer
   :init
-  (add-hook 'ibuffer-mode-hook #'ibuffer-auto-mode)
+  (add-hook 'ibuffer-mode-hook
+            (lambda ()
+              (setq-local cursor-type nil)
+              (hl-line-mode 1)
+              (ibuffer-auto-mode 1)))
+  (with-eval-after-load 'evil
+    (add-hook 'ibuffer-mode-hook
+              (lambda () (setq-local evil-emacs-state-cursor '(bar . 0)))))
   :config
   (defun ibuffer-toggle-mark ()
     "Toggle mark on the current file"
@@ -371,13 +379,13 @@
     " d" '("Open Dired" . (lambda ()
                             (interactive)
                             (if (fboundp 'dirvish) (dirvish) (dired))))
-    " b" '("Open Ibuffer" . ibuffer)
+    " b" '("Switch Buffer" . switch-to-buffer)
     " f" '("Open File" . find-file)
     " a" '("Mark Whole Buffer" . mark-whole-buffer)
     " h" '("Open Help Menu" . help)
     " l" '("Toggle Line Numbers" . global-display-line-numbers-mode)
     " w" '("Toggle whitespace-mode" . global-whitespace-mode)
-    " i" '("Detect Major Mode" . set-auto-mode))
+    " i" '("Detect Major Mode" . (lambda () (interactive) (set-auto-mode 1))))
   (evil-define-key 'visual 'global " c"
     '("Copy to clipboard" .
       (lambda (beg end)
@@ -412,7 +420,10 @@
 (fringe-mode 3) ;; Disable fringes
 (show-paren-mode 1)
 (set-window-buffer nil (current-buffer))
-(set-frame-font "JetBrainsMono Nerd Font Mono 12")
+(let ((font "JetBrainsMono Nerd Font Mono"))
+  (when (and (display-graphic-p) (member font (font-family-list)))
+    (set-frame-font (format "%s 12" font))))
+
 (setq-default
  truncate-lines t
  cursor-in-non-selected-windows nil
