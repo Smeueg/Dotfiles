@@ -245,6 +245,48 @@ fetch() (
 	printf "└─────────────────┘\n"
 )
 
+
+rcmnt() {
+	if ! [ "$(command -v rclone)" ]; then
+		printf "\033[1;31m|\033[0m Command 'rclone' not found\n" >&2
+		return 1
+	fi
+
+	remotes=$(rclone listremotes); i=0
+	while read remote; do
+		i=$((i + 1))
+		printf "  %d. %s\n" ${i} "${remote%:}"
+	done <<-EOF
+	${remotes}
+	EOF
+
+	printf "Select Remote: "; read remote_id
+	case ${remote_id} in
+		*[!0-9]*|"")
+			printf "\033[1;31m|\033[0m Not a number\n" >&2
+			exit 1
+			;;
+	esac
+
+	if [ ${remote_id} -gt ${i} ] || [ ${remote_id} -lt 1 ]; then
+		printf "\033[1;31m|\033[0m Not a valid remote\n" >&2
+		return 1
+	fi
+
+	i=0
+	while [ ${i} -ne ${remote_id} ]; do
+		i=$((i + 1))
+		read remote
+	done <<-EOF
+	${remotes}
+	EOF
+
+	if mkdir -pv "/tmp/${remote%:}"; then
+		printf "Mounted ${remote%:}\n"
+		rclone mount "${remote}" "/tmp/${remote%:}" &
+	fi
+}
+
 # MISC #
 # Git
 if [ "$(command -v git)" ]; then
