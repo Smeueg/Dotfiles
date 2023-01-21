@@ -89,8 +89,6 @@ alias emacs="emacs -nw"
 alias mkdir="mkdir -pv"
 alias diff="diff --color=always"
 alias grep="grep --color=auto"
-alias wget='wget --hsts-file="/tmp/wget-hsts"'
-alias sxiv="sxiv -o"
 alias smeuesic="printf '%s\n' 'https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc'"
 alias ls="ls --color --group-directories-first"
 alias mv="mv -i"
