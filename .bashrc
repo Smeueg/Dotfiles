@@ -248,7 +248,7 @@ fetch() (
 # MISC #
 # Git
 if [ "$(command -v git)" ]; then
-	[ "$(git config --get-regexp ^alias\.graph)" ] &&
+	[ "$(git config --get-regexp ^alias\.graph)" ] ||
 		git config --global alias.graph "log --graph --oneline"
 fi
 
@@ -263,6 +263,6 @@ export LESS_TERMCAP_us=$'\033[1;4;31m'
 
 
 if ! [ "${TERM}" = "linux" ]; then
-	printf '\033[H\033[J'
+	printf '\033[H\r\033[J'
 	fetch
 fi
