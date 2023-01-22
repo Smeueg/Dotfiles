@@ -12,6 +12,8 @@ done
 export PATH
 
 
+export EDITOR=emacs
+
 export LESSHISTFILE=/tmp/less-hist
 export CCACHE_DIR=${HOME}/.cache/ccache
 export TERMINFO="$XDG_DATA_HOME"/terminfo
