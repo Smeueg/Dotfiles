@@ -374,8 +374,12 @@
   (evil-define-key '(normal motion visual emacs) 'global
     ":" 'execute-extended-command)
   (evil-define-key '(normal motion visual) 'global " " nil)
+  (evil-define-key '(normal motion visual) prog-mode-map
+    "  " '("Run/Execute current buffer" . run))
   (evil-define-key '(normal motion) 'global
-    "  " '("Run/Execute current buffer" . run)
+    [?\C-\S-j] (lambda () (interactive) (text-scale-decrease 0.5))
+    [?\C-\S-k] (lambda () (interactive) (text-scale-increase 0.5))
+    [?\C-\S-o] (lambda () (interactive) (text-scale-set 0))
     " d" '("Open Dired" . (lambda ()
                             (interactive)
                             (if (fboundp 'dirvish) (dirvish) (dired))))
