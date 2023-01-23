@@ -153,7 +153,8 @@
   (add-hook 'prog-mode-hook
             (lambda ()
               (hs-minor-mode)
-              (hs-hide-all)))
+              (unless (derived-mode-p 'html-mode)
+                (hs-hide-all))))
   :config
   (with-eval-after-load 'evil
     (evil-define-key 'normal hs-minor-mode-map
@@ -388,7 +389,7 @@
     " a" '("Mark Whole Buffer" . mark-whole-buffer)
     " h" '("Open Help Menu" . help)
     " l" '("Toggle Line Numbers" . global-display-line-numbers-mode)
-    " w" '("Toggle whitespace-mode" . global-whitespace-mode)
+    " w" '("Toggle whitespace-mode" . whitespace-mode)
     " i" '("Detect Major Mode" . (lambda () (interactive) (set-auto-mode 1))))
   (evil-define-key 'visual 'global " c"
     '("Copy to clipboard" .
@@ -438,7 +439,10 @@
 
 (use-package whitespace
   :init
-  (add-hook 'after-init-hook #'global-whitespace-mode)
+  (add-hook 'prog-mode-hook
+            (lambda ()
+              (unless (derived-mode-p 'html-mode)
+                (whitespace-mode 1))))
   (setq whitespace-style '(face lines-tail)
         whitespace-line-column 80))
 
