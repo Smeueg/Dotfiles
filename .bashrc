@@ -303,6 +303,5 @@ export LESS_TERMCAP_us=$'\033[1;4;31m'
 
 
 if ! [ "${TERM}" = "linux" ]; then
-	printf "\r\033[H\033[J"
-	fetch
+	printf "\033[H\033[J%b\n" "$(fetch)"
 fi
