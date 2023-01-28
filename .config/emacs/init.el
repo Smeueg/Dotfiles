@@ -1,3 +1,5 @@
+;; Smeueg's Emacs configuration
+;; TODO: Add keybindings to resize windows/splits
 ;;; CLEANER ENVIRONMENT
 (setq make-backup-files nil
       auto-save-default nil
