@@ -58,7 +58,6 @@ export PASSWORD_STORE_DIR="$XDG_DATA_HOME"/pass
 export GTK2_RC_FILES="$XDG_CONFIG_HOME"/gtk-2.0/gtkrc
 
 # Shell
-export ENV="${HOME}"/.config/shellconfig/main_rc
 export ZDOTDIR="${HOME}/.config/shellconfig"
 
 # Cargo
@@ -67,20 +66,3 @@ export CARGO_HOME="$XDG_DATA_HOME"/cargo
 if [ "$(command -v simplescreenrecorder)" ]; then
 	mkdir -vp "${XDG_CONFIG_HOME}/simplescreenrecorder/"
 fi
-
-# Symlink / remove bash config file if needed
-if [ "${BASH_VERSION}" ] && [ -f "${ENV}" ] && ! [ -L "${HOME}/.bashrc" ]; then
-	[ -f "${HOME}/.bashrc" ] && mv "${HOME}/.bashrc" "${HOME}/.bashrc_old"
-	ln -s "${ENV}" "${HOME}/.bashrc"
-elif ! [ "${BASH_VERSION}" ] && [ -L "${HOME}/.bashrc" ]; then
-	rm "${HOME}/.bashrc"
-fi
-
-# Symlink / remove zsh config file if needed
-if [ "${ZSH_NAME}" ] && [ -f "${ENV}" ] && ! [ -L "${ZDOTDIR}/.bashrc"]; then
-	ln -s "${ENV}" "${ZDOTDIR}/.zshrc"
-elif ! [ "${ZSH_NAME}" ] && [ -L "${ZDOTDIR}/.zshrc" ]; then
-	rm "${ZDOTDIR}/.zshrc"
-fi
-
-. "${ENV}"
