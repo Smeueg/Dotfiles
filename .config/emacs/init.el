@@ -69,6 +69,7 @@
       (setq
        pair
        `((mhtml-mode (:cmd ,(format "xdg-open %s" file)))
+         (python-mode (:cmd ,(format "python3 %s" file)))
          (lua-mode (:cmd ,(format "lua %s" file)))
          (sh-mode (:cmd ,file)
                   (:func executable-make-buffer-file-executable-if-script-p))))
@@ -636,6 +637,9 @@
 
 
 ;;; PROGRAMMING
+(add-to-list 'auto-mode-alist '("\\.ino\\'" . c-mode))
+
+
 (use-package flymake
   :init
   (add-hook 'after-init-hook
@@ -698,7 +702,11 @@
   (setq flymake-shellcheck-use-file t)
   (add-hook 'sh-mode-hook 'flymake-shellcheck-load))
 
-
+(use-package python
+  :init
+  (setq python-indent-guess-indent-offset nil)
+  (add-hook 'python-mode-hook
+            (lambda () (setq tab-width (default-value 'tab-width)))))
 
 ;;; MISC
 (use-package bongo
