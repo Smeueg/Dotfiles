@@ -1,5 +1,4 @@
 ;; Smeueg's Emacs configuration
-;; TODO: Add keybindings to resize windows/splits
 ;;; CLEANER ENVIRONMENT
 (setq make-backup-files nil
       auto-save-default nil
@@ -19,7 +18,6 @@
           (lambda ()
             (when (get-buffer "*Completions*")
               (kill-buffer "*Completions*"))))
-
 
 
 ;;; INDENTATION
@@ -83,6 +81,25 @@
         (term (getenv "SHELL"))
         (term-send-raw-string (format "clear; %s\n" cmd))))))
 
+(defun resize-window ()
+  "Resize a window interactively"
+  (interactive)
+  (while t
+    (message
+     (concat (propertize "──── Resize Window Mode ────\n" 'face
+                         `(:foreground ,(aref ansi-color-names-vector 3)))
+             "h:\tShrink Window Horizontally\n"
+             "j:\tShrink Window\n"
+             "k:\tEnlarge Window\n"
+             "l:\tEnlarge Window Horizontally\n"
+             "C-g:Quit\n"))
+    (let ((key (make-vector 1 (read-key))))
+      (cond
+       ((equal key [?h]) (call-interactively 'shrink-window-horizontally))
+       ((equal key [?j]) (call-interactively 'shrink-window))
+       ((equal key [?k]) (call-interactively 'enlarge-window))
+       ((equal key [?l]) (call-interactively 'enlarge-window-horizontally))
+       ((equal key [?\C-g]) (keyboard-quit) (message ""))))))
 
 
 ;;; HOOKS
@@ -386,6 +403,7 @@
     " d" '("Open Dired" . (lambda ()
                             (interactive)
                             (if (fboundp 'dirvish) (dirvish) (dired))))
+    " r" '("Resize Mode" . resize-window)
     " b" '("Switch Buffer" . switch-to-buffer)
     " f" '("Open File" . find-file)
     " a" '("Mark Whole Buffer" . mark-whole-buffer)
