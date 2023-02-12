@@ -469,13 +469,26 @@
 
 (use-package ansi-color :demand t)
 
+(use-package frame
+  :init
+  (add-hook 'after-init-hook #'window-divider-mode)
+  (setq window-divider-default-places t
+        window-divider-default-bottom-width 1
+        window-divider-default-right-width 1))
+
 (use-package gruvbox-theme
   :ensure t
   :demand t
   :init
   (load-theme 'gruvbox-dark-soft t)
   :config
-  (set-face-background 'highlight (face-attribute 'ansi-color-black :background))
+  (set-face-attribute 'minibuffer-prompt nil
+                      :box (list :line-width 7 :color
+                                 (face-attribute 'default :background)))
+  (set-face-foreground 'window-divider
+                       (face-attribute 'vertical-border :foreground))
+  (set-face-background 'highlight
+                       (face-attribute 'ansi-color-black :background))
   (set-face-attribute 'internal-border nil
 		              :background (face-attribute 'default :background))
   (set-face-attribute 'line-number nil
@@ -488,7 +501,7 @@
                       :background
                       (face-attribute 'default :background)
                       :weight 'bold
-                      :overline (face-attribute 'mode-line-inactive :background)
+                      :overline (face-attribute 'vertical-border :foreground)
                       :box
                       (list :line-width 7 :color
                             (face-attribute 'default :background)))
