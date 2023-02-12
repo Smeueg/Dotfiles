@@ -87,13 +87,14 @@
   (interactive)
   (while t
     (message
-     (concat (propertize "──── Resize Window Mode ────\n" 'face
-                         `(:foreground ,(aref ansi-color-names-vector 3)))
-             "h:\tShrink Window Horizontally\n"
-             "j:\tShrink Window\n"
-             "k:\tEnlarge Window\n"
-             "l:\tEnlarge Window Horizontally\n"
-             "C-g:Quit\n"))
+     (concat
+      (propertize "──── Resize Window Mode ────\n" 'face
+                  `(:foreground ,(aref ansi-color-names-vector 3)))
+      "h:\tShrink Window Horizontally\n"
+      "j:\tShrink Window\n"
+      "k:\tEnlarge Window\n"
+      "l:\tEnlarge Window Horizontally\n"
+      "C-g:Quit\n"))
     (let ((key (make-vector 1 (read-key))))
       (cond
        ((equal key [?h]) (call-interactively 'shrink-window-horizontally))
@@ -125,12 +126,11 @@
 (global-auto-revert-mode 1) ;; Autorefresh buffers
 (global-eldoc-mode 0) ;; Disable eldoc-mode
 (fset 'yes-or-no-p 'y-or-n-p) ;; Shorter version of prompt
-(setq
- require-final-newline t
- hscroll-margin 1000
- scroll-conservatively 101
- scoll-margin 5
- use-dialog-box nil)
+(setq require-final-newline t
+      hscroll-margin 1000
+      scroll-conservatively 101
+      scoll-margin 5
+      use-dialog-box nil)
 (use-package saveplace
   :custom
   (save-place-forget-unreadable-files nil)
@@ -473,18 +473,9 @@
   :ensure t
   :demand t
   :init
-  (add-hook 'after-init-hook
-            (lambda ()
-              (with-eval-after-load 'dirvish
-                (set-face-background
-                 'dirvish-hl-line
-                 (face-attribute 'mode-line :background)))
-              (with-eval-after-load 'vertico
-                (set-face-background
-                 'vertico-current
-                 (face-attribute 'mode-line :background)))))
   (load-theme 'gruvbox-dark-soft t)
   :config
+  (set-face-background 'highlight (face-attribute 'ansi-color-black :background))
   (set-face-attribute 'internal-border nil
 		              :background (face-attribute 'default :background))
   (set-face-attribute 'line-number nil
@@ -494,18 +485,19 @@
                       :background (face-attribute 'default :background))
   (set-face-attribute 'mode-line nil
                       :foreground (face-attribute 'mode-line :background)
+                      :background
+                      (face-attribute 'default :background)
+                      :weight 'bold
+                      :overline (face-attribute 'mode-line-inactive :background)
                       :box
                       (list :line-width 7 :color
-                            (face-attribute 'mode-line-inactive :background))
-                      :weight 'bold
-                      :background
-                      (face-attribute 'mode-line-inactive :background))
+                            (face-attribute 'default :background)))
   (set-face-attribute 'mode-line-inactive nil
-                      :foreground (face-attribute 'mode-line :foreground)
-                      :weight 'bold
-                      :box (face-attribute 'mode-line :box)
-                      :background
-                      (face-attribute 'default :background))
+                      :foreground (face-attribute 'ansi-color-black :foreground)
+                      :background (face-attribute 'default :background)
+                      :overline (face-attribute 'mode-line :overline)
+                      :box
+                      (face-attribute 'mode-line :box))
   (set-face-attribute 'tab-bar-tab-inactive nil
                       :foreground
                       (face-attribute 'mode-line :foreground)
@@ -790,23 +782,25 @@
 ;;; CUSTOM MODELINE
 (defun modeline/align (left right)
   (let ((space (length (format-mode-line right))))
-    (when (eq 'right (get-scroll-bar-mode))
-      (setq space (- space 3)))
     (append left
             (list
              (propertize
-              " " 'display
-              `((space :align-to
-                       (- (+ right right-fringe right-margin) ,space)))))
+              (format
+               (format "%%%ds"
+                       (- (window-width)
+                          space
+                          (length (format-mode-line left))
+                          -3))
+               "")))
             right)))
 
 (setq-default mode-line-format
               '(:eval
                 (let ((face (cond
                              (buffer-read-only
-                              `(:overline ,(aref ansi-color-names-vector 1)))
+                              `(:foreground ,(aref ansi-color-names-vector 1)))
                              ((buffer-modified-p)
-                              `(:overline ,(aref ansi-color-names-vector 3))))))
+                              `(:foreground ,(aref ansi-color-names-vector 3))))))
                   (modeline/align
                    ;; Left
                    `(,(propertize (format  " %s " (buffer-name)) 'face face)
