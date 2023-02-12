@@ -780,40 +780,44 @@
 
 
 ;;; CUSTOM MODELINE
+(defvar mode-line-selected-window nil)
+(add-function :before pre-redisplay-function
+              (lambda (_)
+                (when (not (minibuffer-window-active-p (frame-selected-window)))
+                  (setq mode-line-selected-window (selected-window)))))
+
 (defun modeline/align (left right)
-  (let ((space (length (format-mode-line right))))
-    (append left
-            (list
-             (propertize
-              (format
-               (format "%%%ds"
-                       (- (window-width)
-                          space
-                          (length (format-mode-line left))
-                          -3))
-               "")))
+  (let ((space (+ (length (format-mode-line right))
+                  (length (format-mode-line left)))))
+    (append left (list (propertize (format (format "%%%ds"
+                                                   (- (window-width) space -3))
+                                           "")))
             right)))
 
-(setq-default mode-line-format
-              '(:eval
-                (let ((face (cond
-                             (buffer-read-only
-                              `(:foreground ,(aref ansi-color-names-vector 1)))
-                             ((buffer-modified-p)
-                              `(:foreground ,(aref ansi-color-names-vector 3))))))
-                  (modeline/align
-                   ;; Left
-                   `(,(propertize (format  " %s " (buffer-name)) 'face face)
-                     " "
-                     ,(symbol-name major-mode))
-                   ;;Right
-                   `(,(cdr (assoc (bound-and-true-p evil-state)
-                                  '((normal . "Normal")
-                                    (visual . "Visual")
-                                    (insert . "Insert")
-                                    (replace . "Replace")
-                                    (operator . "O-Pending")
-                                    (motion . "Motion")
-                                    (emacs . "Emacs"))))
-                     " "
-                     ,(propertize " %l:%c " 'face face))))))
+(setq-default
+ mode-line-format
+ '(:eval
+   (let ((face
+          (list
+           :foreground
+           (cond
+            (buffer-read-only (aref ansi-color-names-vector 1))
+            ((buffer-modified-p) (aref ansi-color-names-vector 3))
+            (t (face-attribute 'default :foreground))))))
+     (unless (eq mode-line-selected-window (get-buffer-window))
+       (setq face nil))
+     (modeline/align
+      ;; Left
+      `(,(propertize (format  " %s  " (buffer-name)) 'face face)
+        ,(symbol-name major-mode))
+      ;;Right
+      `(,(cdr (assoc (bound-and-true-p evil-state)
+                     '((normal . "Normal")
+                       (visual . "Visual")
+                       (insert . "Insert")
+                       (replace . "Replace")
+                       (operator . "O-Pending")
+                       (motion . "Motion")
+                       (emacs . "Emacs"))))
+        " "
+        ,(propertize " %l:%c " 'face face))))))
