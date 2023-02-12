@@ -89,13 +89,13 @@ alias emacs="emacs -nw"
 alias mkdir="mkdir -pv"
 alias diff="diff --color=always"
 alias grep="grep --color=auto"
-alias smeuesic="printf '%s\n' 'https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc'"
 alias ls="ls --color --group-directories-first"
 alias mv="mv -i"
 alias rm="rm -i"
 alias cp="cp -i"
 alias ip="ip --color=auto"
 alias dit="git --git-dir=${HOME}/.local/dots --work-tree=${HOME}"
+alias smeuesic="sh <(curl -sNL https://raw.githubusercontent.com/Smeueg/ytpl-sync/main/ytpl-sync) --url  'https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc'"
 
 
 # FUNCTIONS #
