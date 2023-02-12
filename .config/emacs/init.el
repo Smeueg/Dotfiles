@@ -63,12 +63,13 @@
   (interactive)
   (if (not buffer-file-name)
       (message "[%s] Buffer isn't a file" (propertize "ERROR" 'face 'error))
-    (let ((bin nil) (file nil) (pair nil) (chosen nil) (cmd nil) (func nil))
-      (setq file (format "'%s'" buffer-file-name))
-      (setq bin (format "'/tmp/%s'" buffer-file-name))
+    (let ((bin "'/tmp/emacs-output'") (file (format "'%s'" buffer-file-name))
+          (pair nil) (chosen nil) (cmd nil) (func nil))
       (setq
        pair
-       `((mhtml-mode (:cmd ,(format "xdg-open %s" file)))
+       `((c++-mode (:cmd ,(format "g++ %s -o %s; %s" file bin bin)))
+         (c-mode (:cmd ,(format "cc %s -o %s; %s" file bin bin)))
+         (mhtml-mode (:cmd ,(format "xdg-open %s" file)))
          (python-mode (:cmd ,(format "python3 %s" file)))
          (lua-mode (:cmd ,(format "lua %s" file)))
          (sh-mode (:cmd ,file)
