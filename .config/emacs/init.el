@@ -484,9 +484,6 @@
   :init
   (load-theme 'gruvbox-dark-soft t)
   :config
-  (set-face-attribute 'minibuffer-prompt nil
-                      :box (list :line-width 7 :color
-                                 (face-attribute 'default :background)))
   (set-face-foreground 'window-divider
                        (face-attribute 'vertical-border :foreground))
   (set-face-background 'highlight
@@ -513,23 +510,21 @@
                       :overline (face-attribute 'mode-line :overline)
                       :box
                       (face-attribute 'mode-line :box))
-  (set-face-attribute 'tab-bar-tab-inactive nil
-                      :foreground
-                      (face-attribute 'mode-line :foreground)
-                      :background
-                      (face-attribute 'mode-line :background)
-                      :box
-                      (list :line-width 5 :color
-                            (face-attribute 'secondary-selection :background)))
   (set-face-attribute 'tab-bar-tab nil
                       :foreground
-                      (face-attribute 'mode-line :foreground)
-                      :overline (aref ansi-color-names-vector 4)
+                      (face-attribute 'default :foreground)
                       :background
-                      (face-attribute 'mode-line :background)
+                      (face-attribute 'default :background)
+                      :overline (aref ansi-color-names-vector 4)
                       :box
-                      (list :line-width 5 :color
-                            (face-attribute 'secondary-selection :background)))
+                      (list :line-width 7 :color
+                            (face-attribute 'default :background)))
+  (set-face-attribute 'tab-bar-tab-inactive nil
+                      :foreground
+                      (face-attribute 'ansi-color-black :foreground)
+                      :overline t
+                      :box
+                      (face-attribute 'tab-bar-tab :box))
   (set-face-attribute 'header-line nil
                       :box
                       (list :line-width 5 :color
@@ -645,7 +640,6 @@
 
 ;;; PROGRAMMING
 (add-to-list 'auto-mode-alist '("\\.ino\\'" . c-mode))
-
 
 (use-package flymake
   :init
