@@ -411,6 +411,7 @@
     " a" '("Mark Whole Buffer" . mark-whole-buffer)
     " h" '("Open Help Menu" . help)
     " l" '("Toggle Line Numbers" . global-display-line-numbers-mode)
+    " W" '("Toggle Line Wrapping" . visual-line-mode)
     " w" '("Toggle whitespace-mode" . whitespace-mode)
     " i" '("Detect Major Mode" . (lambda () (interactive) (set-auto-mode 1))))
   (evil-define-key 'visual 'global " c"
