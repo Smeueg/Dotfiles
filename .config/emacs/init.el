@@ -67,8 +67,8 @@
           (pair nil) (chosen nil) (cmd nil) (func nil))
       (setq
        pair
-       `((c++-mode (:cmd ,(format "g++ %s -o %s; %s" file bin bin)))
-         (c-mode (:cmd ,(format "cc %s -o %s; %s" file bin bin)))
+       `((c++-mode (:cmd ,(format "g++ %s -o %s && %s" file bin bin)))
+         (c-mode (:cmd ,(format "cc %s -o %s && %s" file bin bin)))
          (mhtml-mode (:cmd ,(format "xdg-open %s" file)))
          (python-mode (:cmd ,(format "python3 %s" file)))
          (lua-mode (:cmd ,(format "lua %s" file)))
@@ -640,6 +640,13 @@
 
 ;;; PROGRAMMING
 (add-to-list 'auto-mode-alist '("\\.ino\\'" . c-mode))
+
+(use-package eglot
+  :ensure t
+  :init
+  (add-hook 'c-mode-hook (lambda ()
+                           (when (executable-find "clangd")
+                             (eglot)))))
 
 (use-package flymake
   :init
