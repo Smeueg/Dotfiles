@@ -86,23 +86,25 @@
 (defun resize-window ()
   "Resize a window interactively"
   (interactive)
-  (while t
-    (message
-     (concat
-      (propertize "──── Resize Window Mode ────\n" 'face
-                  `(:foreground ,(aref ansi-color-names-vector 3)))
-      "h:\tShrink Window Horizontally\n"
-      "j:\tShrink Window\n"
-      "k:\tEnlarge Window\n"
-      "l:\tEnlarge Window Horizontally\n"
-      "C-g:Quit\n"))
-    (let ((key (make-vector 1 (read-key))))
-      (cond
-       ((equal key [?h]) (call-interactively 'shrink-window-horizontally))
-       ((equal key [?j]) (call-interactively 'shrink-window))
-       ((equal key [?k]) (call-interactively 'enlarge-window))
-       ((equal key [?l]) (call-interactively 'enlarge-window-horizontally))
-       ((equal key [?\C-g]) (keyboard-quit) (message ""))))))
+  (if (length> (window-list) 1)
+      (while (length> (window-list) 1)
+        (message
+         (concat
+          (propertize "──── Resize Window Mode ────\n" 'face
+                      (list :foreground (aref ansi-color-names-vector 3)))
+          "h:\t Shrink Window Horizontally\n"
+          "j:\t Shrink Window\n"
+          "k:\t Enlarge Window\n"
+          "l:\t Enlarge Window Horizontally\n"
+          "C-g: Quit"))
+        (let ((key (make-vector 1 (read-key))))
+          (cond
+           ((equal key [?h]) (call-interactively 'shrink-window-horizontally))
+           ((equal key [?j]) (call-interactively 'shrink-window))
+           ((equal key [?k]) (call-interactively 'enlarge-window))
+           ((equal key [?l]) (call-interactively 'enlarge-window-horizontally))
+           ((equal key [?\C-g]) (keyboard-quit) (message "")))))
+    (message "Won't resize ONLY buffer")))
 
 
 ;;; HOOKS
