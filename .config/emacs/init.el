@@ -773,11 +773,18 @@
    (let ((buf (get-buffer-create "*splash*")))
      (with-current-buffer buf
        (setq-local indent-tabs-mode nil)
-       (let (face str-package str-emacs str-time colors)
-         (setq colors ansi-color-names-vector)
-         (setq face `(:weight 'bold :foreground ,(aref colors 3))
+       (let (face str-package str-emacs str-version str-time)
+         (setq face (list :weight 'bold :foreground
+                          (aref ansi-color-names-vector 3))
+               str-version (propertize
+                            (replace-regexp-in-string
+                             "[^ ]+ [^ ]+ \\([^ ]+\\).*\n.*"
+                             "\\1"
+                             (emacs-version))
+                            'face face)
                str-emacs (propertize "Emacs" 'face face)
-               str-time (propertize (emacs-init-time) 'face face))
+               str-time (propertize (emacs-init-time "%.2f Seconds")
+                                    'face face))
          (when (bound-and-true-p package-alist)
            (setq str-package (length package-activated-list))
            (if (= str-package 0)
@@ -786,11 +793,11 @@
                    (propertize
                     (number-to-string str-package) 'face face))))
          (insert
-          (format "Welcome To %s\n\n" str-emacs)
+          (format "Welcome To %s %s\n\n" str-emacs str-version)
           "Enjoy Your Stay\n\n"
           (if str-package
               (format "%s Packages Loaded In %s" str-package str-time)
-            (format "%s Started In %s" str-emacs str-time))))
+            (format "Started In %s" str-time))))
        (splash-align)
        (add-hook 'window-state-change-hook #'splash-align)
        (message ""))
