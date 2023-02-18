@@ -778,12 +778,7 @@
        (let (face str-package str-emacs str-version str-time)
          (setq face (list :weight 'bold :foreground
                           (aref ansi-color-names-vector 3))
-               str-version (propertize
-                            (replace-regexp-in-string
-                             "[^ ]+ [^ ]+ \\([^ ]+\\).*\n.*"
-                             "\\1"
-                             (emacs-version))
-                            'face face)
+               str-version (propertize emacs-version 'face face)
                str-emacs (propertize "Emacs" 'face face)
                str-time (propertize (emacs-init-time "%.2f Seconds")
                                     'face face))
