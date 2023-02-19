@@ -813,7 +813,7 @@
   (let ((space (+ (length (format-mode-line right))
                   (length (format-mode-line left)))))
     (append left (list (propertize (format (format "%%%ds"
-                                                   (- (window-width) space -3))
+                                                   (- (window-width) space -2))
                                            "")))
             right)))
 
