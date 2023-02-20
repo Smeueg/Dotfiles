@@ -389,7 +389,11 @@
     "gc" '("(Un)Comment Line" . comment-line))
   (evil-define-key 'visual prog-mode-map
     "gc" '("(Un)Comment Region" . comment-dwim))
-  (evil-define-key 'insert 'global [?\C-n] nil [?\C-p] nil)
+  (evil-define-key 'insert 'global
+    [?\C-n] nil
+    [?\C-p] nil
+    [?\C-y] #'evil-scroll-line-up
+    [?\C-e] #'evil-scroll-line-down)
   (evil-define-key '(insert normal visual operator motion replace) 'global
     [?\M-h] (lambda () (interactive) (evil-normal-state 1) (evil-backward-char))
     [?\M-j] (lambda () (interactive) (evil-normal-state 1) (evil-next-line))
