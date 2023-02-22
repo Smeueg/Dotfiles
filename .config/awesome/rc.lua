@@ -1,4 +1,6 @@
 -- Smeueg's AwesomeWM Configuration File
+-- TODO: Turn widget functions into a wibox.widget (primarily for the volume
+--       widget)
 -- TODO: Add a dashboard (as a launcher and powermenu) (WIP):
 --       - PowerMenu: ✓
 --       - Launcher: ✗
