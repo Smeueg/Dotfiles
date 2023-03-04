@@ -39,11 +39,21 @@
 (defalias 'wd 'delete-window)
 
 (defun w ()
-  (interactive)
   "Save a buffer if modified or finish an edit (i.e. a commit message)"
+  (interactive)
   (if (string= "COMMIT_EDITMSG" (file-name-base (or (buffer-file-name) "")))
       (call-interactively 'with-editor-finish)
     (call-interactively 'save-buffer)))
+
+(defun Q ()
+  "Quit WINDOW and kill its BUFFER"
+  (interactive)
+  (quit-window 1))
+
+(defun scratch ()
+  "Open the `*scratch*' buffer"
+  (interactive)
+  (switch-to-buffer "*scratch*"))
 
 (defun split ()
   "Split the buffer horizontally and move focus to the new split"
