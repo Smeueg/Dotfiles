@@ -816,9 +816,10 @@
 (defun modeline/align (left right)
   (let ((space (+ (length (format-mode-line right))
                   (length (format-mode-line left)))))
-    (append left (list (propertize (format (format "%%%ds"
-                                                   (- (window-width) space -2))
-                                           "")))
+    (append left (list (propertize
+                        (format (format "%%%ds"
+                                        (- (window-total-width) space 1))
+                                "")))
             right)))
 
 (setq-default
