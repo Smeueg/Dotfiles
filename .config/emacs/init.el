@@ -144,6 +144,7 @@
       scroll-conservatively 101
       scoll-margin 5
       use-dialog-box nil)
+
 (use-package saveplace
   :custom
   (save-place-forget-unreadable-files nil)
@@ -316,8 +317,6 @@
 (use-package magit
   :ensure t
   :commands magit
-  :init
-  (setq magit-commit-show-diff nil)
   :config
   ;; Use '~/' as the working tree and '~/.local/dots' as the git directory when
   ;; modifying a file that's inside '~/'.
@@ -358,7 +357,6 @@
       "j" 'ibuffer-forward-line
       "k" 'ibuffer-backward-line
       " " 'ibuffer-toggle-mark
-      "q" (lambda () (interactive) (quit-window 1))
       [return] (lambda ()
                  (interactive)
                  (call-interactively 'ibuffer-visit-buffer)
@@ -369,15 +367,25 @@
   :init
   (defalias 's 'vr/query-replace))
 
+(use-package window
+  :init
+  (add-to-list 'display-buffer-alist
+               '("\\*Help\\*" display-buffer-pop-up-window)
+               '("magit-diff:*" display-buffer-pop-up-window)))
+
 
 ;;; CONTROLS
-(setq mouse-wheel-scroll-amount '(1)
-      mouse-wheel-progressive-speed nil)
 (define-key key-translation-map [?\C-h] [?\C-?])
 (define-key global-map [?\C-\S-v]
   (lambda ()
     (interactive)
     (insert (or (gui-get-selection 'CLIPBOARD 'UTF8_STRING) ""))))
+
+(use-package mwheel
+  :init
+  (setq mouse-wheel-scroll-amount '(1)
+        mouse-wheel-progressive-speed nil))
+
 (use-package evil
   :ensure t
   :init
@@ -447,11 +455,8 @@
     (evil-collection-init 'magit)
     (evil-define-key 'normal magit-mode-map
       ":" #'execute-extended-command
-      "q" (lambda () (interactive) (quit-window 1))
       "h" #'evil-backward-char
-      "l" #'evil-forward-char))
-  (evil-define-key 'motion help-mode-map
-    "q" (lambda () (interactive) (quit-window 1))))
+      "l" #'evil-forward-char)))
 
 
 
@@ -461,7 +466,7 @@
 (tool-bar-mode 0)
 (menu-bar-mode 0)
 (tooltip-mode 0)
-(fringe-mode 3) ;; Disable fringes
+(fringe-mode 3)
 (show-paren-mode 1)
 (set-window-buffer nil (current-buffer))
 (let ((font "JetBrainsMono Nerd Font Mono"))
@@ -630,6 +635,7 @@
                 (when (= (length (tab-bar-tabs)) 2)
                   (tab-bar-mode 0)))))
 
+
 ;;; ORG
 (use-package org-bullets
   :ensure t
@@ -763,7 +769,6 @@
   (defalias 'bongo 'bongo-playlist))
 
 
-
 ;;; CUSTOM SPLASH SCREEN
 (defun splash-align ()
   (if (get-buffer "*splash*")
@@ -828,7 +833,7 @@
                   (length (format-mode-line left)))))
     (append left (list (propertize
                         (format (format "%%%ds"
-                                        (- (window-total-width) space 1))
+                                        (- (window-total-width) space))
                                 "")))
             right)))
 
@@ -846,7 +851,8 @@
        (setq face nil))
      (modeline/align
       ;; Left
-      `(,(propertize (format  " %s  " (buffer-name)) 'face face)
+      `(,(propertize (format  " %s " (buffer-name)) 'face face)
+        " "
         ,(symbol-name major-mode))
       ;;Right
       `(,(cdr (assoc (bound-and-true-p evil-state)
@@ -859,3 +865,8 @@
                        (emacs . "Emacs"))))
         " "
         ,(propertize " %l:%c " 'face face))))))
+
+
+(add-to-list 'display-buffer-alist
+             '("\\*Help\\*" . ((display-buffer-pop-up-window) .
+                               ((inhibit-same-window . t)))))

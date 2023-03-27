@@ -5,11 +5,9 @@
 	- pactl (Pulseaudio)
 	- nmcli (NetworkManager)
 
-	TODO: Turn widget functions into a wibox.widget (primarily for the volume
-	widget)
-	TODO: Add a dashboard (as a launcher and powermenu) (WIP):
-	- PowerMenu: ✓
-	- Launcher: ✗
+	TODO:
+	- Cleanup
+	- Add USEFULL comments
 --]]
 
 -- Import Libraries
@@ -25,7 +23,27 @@ local awful = require("awful")
 local wibox = require("wibox")
 local lgi = require("lgi")
 local cairo = lgi.cairo
+local Gio = lgi.Gio
 local pi = math.pi
+
+-- Error Handling --
+do
+	local in_error = false
+	awesome.connect_signal(
+		"debug::error",
+		function(err)
+			if in_error then return end
+			in_error = true
+			notify {
+				title = "Error",
+				text = tostring(err),
+				fg = "#FABD2F",
+				timeout = 0
+			}
+			in_error = false
+		end
+	)
+end
 
 
 -- Theme (Gruvbox) --
@@ -48,6 +66,7 @@ beautiful.init {
 	-- Wibar
 	wibar_height = apply_dpi(50),
 	wibar_icon_color = "#FABD2F",
+	wibar_position = "top",
 	-- Dashboard
 	profile_picture = os.getenv("HOME") .. "/.config/awesome/pfp.png",
 	-- Calendar
@@ -63,24 +82,6 @@ beautiful.init {
 
 naughty.config.spacing = apply_dpi(5)
 
--- Error Handling --
-do
-	local in_error = false
-	awesome.connect_signal(
-		"debug::error",
-		function(err)
-			if in_error then return end
-			in_error = true
-			notify {
-				title = "Error",
-				text = tostring(err),
-				fg = "#FABD2F",
-				timeout = 0
-			}
-			in_error = false
-		end
-	)
-end
 
 
 -- Custom Functions --
@@ -157,9 +158,79 @@ local utils = {
 	end
 }
 
-function cairo.CreateImage(body)
+function string.style_for_pango(text, style)
+	local options = ""
+	for key, v in pairs(style) do
+		options = options .. string.format(" %s='%s'", key, v)
+	end
+	return string.format("<span%s>%s</span>", options, text)
+end
+
+function awful.widget.border_wrapper(w, disabled)
+	disabled = disabled or {}
+	local function border(orientation, position)
+		if disabled[position] then
+			return { widget = wibox.container.background }
+		end
+
+		local attr = orientation == "vertical" and "width" or "height"
+		return {
+			widget = wibox.container.background,
+			bg = beautiful.border_focus,
+			{
+				widget = wibox.container.constraint,
+				["forced_"..attr] = beautiful.border_width,
+			}
+		}
+	end
+
+	return {
+		widget = wibox.container.background,
+		{
+			layout = wibox.layout.align.vertical,
+			border(nil, "top"),
+			{
+				layout = wibox.layout.align.horizontal,
+				border("vertical", "left"),
+				w,
+				border("vertical", "right"),
+			},
+			border(nil, "bottom")
+		}
+	}
+end
+
+function root.execute_keybinding(modifiers, key)
+	local conversion = {
+		Mod4 = "Super_L",
+		Control = "Control_L",
+		Shift = "Shift_L",
+		Mod1 = "Alt_L",
+		Mod4 = "Super_R",
+		Control = "Control_R",
+		Shift = "Shift_R",
+		Mod1 = "Alt_R"
+	}
+
+	for _, mod in ipairs(modifiers or {}) do
+		root.fake_input("key_press", conversion[mod])
+	end
+
+	root.fake_input("key_press", key)
+	root.fake_input("key_release", key)
+
+	for _, mod in ipairs(modifiers or {}) do
+		root.fake_input("key_release", conversion[mod])
+	end
+end
+
+function cairo.CreateImage(body, size)
 	local tmp = {}
-	tmp.image = cairo.ImageSurface.create(cairo.Format.ARGB32, 20, 20)
+	local size = size
+	if not size then
+		size = { 20, 20 }
+	end
+	tmp.image = cairo.ImageSurface.create(cairo.Format.ARGB32, size[1], size[2])
 	tmp.cr = cairo.Context(tmp.image)
 	if type(body) == "table" then
 		for _, v in ipairs(body) do
@@ -193,6 +264,1039 @@ function awful.spawn.run_if_installed(cmds)
 	end
 end
 
+
+-- Custom Shapes --
+function gears.shape.rounded_rect_auto(cr, width, height)
+	gears.shape.rounded_rect(cr, width, height, apply_dpi(5))
+end
+
+
+-- Custom Widgets --
+function awful.widget.date()
+	return {
+		widget = wibox.container.background,
+		shape = gears.shape.rounded_rect_auto,
+		bg = "#00000030",
+		{
+			widget = wibox.widget.textclock,
+			format = " %a - %d/%m/%y  %H:%M "
+		}
+	}
+end
+
+do -- awful.widget.volume
+	local icons = {
+		unmute = cairo.CreateImage(function(cr)
+				cr:set_source(gears.color(beautiful.wibar_icon_color))
+				shapes.transform(shapes.rectangle)
+					:translate(6, 8)(cr, 4, 4)
+				shapes.transform(shapes.isosceles_triangle)
+					:rotate_at(0, 0, pi / -2)
+					:translate(-14, 6)(cr, 8, 4)
+				shapes.transform(shapes.arc)
+					:translate(0, 4)(cr, 12, 12, 1, pi / -7, pi / 7, true, true)
+				shapes.transform(shapes.arc)
+					:translate(0, 3)(cr, 14, 14, 1, pi / -6, pi / 6, true, true)
+				shapes.transform(shapes.arc)
+					:translate(0, 2)(cr, 16, 16, 1, pi / -5, pi / 5, true, true)
+				cr:fill()
+		end),
+		mute = cairo.CreateImage(function(cr)
+				cr:set_source(gears.color(beautiful.wibar_icon_color))
+				shapes.transform(shapes.rectangle)
+					:translate(6, 8)(cr, 4, 4)
+				shapes.transform(shapes.isosceles_triangle)
+					:rotate_at(0, 0, pi / -2)
+					:translate(-14, 6)(cr, 8, 4)
+				shapes.transform(shapes.cross)
+					:rotate_at(0, 0, pi / 4)
+					:translate(13.5, -5)(cr, 6, 6, 1)
+				cr:fill()
+		end)
+	}
+
+	local widget = wibox.widget {
+		widget = wibox.container.background,
+		shape = gears.shape.rounded_rect_auto,
+		bg = "#00000030",
+		buttons = gears.table.join(
+			awful.button({}, 1, function()
+					awful.spawn("pactl set-sink-mute @DEFAULT_SINK@ toggle", false)
+			end),
+			awful.button({}, 4, function()
+					awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ +1%", false)
+			end),
+			awful.button({}, 5, function()
+					awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ -1%", false)
+			end)
+		),
+		{
+			widget = wibox.container.margin,
+			layout = wibox.layout.fixed.horizontal,
+			left = apply_dpi(5),
+			right = apply_dpi(5),
+			{
+				widget = wibox.container.background,
+				{
+					widget = wibox.widget.imagebox,
+					id = "icon",
+				}
+			},
+			{
+				widget = wibox.widget.textbox,
+				id = "vol"
+			},
+			{
+				widget = wibox.widget.textbox,
+				text = " "
+			}
+		}
+	}
+
+	local function update()
+		local vol_regex = ""
+		for _=1, 6 do vol_regex = vol_regex .. "[^\n]*\n" end
+		local w_vol = widget:get_children_by_id("vol")[1]
+		local w_icon = widget:get_children_by_id("icon")[1]
+		awful.spawn.easy_async(
+			"pactl info",
+			function(stdout)
+				local sink = stdout:match("Default Sink: ([^\n]+)")
+				sink = sink:gsub("-", "[-]")
+				awful.spawn.easy_async(
+					"pactl list sinks",
+					function(stdout)
+						local regex = "Name: " .. sink .. vol_regex
+						local volume
+						local image
+						if stdout:match(regex .. "%s*Mute: no") then
+							image = icons.unmute
+						else
+							image = icons.mute
+						end
+						regex = regex .. "[^\n]*\n[^/]+/ *(%d+%%) */"
+						volume = stdout:match(regex)
+						widget:get_children_by_id("vol")[1].text = volume
+						widget:get_children_by_id("icon")[1].image = image
+					end
+				)
+			end
+		)
+	end
+
+	local function watch()
+		update()
+		awful.spawn.with_line_callback(
+			"pactl subscribe",
+			{
+				stdout = function(line)
+					if not line:match("'change' on sink ") then return end
+					update()
+				end,
+				exit = spawn_watcher
+			}
+		)
+	end
+
+	awful.spawn.with_line_callback(
+		"ps -C pactl -o pid=,cmd=",
+		{
+			stdout = function(line)
+				local pid = line:match("(%d+)%s+pactl subscribe")
+				if pid then
+					awful.spawn("kill -9 " .. pid, false)
+				end
+			end,
+			output_done = watch
+		}
+	)
+
+	function awful.widget.volume()
+		return widget
+	end
+end
+
+function awful.widget.taglist_styled(s)
+	local function update(self, t)
+		local widget = self:get_children_by_id("icon")[1]
+		if t.selected then
+			widget.shape_border_color = beautiful.taglist_fg_focus
+		else
+			widget.shape_border_color = beautiful.taglist_fg_normal
+		end
+		widget.bg = next(t:clients()) and widget.shape_border_color or nil
+	end
+
+	return awful.widget.taglist {
+		screen = s,
+		filter = awful.widget.taglist.filter.all,
+		buttons = gears.table.join(
+			awful.button({}, 1, function(t) t:view_only() end),
+			awful.button({}, 3, function(t)
+						local c = client.focus
+						if c then c:move_to_tag(t) end
+			end),
+			awful.button({}, 4, function(t) awful.tag.viewidx(-1) end),
+			awful.button({}, 5, function(t) awful.tag.viewidx(1) end)
+		),
+		layout = {
+			layout = wibox.layout.fixed.horizontal,
+			spacing = apply_dpi(10)
+		},
+		widget_template = {
+			widget = wibox.container.margin,
+			margins = apply_dpi(1),
+			{
+				id = "icon",
+				widget = wibox.container.background,
+				shape = gears.shape.circle,
+				shape_border_width = apply_dpi(2),
+				forced_height = apply_dpi(15),
+				forced_width = apply_dpi(15),
+				{ widget = wibox.widget {} }
+			},
+			create_callback = update,
+			update_callback = update
+		}
+	}
+end
+
+function awful.widget.tasklist_styled(s)
+	return awful.widget.tasklist {
+		screen = s,
+		filter = awful.widget.tasklist.filter.currenttags,
+		style = { shape = gears.shape.rounded_rect_auto },
+		buttons = gears.table.join(
+			awful.button({}, 1, function(c)
+					if c == client.focus then
+						c.minimized = true
+					else
+						c:emit_signal(
+							"request::activate",
+							"tasklist",
+							{raise = true}
+						)
+					end
+			end),
+			awful.button({ }, 4, function() awful.client.focus.byidx(1) end),
+			awful.button({ }, 5, function() awful.client.focus.byidx(-1) end)
+		),
+		widget_template = {
+			widget = wibox.container.background,
+			id = "background_role",
+			{
+				widget = wibox.container.margin,
+				margins = apply_dpi(5),
+				{
+					widget = wibox.widget.imagebox,
+					id = "icon_role"
+				}
+			}
+		}
+	}
+end
+
+do -- awful.widget.network
+	local icons = {
+		offline = cairo.CreateImage(function(cr)
+				cr:set_source(gears.color(beautiful.wibar_icon_color))
+				local c_start = (1.5 - 1/5) * pi
+				local c_end = (1.5 + 1/5) * pi
+				shapes.transform(shapes.pie)
+					:translate(0, 5)(cr, 20, 20, c_start, c_end)
+				cr:set_line_width(1)
+				cr:stroke()
+		end),
+		wifi = cairo.CreateImage(function(cr)
+				cr:set_source(gears.color(beautiful.wibar_icon_color))
+				local c_start = (1.5 - 1/5) * pi
+				local c_end = (1.5 + 1/5) * pi
+				shapes.transform(shapes.pie)
+					:translate(0, 5)(cr, 20, 20, c_start, c_end)
+				cr:set_line_width(1)
+				cr:fill()
+		end),
+		ethernet = cairo.CreateImage(function(cr)
+				cr:rectangle(8, 4, 3, 3)
+				cr:rectangle(5, 12, 3, 3)
+				cr:rectangle(11, 12, 3, 3)
+				cr:rectangle(9, 7, 1, 3)
+				cr:rectangle(6, 9, 1, 3)
+				cr:rectangle(12, 9, 1, 3)
+				cr:rectangle(6, 9, 6, 1)
+				cr:fill()
+		end)
+	}
+
+	local widget = wibox.widget {
+		widget = wibox.container.background,
+		shape = gears.shape.rounded_rect_auto,
+		bg = "#00000030",
+		{
+			widget = wibox.container.background,
+			layout = wibox.layout.fixed.horizontal,
+			{
+				widget = wibox.widget.imagebox,
+				id = "icon",
+			},
+			{
+				widget = wibox.widget.textbox,
+				id = "net"
+			},
+			{
+				widget = wibox.widget.textbox,
+				text = " "
+			}
+		}
+	}
+
+	gears.timer {
+		timeout = 10,
+		autostart = true,
+		call_now = true,
+		callback = function()
+			awful.spawn.easy_async(
+				"nmcli -t -f name,type connection show --active",
+				function(stdout)
+					local icon = widget:get_children_by_id("icon")[1]
+					local net = widget:get_children_by_id("net")[1]
+					if not stdout then
+						icon.image = icons.offline
+						net.text = "Offline"
+						return
+					end
+					local net_name, net_type = stdout:match("([^:]+):([^:]+)")
+					if net_type and net_type:match("-wireless") then
+						icon.image = icons.wifi
+					else
+						icon.image = icons.ethernet
+					end
+					net.text = net_name or ""
+				end
+			)
+		end
+	}
+
+	function awful.widget.network() return widget end
+end
+
+do -- awful.widget.screenshot & awful.widget.screenshot.popup
+	local templates = {
+		option = function(text, callback)
+			return {
+				widget = wibox.container.background,
+				callback = callback,
+				id = "option",
+				{
+					widget = wibox.container.margin,
+					margins = apply_dpi(10),
+					{
+						widget = wibox.widget.textbox,
+						markup = string.style_for_pango(text, { font = 12 }),
+						align = "center"
+					}
+				}
+			}
+		end,
+		path = function()
+			return os.date("'/tmp/Screenshot %d-%m-%Y %X.png'")
+		end
+	}
+
+	local function place(p)
+		awful.placement.next_to(
+			p,
+			{
+				preferred_positions = "bottom",
+				preferred_anchors = "middle",
+				geometry = awful.screen.focused().wibar
+			}
+		)
+		p.y = p.y - beautiful.border_width
+	end
+
+	local widget = {
+		widget = wibox.container.background,
+		shape = gears.shape.rounded_rect_auto,
+		bg = "#00000030",
+		buttons = awful.button({}, 1, popup),
+		{
+			widget = wibox.widget.imagebox,
+			image = cairo.CreateImage(function(cr)
+					cr:set_source(gears.color(beautiful.wibar_icon_color))
+					cr:rectangle(4, 4, 4, 2)
+					cr:rectangle(4, 4, 2, 4)
+					cr:rectangle(4, 14, 4, 2)
+					cr:rectangle(4, 12, 2, 4)
+					cr:rectangle(12, 4, 4, 2)
+					cr:rectangle(14, 4, 2, 4)
+					cr:rectangle(12, 14, 4, 2)
+					cr:rectangle(14, 12, 2, 4)
+					cr:fill()
+			end)
+		}
+	}
+
+	local popup = awful.popup {
+		placement = place,
+		ontop = true,
+		visible = false,
+		widget = awful.widget.border_wrapper({
+				widget = wibox.container.margin,
+				margins = apply_dpi(10),
+				{
+					layout = wibox.layout.fixed.vertical,
+					spacing = apply_dpi(10),
+					{
+						widget = wibox.widget.textbox,
+						align = "center",
+						markup = string.style_for_pango("Screenshot", {
+								font = 12,
+								fgcolor = beautiful.border_focus,
+								weight = "bold"
+						})
+					},
+					{
+						layout = wibox.layout.grid,
+						orientation = "horizontal",
+						spacing = apply_dpi(5),
+						templates.option("Full", function()
+								local path = templates.path()
+								awful.spawn.easy_async_with_shell(
+									"sleep 0.05; import -window root " .. path,
+									function(_, _, _, exit_code)
+										if exit_code ~= 0 then return end
+										notify {
+											title = "Took Screenshot",
+											text = path
+										}
+									end
+								)
+						end),
+						templates.option("Partial", function()
+								local path = templates.path()
+								awful.spawn.easy_async_with_shell(
+									"sleep 0.05; import " .. path,
+									function(_, _, _, exit_code)
+										if exit_code ~= 0 then return end
+										notify {
+											title = "Took Screenshot",
+											text = path
+										}
+									end
+								)
+						end)
+					}
+				}
+		}, { top = true })
+	}
+
+	popup.options = popup.widget:get_children_by_id("option")
+
+	function popup.update()
+		for i, w in ipairs(popup.options) do
+			if i == popup.chosen then
+				w.bg = "#00000030"
+			else
+				w.bg = nil
+			end
+		end
+	end
+
+	function popup.prev()
+		if popup.chosen > 1 then
+			popup.chosen = popup.chosen - 1
+		end
+		popup.update()
+	end
+
+	function popup.next()
+		if popup.chosen < #popup.options then
+			popup.chosen = popup.chosen + 1
+		end
+		popup.update()
+	end
+
+	function popup.press()
+		popup.options[popup.chosen].callback()
+		popup.toggle()
+	end
+
+	function popup.toggle()
+		if popup.visible then
+			popup.visible = false
+			popup.keygrabber:stop()
+			return
+		end
+		popup.chosen = 1
+		popup.update()
+		place(popup)
+		popup.visible = true
+		popup.keygrabber:start()
+	end
+
+	popup.widget:buttons(awful.button({}, 1, popup.press))
+
+	for i, w in ipairs(popup.options) do
+		w:connect_signal("mouse::enter", function()
+				popup.chosen = i
+				popup.update()
+		end)
+	end
+
+	popup.keygrabber = awful.keygrabber {
+		keybindings = {
+			{ {}, "Left", popup.prev },
+			{ {}, "Right", popup.next },
+			{ {}, "h", popup.prev },
+			{ {}, "l", popup.next },
+			{ {}, "Escape", popup.toggle },
+			{ {}, "Return", popup.press },
+			{ {"Control"}, "p", popup.prev },
+			{ {"Control"}, "n", popup.next },
+			{ {"Control"}, "g", popup.toggle },
+			{ {"Control"}, "j", popup.press }
+		}
+	}
+
+	awful.widget.screenshot = setmetatable(
+		{ popup = popup.toggle },
+		{ __call = function() return widget end }
+	)
+end
+
+do -- awful.widget.layout
+	local icons = {
+		tile = cairo.CreateImage(function(cr)
+				cr:set_source(gears.color(beautiful.wibar_icon_color))
+				cr:rectangle(4, 4, 5, 12)
+				cr:rectangle(11, 4, 5, 5)
+				cr:rectangle(11, 11, 5, 5)
+				cr:fill()
+		end),
+		max = cairo.CreateImage(function(cr)
+				cr:set_source(gears.color(beautiful.wibar_icon_color))
+				cr:rectangle(4, 4, 12, 12)
+				cr:fill()
+		end),
+		float = cairo.CreateImage(function(cr)
+				cr:set_source(gears.color(beautiful.wibar_icon_color))
+				cr:rectangle(4, 4, 8, 8)
+				cr:rectangle(13, 8, 3, 8)
+				cr:rectangle(8, 13, 8, 3)
+				cr:fill()
+		end)
+	}
+
+	local widget = wibox.widget {
+		widget = wibox.container.background,
+		shape = gears.shape.rounded_rect_auto,
+		bg = "#00000030",
+		buttons = awful.button({}, 1, function(self)
+				local layout = root.tags()[1].layout
+				if layout == awful.layout.suit.tile.right then
+					utils.layout_set(awful.layout.suit.max)
+				elseif layout == awful.layout.suit.max then
+					utils.layout_set(awful.layout.suit.floating)
+				else
+					utils.layout_set(awful.layout.suit.tile.right)
+				end
+		end),
+		{ widget = wibox.widget.imagebox }
+	}
+
+	local function update(t)
+		if t.index > 1 then return end
+		if t.layout == awful.layout.suit.tile.right then
+			widget:get_children()[1].image = icons.tile
+		elseif t.layout == awful.layout.suit.max then
+			widget:get_children()[1].image = icons.max
+		else
+			widget:get_children()[1].image = icons.float
+		end
+	end
+
+	tag.connect_signal("property::layout", update)
+
+	function awful.widget.layout()
+		return widget
+	end
+end
+
+do -- awful.widget.dashboard & awful.widget.dashboard.popup
+	local icons = {
+		shutdown = cairo.CreateImage(function(cr)
+				cr:set_source(gears.color(beautiful.wibar_icon_color))
+				shapes.transform(shapes.arc)
+					:translate(3, 3)(cr, 14, 14, 2, -0.4*math.pi, -0.6*math.pi)
+				shapes.transform(shapes.rounded_bar)
+					:translate(9, 1)(cr, 2, 8)
+				cr:fill()
+		end),
+		reboot = cairo.CreateImage(function(cr)
+				cr:set_source(gears.color(beautiful.wibar_icon_color))
+				shapes.transform(shapes.arc)
+					:translate(3, 3)(cr, 14, 14, 2, -0.3*math.pi, -0.7*math.pi)
+				shapes.transform(shapes.isosceles_triangle)
+					:translate(15, 2):rotate_at(15, 2, math.pi/2.75)(cr, 5, 5)
+				cr:fill()
+		end),
+		suspend = cairo.CreateImage(function(cr)
+				cr:set_source(gears.color(beautiful.wibar_icon_color))
+				shapes.transform(shapes.circle):translate(2, 2)(cr, 16, 16)
+				cr:fill()
+				cr:set_operator(cr, cairo.Operator.clear)
+				shapes.transform(shapes.circle):translate(0, 0)(cr, 12, 12)
+				cr:fill()
+		end),
+		launcher = cairo.CreateImage(function(cr)
+				cr:set_source(gears.color(beautiful.wibar_icon_color))
+				shapes.transform(shapes.circle):translate(4, 4)(cr, 8, 8)
+				cr:stroke()
+				shapes.transform(shapes.rectangle)
+					:translate(11, 10)
+					:rotate_at(11, 10, math.pi/4)(cr, 6, 3)
+				cr:fill()
+		end),
+		home = cairo.CreateImage(function(cr)
+				cr:set_source(gears.color(beautiful.wibar_icon_color))
+				cr:rectangle(4, 8, 12, 8)
+				shapes.transform(shapes.isosceles_triangle)
+					:translate(4, 4)(cr, 12, 4)
+				cr:fill()
+				cr:set_operator(cr, cairo.Operator.clear)
+				shapes.transform(shapes.circle)
+					:translate(7, 10)(cr, 6, 6)
+				cr:rectangle(7, 13, 6, 6)
+				cr:fill()
+		end)
+	}
+
+	local templates = {
+		header = function(img)
+			return {
+				widget = wibox.container.background,
+				shape = gears.shape.rounded_rect_auto,
+				{
+					widget = wibox.container.margin,
+					margins = apply_dpi(5),
+					{
+						widget = wibox.widget.imagebox,
+						image = img,
+						forced_height = apply_dpi(30),
+						forced_width = apply_dpi(30)
+					}
+				}
+			}
+		end,
+		container = function()
+			return wibox.widget {
+				layout = wibox.layout.grid,
+				homogeneous = false
+			}
+		end,
+		power_opt = function(img_id, callback)
+			return {
+				widget = wibox.container.background,
+				callback = callback,
+				id = "opt",
+				shape = gears.shape.rounded_rect_auto,
+				{
+					widget = wibox.container.margin,
+					margins = apply_dpi(10),
+					{
+						widget = wibox.container.place,
+						halign = "center",
+						valign = "center",
+						{
+							widget = wibox.widget.imagebox,
+							image = icons[img_id],
+							forced_height = apply_dpi(25),
+							forced_width = apply_dpi(25),
+						}
+					}
+				}
+			}
+		end
+	}
+
+	local function place(p)
+		awful.placement.next_to(
+			p,
+			{
+				preferred_positions = "bottom",
+				preferred_anchors = "front",
+				geometry = awful.screen.focused().wibar
+			}
+		)
+
+		p.y = p.y - beautiful.border_width
+		p.x = p.x - beautiful.border_width
+	end
+
+	local popup_power = awful.popup {
+		placement = place,
+		ontop = true,
+		visible = false,
+		widget = awful.widget.border_wrapper({
+				widget = wibox.container.margin,
+				margins = apply_dpi(10),
+				{
+					layout = wibox.layout.fixed.horizontal,
+					templates.power_opt("suspend", function()
+							notify { text = "Suspending System" }
+							awful.spawn("systemctl suspend")
+					end),
+					templates.power_opt("reboot", function()
+							notify { text = "Rebooting System" }
+							awful.spawn("systemctl reboot")
+					end),
+					templates.power_opt("shutdown", function()
+							notify { text = "Shutting System Down" }
+							awful.spawn("systemctl poweroff")
+					end)
+				}
+		}, {top = true, left = true})
+	}
+
+	popup_power.options = popup_power.widget:get_children_by_id("opt")
+	popup_power.chosen = 1
+
+	root.popup_launcher = awful.popup {
+		placement = place,
+		ontop = true,
+		visible = false,
+		widget = awful.widget.border_wrapper({
+				widget = wibox.container.margin,
+				margins = apply_dpi(10),
+				{
+					layout = wibox.layout.fixed.vertical,
+					spacing = apply_dpi(10),
+					{
+						layout = wibox.layout.fixed.horizontal,
+						spacing = apply_dpi(5),
+						{
+							widget = wibox.container.background,
+							shape = gears.shape.rectangle,
+							shape_border_color = beautiful.border_focus,
+							shape_border_width = apply_dpi(2),
+							fg = beautiful.border_focus,
+							{
+								widget = wibox.container.margin,
+								margins = apply_dpi(10),
+								{
+									widget = wibox.widget.textbox,
+									markup = "<span font='12'>Run</span>"
+								}
+							}
+						},
+						{
+							widget = wibox.container.background,
+							fg = beautiful.fg_normal .. "80",
+							{
+								widget = wibox.container.margin,
+								margins = apply_dpi(10),
+								{
+									widget = wibox.widget.textbox,
+									font = utils.font_size(12),
+									id = "prompt"
+								}
+							}
+						}
+					},
+					{
+						layout = wibox.layout.fixed.horizontal,
+						{
+							layout = wibox.layout.grid,
+							id = "grid"
+						},
+						{
+							widget = wibox.widget.imagebox,
+							id = "scrollbar",
+							forced_width = apply_dpi(10),
+							resize = false
+						}
+					}
+				}
+		}, { top = true, left = true })
+	}
+
+	function popup_power.style()
+		for i, w in ipairs(popup_power.options) do
+			w.bg = (i == popup_power.chosen) and "#00000030" or nil
+		end
+	end
+
+	function popup_power.next()
+		if popup_power.chosen < #popup_power.options then
+			popup_power.chosen = popup_power.chosen + 1
+		end
+		popup_power.style()
+	end
+
+	function popup_power.prev()
+		if popup_power.chosen > 1 then
+			popup_power.chosen = popup_power.chosen - 1
+		end
+		popup_power.style()
+	end
+
+	function popup_power.press()
+		popup_power.options[popup_power.chosen].callback()
+		popup_power.toggle()
+	end
+
+	function popup_power.toggle()
+		if popup_power.visible then
+			popup_power.visible = false
+			popup_power.keygrabber:stop()
+			return
+		end
+		popup_power.chosen = 1
+		popup_power.visible = true
+		popup_power.style()
+		popup_power.keygrabber:start()
+	end
+
+	for i, w in ipairs(popup_power.options) do
+		w:buttons(awful.button({}, 1, popup_power.press))
+		w:connect_signal("mouse::enter", function()
+				popup_power.chosen = i
+				popup_power.style()
+		end)
+	end
+
+	popup_power.keygrabber = awful.keygrabber {
+		keybindings = {
+			{ {}, "Left", popup_power.prev },
+			{ {}, "Right", popup_power.next },
+			{ {}, "Escape", popup_power.toggle },
+			{ {}, "Return", popup_power.press },
+			{ {}, "h", popup_power.prev },
+			{ {}, "l", popup_power.next },
+			{ { "Control" }, "p", popup_power.prev },
+			{ { "Control" }, "n", popup_power.next },
+			{ { "Control" }, "g", popup_power.toggle },
+			{ { "Control" }, "j", popup_power.press }
+		}
+	}
+
+	local function launcher()
+		root.popup_launcher.visible = true
+		local widget = root.popup_launcher.widget
+		local scrollbar = widget:get_children_by_id("scrollbar")[1]
+		local grid = widget:get_children_by_id("grid")[1]
+		local chosen = 1
+		local offset = 0
+		local limit = 10
+
+		-- Get Entries
+		local entries = {}
+		local entries_filtered
+		for _, e in ipairs(Gio.AppInfo.get_all()) do
+			if e:should_show() then
+				table.insert(entries, {
+						appinfo = e,
+						name = e:get_name()
+							:gsub("&", "&amp;")
+							:gsub("<", "&lt;")
+							:gsub("'", "&#39;")
+				})
+			end
+		end
+
+		local function style()
+			local childrens = grid:get_children()
+			if childrens[chosen - offset - 1] then
+				childrens[chosen - offset - 1].bg = nil
+			end
+
+			if childrens[chosen - offset] then
+				childrens[chosen - offset].bg = "#00000030"
+			end
+
+			if childrens[chosen - offset + 1] then
+				childrens[chosen - offset + 1].bg = nil
+			end
+		end
+
+		local function filter(text)
+			entries_filtered = {}
+			for _, e in ipairs(entries) do
+				if e.name:lower():match(text:lower()) then
+					table.insert(entries_filtered, e)
+				end
+			end
+
+			grid:reset()
+			local entries_filtered = {}
+			for _, e in ipairs(entries) do
+				if e.name:lower():match(text:lower()) then
+					table.insert(entries_filtered, e)
+				end
+			end
+
+			if chosen > #entries_filtered then
+				chosen = #entries_filtered
+			end
+
+			if chosen == 0 then
+				chosen = 1
+			end
+
+			if chosen < offset + 1 then
+				offset = offset - 1
+			end
+
+			if chosen > offset + limit then
+				offset = offset + 1
+			end
+
+			for i, e in ipairs(entries_filtered) do
+				if i >= offset + 1 and i <= offset + limit then
+					grid:add(
+						wibox.widget {
+							widget = wibox.container.background,
+							appinfo = e.appinfo,
+							{
+								widget = wibox.container.margin,
+								margins = apply_dpi(5),
+								{
+									widget = wibox.widget.textbox,
+									text = e.name,
+									forced_width = apply_dpi(300),
+								}
+							}
+						}
+					)
+				end
+			end
+
+			scrollbar.image = nil
+			scrollbar.forced_height = nil
+			local sample = grid:get_children()[1]
+			if sample then
+				sample = sample.widget.widget
+				local w, h = sample:get_preferred_size(awful.screen.focused())
+				h = h + 10
+				local height
+				if #entries_filtered < limit then
+					height = #entries_filtered * h
+				else
+					height = limit * h
+				end
+				scrollbar.forced_height = apply_dpi(height)
+				local c = #entries_filtered / height
+				scrollbar.image = cairo.CreateImage(function(cr)
+						cr:set_source(gears.color(beautiful.fg_normal))
+						cr:rectangle(0, offset / c, 2, limit / c)
+						cr:fill(((#entries_filtered - limit) / c))
+				end, {2, height})
+			end
+			style()
+		end
+
+		filter("")
+
+		awful.prompt.run {
+			textbox = widget:get_children_by_id("prompt")[1],
+			bg_cursor = beautiful.fg_normal .. "80",
+			changed_callback = filter,
+			keypressed_callback = function(mod, key)
+				-- Controls
+				local controls = {
+					next = function() chosen = chosen + 1 end,
+					prev = function() chosen = chosen - 1 end
+				}
+				local keys = {
+					{ n = controls.next, mod = "Control" },
+					{ p = controls.prev, mod = "Control" },
+					{ Down = controls.next },
+					{ Up = controls.prev }
+				}
+				for _, k in ipairs(keys) do
+					if k[key] and (k.mod or true or mod[k.mod]) then
+						k[key]()
+					end
+				end
+				style()
+			end,
+			exe_callback = function(cmd)
+				local entry = grid:get_children()[chosen - offset]
+				if entry then
+					entry.appinfo:launch()
+					notify {
+						title = "Launching Application",
+						text = tostring(entry.widget.widget.text)
+					}
+				else
+					awful.spawn.with_shell(cmd)
+					notify {
+						title = "Running Command",
+						text = cmd
+					}
+				end
+			end,
+			done_callback = function()
+				root.popup_launcher.visible = false
+			end
+		}
+
+		grid:buttons(gears.table.join(
+				awful.button({}, 1, function()
+						root.execute_keybinding(nil, "Return")
+				end),
+				awful.button({}, 4, function()
+						chosen = chosen - 1
+						local text = widget:get_children_by_id("prompt")[1].text
+						filter(text:sub(1, -2))
+						style()
+				end),
+				awful.button({}, 5, function()
+						chosen = chosen + 1
+						local text = widget:get_children_by_id("prompt")[1].text
+						filter(text:sub(1, -2))
+						style()
+				end)
+		))
+	end
+
+	local widget = {
+		widget = wibox.container.background,
+		shape = gears.shape.rounded_rect_auto,
+		bg = "#00000030",
+		buttons = gears.table.join(
+			awful.button({}, 1, function()
+					if root.popup_launcher.visible then
+						root.execute_keybinding(nil, "Escape")
+					else
+						launcher()
+					end
+			end),
+			awful.button({}, 3, function () notify {text = "f"} end)
+		),
+		{
+			widget = wibox.widget.imagebox,
+			image = cairo.CreateImage(function(cr)
+					cr:set_source(gears.color(beautiful.wibar_icon_color))
+					shapes.transform(shapes.rounded_rect)
+						:translate(4, 4)(cr, 5, 5, 1)
+					shapes.transform(shapes.rounded_rect)
+						:translate(4, 11)(cr, 5, 5, 1)
+					shapes.transform(shapes.rounded_rect)
+						:translate(11, 4)(cr, 5, 5, 1)
+					shapes.transform(shapes.rounded_rect)
+						:translate(11, 11)(cr, 5, 5, 1)
+					cr:fill()
+			end)
+		}
+	}
+
+	awful.widget.dashboard = setmetatable(
+		{ power = popup_power.toggle, launcher = launcher },
+		{ __call = function() return widget end }
+	)
+end
 
 -- Run Commands On Startup --
 awful.spawn.run_if_installed {
@@ -340,13 +1444,18 @@ local globalkeys = gears.table.join(
 	),
 	-- Screenshot
 	awful.key(
-		{ "Mod4" }, "s", function() awful.widget.screenshot_popup() end,
+		{ "Mod4" }, "s", awful.widget.screenshot.popup,
 		{ group = "Screenshot", description = "Take A Screenshot" }
 	),
 	-- Dashboard
 	awful.key(
-		{ "Mod4" }, "q", function() awful.widget.dashboard_popup() end,
-		{ group = "Dashboard", description = "Open The Dashboard" }
+		{ "Mod4" }, "q", awful.widget.dashboard.power,
+		{ group = "Dashboard", description = "Open The Power Menu" }
+	),
+	-- Launcher
+	awful.key(
+		{ "Mod4" }, "p", awful.widget.dashboard.launcher,
+		{ group = "Launcher", description = "Open The Application Launcher" }
 	)
 )
 
@@ -454,6 +1563,9 @@ local clientbuttons = gears.table.join(
 	end)
 )
 
+
+
+-- Rules --
 awful.rules.rules = {
 	{
 		rule = {},
@@ -472,905 +1584,66 @@ awful.rules.rules = {
 }
 
 
-local widgets = {}
--- Custom Shapes --
-function gears.shape.rounded_rect_auto(cr, width, height)
-	gears.shape.rounded_rect(cr, width, height, apply_dpi(5))
-end
-
-
--- Custom Widgets --
-function awful.widget.date()
-	return {
-		widget = wibox.container.background,
-		shape = gears.shape.rounded_rect_auto,
-		bg = "#00000030",
-		{
-			widget = wibox.widget.textclock,
-			format = " %a - %d/%m/%y  %H:%M "
-		}
-	}
-end
-
-function awful.widget.volume()
-	local widget = wibox.widget {
-		widget = wibox.container.background,
-		shape = gears.shape.rounded_rect_auto,
-		bg = "#00000030",
-		buttons = gears.table.join(
-			awful.button({}, 1, function()
-					awful.spawn("pactl set-sink-mute @DEFAULT_SINK@ toggle", false)
-			end),
-			awful.button({}, 4, function()
-					awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ +1%", false)
-			end),
-			awful.button({}, 5, function()
-					awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ -1%", false)
-			end)
-		),
-		{
-			widget = wibox.container.margin,
-			layout = wibox.layout.fixed.horizontal,
-			left = apply_dpi(5),
-			right = apply_dpi(5),
-			{
-				widget = wibox.container.background,
-				{
-					widget = wibox.widget.imagebox,
-					id = "icon",
-				}
-			},
-			{
-				widget = wibox.widget.textbox,
-				id = "vol"
-			},
-			{
-				widget = wibox.widget.textbox,
-				text = " "
-			}
-		}
-	}
-
-	local icons = {
-		unmute = cairo.CreateImage(function(cr)
-				cr:set_source(gears.color(beautiful.wibar_icon_color))
-				shapes.transform(shapes.rectangle)
-					:translate(6, 8)(cr, 4, 4)
-				shapes.transform(shapes.isosceles_triangle)
-					:rotate_at(0, 0, pi / -2)
-					:translate(-14, 6)(cr, 8, 4)
-				shapes.transform(shapes.arc)
-					:translate(0, 4)(cr, 12, 12, 1, pi / -7, pi / 7, true, true)
-				shapes.transform(shapes.arc)
-					:translate(0, 3)(cr, 14, 14, 1, pi / -6, pi / 6, true, true)
-				shapes.transform(shapes.arc)
-					:translate(0, 2)(cr, 16, 16, 1, pi / -5, pi / 5, true, true)
-				cr:fill()
-		end),
-		mute = cairo.CreateImage(function(cr)
-				cr:set_source(gears.color(beautiful.wibar_icon_color))
-				shapes.transform(shapes.rectangle)
-					:translate(6, 8)(cr, 4, 4)
-				shapes.transform(shapes.isosceles_triangle)
-					:rotate_at(0, 0, pi / -2)
-					:translate(-14, 6)(cr, 8, 4)
-				shapes.transform(shapes.cross)
-					:rotate_at(0, 0, pi / 4)
-					:translate(13.5, -5)(cr, 6, 6, 1)
-				cr:fill()
-		end)
-	}
-
-	local function update()
-		local vol_regex = ""
-		for _=1, 6 do vol_regex = vol_regex .. "[^\n]*\n" end
-		local w_vol = widget:get_children_by_id("vol")[1]
-		local w_icon = widget:get_children_by_id("icon")[1]
-		awful.spawn.easy_async(
-			"pactl info",
-			function(stdout)
-				local sink = stdout:match("Default Sink: ([^\n]+)")
-				sink = sink:gsub("-", "[-]")
-				awful.spawn.easy_async(
-					"pactl list sinks",
-					function(stdout)
-						local regex = "Name: " .. sink .. vol_regex
-						local volume
-						local image
-						if stdout:match(regex .. "%s*Mute: no") then
-							image = icons.unmute
-						else
-							image = icons.mute
-						end
-						regex = regex .. "[^\n]*\n[^/]+/ *(%d+%%) */"
-						volume = stdout:match(regex)
-						widget:get_children_by_id("vol")[1].text = volume
-						widget:get_children_by_id("icon")[1].image = image
-					end
-				)
-			end
-		)
-	end
-
-	local function watch()
-		update()
-		awful.spawn.with_line_callback(
-			"pactl subscribe",
-			{
-				stdout = function(line)
-					if not line:match("'change' on sink ") then return end
-					update()
-				end,
-				exit = spawn_watcher
-			}
-		)
-	end
-
-	awful.spawn.with_line_callback(
-		"ps -C pactl -o pid=,cmd=",
-		{
-			stdout = function(line)
-				local pid = line:match("(%d+)%s+pactl subscribe")
-				if pid then
-					awful.spawn("kill -9 " .. pid, false)
-				end
-			end,
-			output_done = watch
-		}
-	)
-
-
-	return widget
-end
-
-function awful.widget.taglist_styled(s)
-	local function update(self, t)
-		local widget = self:get_children_by_id("icon")[1]
-		if t.selected then
-			widget.shape_border_color = beautiful.taglist_fg_focus
-		else
-			widget.shape_border_color = beautiful.taglist_fg_normal
-		end
-		widget.bg = next(t:clients()) and widget.shape_border_color or nil
-	end
-
-	return awful.widget.taglist {
-		screen = s,
-		filter = awful.widget.taglist.filter.all,
-		buttons = gears.table.join(
-			awful.button({}, 1, function(t) t:view_only() end),
-			awful.button({}, 3, function(t)
-					local c = client.focus
-					if c then c:move_to_tag(t) end
-			end),
-			awful.button({}, 4, function(t) awful.tag.viewidx(-1) end),
-			awful.button({}, 5, function(t) awful.tag.viewidx(1) end)
-		),
-		layout = {
-			layout = wibox.layout.fixed.horizontal,
-			spacing = apply_dpi(10)
-		},
-		widget_template = {
-			widget = wibox.container.margin,
-			margins = apply_dpi(1),
-			{
-				id = "icon",
-				widget = wibox.container.background,
-				shape = gears.shape.circle,
-				shape_border_width = apply_dpi(2),
-				forced_height = apply_dpi(15),
-				forced_width = apply_dpi(15),
-				{ widget = wibox.widget {} }
-			},
-			create_callback = update,
-			update_callback = update
-		}
-	}
-end
-
-function awful.widget.tasklist_styled(s)
-	return awful.widget.tasklist {
-		screen = s,
-		filter = awful.widget.tasklist.filter.currenttags,
-		style = { shape = gears.shape.rounded_rect_auto },
-		buttons = gears.table.join(
-			awful.button({}, 1, function(c)
-					if c == client.focus then
-						c.minimized = true
-					else
-						c:emit_signal(
-							"request::activate",
-							"tasklist",
-							{raise = true}
-						)
-					end
-			end),
-			awful.button({ }, 4, function() awful.client.focus.byidx(1) end),
-			awful.button({ }, 5, function() awful.client.focus.byidx(-1) end)
-		),
-			widget_template = {
-				widget = wibox.container.background,
-				id = "background_role",
-				{
-					widget = wibox.container.margin,
-					margins = apply_dpi(5),
-					{
-						widget = wibox.widget.imagebox,
-						id = "icon_role"
-					}
-				}
-			}
-		}
-end
-
-function awful.widget.network()
-	local icons = {
-		offline = cairo.CreateImage(function(cr)
-				cr:set_source(gears.color(beautiful.wibar_icon_color))
-				local c_start = (1.5 - 1/5) * pi
-				local c_end = (1.5 + 1/5) * pi
-				shapes.transform(shapes.pie)
-					:translate(0, 5)(cr, 20, 20, c_start, c_end)
-				cr:set_line_width(1)
-				cr:stroke()
-		end),
-		wifi = cairo.CreateImage(function(cr)
-				cr:set_source(gears.color(beautiful.wibar_icon_color))
-				local c_start = (1.5 - 1/5) * pi
-				local c_end = (1.5 + 1/5) * pi
-				shapes.transform(shapes.pie)
-					:translate(0, 5)(cr, 20, 20, c_start, c_end)
-				cr:set_line_width(1)
-				cr:fill()
-		end),
-		ethernet = cairo.CreateImage(function(cr)
-				cr:rectangle(8, 4, 3, 3)
-				cr:rectangle(5, 12, 3, 3)
-				cr:rectangle(11, 12, 3, 3)
-				cr:rectangle(9, 7, 1, 3)
-				cr:rectangle(6, 9, 1, 3)
-				cr:rectangle(12, 9, 1, 3)
-				cr:rectangle(6, 9, 6, 1)
-				cr:fill()
-		end)
-	}
-
-	local widget = wibox.widget {
-		widget = wibox.container.background,
-		shape = gears.shape.rounded_rect_auto,
-		bg = "#00000030",
-		{
-			widget = wibox.container.background,
-			layout = wibox.layout.fixed.horizontal,
-			{
-				widget = wibox.widget.imagebox,
-				id = "icon",
-			},
-			{
-				widget = wibox.widget.textbox,
-				id = "net"
-			},
-			{
-				widget = wibox.widget.textbox,
-				text = " "
-			}
-		}
-	}
-
-	gears.timer {
-		timeout = 10,
-		autostart = true,
-		call_now = true,
-		callback = function()
-			awful.spawn.easy_async(
-				"nmcli -t -f name,type connection show --active",
-				function(stdout)
-					local icon = widget:get_children_by_id("icon")[1]
-					local net = widget:get_children_by_id("net")[1]
-					if not stdout then
-						icon.image = icons.offline
-						net.text = "Offline"
-						return
-					end
-					local net_name, net_type = stdout:match("([^:]+):([^:]+)")
-					if net_type and net_type:match("-wireless") then
-						icon.image = icons.wifi
-					else
-						icon.image = icons.ethernet
-					end
-					net.text = net_name or ""
-				end
-			)
-		end
-	}
-
-	return widget
-end
-
-function awful.widget.screenshot_popup()
-	if not gears.filesystem.find_executable("import") then
-		notify{
-			title = "Cannot Take Screenshot",
-			text = "`import` (from imagemagick) isn't installed"
-		}
-		return
-	end
-
-	if root.screenshot_popup then
-		root.screenshot_popup.keygrabber:stop()
-		root.screenshot_popup.visible = false
-		root.screenshot_popup = nil
-		return
-	end
-
-	local controls = {}
-	local function template_option(text, callback)
-		return {
-			widget = wibox.container.background,
-			buttons = awful.button({}, 1, function() controls.press() end),
-			shape = gears.shape.rounded_rect_auto,
-			callback = callback,
-			id = "option",
-			{
-				widget = wibox.container.margin,
-				margins = apply_dpi(10),
-				{
-					widget = wibox.widget.textbox,
-					markup = string.format("<big><b>%s</b></big>", text),
-					align = "center",
-					valign = "center"
-				}
-			}
-		}
-	end
-
-	local function template_path()
-		return os.date("/tmp/Screenshot %d-%m-%Y %X.png")
-	end
-
-	root.screenshot_popup = awful.popup {
-		placement = awful.placement.centered,
-		border_width = beautiful.border_width,
-		border_color = beautiful.border_focus,
-		ontop = true,
-		widget = {
-			widget = wibox.container.margin,
-			margins = apply_dpi(10),
-			{
-				layout = wibox.layout.flex.horizontal,
-				spacing = apply_dpi(2.5),
-				forced_height = apply_dpi(100),
-				forced_width = apply_dpi(200),
-				template_option("Full", function()
-						local path = template_path()
-						awful.spawn.easy_async_with_shell(
-							string.format(
-								"sleep 0.05; import -window root '%s'",
-								path
-							),
-							function(_, _, _, exit_code)
-								if exit_code ~= 0 then return end
-								notify {
-									title = "Took Screenshot",
-									text = "As " .. path
-								}
-							end
-						)
-				end),
-				template_option("Partial", function()
-						local path = template_path()
-						awful.spawn.easy_async_with_shell(
-							string.format("sleep 0.05; import '%s'", path),
-							function(_, _, _, exit_code)
-								if exit_code ~= 0 then return end
-								notify {
-									title = "Took Screenshot",
-									text = "As " .. path
-								}
-							end
-						)
-				end),
-			}
-		}
-	}
-
-	root.screenshot_popup.chosen = 1
-	local opts = root.screenshot_popup.widget:get_children_by_id("option")
-
-	local function update()
-		for i, w in ipairs(opts) do
-			if i == root.screenshot_popup.chosen then
-				w.bg = "#00000030"
-				w.fg = beautiful.border_focus
-			else
-				w.bg = nil
-				w.fg = beautiful.fg_normal
-			end
-		end
-	end
-
-	function controls.press()
-		opts[root.screenshot_popup.chosen].callback()
-		awful.widget.screenshot_popup()
-	end
-
-	function controls.select_next()
-		if not (root.screenshot_popup.chosen < #opts) then return end
-		root.screenshot_popup.chosen = root.screenshot_popup.chosen + 1
-		update()
-	end
-
-	function controls.select_prev()
-		if not (root.screenshot_popup.chosen > 1) then return end
-		root.screenshot_popup.chosen = root.screenshot_popup.chosen - 1
-		update()
-	end
-
-	-- Mouse Controls
-	for i, w in ipairs(opts) do
-		w:connect_signal("mouse::enter", function()
-				root.screenshot_popup.chosen = i
-				update()
-		end)
-	end
-
-	-- Keyboard Controls
-	root.screenshot_popup.keygrabber = awful.keygrabber {
-		autostart = true,
-		keybindings = {
-			{{}, "h", controls.select_prev},
-			{{}, "l", controls.select_next},
-			{{"Control"}, "p", controls.select_prev},
-			{{"Control"}, "n", controls.select_next},
-			{{"Control"}, "g", awful.widget.screenshot_popup},
-			{{}, "Escape", awful.widget.screenshot_popup},
-			{{}, "Return", controls.press}
-		}
-	}
-
-	update()
-end
-
-function awful.widget.screenshot()
-	return {
-		widget = wibox.container.background,
-		shape = gears.shape.rounded_rect_auto,
-		bg = "#00000030",
-		buttons = awful.button({}, 1, awful.widget.screenshot_popup),
-		{
-			widget = wibox.widget.imagebox,
-			image = cairo.CreateImage(function(cr)
-					cr:set_source(gears.color(beautiful.wibar_icon_color))
-					cr:rectangle(4, 4, 4, 2)
-					cr:rectangle(4, 4, 2, 4)
-					cr:rectangle(4, 14, 4, 2)
-					cr:rectangle(4, 12, 2, 4)
-					cr:rectangle(12, 4, 4, 2)
-					cr:rectangle(14, 4, 2, 4)
-					cr:rectangle(12, 14, 4, 2)
-					cr:rectangle(14, 12, 2, 4)
-					cr:fill()
-			end)
-		}
-	}
-end
-
-function awful.widget.layout()
-	if type(awful.widget.layout) ~= "function" then
-		return awful.widget.layout
-	end
-
-	local icons = {
-		tile = cairo.CreateImage(function(cr)
-				cr:set_source(gears.color(beautiful.wibar_icon_color))
-				cr:rectangle(4, 4, 5, 12)
-				cr:rectangle(11, 4, 5, 5)
-				cr:rectangle(11, 11, 5, 5)
-				cr:fill()
-		end),
-		max = cairo.CreateImage(function(cr)
-				cr:set_source(gears.color(beautiful.wibar_icon_color))
-				cr:rectangle(4, 4, 12, 12)
-				cr:fill()
-			end),
-		float = cairo.CreateImage(function(cr)
-				cr:set_source(gears.color(beautiful.wibar_icon_color))
-				cr:rectangle(4, 4, 8, 8)
-				cr:rectangle(13, 8, 3, 8)
-				cr:rectangle(8, 13, 8, 3)
-				cr:fill()
-		end)
-	}
-
-	awful.widget.layout = wibox.widget {
-		widget = wibox.container.background,
-		shape = gears.shape.rounded_rect_auto,
-		bg = "#00000030",
-		buttons = awful.button({}, 1, function(self)
-				local layout = root.tags()[1].layout
-				if layout == awful.layout.suit.tile.right then
-					utils.layout_set(awful.layout.suit.max)
-				elseif layout == awful.layout.suit.max then
-					utils.layout_set(awful.layout.suit.floating)
-				else
-					utils.layout_set(awful.layout.suit.tile.right)
-				end
-		end),
-		{ widget = wibox.widget.imagebox }
-	}
-
-	local function update(t)
-		if t.index > 1 then return end
-		if t.layout == awful.layout.suit.tile.right then
-			awful.widget.layout:get_children()[1].image = icons.tile
-		elseif t.layout == awful.layout.suit.max then
-			awful.widget.layout:get_children()[1].image = icons.max
-		else
-			awful.widget.layout:get_children()[1].image = icons.float
-		end
-	end
-
-	update(root.tags()[1])
-	tag.connect_signal("property::layout", update)
-
-	return awful.widget.layout
-end
-
-function awful.widget.dashboard_popup()
-	if root.dashboard_popup then
-		root.dashboard_popup.keygrabber:stop()
-		root.dashboard_popup.visible = false
-		root.dashboard_popup = nil
-		return
-	end
-
-	local function template_option(image, callback)
-		return {
-			widget = wibox.container.background,
-			buttons = awful.button({}, 1, function() press.f() end),
-			callback = callback,
-			id = "opt",
-			shape = gears.shape.rounded_rect_auto,
-			{
-				widget = wibox.container.margin,
-				margins = apply_dpi(10),
-				{
-					widget = wibox.container.place,
-					halign = "center",
-					valign = "center",
-					{
-						widget = wibox.widget.imagebox,
-						image = image,
-						forced_height = apply_dpi(40),
-						forced_width = apply_dpi(40)
-					}
-				}
-			}
-		}
-	end
-
-	local function separator(orientation)
-		return wibox.widget {
-			widget = wibox.widget.separator,
-			orientation = orientation,
-			color = beautiful.fg_normal .. "10",
-			forced_width = orientation == "horizontal" and 1 or apply_dpi(30),
-			forced_height = orientation == "vertical" and 1 or apply_dpi(30)
-		}
-	end
-
-	local icons = {
-		shutdown = cairo.CreateImage(function(cr)
-				cr:set_source(gears.color(beautiful.wibar_icon_color))
-				shapes.transform(shapes.arc)
-					:translate(3, 3)(cr, 14, 14, 2, -0.4*math.pi, -0.6*math.pi)
-				shapes.transform(shapes.rounded_bar)
-					:translate(9, 1)(cr, 2, 8)
-				cr:fill()
-		end),
-		reboot = cairo.CreateImage(function(cr)
-				cr:set_source(gears.color(beautiful.wibar_icon_color))
-				shapes.transform(shapes.arc)
-					:translate(3, 3)(cr, 14, 14, 2, -0.3*math.pi, -0.7*math.pi)
-				shapes.transform(shapes.isosceles_triangle)
-					:translate(15, 2):rotate_at(15, 2, math.pi/2.75)(cr, 5, 5)
-				cr:fill()
-		end),
-		suspend = cairo.CreateImage(function(cr)
-				cr:set_source(gears.color(beautiful.wibar_icon_color))
-				shapes.transform(shapes.circle):translate(2, 2)(cr, 16, 16)
-				cr:fill()
-				cr:set_operator(cr, cairo.Operator.clear)
-				shapes.transform(shapes.circle):translate(0, 0)(cr, 12, 12)
-				cr:fill()
-		end)
-	}
-
-	root.dashboard_popup = awful.popup {
-		placement = function(p)
-			awful.placement.top_left(p, {
-					offset = { y = beautiful.wibar_height }
-			})
-		end,
-		ontop = true,
-		widget = {
-			widget = wibox.container.margin,
-			margins = apply_dpi(10),
-			{
-				widget = wibox.container.background,
-				layout = wibox.layout.grid,
-				homogeneous = false,
-				forced_num_cols = 3,
-				spacing = apply_dpi(10)
-			}
-		}
-	}
-
-	local function add_to_popup(...)
-		root.dashboard_popup.widget.widget:add_widget_at(...)
-	end
-
-	-- PFP, User, and Hostname
-	add_to_popup(wibox.widget {
-			widget = wibox.container.background,
-			shape = gears.shape.circle,
-			shape_border_width = apply_dpi(3),
-			shape_border_color = beautiful.border_focus,
-			shape_clip = true,
-			{
-				widget = wibox.container.place,
-				valign = "center",
-				halign = "center",
-				forced_height = apply_dpi(80),
-				forced_width =  apply_dpi(80),
-				{
-					widget = wibox.widget.imagebox,
-					image = beautiful.profile_picture,
-					forced_height = apply_dpi(64),
-					forced_width = apply_dpi(64),
-					resize = true,
-				}
-			}
-
-	}, 1, 1, 2, 1)
-	add_to_popup(wibox.widget{
-			widget = wibox.widget.textbox,
-			font = utils.font_size(12),
-			markup = string.format(
-				"Welcome to %s, %s",
-				utils.style(os.getenv("HOSTNAME"):upper_first(), {
-						foreground = beautiful.border_focus,
-						font_weight = "bold"
-				}),
-				utils.style(os.getenv("USER"):upper_first(), {
-						foreground = beautiful.border_focus,
-						font_weight = "bold"
-				})
-			)
-	}, 1, 2, 1, 2)
-	add_to_popup(wibox.widget{
-			widget = wibox.widget.textbox,
-			font = utils.font_size(12),
-			markup = "Hope you enjoy your stay!"
-	}, 2, 2, 1, 2)
-	add_to_popup(separator("horizontal"), 3, 1, 1, 3)
-	-- Calendar
-	add_to_popup(wibox.widget {
-			widget = wibox.container.background,
-			shape = gears.shape.rounded_rect_auto,
-			shape_border_width = beautiful.border_width,
-			shape_border_color = beautiful.fg_normal .. "10",
-			{
-				widget = wibox.container.margin,
-				margins = apply_dpi(10),
-				{
-					widget = wibox.widget.calendar.month,
-					font = beautiful.font:match("(.*) [0-9]+") .. " 13",
-					long_weekdays = true,
-					spacing = apply_dpi(10),
-					date = os.date("*t"),
-					fn_embed = function(widget, flag, date)
-						local styles = {
-							month = {
-								padding = apply_dpi(5),
-								fg = beautiful.border_focus,
-								bg = "#00000030"
-							},
-							normal = {fg = beautiful.calendar_fg_normal},
-							header = {fg = beautiful.fg_normal},
-							weekday = {},
-							focus = {}
-						}
-						if widget.text then
-							widget.align = "center"
-							widget.valign = "center"
-							if flag == "focus" or flag == "month" then
-								widget.markup = string.format(
-									"<b>%s</b>",
-									widget.text
-								)
-							end
-						end
-
-						return wibox.widget {
-							widget = wibox.container.background,
-							shape = gears.shape.rounded_rect_auto,
-							bg = styles[flag].bg,
-							fg = styles[flag].fg,
-							widget,
-						}
-					end
-				}
-			}
-
-	}, 4, 1, 1, 3)
-	add_to_popup(separator("horizontal"), 5, 1, 1, 3)
-
-	-- Power Menu
-	local power_menu = wibox.widget {
-		widget = wibox.container.background,
-		shape = gears.shape.rounded_rect_auto,
-		shape_border_width = beautiful.border_width,
-		shape_border_color = beautiful.fg_normal .. "10",
-		chosen = 1,
-		{
-			widget = wibox.container.margin,
-			margins = apply_dpi(10),
-			{
-				layout = wibox.layout.grid,
-				spacing = apply_dpi(2),
-				orientation = "horizontal",
-				expand = true,
-				template_option(icons.shutdown, function()
-						notify {text = "Shutting Down System"}
-						awful.spawn("systemctl poweroff")
-				end),
-				template_option(icons.reboot, function()
-						notify {text = "Rebooting System"}
-						awful.spawn("systemctl reboot")
-				end),
-				template_option(icons.suspend, function()
-						notify {text = "Suspending System"}
-						awful.spawn("systemctl suspend")
-				end)
-			}
-		}
-	}
-
-	local opts = power_menu:get_children_by_id("opt")
-	local controls = {}
-
-	local function update()
-		for i, w in ipairs(opts) do
-			if i == power_menu.chosen then
-				w.bg = "#00000030"
-				w.fg = beautiful.border_focus
-			else
-				w.bg = nil
-				w.fg = beautiful.fg_normal
-			end
-		end
-	end
-
-	function controls.press()
-		opts[power_menu.chosen].callback()
-	end
-
-	function controls.next()
-		if not (power_menu.chosen < #opts) then return end
-		power_menu.chosen = power_menu.chosen + 1
-		update()
-	end
-
-	function controls.prev()
-		if not (power_menu.chosen > 1) then return end
-		power_menu.chosen = power_menu.chosen - 1
-		update()
-	end
-
-	for i, w in ipairs(opts) do
-		w:connect_signal("mouse::enter", function()
-				power_menu.chosen = i
-				update()
-		end)
-	end
-
-	root.dashboard_popup.keygrabber = awful.keygrabber {
-		autostart = true,
-		keybindings = {
-			{{}, "h", controls.prev},
-			{{}, "l", controls.next},
-			{{"Control"}, "p", controls.prev},
-			{{"Control"}, "n", controls.next},
-			{{"Control"}, "g", awful.widget.dashboard_popup},
-			{{}, "Escape", awful.widget.dashboard_popup},
-			{{}, "Return", controls.press}
-		}
-	}
-
-	update()
-	root.dashboard_popup.widget.widget:add_widget_at(power_menu, 6, 1, 1, 3)
-end
-
-function awful.widget.dashboard()
-	if not (type(awful.widget.dashboard) == "function") then
-		return awful.widget.dashboard
-	end
-
-	local icon = cairo.CreateImage(function(cr)
-			cr:set_source(gears.color(beautiful.wibar_icon_color))
-			shapes.transform(shapes.rounded_rect):translate(4, 4)(cr, 5, 5, 1)
-			shapes.transform(shapes.rounded_rect):translate(4, 11)(cr, 5, 5, 1)
-			shapes.transform(shapes.rounded_rect):translate(11, 4)(cr, 5, 5, 1)
-			shapes.transform(shapes.rounded_rect):translate(11, 11)(cr, 5, 5, 1)
-			cr:fill()
-	end)
-
-	awful.widget.dashboard = {
-		widget = wibox.container.background,
-		shape = gears.shape.rounded_rect_auto,
-		bg = "#00000030",
-		buttons = awful.button({}, 1, awful.widget.dashboard_popup),
-		{
-			widget = wibox.widget.imagebox,
-			image = icon
-		}
-	}
-
-	return awful.widget.dashboard
-end
-
 
 -- Wibar --
-awful.screen.connect_for_each_screen(
-	function(s)
-			awful.tag({ "1", "2", "3", "4", "5" }, s, awful.layout.suit.tile.right)
-			s.wibar = awful.wibar { screen = s }
-			s.wibar:setup {
+awful.screen.connect_for_each_screen(function(s)
+		awful.tag({ "1", "2", "3", "4", "5" }, s, awful.layout.suit.tile.right)
+		s.wibar = awful.wibar {
+			screen = s,
+			ontop = false,
+			position = beautiful.wibar_position or "top"
+		}
+		s.wibar:setup {
+			layout = wibox.layout.align.vertical,
+			spacing = 0,
+			{ widget = wibox.container.background },
+			{
 				widget = wibox.container.margin,
-				margins = 7.5,
+				margins = apply_dpi(7.5),
 				{
 					layout = wibox.layout.align.horizontal,
 					expand = "none",
-					{ -- Left Widgets
+					{
 						layout = wibox.layout.fixed.horizontal,
-						spacing = 10,
+						spacing = apply_dpi(10),
 						awful.widget.dashboard(),
 						awful.widget.taglist_styled(s),
 						awful.widget.layout()
 					},
-					{ -- Center Widgets
+					{
 						layout = wibox.layout.fixed.horizontal,
-						spacing = 10,
 						awful.widget.tasklist_styled(s)
 					},
-					{ -- Right Widgets
+					{
 						layout = wibox.layout.fixed.horizontal,
-						spacing = 10,
-						widgets.screenshot,
+						spacing = apply_dpi(10),
 						awful.widget.screenshot(),
 						awful.widget.network(),
 						awful.widget.volume(),
 						awful.widget.date()
-					}
+					},
 				}
+			},
+			{
+				widget = wibox.container.background,
+				bg = beautiful.border_focus,
+				{
+					widget = wibox.container.constraint,
+					forced_height = beautiful.border_width
+				}
+			}
 		}
-	end
-)
+end)
 
 
 -- Sets the wallpaper
 gears.wallpaper.set(beautiful.wallpaper or "#222222")
-screen.connect_signal("property::geometry",
-	function()
+screen.connect_signal("property::geometry", function()
 		gears.wallpaper.set(beautiful.wallpaper or "#222222")
-	end
-)
+end)
 
 
-client.connect_signal(
-	"manage",
-	function(c)
+client.connect_signal("manage", function(c)
 		if c.first_tag.layout == awful.layout.suit.max then
 			c.border_width = 0
 		end
@@ -1378,8 +1651,7 @@ client.connect_signal(
 		if c.size_hints.user_position then return end
 		if c.size_hints.program_position then return end
 		awful.placement.no_offscreen(c)
-	end
-)
+end)
 
 
 client.connect_signal("focus", function(c)
@@ -1391,9 +1663,8 @@ client.connect_signal("unfocus", function(c)
 		c.border_color = beautiful.border_normal
 end)
 
-client.connect_signal(
-	"property::floating",
-	function(c)
+
+client.connect_signal("property::floating", function(c)
 		if c.floating then
 			awful.titlebar.show(c)
 			c.border_width = 0
@@ -1403,13 +1674,10 @@ client.connect_signal(
 				c.border_width = beautiful.border_width
 			end
 		end
-	end
-)
+end)
 
 
-client.connect_signal(
-	"request::titlebars",
-	function(c)
+client.connect_signal("request::titlebars", function(c)
 		local function btn_create(color, func)
 			return {
 				buttons = awful.button({}, 1, func),
@@ -1456,8 +1724,7 @@ client.connect_signal(
 				wibox.widget {}
 			}
 		}
-	end
-)
+end)
 
 
 gears.timer { -- More frequent garbage collection
