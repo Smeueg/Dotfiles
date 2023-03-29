@@ -488,7 +488,9 @@ function awful.widget.tasklist_styled(s)
 				margins = apply_dpi(5),
 				{
 					widget = wibox.widget.imagebox,
-					id = "icon_role"
+					id = "icon_role",
+					forced_height = apply_dpi(20),
+					forced_width = apply_dpi(20)
 				}
 			}
 		}
