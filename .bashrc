@@ -200,16 +200,6 @@ fetch() (
 		term=${term%% *}
 	fi
 
-	# Get the WM
-	if [ "${DESKTOP}" ] && [ "$(command -v xprop)" ]; then
-		wm=$(xprop -root -notype _NET_SUPPORTING_WM_CHECK 2>&1)
-		wm=$(xprop -id "${wm##* }" -notype -len 100 -f _NET_WM_NAME 8t 2>&1)
-		wm=${wm%\"*}
-		wm=${wm##*\"}
-	else
-		wm="Unknown"
-	fi
-
 	# The username and hostname
 	name="\033[1;33m${USER}\033[0m@\033[33m${HOSTNAME}\033[0m\n"
 
@@ -230,17 +220,16 @@ fetch() (
 	done
 
 	# Actual printing
-	printf "┌─────────────────┐\n"
-	printf "│                 │ ${name}"
-	printf "│  · ·  ·   ·  ·  ├─${underline}─\n"
-	printf "│   ·  ·  ·   ·   │ \033[1;31mOS\033[0m      ─  ${os}\n"
-	printf "│    ·      ●     │ \033[1;32mWM\033[0m      ─  ${wm}\n"
-	printf "│  ·    ·      ·  │ \033[1;33mTERM\033[0m    ─  ${term##*/}\n"
-	printf "│   ·     ·  ·    │ \033[1;34mSHELL\033[0m   ─  ${SHELL##*/}\n"
-	printf "│     ● ·  ·   ·  │ \033[1;35mEDITOR\033[0m  ─  ${EDITOR}\n"
-	printf "│  ·   ·      ·   │ \033[1;36mKERNEL\033[0m  ─  $(uname -r)\n"
-	printf "│                 │ ${colors}\n"
-	printf "└─────────────────┘\n"
+	printf "┌────────────────┐\n"
+	printf "│                │ ${name}"
+	printf "│   ·  ·   ·  ·  ├─${underline}─\n"
+	printf "│   ·      ●     │ \033[1;31mOS\033[0m      ─  ${os}\n"
+	printf "│      ·      ·  │ \033[1;33mTERM\033[0m    ─  ${term##*/}\n"
+	printf "│  ·     ·  ·    │ \033[1;34mSHELL\033[0m   ─  ${SHELL##*/}\n"
+	printf "│    ● ·  ·   ·  │ \033[1;35mEDITOR\033[0m  ─  ${EDITOR}\n"
+	printf "│     ·      ·   │ \033[1;36mKERNEL\033[0m  ─  $(uname -r)\n"
+	printf "│                │ ${colors}\n"
+	printf "└────────────────┘\n"
 )
 
 
