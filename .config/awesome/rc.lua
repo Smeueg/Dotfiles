@@ -8,6 +8,7 @@
 	TODO:
 	- Cleanup
 	- Add USEFULL comments
+	- Add animations
 --]]
 
 -- Import Libraries
@@ -67,8 +68,6 @@ beautiful.init {
 	wibar_height = apply_dpi(50),
 	wibar_icon_color = "#FABD2F",
 	wibar_position = "top",
-	-- Dashboard
-	profile_picture = os.getenv("HOME") .. "/.config/awesome/pfp.png",
 	-- Calendar
 	calendar_fg_normal = "#43413F",
 	-- Notifications
@@ -615,28 +614,6 @@ do -- awful.widget.screenshot & awful.widget.screenshot.popup
 		p.y = p.y - beautiful.border_width
 	end
 
-	local widget = {
-		widget = wibox.container.background,
-		shape = gears.shape.rounded_rect_auto,
-		bg = "#00000030",
-		buttons = awful.button({}, 1, popup),
-		{
-			widget = wibox.widget.imagebox,
-			image = cairo.CreateImage(function(cr)
-					cr:set_source(gears.color(beautiful.wibar_icon_color))
-					cr:rectangle(4, 4, 4, 2)
-					cr:rectangle(4, 4, 2, 4)
-					cr:rectangle(4, 14, 4, 2)
-					cr:rectangle(4, 12, 2, 4)
-					cr:rectangle(12, 4, 4, 2)
-					cr:rectangle(14, 4, 2, 4)
-					cr:rectangle(12, 14, 4, 2)
-					cr:rectangle(14, 12, 2, 4)
-					cr:fill()
-			end)
-		}
-	}
-
 	local popup = awful.popup {
 		placement = place,
 		ontop = true,
@@ -756,6 +733,28 @@ do -- awful.widget.screenshot & awful.widget.screenshot.popup
 			{ {"Control"}, "n", popup.next },
 			{ {"Control"}, "g", popup.toggle },
 			{ {"Control"}, "j", popup.press }
+		}
+	}
+
+	local widget = {
+		widget = wibox.container.background,
+		shape = gears.shape.rounded_rect_auto,
+		bg = "#00000030",
+		buttons = awful.button({}, 1, popup.toggle),
+		{
+			widget = wibox.widget.imagebox,
+			image = cairo.CreateImage(function(cr)
+					cr:set_source(gears.color(beautiful.wibar_icon_color))
+					cr:rectangle(4, 4, 4, 2)
+					cr:rectangle(4, 4, 2, 4)
+					cr:rectangle(4, 14, 4, 2)
+					cr:rectangle(4, 12, 2, 4)
+					cr:rectangle(12, 4, 4, 2)
+					cr:rectangle(14, 4, 2, 4)
+					cr:rectangle(12, 14, 4, 2)
+					cr:rectangle(14, 12, 2, 4)
+					cr:fill()
+			end)
 		}
 	}
 
@@ -962,7 +961,68 @@ do -- awful.widget.dashboard & awful.widget.dashboard.popup
 	popup_power.options = popup_power.widget:get_children_by_id("opt")
 	popup_power.chosen = 1
 
-	root.popup_launcher = awful.popup {
+	function popup_power:style()
+		for i, w in ipairs(self.options) do
+			w.bg = (i == self.chosen) and "#00000030" or nil
+		end
+	end
+
+	function popup_power:next()
+		if self.chosen < #self.options then
+			self.chosen = self.chosen + 1
+		end
+		self:style()
+	end
+
+	function popup_power:prev()
+		if self.chosen > 1 then
+			self.chosen = self.chosen - 1
+		end
+		self:style()
+	end
+
+	function popup_power:press()
+		self.options[self.chosen].callback()
+		self.toggle()
+	end
+
+	function popup_power:toggle()
+		if self.visible then
+			self.visible = false
+			self.keygrabber:stop()
+			return
+		end
+		self.chosen = 1
+		self.visible = true
+		self:style()
+		self.keygrabber:start()
+	end
+
+	for i, w in ipairs(popup_power.options) do
+		w:buttons(awful.button({}, 1, function() popup_power:press() end))
+		w:connect_signal("mouse::enter", function()
+				popup_power.chosen = i
+				popup_power.style()
+		end)
+	end
+
+	popup_power.keygrabber = awful.keygrabber {
+		keybindings = {
+			{ {}, "Left", function() popup_power:prev() end },
+			{ {}, "Right", function() popup_power:next() end },
+			{ {}, "Escape", function() popup_power:toggle() end },
+			{ {}, "Return", function() popup_power:press() end },
+			{ {}, "h", function() popup_power:prev() end },
+			{ {}, "l", function() popup_power:next() end },
+			{ { "Control" }, "p", function() popup_power:prev() end },
+			{ { "Control" }, "n", function() popup_power:next() end },
+			{ { "Control" }, "g", function() popup_power:toggle() end },
+			{ { "Control" }, "j", function() popup_power:press() end }
+		}
+	}
+
+	-- Launcher --
+	local popup_launcher = awful.popup {
 		placement = place,
 		ontop = true,
 		visible = false,
@@ -974,20 +1034,15 @@ do -- awful.widget.dashboard & awful.widget.dashboard.popup
 					spacing = apply_dpi(10),
 					{
 						layout = wibox.layout.fixed.horizontal,
-						spacing = apply_dpi(5),
+						spacing = apply_dpi(-10),
 						{
-							widget = wibox.container.background,
-							shape = gears.shape.rectangle,
-							shape_border_color = beautiful.border_focus,
-							shape_border_width = apply_dpi(2),
-							fg = beautiful.border_focus,
+							widget = wibox.container.margin,
+							margins = apply_dpi(10),
 							{
-								widget = wibox.container.margin,
-								margins = apply_dpi(10),
-								{
-									widget = wibox.widget.textbox,
-									markup = "<span font='12'>Run</span>"
-								}
+								widget = wibox.widget.imagebox,
+								image = icons.launcher,
+								forced_height = apply_dpi(20),
+								forced_width = apply_dpi(20),
 							}
 						},
 						{
@@ -1020,246 +1075,179 @@ do -- awful.widget.dashboard & awful.widget.dashboard.popup
 				}
 		}, { top = true, left = true })
 	}
-
-	function popup_power.style()
-		for i, w in ipairs(popup_power.options) do
-			w.bg = (i == popup_power.chosen) and "#00000030" or nil
+	popup_launcher.limit = 10
+	popup_launcher.entries = {}
+	popup_launcher.grid = popup_launcher.widget:get_children_by_id("grid")[1]
+	popup_launcher.scrollbar = popup_launcher.widget:get_children_by_id("scrollbar")[1]
+	popup_launcher.prompt = popup_launcher.widget:get_children_by_id("prompt")[1]
+	for _, e in ipairs(Gio.AppInfo.get_all()) do
+		if e:should_show() then
+			table.insert(popup_launcher.entries, {
+					appinfo = e,
+					name = e:get_name()
+						:gsub("&", "&amp;")
+						:gsub("<", "&lt;")
+						:gsub("'", "&#39;")
+			})
 		end
 	end
 
-	function popup_power.next()
-		if popup_power.chosen < #popup_power.options then
-			popup_power.chosen = popup_power.chosen + 1
+	function popup_launcher:style()
+		local childrens = self.grid:get_children()
+		local idx = self.chosen - self.scroll
+		if childrens[idx - 1] then
+			childrens[idx - 1].bg = nil
 		end
-		popup_power.style()
-	end
 
-	function popup_power.prev()
-		if popup_power.chosen > 1 then
-			popup_power.chosen = popup_power.chosen - 1
+		if childrens[idx] then
+			childrens[idx].bg = "#00000030"
 		end
-		popup_power.style()
-	end
 
-	function popup_power.press()
-		popup_power.options[popup_power.chosen].callback()
-		popup_power.toggle()
-	end
-
-	function popup_power.toggle()
-		if popup_power.visible then
-			popup_power.visible = false
-			popup_power.keygrabber:stop()
-			return
+		if childrens[idx + 1] then
+			childrens[idx + 1].bg = nil
 		end
-		popup_power.chosen = 1
-		popup_power.visible = true
-		popup_power.style()
-		popup_power.keygrabber:start()
 	end
 
-	for i, w in ipairs(popup_power.options) do
-		w:buttons(awful.button({}, 1, popup_power.press))
-		w:connect_signal("mouse::enter", function()
-				popup_power.chosen = i
-				popup_power.style()
-		end)
-	end
-
-	popup_power.keygrabber = awful.keygrabber {
-		keybindings = {
-			{ {}, "Left", popup_power.prev },
-			{ {}, "Right", popup_power.next },
-			{ {}, "Escape", popup_power.toggle },
-			{ {}, "Return", popup_power.press },
-			{ {}, "h", popup_power.prev },
-			{ {}, "l", popup_power.next },
-			{ { "Control" }, "p", popup_power.prev },
-			{ { "Control" }, "n", popup_power.next },
-			{ { "Control" }, "g", popup_power.toggle },
-			{ { "Control" }, "j", popup_power.press }
-		}
-	}
-
-	local function launcher()
-		root.popup_launcher.visible = true
-		local widget = root.popup_launcher.widget
-		local scrollbar = widget:get_children_by_id("scrollbar")[1]
-		local grid = widget:get_children_by_id("grid")[1]
-		local chosen = 1
-		local offset = 0
-		local limit = 10
-
-		-- Get Entries
-		local entries = {}
-		local entries_filtered
-		for _, e in ipairs(Gio.AppInfo.get_all()) do
-			if e:should_show() then
-				table.insert(entries, {
-						appinfo = e,
-						name = e:get_name()
-							:gsub("&", "&amp;")
-							:gsub("<", "&lt;")
-							:gsub("'", "&#39;")
-				})
+	function popup_launcher:filter(text)
+		self.entries_filtered = {}
+		for _, e in ipairs(self.entries) do
+			if e.name:lower():match(text:lower()) then
+				table.insert(self.entries_filtered, e)
 			end
 		end
 
-		local function style()
-			local childrens = grid:get_children()
-			if childrens[chosen - offset - 1] then
-				childrens[chosen - offset - 1].bg = nil
-			end
-
-			if childrens[chosen - offset] then
-				childrens[chosen - offset].bg = "#00000030"
-			end
-
-			if childrens[chosen - offset + 1] then
-				childrens[chosen - offset + 1].bg = nil
-			end
-		end
-
-		local function filter(text)
-			entries_filtered = {}
-			for _, e in ipairs(entries) do
-				if e.name:lower():match(text:lower()) then
-					table.insert(entries_filtered, e)
-				end
-			end
-
-			grid:reset()
-			local entries_filtered = {}
-			for _, e in ipairs(entries) do
-				if e.name:lower():match(text:lower()) then
-					table.insert(entries_filtered, e)
-				end
-			end
-
-			if chosen > #entries_filtered then
-				chosen = #entries_filtered
-			end
-
-			if chosen == 0 then
-				chosen = 1
-			end
-
-			if chosen < offset + 1 then
-				offset = offset - 1
-			end
-
-			if chosen > offset + limit then
-				offset = offset + 1
-			end
-
-			for i, e in ipairs(entries_filtered) do
-				if i >= offset + 1 and i <= offset + limit then
-					grid:add(
-						wibox.widget {
-							widget = wibox.container.background,
-							appinfo = e.appinfo,
+		self.grid:reset()
+		for i, e in ipairs(self.entries_filtered) do
+			if i >= self.scroll + 1 and i <= self.scroll + self.limit then
+				self.grid:add(
+					wibox.widget {
+						widget = wibox.container.background,
+						appinfo = e.appinfo,
+						{
+							widget = wibox.container.margin,
+							margins = apply_dpi(5),
 							{
-								widget = wibox.container.margin,
-								margins = apply_dpi(5),
-								{
-									widget = wibox.widget.textbox,
-									text = e.name,
-									forced_width = apply_dpi(300),
-								}
+								widget = wibox.widget.textbox,
+								text = e.name,
+								forced_width = apply_dpi(300),
 							}
 						}
-					)
-				end
+					}
+				)
 			end
-
-			scrollbar.image = nil
-			scrollbar.forced_height = nil
-			local sample = grid:get_children()[1]
-			if sample then
-				sample = sample.widget.widget
-				local w, h = sample:get_preferred_size(awful.screen.focused())
-				h = h + 10
-				local height
-				if #entries_filtered < limit then
-					height = #entries_filtered * h
-				else
-					height = limit * h
-				end
-				scrollbar.forced_height = apply_dpi(height)
-				local c = #entries_filtered / height
-				scrollbar.image = cairo.CreateImage(function(cr)
-						cr:set_source(gears.color(beautiful.fg_normal))
-						cr:rectangle(0, offset / c, 2, limit / c)
-						cr:fill(((#entries_filtered - limit) / c))
-				end, {2, height})
-			end
-			style()
 		end
 
-		filter("")
+		self.scrollbar.image = nil
+		self.scrollbar.forced_height = nil
+		local sample = self.grid:get_children()[1]
+		if sample then
+			sample = sample.widget.widget
+			local _, h = sample:get_preferred_size(awful.screen.focused())
+			h = h + 10
+			if #self.entries_filtered < self.limit then
+				h = h * #self.entries_filtered
+			else
+				h = h * self.limit
+			end
+			self.scrollbar.forced_height = apply_dpi(h)
+			local c = #self.entries_filtered / h
+			self.scrollbar.image = cairo.CreateImage(function(cr)
+					cr:set_source(gears.color(beautiful.fg_normal))
+					cr:rectangle(0, self.scroll / c, 2, self.limit / c)
+					cr:fill(((#self.entries_filtered - self.limit) / c))
+			end, {2, h})
+		end
+
+		self:style()
+	end
+
+	function popup_launcher:next()
+		if self.chosen < #self.entries_filtered then
+			self.chosen = self.chosen + 1
+		end
+
+		if self.chosen > self.scroll + self.limit then
+			self.scroll = self.scroll + 1
+		end
+	end
+
+	function popup_launcher:prev()
+		if self.chosen ~= 1 then
+			self.chosen = self.chosen - 1
+		end
+
+		if self.chosen < self.scroll + 1 then
+			self.scroll = self.scroll - 1
+		end
+	end
+
+	function popup_launcher:press(str)
+		local idx = self.chosen - self.scroll
+		local entry = self.widget:get_children_by_id("grid")[1]:get_children()[idx]
+		if entry then
+			entry.appinfo:launch()
+			notify {
+				title = "Launching Application",
+				text = entry.widget.widget.text
+			}
+		else
+			awful.spawn.with_shell(str)
+			notify {
+				title = "Running Command",
+				text = str
+			}
+		end
+	end
+
+	function popup_launcher:toggle()
+		self.visible = true
+		self.chosen = 1
+		self.scroll = 0
+		self:filter("")
 
 		awful.prompt.run {
-			textbox = widget:get_children_by_id("prompt")[1],
+			textbox = self.widget:get_children_by_id("prompt")[1],
 			bg_cursor = beautiful.fg_normal .. "80",
-			changed_callback = filter,
+			changed_callback = function(str) self:filter(str) end,
 			keypressed_callback = function(mod, key)
 				-- Controls
-				local controls = {
-					next = function() chosen = chosen + 1 end,
-					prev = function() chosen = chosen - 1 end
-				}
 				local keys = {
-					{ n = controls.next, mod = "Control" },
-					{ p = controls.prev, mod = "Control" },
-					{ Down = controls.next },
-					{ Up = controls.prev }
+					{ n = function() self:next() end, mod = "Control" },
+					{ p = function() self:prev() end, mod = "Control" },
+					{ Down = function() self:next() end },
+					{ Up = function() self:prev() end },
 				}
 				for _, k in ipairs(keys) do
 					if k[key] and (k.mod or true or mod[k.mod]) then
 						k[key]()
 					end
 				end
-				style()
+				self:style()
 			end,
 			exe_callback = function(cmd)
-				local entry = grid:get_children()[chosen - offset]
-				if entry then
-					entry.appinfo:launch()
-					notify {
-						title = "Launching Application",
-						text = tostring(entry.widget.widget.text)
-					}
-				else
-					awful.spawn.with_shell(cmd)
-					notify {
-						title = "Running Command",
-						text = cmd
-					}
-				end
+				self:press(cmd)
 			end,
 			done_callback = function()
-				root.popup_launcher.visible = false
+				self.visible = false
 			end
 		}
-
-		grid:buttons(gears.table.join(
-				awful.button({}, 1, function()
-						root.execute_keybinding(nil, "Return")
-				end),
-				awful.button({}, 4, function()
-						chosen = chosen - 1
-						local text = widget:get_children_by_id("prompt")[1].text
-						filter(text:sub(1, -2))
-						style()
-				end),
-				awful.button({}, 5, function()
-						chosen = chosen + 1
-						local text = widget:get_children_by_id("prompt")[1].text
-						filter(text:sub(1, -2))
-						style()
-				end)
-		))
 	end
+
+	popup_launcher.grid:buttons(gears.table.join(
+			awful.button({}, 1, function()
+					root.execute_keybinding(nil, "Return")
+			end),
+			awful.button({}, 4, function()
+					popup_launcher:prev()
+					popup_launcher:filter(popup_launcher.prompt.text:sub(1, -2))
+					popup_launcher:style()
+			end),
+			awful.button({}, 5, function()
+					popup_launcher:next()
+					popup_launcher:filter(popup_launcher.prompt.text:sub(1, -2))
+					popup_launcher:style()
+			end)
+	))
 
 	local widget = {
 		widget = wibox.container.background,
@@ -1267,13 +1255,19 @@ do -- awful.widget.dashboard & awful.widget.dashboard.popup
 		bg = "#00000030",
 		buttons = gears.table.join(
 			awful.button({}, 1, function()
-					if root.popup_launcher.visible then
+					if popup_launcher.visible then
 						root.execute_keybinding(nil, "Escape")
 					else
-						launcher()
+						popup_launcher:toggle()
 					end
 			end),
-			awful.button({}, 3, function () notify {text = "f"} end)
+			awful.button({}, 3, function()
+					if popup_launcher.visible then
+						root.execute_keybinding(nil, "Escape")
+					else
+						popup_power:toggle()
+					end
+			end)
 		),
 		{
 			widget = wibox.widget.imagebox,
@@ -1293,7 +1287,10 @@ do -- awful.widget.dashboard & awful.widget.dashboard.popup
 	}
 
 	awful.widget.dashboard = setmetatable(
-		{ power = popup_power.toggle, launcher = launcher },
+		{
+			power = function() popup_power:toggle() end,
+			launcher = function() popup_launcher:toggle() end
+		},
 		{ __call = function() return widget end }
 	)
 end
