@@ -985,7 +985,7 @@ do -- awful.widget.dashboard & awful.widget.dashboard.popup
 
 	function popup_power:press()
 		self.options[self.chosen].callback()
-		self.toggle()
+		self:toggle()
 	end
 
 	function popup_power:toggle()
