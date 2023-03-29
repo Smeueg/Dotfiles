@@ -669,9 +669,10 @@
   (with-eval-after-load 'evil
     (evil-define-key 'normal eglot-mode-map
       " c" '("Code Action" . eglot-code-actions)))
+
   (add-hook 'c-mode-hook (lambda ()
                            (when (executable-find "clangd")
-                             (eglot)))))
+                             (eglot-ensure)))))
 
 (use-package flymake
   :init
