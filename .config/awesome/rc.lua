@@ -1399,6 +1399,15 @@ local globalkeys = gears.table.join(
 			description = "Switch to the floating layout"
 		}
 	),
+	-- Tags
+	awful.key(
+		{ "Mod4" }, "Tab", function() awful.tag.viewidx(1) end,
+		{ group = "Tag", description = "Switch to the next tag" }
+	),
+	awful.key(
+		{ "Mod4", "Shift" }, "Tab", function() awful.tag.viewidx(-1) end,
+		{ group = "Tag", description = "Switch to the previous tag" }
+	),
 	-- Increase master width
 	awful.key(
 		{ "Mod4" }, "l", function() utils.layout_incmwfact(0.05) end,
