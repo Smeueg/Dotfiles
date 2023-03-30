@@ -1509,7 +1509,7 @@ do -- Move and resize clients using the arrow keys
 end
 
 -- Bind Keybindings to Tags
-for i = 1, 5 do
+for i = 1, beautiful.tag_amount or 5 do
 	globalkeys = gears.table.join(
 		globalkeys,
 		-- View tag only.
