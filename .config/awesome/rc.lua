@@ -1601,7 +1601,7 @@ awful.rules.rules = {
 
 -- Wibar --
 awful.screen.connect_for_each_screen(function(s)
-		awful.tag({ "1", "2", "3", "4", "5" }, s, awful.layout.suit.tile.right)
+		awful.tag({ "1", "2", "3" }, s, awful.layout.suit.tile.right)
 		s.wibar = awful.wibar {
 			screen = s,
 			ontop = false,
