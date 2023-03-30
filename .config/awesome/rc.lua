@@ -78,7 +78,7 @@ beautiful.init {
 	-- Tasklist
 	tasklist_bg_focus = "#00000030",
 	-- Launcher
-	launcher_app_margin = apply_dpi(5),
+	launcher_app_margin = apply_dpi(10),
 	launcher_limit = 10
 }
 
@@ -1156,7 +1156,7 @@ do -- awful.widget.dashboard & awful.widget.dashboard.popup
 		if sample then
 			sample = sample.widget.widget
 			local _, h = sample:get_preferred_size(awful.screen.focused())
-			h = h + beautiful.launcher_app_margin
+			h = h + beautiful.launcher_app_margin * 2
 			if #self.entries_filtered < self.limit then
 				h = h * #self.entries_filtered
 			else
