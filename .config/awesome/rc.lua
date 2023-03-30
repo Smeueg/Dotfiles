@@ -931,6 +931,12 @@ do -- awful.widget.dashboard & awful.widget.dashboard.popup
 					}
 				}
 			}
+		end,
+		sys_cmd = function(cmd)
+			if utils.check_cmd("systemctl") then
+				return "systemctl " .. cmd
+			end
+			return "loginctl " .. cmd
 		end
 	}
 
@@ -959,15 +965,15 @@ do -- awful.widget.dashboard & awful.widget.dashboard.popup
 					layout = wibox.layout.fixed.horizontal,
 					templates.power_opt("suspend", function()
 							notify { text = "Suspending System" }
-							awful.spawn("systemctl suspend")
+							awful.spawn(sys_cmd("suspend"))
 					end),
 					templates.power_opt("reboot", function()
 							notify { text = "Rebooting System" }
-							awful.spawn("systemctl reboot")
+							awful.spawn(sys_cmd("reboot"))
 					end),
 					templates.power_opt("shutdown", function()
 							notify { text = "Shutting System Down" }
-							awful.spawn("systemctl poweroff")
+							awful.spawn(sys_cmd("poweroff"))
 					end)
 				}
 		}, {top = true, left = true})
