@@ -244,6 +244,14 @@ function cairo.CreateImage(body, size)
 	return tmp.image
 end
 
+function cairo.get_rgb_as_hex(pattern)
+	local _, r, g, b = pattern:get_rgba()
+	r = math.floor(r * 255 + 0.5)
+	g = math.floor(g * 255 + 0.5)
+	b = math.floor(b * 255 + 0.5)
+	return string.format("#%02X%02X%02X", r, g, b)
+end
+
 function gears.filesystem.find_executable(executable)
 	local path
 	for dir in string.gmatch(os.getenv("PATH"), "([^:]+)") do
@@ -1681,19 +1689,27 @@ end)
 
 client.connect_signal("request::titlebars", function(c)
 		local function btn_create(color, func)
-			return {
+			local btn = wibox.widget {
 				buttons = awful.button({}, 1, func),
 				widget = wibox.container.background,
 				shape = gears.shape.circle,
-				shape_border_width = apply_dpi(4),
-				shape_border_color = color .. "90",
 				bg = color,
 				{
 					widget = wibox.container.constraint,
-					forced_height = apply_dpi(17.5),
-					forced_width = apply_dpi(17.5)
+					forced_height = apply_dpi(15),
+					forced_width = apply_dpi(15)
 				}
 			}
+
+			btn:connect_signal("mouse::enter", function()
+					btn.bg = cairo.get_rgb_as_hex(btn.bg) .. "90"
+			end)
+
+			btn:connect_signal("mouse::leave", function()
+					btn.bg = cairo.get_rgb_as_hex(btn.bg)
+			end)
+
+			return btn
 		end
 
 		awful.titlebar(c, {size = apply_dpi(40)}):setup {
@@ -1720,12 +1736,14 @@ client.connect_signal("request::titlebars", function(c)
 				btn_create(beautiful.titlebar_btn_min, function()
 						c.minimized = not c.minimized
 				end),
-				btn_create(beautiful.titlebar_btn_close,
-					function() c:kill()
+				btn_create(beautiful.titlebar_btn_close, function()
+						c:kill()
 				end),
 				wibox.widget {}
 			}
 		}
+
+
 end)
 
 
