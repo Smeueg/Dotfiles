@@ -88,9 +88,6 @@ naughty.config.spacing = apply_dpi(5)
 
 
 -- Custom Functions --
-function string:upper_first()
-	return self:sub(1, 1):upper() .. self:sub(2)
-end
 local utils = {
 	check_cmd = function(cmd)
 		for dir in string.gmatch(os.getenv("PATH"), "([^:]+)") do
@@ -160,6 +157,10 @@ local utils = {
 		return string.format("%s %i", beautiful.font:match("(.*) [0-9]+"), size)
 	end
 }
+
+function string:upper_first()
+	return self:sub(1, 1):upper() .. self:sub(2)
+end
 
 function string.style_for_pango(text, style)
 	local options = ""
