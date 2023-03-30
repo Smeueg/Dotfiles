@@ -72,7 +72,8 @@ beautiful.init {
 	calendar_fg_normal = "#43413F",
 	-- Notifications
 	notification_border_color = "#FE8019",
-	-- Taglist
+	-- Tags/Taglist
+	tag_amount = 3,
 	taglist_fg_focus = "#FABD2F",
 	taglist_fg_normal = "#504945",
 	-- Tasklist
@@ -1601,7 +1602,11 @@ awful.rules.rules = {
 
 -- Wibar --
 awful.screen.connect_for_each_screen(function(s)
-		awful.tag({ "1", "2", "3" }, s, awful.layout.suit.tile.right)
+		local tags = {}
+		for i = 1, beautiful.tag_amount or 5 do
+			tags[i] = tostring(i)
+		end
+		awful.tag(tags, s, awful.layout.suit.tile.right)
 		s.wibar = awful.wibar {
 			screen = s,
 			ontop = false,
