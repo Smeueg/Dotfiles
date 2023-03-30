@@ -965,15 +965,15 @@ do -- awful.widget.dashboard & awful.widget.dashboard.popup
 					layout = wibox.layout.fixed.horizontal,
 					templates.power_opt("suspend", function()
 							notify { text = "Suspending System" }
-							awful.spawn(sys_cmd("suspend"))
+							awful.spawn(templates.sys_cmd("suspend"))
 					end),
 					templates.power_opt("reboot", function()
 							notify { text = "Rebooting System" }
-							awful.spawn(sys_cmd("reboot"))
+							awful.spawn(templates.sys_cmd("reboot"))
 					end),
 					templates.power_opt("shutdown", function()
 							notify { text = "Shutting System Down" }
-							awful.spawn(sys_cmd("poweroff"))
+							awful.spawn(templates.sys_cmd("poweroff"))
 					end)
 				}
 		}, {top = true, left = true})
