@@ -1129,6 +1129,10 @@ do -- awful.widget.dashboard & awful.widget.dashboard.popup
 			end
 		end
 
+		if self.chosen > #self.entries_filtered then
+			self.chosen = #self.entries_filtered
+		end
+
 		self.grid:reset()
 		for i, e in ipairs(self.entries_filtered) do
 			if i >= self.scroll + 1 and i <= self.scroll + self.limit then
