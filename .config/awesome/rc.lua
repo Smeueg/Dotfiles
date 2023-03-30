@@ -76,7 +76,10 @@ beautiful.init {
 	taglist_fg_focus = "#FABD2F",
 	taglist_fg_normal = "#504945",
 	-- Tasklist
-	tasklist_bg_focus = "#00000030"
+	tasklist_bg_focus = "#00000030",
+	-- Launcher
+	launcher_app_margin = apply_dpi(5),
+	launcher_limit = 10
 }
 
 naughty.config.spacing = apply_dpi(5)
@@ -1077,7 +1080,7 @@ do -- awful.widget.dashboard & awful.widget.dashboard.popup
 				}
 		}, { top = true, left = true })
 	}
-	popup_launcher.limit = 10
+	popup_launcher.limit = beautiful.launcher_limit or 10
 	popup_launcher.entries = {}
 	popup_launcher.grid = popup_launcher.widget:get_children_by_id("grid")[1]
 	popup_launcher.scrollbar = popup_launcher.widget:get_children_by_id("scrollbar")[1]
@@ -1127,7 +1130,7 @@ do -- awful.widget.dashboard & awful.widget.dashboard.popup
 						appinfo = e.appinfo,
 						{
 							widget = wibox.container.margin,
-							margins = apply_dpi(5),
+							margins = beautiful.launcher_app_margin,
 							{
 								widget = wibox.widget.textbox,
 								text = e.name,
@@ -1145,7 +1148,7 @@ do -- awful.widget.dashboard & awful.widget.dashboard.popup
 		if sample then
 			sample = sample.widget.widget
 			local _, h = sample:get_preferred_size(awful.screen.focused())
-			h = h + 10
+			h = h + beautiful.launcher_app_margin
 			if #self.entries_filtered < self.limit then
 				h = h * #self.entries_filtered
 			else
