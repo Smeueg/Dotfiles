@@ -68,6 +68,7 @@ beautiful.init {
 	wibar_height = apply_dpi(50),
 	wibar_icon_color = "#FABD2F",
 	wibar_position = "top",
+	wibar_padding = apply_dpi(7.5),
 	-- Calendar
 	calendar_fg_normal = "#43413F",
 	-- Notifications
@@ -78,6 +79,7 @@ beautiful.init {
 	taglist_fg_normal = "#504945",
 	-- Tasklist
 	tasklist_bg_focus = "#00000030",
+	tasklist_inner_margin = apply_dpi(5),
 	-- Launcher
 	launcher_app_margin = apply_dpi(10),
 	launcher_limit = 10
@@ -1634,7 +1636,7 @@ awful.screen.connect_for_each_screen(function(s)
 			{ widget = wibox.container.background },
 			{
 				widget = wibox.container.margin,
-				margins = apply_dpi(7.5),
+				margins = apply_dpi(beautiful.wibar_padding),
 				{
 					layout = wibox.layout.align.horizontal,
 					expand = "none",
