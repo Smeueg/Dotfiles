@@ -866,8 +866,3 @@
                        (emacs . "Emacs"))))
         " "
         ,(propertize " %l:%c " 'face face))))))
-
-
-(add-to-list 'display-buffer-alist
-             '("\\*Help\\*" . ((display-buffer-pop-up-window) .
-                               ((inhibit-same-window . t)))))

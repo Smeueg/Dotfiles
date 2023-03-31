@@ -500,14 +500,23 @@ function awful.widget.tasklist_styled(s)
 			id = "background_role",
 			{
 				widget = wibox.container.margin,
-				margins = apply_dpi(5),
+				margins = apply_dpi(beautiful.tasklist_inner_margin),
 				{
-					widget = wibox.widget.imagebox,
-					id = "icon_role",
-					forced_height = apply_dpi(20),
-					forced_width = apply_dpi(20)
+					widget = wibox.container.place,
+					halign = "center",
+					{
+						widget = wibox.widget.imagebox,
+						id = "icon_role",
+					}
 				}
-			}
+			},
+			create_callback = function(self, c)
+				local client = c
+				while not client.icon_sizes[1] do
+					client = client.transient_for
+				end
+				self:get_children_by_id("icon_role")[1].image = client.icon
+			end
 		}
 	}
 end
