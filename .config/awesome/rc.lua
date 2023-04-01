@@ -15,7 +15,7 @@
 pcall(require, "luarocks.loader") -- Make sure LuaRocks packages is loaded
 require("awful.autofocus")
 local beautiful = require("beautiful")
-local apply_dpi = beautiful.xresources.apply_dpi
+local dpi = beautiful.xresources.apply_dpi
 local naughty = require("naughty")
 local notify = naughty.notify
 local gears = require("gears")
@@ -55,20 +55,20 @@ beautiful.init {
 	bg_normal = "#32302f",
 	fg_normal = "#EBDBB2",
 	-- Windows
-	border_width = apply_dpi(2),
+	border_width = dpi(2),
 	border_focus = "#FE8019",
 	border_normal = "#282828",
-	useless_gap = apply_dpi(10),
+	useless_gap = dpi(10),
 	-- Titlebar
 	titlebar_bg = "#32302f",
 	titlebar_btn_max = "#B8BB26",
 	titlebar_btn_min = "#FABD2F",
 	titlebar_btn_close = "#D65D0E",
 	-- Wibar
-	wibar_height = apply_dpi(50),
+	wibar_height = dpi(50),
 	wibar_icon_color = "#FABD2F",
 	wibar_position = "top",
-	wibar_padding = apply_dpi(7.5),
+	wibar_padding = dpi(7.5),
 	-- Calendar
 	calendar_fg_normal = "#43413F",
 	-- Notifications
@@ -79,13 +79,13 @@ beautiful.init {
 	taglist_fg_normal = "#504945",
 	-- Tasklist
 	tasklist_bg_focus = "#00000030",
-	tasklist_inner_margin = apply_dpi(5),
+	tasklist_inner_margin = dpi(5),
 	-- Launcher
-	launcher_app_margin = apply_dpi(10),
+	launcher_app_margin = dpi(10),
 	launcher_limit = 10
 }
 
-naughty.config.spacing = apply_dpi(5)
+naughty.config.spacing = dpi(5)
 
 
 
@@ -281,7 +281,7 @@ end
 
 -- Custom Shapes --
 function gears.shape.rounded_rect_auto(cr, width, height)
-	gears.shape.rounded_rect(cr, width, height, apply_dpi(5))
+	gears.shape.rounded_rect(cr, width, height, dpi(5))
 end
 
 
@@ -347,8 +347,8 @@ do -- awful.widget.volume
 		{
 			widget = wibox.container.margin,
 			layout = wibox.layout.fixed.horizontal,
-			left = apply_dpi(5),
-			right = apply_dpi(5),
+			left = dpi(5),
+			right = dpi(5),
 			{
 				widget = wibox.container.background,
 				{
@@ -455,18 +455,18 @@ function awful.widget.taglist_styled(s)
 		),
 		layout = {
 			layout = wibox.layout.fixed.horizontal,
-			spacing = apply_dpi(10)
+			spacing = dpi(10)
 		},
 		widget_template = {
 			widget = wibox.container.margin,
-			margins = apply_dpi(1),
+			margins = dpi(1),
 			{
 				id = "icon",
 				widget = wibox.container.background,
 				shape = gears.shape.circle,
-				shape_border_width = apply_dpi(2),
-				forced_height = apply_dpi(15),
-				forced_width = apply_dpi(15),
+				shape_border_width = dpi(2),
+				forced_height = dpi(15),
+				forced_width = dpi(15),
 				{ widget = wibox.widget {} }
 			},
 			create_callback = update,
@@ -500,7 +500,7 @@ function awful.widget.tasklist_styled(s)
 			id = "background_role",
 			{
 				widget = wibox.container.margin,
-				margins = apply_dpi(beautiful.tasklist_inner_margin),
+				margins = dpi(beautiful.tasklist_inner_margin),
 				{
 					widget = wibox.container.place,
 					halign = "center",
@@ -614,7 +614,7 @@ do -- awful.widget.screenshot & awful.widget.screenshot.popup
 				id = "option",
 				{
 					widget = wibox.container.margin,
-					margins = apply_dpi(10),
+					margins = dpi(10),
 					{
 						widget = wibox.widget.textbox,
 						markup = string.style_for_pango(text, { font = 12 }),
@@ -646,10 +646,10 @@ do -- awful.widget.screenshot & awful.widget.screenshot.popup
 		visible = false,
 		widget = awful.widget.border_wrapper({
 				widget = wibox.container.margin,
-				margins = apply_dpi(10),
+				margins = dpi(10),
 				{
 					layout = wibox.layout.fixed.vertical,
-					spacing = apply_dpi(10),
+					spacing = dpi(10),
 					{
 						widget = wibox.widget.textbox,
 						align = "center",
@@ -662,7 +662,7 @@ do -- awful.widget.screenshot & awful.widget.screenshot.popup
 					{
 						layout = wibox.layout.grid,
 						orientation = "horizontal",
-						spacing = apply_dpi(5),
+						spacing = dpi(5),
 						templates.option("Full", function()
 								local path = templates.path()
 								awful.spawn.easy_async_with_shell(
@@ -904,12 +904,12 @@ do -- awful.widget.dashboard & awful.widget.dashboard.popup
 				shape = gears.shape.rounded_rect_auto,
 				{
 					widget = wibox.container.margin,
-					margins = apply_dpi(5),
+					margins = dpi(5),
 					{
 						widget = wibox.widget.imagebox,
 						image = img,
-						forced_height = apply_dpi(30),
-						forced_width = apply_dpi(30)
+						forced_height = dpi(30),
+						forced_width = dpi(30)
 					}
 				}
 			}
@@ -928,7 +928,7 @@ do -- awful.widget.dashboard & awful.widget.dashboard.popup
 				shape = gears.shape.rounded_rect_auto,
 				{
 					widget = wibox.container.margin,
-					margins = apply_dpi(10),
+					margins = dpi(10),
 					{
 						widget = wibox.container.place,
 						halign = "center",
@@ -936,8 +936,8 @@ do -- awful.widget.dashboard & awful.widget.dashboard.popup
 						{
 							widget = wibox.widget.imagebox,
 							image = icons[img_id],
-							forced_height = apply_dpi(25),
-							forced_width = apply_dpi(25),
+							forced_height = dpi(25),
+							forced_width = dpi(25),
 						}
 					}
 				}
@@ -971,7 +971,7 @@ do -- awful.widget.dashboard & awful.widget.dashboard.popup
 		visible = false,
 		widget = awful.widget.border_wrapper({
 				widget = wibox.container.margin,
-				margins = apply_dpi(10),
+				margins = dpi(10),
 				{
 					layout = wibox.layout.fixed.horizontal,
 					templates.power_opt("suspend", function()
@@ -1060,21 +1060,21 @@ do -- awful.widget.dashboard & awful.widget.dashboard.popup
 		visible = false,
 		widget = awful.widget.border_wrapper({
 				widget = wibox.container.margin,
-				margins = apply_dpi(10),
+				margins = dpi(10),
 				{
 					layout = wibox.layout.fixed.vertical,
-					spacing = apply_dpi(10),
+					spacing = dpi(10),
 					{
 						layout = wibox.layout.fixed.horizontal,
-						spacing = apply_dpi(-10),
+						spacing = dpi(-10),
 						{
 							widget = wibox.container.margin,
-							margins = apply_dpi(10),
+							margins = dpi(10),
 							{
 								widget = wibox.widget.imagebox,
 								image = icons.launcher,
-								forced_height = apply_dpi(20),
-								forced_width = apply_dpi(20),
+								forced_height = dpi(20),
+								forced_width = dpi(20),
 							}
 						},
 						{
@@ -1082,7 +1082,7 @@ do -- awful.widget.dashboard & awful.widget.dashboard.popup
 							fg = beautiful.fg_normal .. "80",
 							{
 								widget = wibox.container.margin,
-								margins = apply_dpi(10),
+								margins = dpi(10),
 								{
 									widget = wibox.widget.textbox,
 									font = utils.font_size(12),
@@ -1100,7 +1100,7 @@ do -- awful.widget.dashboard & awful.widget.dashboard.popup
 						{
 							widget = wibox.widget.imagebox,
 							id = "scrollbar",
-							forced_width = apply_dpi(10),
+							forced_width = dpi(10),
 							resize = false
 						}
 					}
@@ -1165,7 +1165,7 @@ do -- awful.widget.dashboard & awful.widget.dashboard.popup
 							{
 								widget = wibox.widget.textbox,
 								text = e.name,
-								forced_width = apply_dpi(300),
+								forced_width = dpi(300),
 							}
 						}
 					}
@@ -1185,7 +1185,7 @@ do -- awful.widget.dashboard & awful.widget.dashboard.popup
 			else
 				h = h * self.limit
 			end
-			self.scrollbar.forced_height = apply_dpi(h)
+			self.scrollbar.forced_height = dpi(h)
 			local c = #self.entries_filtered / h
 			self.scrollbar.image = cairo.CreateImage(function(cr)
 					cr:set_source(gears.color(beautiful.fg_normal))
@@ -1645,13 +1645,13 @@ awful.screen.connect_for_each_screen(function(s)
 			{ widget = wibox.container.background },
 			{
 				widget = wibox.container.margin,
-				margins = apply_dpi(beautiful.wibar_padding),
+				margins = dpi(beautiful.wibar_padding),
 				{
 					layout = wibox.layout.align.horizontal,
 					expand = "none",
 					{
 						layout = wibox.layout.fixed.horizontal,
-						spacing = apply_dpi(10),
+						spacing = dpi(10),
 						awful.widget.dashboard(),
 						awful.widget.taglist_styled(s),
 						awful.widget.layout()
@@ -1662,7 +1662,7 @@ awful.screen.connect_for_each_screen(function(s)
 					},
 					{
 						layout = wibox.layout.fixed.horizontal,
-						spacing = apply_dpi(10),
+						spacing = dpi(10),
 						awful.widget.screenshot(),
 						awful.widget.network(),
 						awful.widget.volume(),
@@ -1732,8 +1732,8 @@ client.connect_signal("request::titlebars", function(c)
 				bg = color,
 				{
 					widget = wibox.container.constraint,
-					forced_height = apply_dpi(15),
-					forced_width = apply_dpi(15)
+					forced_height = dpi(15),
+					forced_width = dpi(15)
 				}
 			}
 
@@ -1748,7 +1748,7 @@ client.connect_signal("request::titlebars", function(c)
 			return btn
 		end
 
-		awful.titlebar(c, {size = apply_dpi(40)}):setup {
+		awful.titlebar(c, {size = dpi(40)}):setup {
 			layout = wibox.layout.align.horizontal,
 			wibox.widget {},
 			{
@@ -1765,7 +1765,7 @@ client.connect_signal("request::titlebars", function(c)
 			{
 				widget = wibox.container.background,
 				layout = wibox.layout.fixed.horizontal,
-				spacing = apply_dpi(10),
+				spacing = dpi(10),
 				btn_create(beautiful.titlebar_btn_max, function()
 						c.maximized = not c.maximized
 				end),
