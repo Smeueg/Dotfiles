@@ -8,6 +8,7 @@
 	TODO:
 	- Cleanup
 	- Add USEFULL comments
+	- Add a lock screen feature
 --]]
 
 -- Import Libraries
