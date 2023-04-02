@@ -681,7 +681,41 @@
               (with-eval-after-load 'evil
                 (evil-define-key 'normal flymake-mode-map
                   " n" '("Goto Next Error" . flymake-goto-next-error)
-                  " p" '("Goto Previous Error" . flymake-goto-prev-error))))))
+                  " p" '("Goto Previous Error" . flymake-goto-prev-error)))))
+  (add-hook 'flymake-mode-hook
+            (lambda ()
+              (if flymake-mode
+                  (set-window-fringes nil 8 0)
+                (set-window-fringes nil 0 0))))
+  :config
+  (let (v)
+    (setq v [
+             #b00000000
+             #b11000000
+             #b11000000
+             #b11000000
+             #b11000000
+             #b11000000
+             #b11000000
+             #b11000000
+             #b11000000
+             #b11000000
+             #b11000000
+             #b11000000
+             #b11000000
+             #b11000000
+             #b11000000
+             #b00000000
+             ])
+    (define-fringe-bitmap 'bar-error v) ;; nil nil 'center
+    (define-fringe-bitmap 'bar-warning v)
+    (define-fringe-bitmap 'bar-note v)
+    (set-fringe-bitmap-face 'bar-error 'font-lock-keyword-face)
+    (set-fringe-bitmap-face 'bar-warning 'font-lock-function-name-face)
+    (set-fringe-bitmap-face 'bar-note 'font-lock-doc-face)
+    (setq flymake-error-bitmap 'bar-error
+          flymake-warning-bitmap 'bar-warning
+          flymake-note-bitmap 'bar-note)))
 
 (use-package lua-mode
   :ensure t
