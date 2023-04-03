@@ -1562,39 +1562,6 @@ local globalkeys = gears.table.join(
 	)
 )
 
-do -- Move and resize clients using the arrow keys
-	local t = {
-		["Up"] = { 0, 10, 0, 10},
-		["Down"] = { 0, -10, 0, -10},
-		["Left"] = { -10, 0, -10, 0},
-		["Right"] = { 10, 0, 10, 0},
-	}
-
-	for direction, coords in pairs(t) do
-		clientkeys = gears.table.join(
-			clientkeys,
-			awful.key(
-				{ "Mod4" }, direction, function(c)
-					c:relative_move(coords[1], coords[2], 0, 0)
-				end,
-				{
-					group = "Client",
-					description = "Move the client " .. direction:lower()
-				}
-			),
-			awful.key(
-				{ "Mod4" }, direction, function(c)
-					c:relative_move(0, 0, coords[3], coords[4])
-				end,
-				{
-					group = "Client",
-					description = "Resize the client " .. direction:lower()
-				}
-			)
-		)
-	end
-end
-
 -- Bind Keybindings to Tags
 for i = 1, beautiful.tag_amount or 5 do
 	globalkeys = gears.table.join(
@@ -1651,6 +1618,40 @@ local clientkeys = gears.table.join(
 		{ group = "Client", description = "Move client to the current screen" }
 	)
 )
+
+do -- Move and resize clients using the arrow keys
+	local t = {
+		["Down"] = { 0, 10 },
+		["Up"] = { 0, -10 },
+		["Left"] = { -10, 0 },
+		["Right"] = { 10, 0 },
+	}
+
+	for direction, coords in pairs(t) do
+		clientkeys = gears.table.join(
+			clientkeys,
+			awful.key(
+				{ "Mod4" }, direction, function(c)
+					c:relative_move(coords[1], coords[2], 0, 0)
+				end,
+				{
+					group = "Client",
+					description = "Move the client " .. direction:lower()
+				}
+			),
+			awful.key(
+				{ "Mod4", "Shift" }, direction, function(c)
+					c:relative_move(0, 0, coords[1], coords[2])
+				end,
+				{
+					group = "Client",
+					description = "Resize the client " .. direction:lower()
+				}
+			)
+		)
+	end
+end
+
 
 local clientbuttons = gears.table.join(
 	awful.button({}, 1, function(c)
