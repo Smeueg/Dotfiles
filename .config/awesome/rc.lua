@@ -557,6 +557,7 @@ do -- awful.widget.network
 				cr:fill()
 		end),
 		ethernet = cairo.CreateImage(function(cr)
+				cr:set_source(gears.color(beautiful.wibar_icon_color))
 				cr:rectangle(8, 4, 3, 3)
 				cr:rectangle(5, 12, 3, 3)
 				cr:rectangle(11, 12, 3, 3)
