@@ -81,7 +81,11 @@ beautiful.init {
 	-- Dashboard
 	dashboard_app_margins = dpi(10),
 	dashboard_app_text_width = dpi(300),
-	dashboard_app_limit = 10
+	dashboard_app_limit = 10,
+	-- Edge Snapping
+	snap_shape = gears.shape.rectangle,
+	snap_border_width = dpi(2),
+	snap_bg = "#FE8019"
 }
 
 naughty.config.spacing = dpi(5)
@@ -1319,11 +1323,12 @@ do -- awful.widget.dashboard
 				{{}, "k", power.prev},
 				{{}, "Down", power.next},
 				{{}, "Up", power.prev},
+				{{}, "Escape", power.exit},
+				{{}, "Return", power.press},
+				{{}, "Tab", power.switch},
 				{{"Control"}, "n", power.next},
 				{{"Control"}, "p", power.prev},
-				{{}, "Escape", power.exit},
-				{{}, "Tab", power.switch},
-				{{}, "Return", power.press},
+				{{"Control"}, "g", power.exit},
 				{{"Control"}, "j", power.press}
 			}
 		}
