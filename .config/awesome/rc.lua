@@ -9,6 +9,7 @@
 	- Cleanup
 	- Add USEFULL comments
 	- Add a lock screen feature
+	- Add a hotkeys popup
 --]]
 
 -- Import Libraries
