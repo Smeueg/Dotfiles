@@ -123,6 +123,7 @@ local utils = {
 
 		for _, c in ipairs(client.get()) do
 			c.border_width = border
+			c.maximized = false
 			if show_titlebar then
 				awful.titlebar.show(c)
 			elseif not c.floating then
