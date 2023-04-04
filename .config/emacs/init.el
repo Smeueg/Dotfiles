@@ -303,11 +303,11 @@
   (define-key dirvish-mode-map "m" 'dirvish-move)
   (define-key dirvish-mode-map "." 'dired-create-empty-file)
   (define-key dirvish-mode-map "r" 'dired-do-rename)
-  (setq-default
-   dirvish-default-layout '(0 0.4 0.6)
-   dirvish-attributes '(file-time file-size)
-   dired-listing-switches "-lAh --group-directories-first"
-   dirvish-path-separators '("  ⌂" "  /" " ⋗ ")))
+  (define-key dirvish-mode-map "/" 'evil-search-forward)
+  (setq-default dirvish-default-layout '(0 0.4 0.6)
+                dirvish-attributes '(file-time file-size)
+                dired-listing-switches "-lAh --group-directories-first"
+                dirvish-path-separators '("  ⌂" "  /" " ⋗ ")))
 
 (use-package which-key
   :ensure t
