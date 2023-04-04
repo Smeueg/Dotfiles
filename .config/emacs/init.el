@@ -117,6 +117,7 @@
     (message "Won't resize ONLY buffer")))
 
 
+
 ;;; HOOKS
 (add-hook 'before-save-hook #'delete-trailing-whitespace)
 
@@ -317,6 +318,12 @@
 (use-package magit
   :ensure t
   :commands magit
+  :init
+  (add-hook 'text-mode-hook
+            (lambda ()
+              (let ((buffer-name (file-name-base (or (buffer-file-name) ""))))
+                (when (string= "COMMIT_EDITMSG" buffer-name)
+                  (flyspell-mode 1)))))
   :config
   ;; Use '~/' as the working tree and '~/.local/dots' as the git directory when
   ;; modifying a file that's inside '~/'.
