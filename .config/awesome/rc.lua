@@ -383,46 +383,36 @@ do -- awful.widget.volume
 			}
 		}
 	}
+	widget.vol = widget:get_children_by_id("vol")[1]
+	widget.icon = widget:get_children_by_id("icon")[1]
 
-	local function update()
-		local vol_regex = ""
-		for _=1, 6 do vol_regex = vol_regex .. "[^\n]*\n" end
-		local w_vol = widget:get_children_by_id("vol")[1]
-		local w_icon = widget:get_children_by_id("icon")[1]
-		awful.spawn.easy_async(
-			"pactl info",
-			function(stdout)
-				local sink = stdout:match("Default Sink: ([^\n]+)")
-				sink = sink:gsub("-", "[-]")
-				awful.spawn.easy_async(
-					"pactl list sinks",
-					function(stdout)
-						local regex = "Name: " .. sink .. vol_regex
-						local volume
-						local image
-						if stdout:match(regex .. "%s*Mute: no") then
-							image = icons.unmute
-						else
-							image = icons.mute
-						end
-						regex = regex .. "[^\n]*\n[^/]+/ *(%d+%%) */"
-						volume = stdout:match(regex)
-						widget:get_children_by_id("vol")[1].text = volume
-						widget:get_children_by_id("icon")[1].image = image
-					end
-				)
-			end
-		)
+	local vol_regex = ""
+	for _=1, 6 do vol_regex = vol_regex .. "[^\n]*\n" end
+
+	local function parse_sinks(input)
+		if input:match(widget.regex .. "%s*Mute: no") then
+			widget.icon.image = icons.unmute
+		else
+			widget.icon.image = icons.mute
+		end
+
+		widget.vol.text = input:match(widget.regex.."[^\n]*\n[^/]+/ *(%d+%%) */")
+	end
+
+	local function parse_info(input)
+		local sink = input:match("Default Sink: ([^\n]+)"):gsub("-", "[-]")
+		widget.regex = "Name: " .. sink .. vol_regex
+		awful.spawn.easy_async("pactl list sinks", parse_sinks)
 	end
 
 	local function watch()
-		update()
+		awful.spawn.easy_async("pactl info", parse_info)
 		awful.spawn.with_line_callback(
 			"pactl subscribe",
 			{
 				stdout = function(line)
 					if not line:match("'change' on sink ") then return end
-					update()
+					awful.spawn.easy_async("pactl info", parse_info)
 				end,
 				exit = spawn_watcher
 			}
