@@ -95,7 +95,8 @@ alias rm="rm -i"
 alias cp="cp -i"
 alias ip="ip --color=auto"
 alias dit="git --git-dir=${HOME}/.local/dots --work-tree=${HOME}"
-alias smeuesic="sh <(curl -sNL https://raw.githubusercontent.com/Smeueg/ytpl-sync/main/ytpl-sync) --url  'https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc'"
+alias smeuesic="sh <(curl -sNL https://raw.githubusercontent.com/Smeueg/ytpl-sync/main/ytpl-sync) --url 'https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc'"
+alias ytpl="sh <(curl -sNL https://raw.githubusercontent.com/Smeueg/ytpl-sync/main/ytpl-sync)"
 
 
 # FUNCTIONS #
