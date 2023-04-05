@@ -426,6 +426,7 @@
   (add-to-list 'evil-emacs-state-modes 'dired-mode)
   (add-hook 'dired-mode-hook
             (lambda () (setq-local evil-emacs-state-cursor '(bar . 0))))
+  (evil-define-key '(normal motion visual) 'global " " nil)
   (evil-define-key 'normal prog-mode-map
     "gc" '("(Un)Comment Line" . comment-line))
   (evil-define-key 'visual prog-mode-map
@@ -440,10 +441,15 @@
     [?\M-j] (lambda () (interactive) (evil-normal-state 1) (evil-next-line))
     [?\M-k] (lambda () (interactive) (evil-normal-state 1) (evil-previous-line))
     [?\M-l] (lambda () (interactive) (evil-normal-state 1) (evil-forward-char)))
+  (dolist (command '(evil-window-top evil-window-bottom))
+    (advice-add command :after 'evil-scroll-line-to-center))
+  (advice-add 'evil-window-top :after 'evil-scroll-line-to-center)
+  (advice-add 'evil-window-bottom :after 'evil-scroll-line-to-center)
   (evil-define-key '(normal motion visual emacs) 'global
     ":" 'execute-extended-command)
-  (evil-define-key '(normal motion visual) 'global " " nil)
-  (evil-define-key '(normal motion visual) prog-mode-map
+  (evil-define-key 'visual 'global
+    " a" '("Mark Whole Buffer" . mark-whole-buffer))
+  (evil-define-key 'normal prog-mode-map
     "  " '("Run/Execute current buffer" . run))
   (evil-define-key '(normal motion) 'global
     [?\C-\S-j] (lambda () (interactive) (text-scale-decrease 0.5))
@@ -454,8 +460,7 @@
                             (if (fboundp 'dirvish) (dirvish) (dired))))
     " r" '("Resize Mode" . resize-window)
     " b" '("Switch Buffer" . switch-to-buffer)
-    " f" '("Open File" . find-file)
-    " a" '("Mark Whole Buffer" . mark-whole-buffer)
+    " o" '("Open File" . find-file)
     " h" '("Open Help Menu" . help)
     " l" '("Toggle Line Numbers" . global-display-line-numbers-mode)
     " W" '("Toggle Line Wrapping" . visual-line-mode)
