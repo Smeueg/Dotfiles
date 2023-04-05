@@ -77,13 +77,15 @@
           (pair nil) (chosen nil) (cmd nil) (func nil))
       (setq
        pair
-       `((c++-mode (:cmd ,(format "g++ %s -o %s && %s" file bin bin)))
+       `((rust-mode (:cmd "cargo run"))
+         (c++-mode (:cmd ,(format "g++ %s -o %s && %s" file bin bin)))
          (c-mode (:cmd ,(format "cc %s -o %s && %s" file bin bin)))
          (mhtml-mode (:cmd ,(format "xdg-open %s" file)))
          (python-mode (:cmd ,(format "python3 %s" file)))
          (lua-mode (:cmd ,(format "lua %s" file)))
          (sh-mode (:cmd ,file)
                   (:func executable-make-buffer-file-executable-if-script-p))))
+
       (setq chosen (cdr (assoc major-mode pair)))
       (setq cmd (cadr (assq :cmd chosen)))
       (setq func (cadr (assq :func chosen)))
@@ -673,47 +675,59 @@
 (use-package eglot
   :ensure t
   :init
+  (setq eglot-autoshutdown t)
+  (dolist (hook '(c-mode-hook rust-mode-hook))
+    (add-hook hook #'eglot-ensure))
   (with-eval-after-load 'evil
     (evil-define-key 'normal eglot-mode-map
-      " c" '("Code Action" . eglot-code-actions)))
+      " cr" '("Rename Symbol" . eglot-rename)
+      " ca" '("Code Action" . eglot-code-actions)))
+  :config
+  (add-to-list 'eglot-server-programs
+               '(rust-mode . ("rustup" "run" "stable" "rust-analyzer"))))
 
-  (add-hook 'c-mode-hook (lambda ()
-                           (when (executable-find "clangd")
-                             (eglot-ensure)))))
+(use-package xref
+  :init
+  (with-eval-after-load 'evil
+    (evil-define-key 'normal 'global
+      " fd" '("Find Definition" . xref-find-definitions))))
 
 (use-package flymake
   :init
-  (add-hook 'after-init-hook
-            (lambda ()
-              (with-eval-after-load 'evil
-                (evil-define-key 'normal flymake-mode-map
-                  " n" '("Goto Next Error" . flymake-goto-next-error)
-                  " p" '("Goto Previous Error" . flymake-goto-prev-error)))))
+  (defun flymake-diagnostic-at-point ()
+    "Display the flymake's diagnostic at point on the minibuffer"
+    (interactive)
+    (let ((diagnostic (get-char-property (point) 'flymake-diagnostic)))
+      (when diagnostic
+        (message (flymake--diag-text diagnostic)))))
+
   (add-hook 'flymake-mode-hook
             (lambda ()
               (if flymake-mode
                   (set-window-fringes nil 8 0)
                 (set-window-fringes nil 0 0))))
   :config
-  (let (v)
-    (setq v [
-             #b00000000
-             #b11000000
-             #b11000000
-             #b11000000
-             #b11000000
-             #b11000000
-             #b11000000
-             #b11000000
-             #b11000000
-             #b11000000
-             #b11000000
-             #b11000000
-             #b11000000
-             #b11000000
-             #b11000000
-             #b00000000
-             ])
+  (with-eval-after-load 'evil
+    (evil-define-key 'normal 'flymake-mode-map
+      " fn" '("Goto Next Error" . flymake-goto-next-error)
+      " fp" '("Goto Previous Error" . flymake-goto-prev-error)
+      " fs" '("Show Diagnostics" . flymake-diagnostic-at-point)))
+  (let ((v [#b00000000
+            #b11000000
+            #b11000000
+            #b11000000
+            #b11000000
+            #b11000000
+            #b11000000
+            #b11000000
+            #b11000000
+            #b11000000
+            #b11000000
+            #b11000000
+            #b11000000
+            #b11000000
+            #b11000000
+            #b00000000]))
     (define-fringe-bitmap 'bar-error v) ;; nil nil 'center
     (define-fringe-bitmap 'bar-warning v)
     (define-fringe-bitmap 'bar-note v)
@@ -723,6 +737,13 @@
     (setq flymake-error-bitmap 'bar-error
           flymake-warning-bitmap 'bar-warning
           flymake-note-bitmap 'bar-note)))
+
+(use-package flymake-shellcheck
+  :ensure t
+  :commands flymake-shellcheck-load
+  :init
+  (setq flymake-shellcheck-use-file t)
+  (add-hook 'sh-mode-hook 'flymake-shellcheck-load))
 
 (use-package lua-mode
   :ensure t
@@ -757,31 +778,30 @@
   (add-hook 'emacs-lisp-mode-hook
 			(lambda () (setq-local indent-tabs-mode nil))))
 
-(use-package flymake-diagnostic-at-point
-  :ensure t
-  :after flymake
-  :config
-  (setq flymake-diagnostic-at-point-display-diagnostic-function
-        'flymake-diagnostic-at-point-display-minibuffer)
-  (add-hook 'flymake-mode-hook #'flymake-diagnostic-at-point-mode))
-
 (use-package prog-mode
   :init
   (add-hook 'prog-mode-hook ;; Disable wrap
             (lambda () (visual-line-mode 0))))
-
-(use-package flymake-shellcheck
-  :ensure t
-  :commands flymake-shellcheck-load
-  :init
-  (setq flymake-shellcheck-use-file t)
-  (add-hook 'sh-mode-hook 'flymake-shellcheck-load))
 
 (use-package python
   :init
   (setq python-indent-guess-indent-offset nil)
   (add-hook 'python-mode-hook
             (lambda () (setq tab-width (default-value 'tab-width)))))
+
+(use-package rust-mode
+  :ensure t
+  :init
+  (add-hook 'rust-mode-hook
+            (lambda ()
+              (setq-local indent-tabs-mode nil)))
+  :config
+  (with-eval-after-load 'evil
+    (evil-define-key 'normal 'rust-mode-map
+      " cf" 'rust-format-buffer
+      " cc" 'rust-compile
+      " ck" 'rust-check
+      " ct" 'rust-toggle-mutability)))
 
 ;;; MISC
 (use-package bongo
