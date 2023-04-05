@@ -177,6 +177,17 @@
   :init
   (add-hook 'after-init-hook 'vertico-mode))
 
+(use-package avy
+  :ensure t
+  :init
+  (add-hook 'after-init-hook
+            (lambda ()
+              (with-eval-after-load 'evil
+                (evil-define-key '(normal motion) 'global
+                  " ag" 'avy-goto-char-2
+                  " an" 'avy-next
+                  " ap" 'avy-prev)))))
+
 (use-package marginalia
   :ensure t
   :init
