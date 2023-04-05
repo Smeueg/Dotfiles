@@ -116,7 +116,7 @@
            ((equal key [?k]) (call-interactively 'enlarge-window))
            ((equal key [?l]) (call-interactively 'enlarge-window-horizontally))
            ((equal key [?\C-g]) (keyboard-quit) (message "")))))
-    (message "Won't resize ONLY buffer")))
+    (message "Won't resize ONLY window")))
 
 
 
