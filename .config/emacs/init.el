@@ -393,6 +393,9 @@
                '("\\*Help\\*" display-buffer-pop-up-window)
                '("magit-diff:*" display-buffer-pop-up-window)))
 
+(use-package auth-source
+  :init
+  (setq auth-source-save-behavior nil))
 
 ;;; CONTROLS
 (define-key key-translation-map [?\C-h] [?\C-?])
