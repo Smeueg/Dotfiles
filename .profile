@@ -5,7 +5,7 @@ export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:="$HOME/.config"}
 export XDG_DESKTOP_DIR="${HOME}"
 
 # Add directories to PATH if they don't exist already
-for dir in /sbin/ "${HOME}"/.local/bin/; do
+for dir in /sbin/ "${HOME}"/.local/bin/ "${HOME}"/.local/share/cargo/bin; do
 	[ "${PATH##*${dir%/}*}" ] || continue
 	PATH="${dir%/}:${PATH}"
 done
@@ -31,6 +31,9 @@ if [ ! -d "${GNUPGHOME}" ]; then
 	mkdir -pv "${GNUPGHOME}"
 	chmod 700 "${GNUPGHOME}" # Set 700 for directories
 fi
+
+# Rust
+export RUSTUP_HOME="${HOME}/.local/share/rustup"
 
 # Java
 export _JAVA_AWT_WM_NONREPARENTING=1
