@@ -187,7 +187,7 @@
             (lambda ()
               (with-eval-after-load 'evil
                 (evil-define-key '(normal motion) 'global
-                  " ag" 'avy-goto-char-2
+                  " aj" 'avy-goto-char-2
                   " an" 'avy-next
                   " ap" 'avy-prev)))))
 
