@@ -140,7 +140,6 @@
 (setq use-package-always-defer t)
 
 
-
 ;;; LIFE IMPROVEMENTS
 (electric-pair-mode 1) ;; Auto pairs
 (global-auto-revert-mode 1) ;; Autorefresh buffers
@@ -320,7 +319,10 @@
   (define-key dirvish-mode-map "m" 'dirvish-move)
   (define-key dirvish-mode-map "." 'dired-create-empty-file)
   (define-key dirvish-mode-map "r" 'dired-do-rename)
-  (define-key dirvish-mode-map "/" 'evil-search-forward)
+  (with-eval-after-load 'evil
+    (define-key dirvish-mode-map "/" 'evil-search-forward)
+    (define-key dirvish-mode-map "n" 'evil-search-next)
+    (define-key dirvish-mode-map "N" 'evil-search-previous))
   (setq-default dirvish-default-layout '(0 0.4 0.6)
                 dirvish-attributes '(file-time file-size)
                 dired-listing-switches "-lAh --group-directories-first"
