@@ -118,6 +118,10 @@
            ((equal key [?\C-g]) (keyboard-quit) (message "")))))
     (message "Won't resize ONLY window")))
 
+(defun scratch ()
+  "Switch to the a scratch buffer"
+  (interactive)
+  (switch-to-buffer "*scratch*"))
 
 
 ;;; HOOKS
