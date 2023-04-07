@@ -118,11 +118,6 @@
            ((equal key [?\C-g]) (keyboard-quit) (message "")))))
     (message "Won't resize ONLY window")))
 
-(defun scratch ()
-  "Switch to the a scratch buffer"
-  (interactive)
-  (switch-to-buffer "*scratch*"))
-
 (defun define-key-convenient (mode-map key fn &rest args)
   (define-key mode-map key fn)
   (while args
@@ -134,6 +129,12 @@
 
 ;;; HOOKS
 (add-hook 'before-save-hook #'delete-trailing-whitespace)
+(add-hook 'buffer-list-update-hook ;; Always have `*scratch*' ready to go
+          (lambda ()
+            (let ((buffer "*scratch*"))
+              (unless (get-buffer buffer)
+                (generate-new-buffer buffer)
+                (set-buffer-major-mode (get-buffer buffer))))))
 
 
 
