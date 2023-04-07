@@ -102,70 +102,27 @@ local utils = {
 			end
 		end
 		return false
-	end,
-	layout_set = function(layout)
-		local layouts = awful.layout.suit
-		local gap = 0
-		local border = 0
-		local show_titlebar = false
-
-		if layout == layouts.tile.right then
-			gap = beautiful.useless_gap
-			border = beautiful.border_width
-		elseif layout == layouts.floating then
-			show_titlebar = true
-		end
-
-		for _, t in ipairs(root.tags()) do
-			awful.layout.set(layout, t)
-			t.useless_gap = gap
-		end
-
-		for _, c in ipairs(client.get()) do
-			c.border_width = border
-			c.maximized = false
-			if show_titlebar then
-				awful.titlebar.show(c)
-			elseif not c.floating then
-				awful.titlebar.hide(c)
-			end
-		end
-	end,
-	layout_incmwfact = function(factor)
-		if awful.layout.get() ~= awful.layout.suit.tile.right then return end
-		for _, t in ipairs(root.tags()) do awful.tag.incmwfact(factor, t) end
-	end,
-	launch = function(name, cmd)
-		notify { title = "Launching Application", text = name }
-		awful.spawn(cmd, {
-				tag = awful.screen.focused().selected_tag
-		})
-	end,
-	style = function(str, markup)
-		local str_style = ""
-		local function check_and_add(attr)
-			if markup[attr] then
-				str_style = string.format(
-					"%s %s='%s'",
-					str_style,
-					attr,
-					markup[attr]
-				)
-			end
-		end
-		local styles = {
-			"foreground",
-			"background",
-			"font_weight",
-			"font_size"
-		}
-		for _, v in ipairs(styles) do check_and_add(v) end
-		return string.format("<span%s>%s</span>", str_style, str)
-	end,
-	font_size = function(size)
-		return string.format("%s %i", beautiful.font:match("(.*) [0-9]+"), size)
 	end
 }
+
+function awful.spawn.launch(name, cmd)
+	notify { title = "Launching Application", text = name }
+	awful.spawn(cmd, {
+			tag = awful.screen.focused().selected_tag
+	})
+end
+
+-- Sets a layout for every tag
+function awful.layout.set_all(layout)
+	for _, t in ipairs(root.tags()) do
+		awful.layout.set(layout, t)
+	end
+end
+
+function awful.layout.incmwf_all(factor)
+	if awful.layout.get() ~= awful.layout.suit.tile.right then return end
+	for _, t in ipairs(root.tags()) do awful.tag.incmwfact(factor, t) end
+end
 
 function string:upper_first()
 	return self:sub(1, 1):upper() .. self:sub(2)
@@ -831,11 +788,11 @@ do -- awful.widget.layout
 		buttons = awful.button({}, 1, function(self)
 				local layout = root.tags()[1].layout
 				if layout == awful.layout.suit.tile.right then
-					utils.layout_set(awful.layout.suit.max)
+					awful.layout.set_all(awful.layout.suit.max)
 				elseif layout == awful.layout.suit.max then
-					utils.layout_set(awful.layout.suit.floating)
+					awful.layout.set_all(awful.layout.suit.floating)
 				else
-					utils.layout_set(awful.layout.suit.tile.right)
+					utils.layout.set_all(awful.layout.suit.tile.right)
 				end
 		end),
 		{ widget = wibox.widget.imagebox }
@@ -1447,7 +1404,7 @@ local globalkeys = gears.table.join(
 	-- Layout
 	awful.key(
 		{ "Mod4" }, "t", function()
-			utils.layout_set(awful.layout.suit.tile.right)
+			awful.layout.set_all(awful.layout.suit.tile.right)
 		end,
 		{
 			group = "Layout",
@@ -1456,7 +1413,7 @@ local globalkeys = gears.table.join(
 	),
 	awful.key(
 		{ "Mod4" }, "m", function()
-			utils.layout_set(awful.layout.suit.max)
+			awful.layout.set_all(awful.layout.suit.max)
 		end,
 		{
 			group = "Layout",
@@ -1465,7 +1422,7 @@ local globalkeys = gears.table.join(
 	),
 	awful.key(
 		{ "Mod4" }, "f", function()
-			utils.layout_set(awful.layout.suit.floating)
+			awful.layout.set_all(awful.layout.suit.floating)
 		end,
 		{
 			group = "Layout",
@@ -1483,12 +1440,12 @@ local globalkeys = gears.table.join(
 	),
 	-- Increase master width
 	awful.key(
-		{ "Mod4" }, "l", function() utils.layout_incmwfact(0.05) end,
+		{ "Mod4" }, "l", function() awful.layout.incmwf_all(0.05) end,
 		{ group = "Layout", description = "Increase the master width factor" }
 	),
 	-- Decrease master width
 	awful.key(
-		{ "Mod4" }, "h", function() utils.layout_incmwfact(-0.05) end,
+		{ "Mod4" }, "h", function() awful.layout.incmwf_all(-0.05) end,
 		{ group = "Layout", description = "Decrease the master width factor" }
 	),
 	-- Awesome Functions
@@ -1504,7 +1461,7 @@ local globalkeys = gears.table.join(
 	awful.key(
 		{ "Mod4" }, "Return",
 		function()
-			utils.launch("Emacs", "emacs --internal-border=20")
+			awful.spawn.launch("Emacs", "emacs --internal-border=20")
 		end,
 		{ group = "Application", description = "Launch Emacs"}
 	),
@@ -1514,7 +1471,7 @@ local globalkeys = gears.table.join(
 			local AppInfo = Gio.AppInfo
 			local app = AppInfo.get_default_for_type("text/html")
 			if app then
-				utils.launch(AppInfo.get_name(app), AppInfo.get_executable(app))
+				awful.spawn.launch(AppInfo.get_name(app), AppInfo.get_executable(app))
 			else
 				notify {
 					title = "Error",
@@ -1840,6 +1797,31 @@ client.connect_signal("request::titlebars", function(c)
 
 end)
 
+tag.connect_signal("property::layout", function(t)
+		local titlebar_show = false
+		local border = 0
+
+		if t.layout == awful.layout.suit.tile.right then
+			t.useless_gap = beautiful.useless_gap
+			border = beautiful.border_width
+		else
+			t.useless_gap = 0
+		end
+
+		if t.layout == awful.layout.suit then
+			titlebar_show = true
+		end
+
+		for _, c in ipairs(t:clients()) do
+			c.border_width = border
+			c.maximized = false
+			if titlebar_show then
+				awful.titlebar.show(c)
+			elseif not c.floating then
+				awful.titlebar.hide(c)
+			end
+		end
+end)
 
 gears.timer { -- More frequent garbage collection
 	timeout = 30,
