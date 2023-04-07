@@ -241,14 +241,6 @@ function root.execute_keybinding(modifiers, key)
 	end
 end
 
-function root.type(str)
-	for i=1, #str do
-		local c = str:sub(i, i)
-		root.fake_input("key_press", c)
-		root.fake_input("key_release", c)
-	end
-end
-
 function cairo.CreateImage(body, size)
 	local tmp = {}
 	local size = size
