@@ -247,15 +247,11 @@
     [?\C-\\?\C-n] 'term-line-mode
     [?\C-\S-v] (lambda ()
                  (interactive)
-                 "Paste from the clipboard to `ansi-term'"
                  (term-send-raw-string
-                  (gui-get-selection 'CLIPBOARD 'UTF8_STRING))))
-
+                  (or (gui-get-selection 'CLIPBOARD 'UTF8_STRING) ""))))
   (advice-add 'term-handle-exit :after
               (lambda (&rest r)
-                "Close the terminal on exit"
                 (kill-buffer)))
-
   (add-hook 'term-mode-hook
             (lambda ()
               (display-line-numbers-mode 0)
