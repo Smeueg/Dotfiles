@@ -80,7 +80,7 @@
        `((rust-mode (:cmd "cargo run"))
          (c++-mode (:cmd ,(format "g++ %s -o %s && %s" file bin bin)))
          (c-mode (:cmd ,(format "cc %s -o %s && %s" file bin bin)))
-         (mhtml-mode (:cmd ,(format "xdg-open %s" file)))
+         (mhtml-mode (:cmd ,(format "xdg-open %s; exit" file)))
          (python-mode (:cmd ,(format "python3 %s" file)))
          (lua-mode (:cmd ,(format "lua %s" file)))
          (sh-mode (:cmd ,file)
