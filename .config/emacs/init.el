@@ -360,6 +360,7 @@
                 (when (string= "COMMIT_EDITMSG" buffer-name)
                   (flyspell-mode 1)))))
   :config
+  (define-key magit-diff-mode-map "e" nil)
   ;; Use '~/' as the working tree and '~/.local/dots' as the git directory when
   ;; modifying a file that's inside '~/'.
   (advice-add
