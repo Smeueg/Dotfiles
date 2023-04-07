@@ -124,8 +124,7 @@
     (setq key (car args)
           fn (cadr args)
           args (cddr args))
-    (define-key mode-map key fn)
-    (print (format "%s: %s" key (symbol-name fn)))))
+    (define-key mode-map key fn)))
 
 ;;; HOOKS
 (add-hook 'before-save-hook #'delete-trailing-whitespace)
