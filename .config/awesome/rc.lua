@@ -137,7 +137,9 @@ local utils = {
 	end,
 	launch = function(name, cmd)
 		notify { title = "Launching Application", text = name }
-		awful.spawn(cmd)
+		awful.spawn(cmd, {
+				tag = awful.screen.focused().selected_tag
+		})
 	end,
 	style = function(str, markup)
 		local str_style = ""
