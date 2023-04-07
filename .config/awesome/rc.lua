@@ -1184,7 +1184,6 @@ do -- awful.widget.dashboard
 		launcher.chosen = 1
 		launcher.offset = 0
 		launcher.limit = beautiful.dashboard_app_limit
-		launcher.filter("")
 		awful.prompt.run {
 			textbox = popup.launcher.textbox,
 			bg_cursor = beautiful.fg_normal,
@@ -1215,6 +1214,7 @@ do -- awful.widget.dashboard
 			end,
 			exe_callback = launcher.press
 		}
+		launcher.filter("")
 	end
 
 	popup.launcher.grid:buttons(gears.table.join(
