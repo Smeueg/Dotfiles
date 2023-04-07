@@ -871,6 +871,13 @@
   :config
   (defalias 'bongo 'bongo-playlist))
 
+(use-package help
+  :config
+  (with-eval-after-load 'evil
+    (evil-define-key '(motion) help-mode-map
+      [return] #'push-button
+      " n" #'forward-button
+      " p" #'backward-button)))
 
 ;;; CUSTOM SPLASH SCREEN
 (defun splash-align ()
