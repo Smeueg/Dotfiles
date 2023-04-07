@@ -346,13 +346,22 @@ do -- awful.widget.volume
 		bg = "#00000030",
 		buttons = gears.table.join(
 			awful.button({}, 1, function()
-					awful.spawn("pactl set-sink-mute @DEFAULT_SINK@ toggle", false)
+					awful.spawn(
+						"pactl set-sink-mute @DEFAULT_SINK@ toggle",
+						false
+					)
 			end),
 			awful.button({}, 4, function()
-					awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ +1%", false)
+					awful.spawn(
+						"pactl set-sink-volume @DEFAULT_SINK@ +1%",
+						false
+					)
 			end),
 			awful.button({}, 5, function()
-					awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ -1%", false)
+					awful.spawn(
+						"pactl set-sink-volume @DEFAULT_SINK@ -1%",
+						false
+					)
 			end)
 		),
 		{
