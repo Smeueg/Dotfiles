@@ -123,6 +123,14 @@
   (interactive)
   (switch-to-buffer "*scratch*"))
 
+(defun define-key-convenient (mode-map key fn &rest args)
+  (define-key mode-map key fn)
+  (while args
+    (setq key (car args)
+          fn (cadr args)
+          args (cddr args))
+    (define-key mode-map key fn)
+    (print (format "%s: %s" key (symbol-name fn)))))
 
 ;;; HOOKS
 (add-hook 'before-save-hook #'delete-trailing-whitespace)
@@ -233,22 +241,26 @@
   :commands term
   :config
   (define-prefix-command 'term-esc-map)
-  (define-key term-raw-map [?\C-\\] 'term-esc-map)
-  (define-key term-raw-map [?\C-\\?\C-n] 'term-line-mode)
-  (define-key term-raw-map [?\C-\S-v]
-    (lambda ()
-      (interactive)
-      (term-send-raw-string
-       (gui-get-selection 'CLIPBOARD 'UTF8_STRING))))
+  (define-key-convenient term-raw-map
+    [?\C-\\] 'term-esc-map
+    [?\C-\\?\C-n] 'term-line-mode
+    [?\C-\S-v] (lambda ()
+                 (interactive)
+                 "Paste from the clipboard to `ansi-term'"
+                 (term-send-raw-string
+                  (gui-get-selection 'CLIPBOARD 'UTF8_STRING))))
+
   (advice-add 'term-handle-exit :after
               (lambda (&rest r)
                 "Close the terminal on exit"
                 (kill-buffer)))
+
   (add-hook 'term-mode-hook
             (lambda ()
               (display-line-numbers-mode 0)
               (electric-pair-local-mode 0)
               (setq-local scroll-margin 0)))
+
   (with-eval-after-load 'evil
     (advice-add 'term-line-mode :after
                 (lambda ()
@@ -310,19 +322,22 @@
         (dired-mark 1)))
     (dired-next-line 1))
   :config
-  (define-key dirvish-mode-map "h" 'dired-up-directory)
-  (define-key dirvish-mode-map "j" 'dired-next-line)
-  (define-key dirvish-mode-map "k" 'dired-previous-line)
-  (define-key dirvish-mode-map "l" 'dired-find-file)
-  (define-key dirvish-mode-map " " 'dired-toggle-mark)
-  (define-key dirvish-mode-map "p" 'dirvish-yank)
-  (define-key dirvish-mode-map "m" 'dirvish-move)
-  (define-key dirvish-mode-map "." 'dired-create-empty-file)
-  (define-key dirvish-mode-map "r" 'dired-do-rename)
+  (define-key-convenient dirvish-mode-map
+    " " 'dired-toggle-mark
+    "h" 'dired-up-directory
+    "j" 'dired-next-line
+    "k" 'dired-previous-line
+    "l" 'dired-find-file
+    "p" 'dirvish-yank
+    "m" 'dirvish-move
+    "r" 'dired-do-rename
+    "++" 'dired-create-directory
+    "+f" 'dired-create-empty-file)
   (with-eval-after-load 'evil
-    (define-key dirvish-mode-map "/" 'evil-search-forward)
-    (define-key dirvish-mode-map "n" 'evil-search-next)
-    (define-key dirvish-mode-map "N" 'evil-search-previous))
+    (define-key-convenient dirvish-mode-map
+      "/" 'evil-search-forward
+      "n" 'evil-search-next
+      "N" 'evil-search-previous))
   (setq-default dirvish-default-layout '(0 0.4 0.6)
                 dirvish-attributes '(file-time file-size)
                 dired-listing-switches "-lAh --group-directories-first"
