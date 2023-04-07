@@ -472,8 +472,8 @@
     ":" 'execute-extended-command)
   (evil-define-key 'visual 'global
     " a" '("Mark Whole Buffer" . mark-whole-buffer))
-  (evil-define-key 'normal prog-mode-map
-    "  " '("Run/Execute current buffer" . run))
+  (evil-define-key 'normal 'global
+    " ce" '("Run/Execute current buffer" . run))
   (evil-define-key '(normal motion) 'global
     [?\C-\S-j] (lambda () (interactive) (text-scale-decrease 0.5))
     [?\C-\S-k] (lambda () (interactive) (text-scale-increase 0.5))
