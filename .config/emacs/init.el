@@ -442,10 +442,6 @@
     [?\M-j] (lambda () (interactive) (evil-normal-state 1) (evil-next-line))
     [?\M-k] (lambda () (interactive) (evil-normal-state 1) (evil-previous-line))
     [?\M-l] (lambda () (interactive) (evil-normal-state 1) (evil-forward-char)))
-  (dolist (command '(evil-window-top evil-window-bottom))
-    (advice-add command :after 'evil-scroll-line-to-center))
-  (advice-add 'evil-window-top :after 'evil-scroll-line-to-center)
-  (advice-add 'evil-window-bottom :after 'evil-scroll-line-to-center)
   (evil-define-key '(normal motion visual emacs) 'global
     ":" 'execute-extended-command)
   (evil-define-key 'visual 'global
