@@ -64,7 +64,7 @@ export GTK2_RC_FILES="$XDG_CONFIG_HOME"/gtk-2.0/gtkrc
 export ZDOTDIR="${HOME}/.config/shellconfig"
 
 # Cargo
-export CARGO_HOME="$XDG_DATA_HOME"/cargo
+export CARGO_HOME="${XDG_DATA_HOME}"/cargo
 
 if [ "$(command -v simplescreenrecorder)" ]; then
 	mkdir -vp "${XDG_CONFIG_HOME}/simplescreenrecorder/"
