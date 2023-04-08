@@ -237,46 +237,6 @@
   :init
   (add-hook 'ibuffer-mode-hook #'all-the-icons-ibuffer-mode))
 
-(use-package term
-  :commands term
-  :config
-  (define-prefix-command 'term-esc-map)
-  (define-key-convenient term-raw-map
-    [?\C-\\] 'term-esc-map
-    [?\C-\\?\C-n] 'term-line-mode
-    [?\C-\S-v] (lambda ()
-                 (interactive)
-                 (term-send-raw-string
-                  (or (gui-get-selection 'CLIPBOARD 'UTF8_STRING) ""))))
-  (advice-add 'term-handle-exit :after
-              (lambda (&rest r)
-                (kill-buffer)))
-  (add-hook 'term-mode-hook
-            (lambda ()
-              (display-line-numbers-mode 0)
-              (electric-pair-local-mode 0)
-              (setq-local scroll-margin 0)))
-
-  (with-eval-after-load 'evil
-    (advice-add 'term-line-mode :after
-                (lambda ()
-                  (turn-on-evil-mode)
-                  (evil-normal-state 1)))
-    (add-hook 'term-mode-hook
-              (lambda ()
-                (turn-off-evil-mode)
-                (setq-local evil-insert-state-cursor 'box)
-                (add-hook 'evil-insert-state-entry-hook
-                          (lambda () (term-char-mode) (turn-off-evil-mode))
-                          0 t)))))
-
-(use-package server
-  :commands (server-running-p server-start)
-  :init
-  (add-hook 'term-mode-hook
-            (lambda ()
-              (unless (server-running-p) (server-start)))))
-
 (use-package rainbow-mode
   :ensure t
   :init
@@ -405,15 +365,38 @@
   :init
   (defalias 's 'vr/query-replace))
 
-(use-package window
-  :init
-  (add-to-list 'display-buffer-alist
-               '("\\*Help\\*" display-buffer-pop-up-window)
-               '("magit-diff:*" display-buffer-pop-up-window)))
-
 (use-package auth-source
   :init
   (setq auth-source-save-behavior nil))
+
+(use-package eat
+  :ensure t
+  :init
+  (setq eat-kill-buffer-on-exit t)
+  :config
+  (set-face-attribute 'eat-term-color-11 nil
+                      :foreground
+                      (face-attribute 'font-lock-builtin-face :foreground)
+                      :background
+                      (face-attribute 'font-lock-builtin-face :foreground))
+  (add-hook 'eat-mode-hook ;; Start an emacsclient server
+            (lambda () (unless (server-running-p) (server-start))))
+  (with-eval-after-load 'evil
+    (add-hook 'eat-mode-hook
+              (lambda (&rest r)
+                (setq-local evil-insert-state-cursor 'box)
+                (add-hook 'evil-insert-state-entry-hook
+                          (lambda ()
+                            (turn-off-evil-mode)
+                            (eat-char-mode))
+                          nil t)))
+    (define-prefix-command 'term-esc-map)
+    (define-key-convenient eat-char-mode-map
+      [?\C-\\] #'term-esc-map
+      [?\C-\\?\C-n] (lambda () (interactive)
+                      (evil-normal-state)
+                      (eat-emacs-mode)))))
+
 
 ;;; CONTROLS
 (define-key key-translation-map [?\C-h] [?\C-?])
@@ -536,14 +519,14 @@
   (setq whitespace-style '(face lines-tail)
         whitespace-line-column 80))
 
-(use-package ansi-color :demand t)
-
 (use-package frame
   :init
   (add-hook 'after-init-hook #'window-divider-mode)
   (setq window-divider-default-places t
         window-divider-default-bottom-width 1
         window-divider-default-right-width 1))
+
+(use-package ansi-color :demand t)
 
 (use-package gruvbox-theme
   :ensure t
@@ -634,33 +617,6 @@
      (set-face-attribute
       'flymake-warning nil :underline
       (face-attribute 'font-lock-function-name-face :foreground)))))
-
-(use-package eterm-256color
-  :ensure t
-  :init
-  (add-hook 'term-mode-hook #'eterm-256color-mode)
-  :config
-  (let ((colors [black red green yellow blue magenta cyan white]))
-    (seq-mapn
-     (lambda (type color)
-       (set-face-attribute
-        (eval (car (read-from-string
-                    (concat "'eterm-256color-" (symbol-name type)))))
-        nil
-        :foreground color
-        :background color)
-       (set-face-attribute
-        (eval (car (read-from-string
-                    (concat "'eterm-256color-bright-" (symbol-name type)))))
-        nil
-        :foreground color
-        :background color))
-     colors ansi-color-names-vector))
-  (set-face-attribute 'eterm-256color-bright-yellow nil
-                      :foreground
-                      (face-attribute 'font-lock-builtin-face :foreground)
-                      :background
-                      (face-attribute 'font-lock-builtin-face :foreground)))
 
 (use-package tab-bar
   :init
