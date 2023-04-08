@@ -487,6 +487,12 @@
       "h" #'evil-backward-char
       "l" #'evil-forward-char)))
 
+(use-package evil-surround
+  :ensure t
+  :after evil
+  :config
+  (global-evil-surround-mode 1))
+
 
 
 ;;; VISUALS
