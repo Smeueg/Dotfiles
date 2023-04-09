@@ -398,6 +398,20 @@
                       (eat-emacs-mode)))))
 
 
+;;; BUILTIN
+(use-package info
+  :config
+  (with-eval-after-load 'evil
+    (evil-define-key 'motion Info-mode-map
+      [return] #'Info-follow-nearest-node
+      " n" #'Info-next-reference
+      " p" #'Info-prev-reference
+      " l" #'Info-next
+      " h" #'Info-prev
+      "N" #'evil-search-previous
+      "n" #'evil-search-next)))
+
+
 ;;; CONTROLS
 (define-key key-translation-map [?\C-h] [?\C-?])
 (define-key global-map [?\C-\S-v]
