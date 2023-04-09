@@ -414,6 +414,10 @@
     (define-prefix-command 'term-esc-map)
     (define-key-convenient eat-char-mode-map
       [?\C-\\] #'term-esc-map
+      [?\C-\S-v] (lambda () (interactive)
+                   (eat-send-string-as-yank
+                    eat--terminal
+                    (or (gui-get-selection 'CLIPBOARD 'UTF8_STRING) "")))
       [?\C-\\?\C-n] (lambda () (interactive)
                       (evil-normal-state)
                       (eat-emacs-mode)))))
