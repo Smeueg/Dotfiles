@@ -860,6 +860,9 @@
   (defalias 'bongo 'bongo-playlist))
 
 (use-package help
+  :init
+  (add-to-list 'display-buffer-alist '("*Help*" display-buffer-same-window))
+  (add-to-list 'display-buffer-alist '("*Metahelp*" display-buffer-same-window))
   :config
   (with-eval-after-load 'evil
     (evil-define-key '(motion) help-mode-map
