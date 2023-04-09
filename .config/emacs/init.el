@@ -393,7 +393,7 @@
             (lambda ()
               (with-eval-after-load 'evil
                 (evil-define-key '(normal motion) 'global
-                  " t" #'eat-new))))
+                  " s" #'eat-new))))
   :config
   (set-face-attribute 'eat-term-color-11 nil
                       :foreground
