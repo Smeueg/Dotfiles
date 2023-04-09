@@ -91,9 +91,13 @@
       (setq func (cadr (assq :func chosen)))
       (save-buffer)
       (when func (funcall func))
-      (when cmd
-        (term (getenv "SHELL"))
-        (term-send-raw-string (format "clear; %s\n" cmd))))))
+      (if (fboundp #'eat-new)
+          (with-current-buffer (eat-new)
+            (eat-send-string-as-yank eat--terminal (format "clear; %s" cmd))
+            (eat-input-char ?\n 1))
+        (progn
+          (term (getenv "SHELL"))
+          (term-send-raw-string (format "clear; %s\n" cmd)))))))
 
 (defun resize-window ()
   "Resize a window interactively"
@@ -376,6 +380,19 @@
   :ensure t
   :init
   (setq eat-kill-buffer-on-exit t)
+  (defun eat-new ()
+    "Spawn a new `*eat*' terminal when one already exists"
+    (interactive)
+    (let ((i 1) current-prefix-arg)
+      (while (get-buffer (format "*eat*<%i>" i))
+        (setq i (+ i 1)))
+      (setq current-prefix-arg i)
+      (call-interactively #'eat)))
+  (add-hook 'after-init-hook
+            (lambda ()
+              (with-eval-after-load 'evil
+                (evil-define-key '(normal motion) 'global
+                  " t" #'eat-new))))
   :config
   (set-face-attribute 'eat-term-color-11 nil
                       :foreground
