@@ -83,6 +83,7 @@
          (mhtml-mode (:cmd ,(format "xdg-open %s; exit" file)))
          (python-mode (:cmd ,(format "python3 %s" file)))
          (lua-mode (:cmd ,(format "lua %s" file)))
+         (emacs-lisp-mode (:func eval-defun))
          (sh-mode (:cmd ,file)
                   (:func executable-make-buffer-file-executable-if-script-p))))
 
