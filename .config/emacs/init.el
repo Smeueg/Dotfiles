@@ -590,31 +590,22 @@
                       :background
                       (face-attribute 'default :background)
                       :weight 'bold
-                      :overline (face-attribute 'vertical-border :foreground)
                       :box
                       (list :line-width 7 :color
                             (face-attribute 'default :background)))
   (set-face-attribute 'mode-line-inactive nil
                       :foreground (face-attribute 'ansi-color-black :foreground)
                       :background (face-attribute 'default :background)
-                      :overline (face-attribute 'mode-line :overline)
                       :box
                       (face-attribute 'mode-line :box))
   (set-face-attribute 'tab-bar-tab nil
                       :foreground
                       (face-attribute 'default :foreground)
                       :background
-                      (face-attribute 'default :background)
-                      :overline (aref ansi-color-names-vector 4)
-                      :box
-                      (list :line-width 7 :color
-                            (face-attribute 'default :background)))
+                      (face-attribute 'default :background))
   (set-face-attribute 'tab-bar-tab-inactive nil
                       :foreground
-                      (face-attribute 'ansi-color-black :foreground)
-                      :overline t
-                      :box
-                      (face-attribute 'tab-bar-tab :box))
+                      (face-attribute 'ansi-color-black :foreground))
   (set-face-attribute 'header-line nil
                       :box
                       (list :line-width 5 :color
@@ -933,40 +924,28 @@
                 (when (not (minibuffer-window-active-p (frame-selected-window)))
                   (setq mode-line-selected-window (selected-window)))))
 
-(defun modeline/align (left right)
-  (let ((space (+ (length (format-mode-line right))
-                  (length (format-mode-line left)))))
-    (append left (list (propertize
-                        (format (format "%%%ds"
-                                        (- (window-total-width) space))
-                                "")))
-            right)))
-
 (setq-default
  mode-line-format
  '(:eval
-   (let ((face
-          (list
-           :foreground
-           (cond
-            (buffer-read-only (aref ansi-color-names-vector 1))
-            ((buffer-modified-p) (aref ansi-color-names-vector 3))
-            (t (face-attribute 'default :foreground))))))
-     (unless (eq mode-line-selected-window (get-buffer-window))
-       (setq face nil))
-     (modeline/align
-      ;; Left
-      `(,(propertize (format  " %s " (buffer-name)) 'face face)
-        " "
-        ,(symbol-name major-mode))
-      ;;Right
-      `(,(cdr (assoc (bound-and-true-p evil-state)
-                     '((normal . "Normal")
-                       (visual . "Visual")
-                       (insert . "Insert")
-                       (replace . "Replace")
-                       (operator . "O-Pending")
-                       (motion . "Motion")
-                       (emacs . "Emacs"))))
-        " "
-        ,(propertize " %l:%c " 'face face))))))
+   (let (face left right r-length)
+     (when (eq mode-line-selected-window (get-buffer-window))
+       (setq face
+             (list :foreground
+                   (cond (buffer-read-only (aref ansi-color-names-vector 1))
+                         ((buffer-modified-p) (aref ansi-color-names-vector 3))
+                         (t (face-attribute 'default :foreground))))))
+     (setq left (list (propertize (format " %s " (buffer-name)) 'face face)
+                      " "
+                      (symbol-name major-mode))
+           right (list (propertize (format "%s " (or vc-mode "")) 'face face)
+                       (alist-get evil-state
+                                  '((normal . "Normal") (insert . "Insert")
+                                    (visual . "Visual") (motion . "Motion")
+                                    (emacs . "Emacs") (replace . "Replace")
+                                    (operator . "O-Pending")))
+                       (propertize " %l:%c " 'face face))
+           r-length (length (format-mode-line right)))
+     (append left
+             (list (propertize " "
+                               'display `(space :align-to (- right ,r-length))))
+             right))))
