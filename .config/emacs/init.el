@@ -369,6 +369,9 @@
   :init
   (setq auth-source-save-behavior nil))
 
+(use-package server
+  :autoload (server-running-p server-start))
+
 (use-package eat
   :ensure t
   :init
