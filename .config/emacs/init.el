@@ -524,8 +524,7 @@
 
 (use-package evil-surround
   :ensure t
-  :after evil
-  :config
+  :init
   (global-evil-surround-mode 1))
 
 
