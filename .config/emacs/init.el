@@ -314,6 +314,8 @@
   :ensure t
   :commands magit
   :init
+  (add-to-list 'display-buffer-alist
+               '("magit: .*" display-buffer-same-window))
   (add-hook 'text-mode-hook
             (lambda ()
               (let ((buffer-name (file-name-base (or (buffer-file-name) ""))))
@@ -856,8 +858,9 @@
 
 (use-package help
   :init
-  (add-to-list 'display-buffer-alist '("*Help*" display-buffer-same-window))
-  (add-to-list 'display-buffer-alist '("*Metahelp*" display-buffer-same-window))
+  (add-to-list 'display-buffer-alist '("\\*Help\\*" display-buffer-same-window))
+  (add-to-list 'display-buffer-alist
+               '("\\*Metahelp\\*" display-buffer-same-window))
   :config
   (with-eval-after-load 'evil
     (evil-define-key '(motion) help-mode-map
