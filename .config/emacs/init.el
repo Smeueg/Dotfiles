@@ -930,22 +930,30 @@
 (setq-default
  mode-line-format
  '(:eval
-   (let (face left right r-length)
+   (let (face left right r-length (git-branch ""))
      (when (eq mode-line-selected-window (get-buffer-window))
        (setq face
              (list :foreground
                    (cond (buffer-read-only (aref ansi-color-names-vector 1))
                          ((buffer-modified-p) (aref ansi-color-names-vector 3))
                          (t (face-attribute 'default :foreground))))))
+     (when (require 'vc-git nil t)
+       (setq git-branch (vc-git--run-command-string
+                         nil "branch" "--show-current")
+             git-branch (substring (or git-branch " ") 0 -1)
+             git-branch (if (not (string-empty-p git-branch))
+                            (propertize (format "[%s] " git-branch) 'face face)
+                          "")))
      (setq left (list (propertize (format " %s " (buffer-name)) 'face face)
+                      git-branch
                       " "
                       (symbol-name major-mode))
-           right (list (propertize (format "%s " (or vc-mode "")) 'face face)
-                       (alist-get evil-state
+           right (list (alist-get evil-state
                                   '((normal . "Normal") (insert . "Insert")
                                     (visual . "Visual") (motion . "Motion")
                                     (emacs . "Emacs") (replace . "Replace")
                                     (operator . "O-Pending")))
+                       " "
                        (propertize " %l:%c " 'face face))
            r-length (length (format-mode-line right)))
      (append left
