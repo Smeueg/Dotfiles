@@ -191,7 +191,9 @@
 (use-package vertico
   :ensure t
   :init
-  (add-hook 'after-init-hook 'vertico-mode))
+  (add-hook 'after-init-hook 'vertico-mode)
+  (setq read-buffer-completion-ignore-case t
+        read-file-name-completion-ignore-case t))
 
 (use-package avy
   :ensure t
