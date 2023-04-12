@@ -1808,7 +1808,7 @@ tag.connect_signal("property::layout", function(t)
 			t.useless_gap = 0
 		end
 
-		if t.layout == awful.layout.suit then
+		if t.layout == awful.layout.suit.floating then
 			titlebar_show = true
 		end
 
