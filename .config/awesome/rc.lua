@@ -761,22 +761,26 @@ end
 do -- awful.widget.layout
 	local icons = {
 		tile = cairo.CreateImage(function(cr)
-				cr:set_source(gears.color(beautiful.wibar_icon_color))
 				cr:rectangle(4, 4, 5, 12)
+				cr:set_source(gears.color(beautiful.wibar_icon_color))
+				cr:fill()
 				cr:rectangle(11, 4, 5, 5)
 				cr:rectangle(11, 11, 5, 5)
+				cr:set_source(gears.color(beautiful.fg_normal))
 				cr:fill()
 		end),
 		max = cairo.CreateImage(function(cr)
-				cr:set_source(gears.color(beautiful.wibar_icon_color))
 				cr:rectangle(4, 4, 12, 12)
+				cr:set_source(gears.color(beautiful.wibar_icon_color))
 				cr:fill()
 		end),
 		float = cairo.CreateImage(function(cr)
 				cr:set_source(gears.color(beautiful.wibar_icon_color))
 				cr:rectangle(4, 4, 8, 8)
+				cr:fill()
 				cr:rectangle(13, 8, 3, 8)
 				cr:rectangle(8, 13, 8, 3)
+				cr:set_source(gears.color(beautiful.fg_normal))
 				cr:fill()
 		end)
 	}
