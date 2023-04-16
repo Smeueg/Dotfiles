@@ -131,6 +131,7 @@
           args (cddr args))
     (define-key mode-map key fn)))
 
+
 ;;; HOOKS
 (add-hook 'before-save-hook #'delete-trailing-whitespace)
 (add-hook 'buffer-list-update-hook ;; Always have `*scratch*' ready to go
@@ -404,9 +405,12 @@
                       (face-attribute 'font-lock-builtin-face :foreground)
                       :background
                       (face-attribute 'font-lock-builtin-face :foreground))
-  (add-hook 'eat-mode-hook ;; Start an emacsclient server
-            (lambda () (unless (server-running-p) (server-start))))
+  (add-hook 'eat-exec-hook
+            (lambda ()
+              (unless (server-running-p) (server-start))
+              (eat-char-mode)))
   (with-eval-after-load 'evil
+    (add-hook 'eat-exec-hook #'turn-off-evil-mode)
     (add-hook 'eat-mode-hook
               (lambda (&rest r)
                 (setq-local evil-insert-state-cursor 'box)
