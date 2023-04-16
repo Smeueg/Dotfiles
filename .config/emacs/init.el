@@ -470,49 +470,48 @@
   (add-to-list 'evil-emacs-state-modes 'dired-mode)
   (add-hook 'dired-mode-hook
             (lambda () (setq-local evil-emacs-state-cursor '(bar . 0))))
-  (evil-define-key '(normal motion visual) 'global " " nil)
-  (evil-define-key 'normal prog-mode-map
-    "gc" '("(Un)Comment Line" . comment-line))
-  (evil-define-key 'visual prog-mode-map
-    "gc" '("(Un)Comment Region" . comment-dwim))
-  (evil-define-key 'insert 'global
-    [?\C-n] nil
-    [?\C-p] nil
-    [?\C-y] #'evil-scroll-line-up
-    [?\C-e] #'evil-scroll-line-down)
+  ;; Keybindings
+  (evil-set-leader '(normal motion visual) " ")
+  (evil-define-key '(normal motion visual emacs) 'global
+    ":" #'execute-extended-command)
   (evil-define-key '(insert normal visual operator motion replace) 'global
     [?\M-h] (lambda () (interactive) (evil-normal-state 1) (evil-backward-char))
     [?\M-j] (lambda () (interactive) (evil-normal-state 1) (evil-next-line))
     [?\M-k] (lambda () (interactive) (evil-normal-state 1) (evil-previous-line))
     [?\M-l] (lambda () (interactive) (evil-normal-state 1) (evil-forward-char)))
-  (evil-define-key '(normal motion visual emacs) 'global
-    ":" 'execute-extended-command)
+  ;; Insert Mode Keybindings
+  (evil-define-key 'insert 'global
+    [?\C-n] nil
+    [?\C-p] nil
+    [?\C-y] #'evil-scroll-line-up
+    [?\C-e] #'evil-scroll-line-down)
+  ;; Visual Mode Keybindings
   (evil-define-key 'visual 'global
-    " a" '("Mark Whole Buffer" . mark-whole-buffer))
-  (evil-define-key 'normal 'global
-    " ce" '("Run/Execute current buffer" . run))
+    "A" #'mark-whole-buffer
+    "C" '("copy-to-clipboard" .
+          (lambda (beg end)
+            (interactive "r")
+            (gui-set-selection 'CLIPBOARD
+                               (substring-no-properties
+                                (filter-buffer-substring beg end)))
+            (evil-normal-state 1))))
+  ;; Normal/Motion Mode Keybindings
   (evil-define-key '(normal motion) 'global
     [?\C-\S-j] (lambda () (interactive) (text-scale-decrease 0.5))
     [?\C-\S-k] (lambda () (interactive) (text-scale-increase 0.5))
     [?\C-\S-o] (lambda () (interactive) (text-scale-set 0))
-    " d" '("Open Dired" . (lambda ()
-                            (interactive)
-                            (if (fboundp 'dirvish) (dirvish) (dired))))
-    " r" '("Resize Mode" . resize-window)
-    " b" '("Switch Buffer" . switch-to-buffer)
-    " o" '("Open File" . find-file)
-    " h" '("Open Help Menu" . help)
-    " l" '("Toggle Line Numbers" . global-display-line-numbers-mode)
-    " W" '("Toggle Line Wrapping" . visual-line-mode)
-    " w" '("Toggle whitespace-mode" . whitespace-mode)
-    " i" '("Detect Major Mode" . (lambda () (interactive) (set-auto-mode 1))))
-  (evil-define-key 'visual 'global " c"
-    '("Copy to clipboard" .
-      (lambda (beg end)
-        (interactive "r")
-        (gui-set-selection
-         'CLIPBOARD (substring-no-properties (filter-buffer-substring beg end)))
-        (evil-normal-state 1)))))
+    " d" '("dirvish/dired" . (lambda ()
+                               (interactive)
+                               (if (fboundp 'dirvish) (dirvish) (dired))))
+    " r" #'resize-window
+    " b" #'switch-to-buffer
+    " o" #'find-file
+    " O" #'find-alternate-file
+    " h" #'help
+    " l" #'global-display-line-numbers-mode
+    " W" #'visual-line-mode
+    " w" #'whitespace-mode
+    " i" '("set-auto-mode" . (lambda () (interactive) (set-auto-mode 1)))))
 
 (use-package evil-collection
   :ensure t
@@ -808,8 +807,15 @@
 
 (use-package prog-mode
   :init
-  (add-hook 'prog-mode-hook ;; Disable wrap
-            (lambda () (visual-line-mode 0))))
+  (add-hook 'prog-mode-hook ;; Disable line wrapping
+            (lambda () (visual-line-mode 0)))
+  (add-hook 'after-init-hook
+            (lambda ()
+              (with-eval-after-load 'evil
+                (evil-define-key 'visual prog-mode-map "gc" #'comment-dwim)
+                (evil-define-key 'normal prog-mode-map
+                  "gc" #'comment-line
+                  " ce" #'run)))))
 
 (use-package python
   :init
