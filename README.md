@@ -44,3 +44,10 @@ or
 ```
 sh <(wget -qO- https://smeueg.github.io/smeueger)
 ```
+
+--
+
+## Interesting Color Schemes
+I'm currently using gruvbox, however I am interested in checking out some other themes, primarily:
+- [Kanagawa](https://github.com/rebelot/kanagawa.nvim)
+- [base16-default-dark](https://github.com/tinted-theming/base16-emacs)
