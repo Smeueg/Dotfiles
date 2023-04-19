@@ -35,15 +35,21 @@
 
 ;;; FUNCTIONS / ALIASES
 (setq disabled-command-function nil) ;; Enable all command/functions
-(defalias 'q 'kill-buffer)
 (defalias 'wd 'delete-window)
 
 (defun w ()
-  "Save a buffer if modified or finish an edit (i.e. a commit message)"
+  "Save a buffer if modified or finish an edit `with-editor-finish()'"
   (interactive)
-  (if (string= "COMMIT_EDITMSG" (file-name-base (or (buffer-file-name) "")))
-      (call-interactively 'with-editor-finish)
-    (call-interactively 'save-buffer)))
+  (if with-editor-mode
+      (call-interactively #'with-editor-finish)
+    (call-interactively #'save-buffer)))
+
+(defun q ()
+  "Kill a buffer or cancel an edit `with-editor-cancel()'"
+  (interactive)
+  (if with-editor-mode
+      (call-interactively #'with-editor-cancel)
+    (call-interactively #'kill-buffer)))
 
 (defun Q ()
   "Quit WINDOW and kill its BUFFER"
