@@ -173,6 +173,14 @@
       scoll-margin 5
       use-dialog-box nil)
 
+(use-package window
+  :init
+  (add-to-list 'display-buffer-alist
+               `(,(lambda (buffer arg)
+                    "Always open files in an already existing window"
+                    (buffer-file-name (get-buffer buffer)))
+                 display-buffer-same-window)))
+
 (use-package saveplace
   :custom
   (save-place-forget-unreadable-files nil)
