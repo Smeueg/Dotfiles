@@ -27,9 +27,11 @@
  tab-width 4
  tab-always-indent nil
  backward-delete-char-untabify-method 'hungry)
-;; Use spaces when aligning with align-regexp
-(defadvice align-regexp (around align-regexp-with-spaces activate)
-  (let ((indent-tabs-mode nil)) ad-do-it))
+(advice-add 'align-regexp :around
+            (lambda (fn &rest args)
+              "Always use spaces when aligning with `align-regexp'"
+              (let ((indent-tabs-mode nil))
+                (apply fn args))))
 
 
 
@@ -831,14 +833,14 @@
   :init
   (setq python-indent-guess-indent-offset nil)
   (add-hook 'python-mode-hook
-            (lambda () (setq tab-width (default-value 'tab-width)))))
+            (lambda ()
+              (setq-local tab-width (default-value 'tab-width)
+                          indent-tabs-mode nil))))
 
 (use-package rust-mode
   :ensure t
   :init
-  (add-hook 'rust-mode-hook
-            (lambda ()
-              (setq-local indent-tabs-mode nil)))
+  (add-hook 'rust-mode-hook (lambda () (setq-local indent-tabs-mode nil)))
   :config
   (with-eval-after-load 'evil
     (evil-define-key 'normal 'rust-mode-map
