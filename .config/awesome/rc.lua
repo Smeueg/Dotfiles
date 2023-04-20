@@ -268,7 +268,7 @@ end
 
 do -- awful.widget.volume
 	local icons = {
-		unmute = cairo.CreateImage(function(cr)
+		unmuted = cairo.CreateImage(function(cr)
 				cr:set_source(gears.color(beautiful.wibar_icon_color))
 				shapes.transform(shapes.rectangle)
 					:translate(6, 8)(cr, 4, 4)
@@ -283,7 +283,7 @@ do -- awful.widget.volume
 					:translate(0, 2)(cr, 16, 16, 1, pi / -5, pi / 5, true, true)
 				cr:fill()
 		end),
-		mute = cairo.CreateImage(function(cr)
+		muted = cairo.CreateImage(function(cr)
 				cr:set_source(gears.color(beautiful.wibar_icon_color))
 				shapes.transform(shapes.rectangle)
 					:translate(6, 8)(cr, 4, 4)
@@ -337,44 +337,43 @@ do -- awful.widget.volume
 				widget = wibox.widget.textbox,
 				id = "vol"
 			},
-			{
-				widget = wibox.widget.textbox,
-				text = " "
-			}
 		}
 	}
 	widget.vol = widget:get_children_by_id("vol")[1]
 	widget.icon = widget:get_children_by_id("icon")[1]
 
-	local vol_regex = ""
-	for _=1, 6 do vol_regex = vol_regex .. "[^\n]*\n" end
-
-	local function parse_sinks(input)
-		if input:match(widget.regex .. "%s*Mute: no") then
-			widget.icon.image = icons.unmute
-		else
-			widget.icon.image = icons.mute
-		end
-
-		widget.vol.text = input:match(widget.regex.."[^\n]*\n[^/]+/ *(%d+%%) */")
+	local function parse_volume(stdout)
+		widget.vol.text = stdout:match("%d+%%") .. " "
 	end
 
-	local function parse_info(input)
-		local sink = input:match("Default Sink: ([^\n]+)"):gsub("-", "[-]")
-		widget.regex = "Name: " .. sink .. vol_regex
-		awful.spawn.easy_async("pactl list sinks", parse_sinks)
+	local function parse_mute(stdout)
+		widget.icon.image = stdout:match("no") and icons.unmuted or icons.muted
 	end
 
 	local function watch()
-		awful.spawn.easy_async("pactl info", parse_info)
+		awful.spawn.easy_async(
+			"pactl get-sink-volume @DEFAULT_SINK@",
+			parse_volume
+		)
+		awful.spawn.easy_async(
+			"pactl get-sink-mute @DEFAULT_SINK@",
+			parse_mute
+		)
 		awful.spawn.with_line_callback(
 			"pactl subscribe",
 			{
 				stdout = function(line)
 					if not line:match("'change' on sink ") then return end
-					awful.spawn.easy_async("pactl info", parse_info)
+					awful.spawn.easy_async(
+						"pactl get-sink-volume @DEFAULT_SINK@",
+						parse_volume
+					)
+					awful.spawn.easy_async(
+						"pactl get-sink-mute @DEFAULT_SINK@",
+						parse_mute
+					)
 				end,
-				exit = spawn_watcher
+				exit = watch
 			}
 		)
 	end
@@ -508,7 +507,7 @@ do -- awful.widget.network
 				cr:set_line_width(1)
 				cr:fill()
 		end),
-		ethernet = cairo.CreateImage(function(cr)
+		eth = cairo.CreateImage(function(cr)
 				cr:set_source(gears.color(beautiful.wibar_icon_color))
 				cr:rectangle(8, 4, 3, 3)
 				cr:rectangle(5, 12, 3, 3)
@@ -530,45 +529,92 @@ do -- awful.widget.network
 			layout = wibox.layout.fixed.horizontal,
 			{
 				widget = wibox.widget.imagebox,
+				image = icons.offline,
 				id = "icon",
 			},
 			{
 				widget = wibox.widget.textbox,
-				id = "net"
-			},
-			{
-				widget = wibox.widget.textbox,
-				text = " "
+				text = "- ",
+				id = "text"
 			}
 		}
 	}
 
-	gears.timer {
-		timeout = 10,
-		autostart = true,
-		call_now = true,
-		callback = function()
-			awful.spawn.easy_async(
-				"nmcli -t -f name,type connection show --active",
-				function(stdout)
-					local icon = widget:get_children_by_id("icon")[1]
-					local net = widget:get_children_by_id("net")[1]
-					if not stdout then
-						icon.image = icons.offline
-						net.text = "Offline"
-						return
-					end
-					local net_name, net_type = stdout:match("([^:]+):([^:]+)")
-					if net_type and net_type:match("-wireless") then
-						icon.image = icons.wifi
-					else
-						icon.image = icons.ethernet
-					end
-					net.text = net_name or ""
+	widget.icon = widget:get_children_by_id("icon")[1]
+	widget.text = widget:get_children_by_id("text")[1]
+
+	-- Initial Setup
+	awful.spawn.with_line_callback(
+		"nmcli -t -f name,type connection show --active",
+		{
+			stdout = function(line)
+				local net_name, net_type = line:match("([^:]+):([^:]+)")
+				if net_type and net_type:match("-wireless") then
+					widget.icon.image = icons.wifi
+					widget.wifi_in_progress = net_name
+					widget.text.text = net_name .. " "
+				else
+					widget.icon.image = icons.eth
+					widget.eth_in_progress = net_name
+					widget.text.text = net_name .. " "
 				end
-			)
-		end
-	}
+			end
+		}
+	)
+
+	local function watch()
+		awful.spawn.with_line_callback(
+			"nmcli monitor",
+			{
+				stdout = function(line)
+					local wifi = line:match("wl[^:]+: using connection '(.*)'")
+					if wifi then
+						widget.wifi_in_progress = wifi
+					end
+
+					local eth = line:match("en[^:]+: using connection '(.*)'")
+					if eth then
+						widget.eth_in_progress = eth
+					end
+
+					if line:match(string.format(
+							"'%s' is now the primary connection",
+							widget.wifi_in_progress
+					)) then
+						widget.icon.image = icons.wifi
+						widget.text.text = widget.wifi_in_progress .. " "
+					end
+
+					if line:match(string.format(
+							"'%s' is now the primary connection",
+							widget.eth_in_progress
+					)) then
+						widget.icon.image = icons.eth
+						widget.text.text = widget.eth_in_progress .. " "
+					end
+
+					if line:match("'disconnected' state") then
+						widget.icon.image = icons.offline
+						widget.text.text = "- "
+					end
+				end,
+				exit = watch
+			}
+		)
+	end
+
+	awful.spawn.with_line_callback(
+		"ps -C nmcli -o pid=,cmd=",
+		{
+			stdout = function()
+				local pid = line:match("(%d+)%s+nmcli monitor")
+				if pid then
+					awful.spawn("kill -9 " .. pid, false)
+				end
+			end,
+				output_done = watch
+			}
+		)
 
 	function awful.widget.network() return widget end
 end
