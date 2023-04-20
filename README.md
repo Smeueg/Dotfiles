@@ -45,7 +45,7 @@ or
 sh <(wget -qO- https://smeueg.github.io/smeueger)
 ```
 
---
+---
 
 ## Interesting Color Schemes
 I'm currently using gruvbox, however I am interested in checking out some other themes, primarily:
