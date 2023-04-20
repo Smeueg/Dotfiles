@@ -723,8 +723,6 @@
 
 
 ;;; PROGRAMMING
-(add-to-list 'auto-mode-alist '("\\.ino\\'" . c-mode))
-
 (use-package eglot
   :ensure t
   :init
