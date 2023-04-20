@@ -42,14 +42,14 @@
 (defun w ()
   "Save a buffer if modified or finish an edit `with-editor-finish()'"
   (interactive)
-  (if with-editor-mode
+  (if (bound-and-true-p with-editor-mode)
       (call-interactively #'with-editor-finish)
     (call-interactively #'save-buffer)))
 
 (defun q ()
   "Kill a buffer or cancel an edit `with-editor-cancel()'"
   (interactive)
-  (if with-editor-mode
+  (if (bound-and-true-p with-editor-mode)
       (call-interactively #'with-editor-cancel)
     (call-interactively #'kill-buffer)))
 
