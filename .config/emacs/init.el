@@ -162,6 +162,148 @@
 (setq use-package-always-defer t)
 
 
+
+;;; VISUALS
+(blink-cursor-mode 0)
+(scroll-bar-mode 0)
+(tool-bar-mode 0)
+(tooltip-mode 0)
+(fringe-mode 3)
+(show-paren-mode 1)
+(set-window-buffer nil (current-buffer))
+(let ((font "JetBrainsMono Nerd Font Mono"))
+  (when (and (display-graphic-p) (member font (font-family-list)))
+    (set-frame-font (format "%s 12" font))))
+
+(setq-default
+ truncate-lines t
+ cursor-in-non-selected-windows nil
+ left-margin-width 1
+ right-margin-width 1
+ fringe-indicator-alist (add-to-list 'fringe-indicator-alist
+                                     '(truncation nil right-arrow)))
+
+(use-package whitespace
+  :init
+  (add-hook 'prog-mode-hook
+            (lambda ()
+              (unless (derived-mode-p 'html-mode)
+                (whitespace-mode 1))))
+  (setq whitespace-style '(face lines-tail)
+        whitespace-line-column 80))
+
+(use-package frame
+  :init
+  (add-hook 'after-init-hook #'window-divider-mode)
+  (setq window-divider-default-places t
+        window-divider-default-bottom-width 1
+        window-divider-default-right-width 1))
+
+(use-package ansi-color :demand t)
+
+(use-package gruvbox-theme
+  :ensure t
+  :demand t
+  :init
+  (load-theme 'gruvbox-dark-soft t)
+  :config
+  (set-face-foreground 'window-divider
+                       (face-attribute 'vertical-border :foreground))
+  (set-face-background 'highlight
+                       (face-attribute 'ansi-color-black :background))
+  (set-face-attribute 'internal-border nil
+		              :background (face-attribute 'default :background))
+  (set-face-attribute 'line-number nil
+		              :background (face-attribute 'default :background))
+  (set-face-attribute 'line-number-current-line nil
+                      :weight 'bold
+                      :background (face-attribute 'default :background))
+  (set-face-attribute 'mode-line nil
+                      :foreground (face-attribute 'mode-line :background)
+                      :background
+                      (face-attribute 'default :background)
+                      :weight 'bold
+                      :box
+                      (list :line-width 7 :color
+                            (face-attribute 'default :background)))
+  (set-face-attribute 'mode-line-inactive nil
+                      :foreground (face-attribute 'ansi-color-black :foreground)
+                      :background (face-attribute 'default :background)
+                      :box
+                      (face-attribute 'mode-line :box))
+  (set-face-attribute 'tab-bar-tab nil
+                      :foreground
+                      (face-attribute 'default :foreground)
+                      :background
+                      (face-attribute 'default :background))
+  (set-face-attribute 'tab-bar-tab-inactive nil
+                      :foreground
+                      (face-attribute 'ansi-color-black :foreground))
+  (set-face-attribute 'header-line nil
+                      :box
+                      (list :line-width 5 :color
+                            (face-attribute 'header-line :background)))
+  (with-eval-after-load 'dired
+    (set-face-attribute 'dired-symlink nil
+                        :foreground (aref ansi-color-names-vector 6))
+    (add-to-list 'dired-font-lock-keywords ;; Recolor executables in dired
+                 (list dired-re-exe
+                       '(".+" (dired-move-to-filename) nil
+                         (0 `(:foreground ,(aref ansi-color-names-vector 2)))))
+                 'append))
+  (set-face-attribute 'variable-pitch nil :font "JetBrainsMono Nerd Font Mono")
+  (add-hook 'eww-mode-hook
+            (lambda ()
+              (set-face-attribute
+               'eww-form-submit nil
+               :font "JetBrainsMono Nerd Font Mono"
+               :foreground (face-attribute 'default :foreground)
+               :background (face-attribute 'mode-line :background)
+               :box
+               (list
+                :line-width 5
+                :color (face-attribute 'mode-line :background)
+                :style nil))
+              (set-face-attribute
+               'eww-form-text nil
+               :background (face-attribute 'header-line :background)
+               :box
+               (list :line-width 2 :color (aref ansi-color-names-vector 3)))))
+
+  (add-hook
+   'flymake-mode-hook
+   (lambda ()
+     (set-face-attribute
+      'flymake-error nil
+      :underline (face-attribute 'error :foreground))
+     (set-face-attribute
+      'flymake-note nil
+      :underline (face-attribute 'font-lock-doc-face :foreground))
+     (set-face-attribute
+      'flymake-warning nil :underline
+      (face-attribute 'font-lock-function-name-face :foreground)))))
+
+(use-package tab-bar
+  :init
+  (defalias 'tc 'tab-bar-close-tab)
+  (defalias 'tn 'tab-new)
+  (setq tab-bar-close-button (propertize " ●" 'close-tab t 'display '(height 1))
+        tab-bar-new-button
+        (propertize " + "
+                    'close-tab t 'display '(height 1)
+                    'face (list
+                           :background
+                           (face-attribute 'tab-bar-tab-inactive :background)
+                           :foreground
+                           (aref ansi-color-names-vector 2))))
+  :config
+  (advice-add 'tab-bar-close-tab :before
+              (lambda (&rest r)
+                (when (= (length (tab-bar-tabs)) 2)
+                  (tab-bar-mode 0)))))
+
+
+
 ;;; LIFE IMPROVEMENTS
 (electric-pair-mode 1) ;; Auto pairs
 (global-auto-revert-mode 1) ;; Autorefresh buffers
@@ -337,7 +479,7 @@
                '("magit: .*" display-buffer-same-window))
   (add-hook 'text-mode-hook
             (lambda ()
-              (let ((buffer-name (file-name-base (or (buffer-file-name) ""))))
+              (let ((buffer-name (file-name-base (or buffer-file-name ""))))
                 (when (string= "COMMIT_EDITMSG" buffer-name)
                   (flyspell-mode 1)))))
   :config
@@ -448,6 +590,10 @@
 
 
 ;;; BUILTIN
+(use-package isearch
+  :init
+  (setq lazy-highlight-cleanup nil))
+
 (use-package info
   :config
   (with-eval-after-load 'evil
@@ -550,146 +696,6 @@
   :init
   (global-evil-surround-mode 1))
 
-
-
-;;; VISUALS
-(blink-cursor-mode 0)
-(scroll-bar-mode 0)
-(tool-bar-mode 0)
-(menu-bar-mode 0)
-(tooltip-mode 0)
-(fringe-mode 3)
-(show-paren-mode 1)
-(set-window-buffer nil (current-buffer))
-(let ((font "JetBrainsMono Nerd Font Mono"))
-  (when (and (display-graphic-p) (member font (font-family-list)))
-    (set-frame-font (format "%s 12" font))))
-
-(setq-default
- truncate-lines t
- cursor-in-non-selected-windows nil
- left-margin-width 1
- right-margin-width 1
- fringe-indicator-alist (add-to-list 'fringe-indicator-alist
-                                     '(truncation nil right-arrow)))
-
-(use-package whitespace
-  :init
-  (add-hook 'prog-mode-hook
-            (lambda ()
-              (unless (derived-mode-p 'html-mode)
-                (whitespace-mode 1))))
-  (setq whitespace-style '(face lines-tail)
-        whitespace-line-column 80))
-
-(use-package frame
-  :init
-  (add-hook 'after-init-hook #'window-divider-mode)
-  (setq window-divider-default-places t
-        window-divider-default-bottom-width 1
-        window-divider-default-right-width 1))
-
-(use-package ansi-color :demand t)
-
-(use-package gruvbox-theme
-  :ensure t
-  :demand t
-  :init
-  (load-theme 'gruvbox-dark-soft t)
-  :config
-  (set-face-foreground 'window-divider
-                       (face-attribute 'vertical-border :foreground))
-  (set-face-background 'highlight
-                       (face-attribute 'ansi-color-black :background))
-  (set-face-attribute 'internal-border nil
-		              :background (face-attribute 'default :background))
-  (set-face-attribute 'line-number nil
-		              :background (face-attribute 'default :background))
-  (set-face-attribute 'line-number-current-line nil
-                      :weight 'bold
-                      :background (face-attribute 'default :background))
-  (set-face-attribute 'mode-line nil
-                      :foreground (face-attribute 'mode-line :background)
-                      :background
-                      (face-attribute 'default :background)
-                      :weight 'bold
-                      :box
-                      (list :line-width 7 :color
-                            (face-attribute 'default :background)))
-  (set-face-attribute 'mode-line-inactive nil
-                      :foreground (face-attribute 'ansi-color-black :foreground)
-                      :background (face-attribute 'default :background)
-                      :box
-                      (face-attribute 'mode-line :box))
-  (set-face-attribute 'tab-bar-tab nil
-                      :foreground
-                      (face-attribute 'default :foreground)
-                      :background
-                      (face-attribute 'default :background))
-  (set-face-attribute 'tab-bar-tab-inactive nil
-                      :foreground
-                      (face-attribute 'ansi-color-black :foreground))
-  (set-face-attribute 'header-line nil
-                      :box
-                      (list :line-width 5 :color
-                            (face-attribute 'header-line :background)))
-  (set-face-attribute 'dired-symlink nil
-                      :foreground (aref ansi-color-names-vector 6))
-  (add-to-list 'dired-font-lock-keywords ;; Recolor executables in dired
-               (list dired-re-exe
-                     '(".+" (dired-move-to-filename) nil
-                       (0 `(:foreground ,(aref ansi-color-names-vector 2)))))
-               'append)
-  (set-face-attribute 'variable-pitch nil :font "JetBrainsMono Nerd Font Mono")
-  (add-hook 'eww-mode-hook
-            (lambda ()
-              (set-face-attribute
-               'eww-form-submit nil
-               :font "JetBrainsMono Nerd Font Mono"
-               :foreground (face-attribute 'default :foreground)
-               :background (face-attribute 'mode-line :background)
-               :box
-               (list
-                :line-width 5
-                :color (face-attribute 'mode-line :background)
-                :style nil))
-              (set-face-attribute
-               'eww-form-text nil
-               :background (face-attribute 'header-line :background)
-               :box
-               (list :line-width 2 :color (aref ansi-color-names-vector 3)))))
-
-  (add-hook
-   'flymake-mode-hook
-   (lambda ()
-     (set-face-attribute
-      'flymake-error nil
-      :underline (face-attribute 'error :foreground))
-     (set-face-attribute
-      'flymake-note nil
-      :underline (face-attribute 'font-lock-doc-face :foreground))
-     (set-face-attribute
-      'flymake-warning nil :underline
-      (face-attribute 'font-lock-function-name-face :foreground)))))
-
-(use-package tab-bar
-  :init
-  (defalias 'tc 'tab-bar-close-tab)
-  (defalias 'tn 'tab-new)
-  (setq tab-bar-close-button (propertize " ●" 'close-tab t 'display '(height 1))
-        tab-bar-new-button
-        (propertize " + "
-                    'close-tab t 'display '(height 1)
-                    'face (list
-                           :background
-                           (face-attribute 'tab-bar-tab-inactive :background)
-                           :foreground
-                           (aref ansi-color-names-vector 2))))
-  :config
-  (advice-add 'tab-bar-close-tab :before
-              (lambda (&rest r)
-                (when (= (length (tab-bar-tabs)) 2)
-                  (tab-bar-mode 0)))))
 
 
 ;;; ORG
@@ -857,6 +863,7 @@
       " ck" 'rust-check
       " ct" 'rust-toggle-mutability)))
 
+
 ;;; MISC
 (use-package bongo
   :ensure t
@@ -895,6 +902,7 @@
       [return] #'push-button
       " n" #'forward-button
       " p" #'backward-button)))
+
 
 ;;; CUSTOM SPLASH SCREEN
 (defun splash-align ()
