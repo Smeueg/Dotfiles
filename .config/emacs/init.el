@@ -22,11 +22,10 @@
 
 ;;; INDENTATION
 (defvaralias 'c-basic-offset 'tab-width)
-(setq-default
- indent-tabs-mode t
- tab-width 4
- tab-always-indent nil
- backward-delete-char-untabify-method 'hungry)
+(setq-default indent-tabs-mode t
+              tab-width 4
+              tab-always-indent nil
+              backward-delete-char-untabify-method 'hungry)
 (advice-add 'align-regexp :around
             (lambda (fn &rest args)
               "Always use spaces when aligning with `align-regexp'"
@@ -52,11 +51,6 @@
   (if (bound-and-true-p with-editor-mode)
       (call-interactively #'with-editor-cancel)
     (call-interactively #'kill-buffer)))
-
-(defun Q ()
-  "Quit WINDOW and kill its BUFFER"
-  (interactive)
-  (quit-window 1))
 
 (defun scratch ()
   "Open the `*scratch*' buffer"
@@ -165,7 +159,6 @@
 
 ;;; VISUALS
 (blink-cursor-mode 0)
-(scroll-bar-mode 0)
 (tool-bar-mode 0)
 (tooltip-mode 0)
 (fringe-mode 3)
