@@ -481,6 +481,7 @@
               (add-hook 'with-editor-post-cancel-hook #'magit-kill-diffs)))
   :config
   (define-key magit-diff-mode-map "e" nil)
+  (define-key magit-mode-map " " nil)
   ;; Use '~/' as the working tree and '~/.local/dots' as the git directory when
   ;; modifying a file that's inside '~/'.
   (advice-add
