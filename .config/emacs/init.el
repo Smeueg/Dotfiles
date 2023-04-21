@@ -475,13 +475,16 @@
   :ensure t
   :commands magit
   :init
+  (defun magit-kill-diffs ()
+    "Kill the diff buffers that's associated with the current repo"
+    (kill-buffer (magit-get-mode-buffer 'magit-diff-mode)))
   (add-to-list 'display-buffer-alist
                '("magit: .*" display-buffer-same-window))
-  (add-hook 'text-mode-hook
+  (add-hook 'git-commit-setup-hook
             (lambda ()
-              (let ((buffer-name (file-name-base (or buffer-file-name ""))))
-                (when (string= "COMMIT_EDITMSG" buffer-name)
-                  (flyspell-mode 1)))))
+              (flyspell-mode 1)
+              (add-hook 'with-editor-post-finish-hook #'magit-kill-diffs)
+              (add-hook 'with-editor-post-cancel-hook #'magit-kill-diffs)))
   :config
   (define-key magit-diff-mode-map "e" nil)
   ;; Use '~/' as the working tree and '~/.local/dots' as the git directory when
