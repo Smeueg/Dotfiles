@@ -901,54 +901,47 @@
 
 
 ;;; CUSTOM SPLASH SCREEN
-(defun splash-align ()
-  (if (get-buffer "*splash*")
-      (with-current-buffer "*splash*"
-        (let ((point (point)))
-          (read-only-mode 0)
-          (goto-char (point-min))
-          (while (equal (thing-at-point 'line t) "\n")
-            (delete-char 1))
-          (goto-char (point-max))
-          (while (looking-back "^\n$") (backward-delete-char 1))
-          (let ((lines (count-lines 1 (point-max)))
-                (fill-column (- (window-body-width nil) 2)))
-            (goto-char (point-min))
-            (insert-char ?\n ( / (- (window-body-height nil) lines) 2))
-            (center-line lines))
-          (goto-char point)
-          (read-only-mode 1)))
-    (remove-hook 'window-state-change-hook 'splash-align)))
-(setq-default
- initial-buffer-choice
- (lambda ()
-   (let ((buf (get-buffer-create "*splash*")))
-     (with-current-buffer buf
-       (setq-local indent-tabs-mode nil)
-       (let (face str-package str-emacs str-version str-time)
-         (setq face (list :weight 'bold :foreground
-                          (aref ansi-color-names-vector 3))
-               str-version (propertize emacs-version 'face face)
-               str-emacs (propertize "Emacs" 'face face)
-               str-time (propertize (emacs-init-time "%.2f Seconds")
-                                    'face face))
-         (when (bound-and-true-p package-alist)
-           (setq str-package (length package-activated-list))
-           (if (= str-package 0)
-               (setq str-package nil)
-             (setq str-package
-                   (propertize
-                    (number-to-string str-package) 'face face))))
-         (insert
-          (format "Welcome To %s %s\n\n" str-emacs str-version)
-          "Enjoy Your Stay\n\n"
-          (if str-package
-              (format "%s Packages Loaded In %s" str-package str-time)
-            (format "Started In %s" str-time))))
-       (splash-align)
-       (add-hook 'window-state-change-hook #'splash-align)
-       (message ""))
-     buf)))
+(defun splash-format ()
+  "Insert an aligned text to `*splash*'"
+  (let* ((buffer (get-buffer-create "*splash*"))
+         (window (get-buffer-window buffer))
+         (color-bold (face-attribute 'ansi-color-yellow :foreground))
+         (color-rest (face-attribute 'mode-line :foreground))
+         (fmt (lambda (str color)
+                (propertize (format "%s" str) 'face
+                            `(:foreground ,color :weight 'bold))))
+         (lines `(,(concat (funcall fmt (concat "GNU Emacs " emacs-version)
+                                    color-bold)
+                           (funcall fmt " ── a Text Editor" color-rest))
+                  ,(funcall fmt (format "%s Packages Were Loaded in %ss"
+                                        (length package-activated-list)
+                                        (emacs-init-time "%.2f"))
+                            color-rest))))
+    (when window
+      (with-current-buffer buffer
+        (read-only-mode 0)
+        (erase-buffer)
+        (let* ((width (window-width window))
+               (height (window-height window))
+               (space (format (format "%%%ss" width) " "))
+               (indent-tabs-mode nil)
+               (fill-column width))
+          (dotimes (_ (- height 3)) (insert space "\n"))
+          (delete-backward-char 1)
+          (goto-line (/ (- height (length lines)) 2))
+          (dolist (line lines)
+            (insert line)
+            (center-line)
+            (insert-char (string-to-char " ") (- width (current-column)))
+            (insert "\n"))
+          (delete-backward-char 1))
+        (read-only-mode 1)))))
+
+(setq initial-buffer-choice
+      (lambda ()
+        (let ((buffer (get-buffer-create "*splash*")))
+          (add-hook 'window-state-change-hook #'splash-format)
+          buffer)))
 
 
 
