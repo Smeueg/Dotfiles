@@ -562,13 +562,17 @@
                       :background
                       (face-attribute 'font-lock-builtin-face :foreground))
   (add-hook 'eat-exec-hook
-            (lambda ()
-              (unless (server-running-p) (server-start))
-              (eat-char-mode)))
+            (lambda (&rest r)
+              (eat-char-mode)
+              (when (require 'server)
+                (unless (server-running-p) (server-start)))))
+
   (with-eval-after-load 'evil
-    (add-hook 'eat-exec-hook #'turn-off-evil-mode)
-    (add-hook 'eat-mode-hook
+    (add-hook 'eat-exec-hook
               (lambda (&rest r)
+                (turn-off-evil-mode)))
+    (add-hook 'eat-mode-hook
+              (lambda ()
                 (setq-local evil-insert-state-cursor 'box)
                 (add-hook 'evil-insert-state-entry-hook
                           (lambda ()
