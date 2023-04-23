@@ -354,7 +354,7 @@
             (lambda ()
               (with-eval-after-load 'evil
                 (evil-define-key '(normal motion) 'global
-                  " aj" 'avy-goto-char-2
+                  " aj" 'avy-goto-char
                   " an" 'avy-next
                   " ap" 'avy-prev)))))
 
