@@ -381,6 +381,7 @@
       " Th" '("Hide All Fold" . hs-hide-all))))
 
 (use-package all-the-icons
+  ;; The fonts need to be installed using `all-the-icons-install-fonts'
   :ensure t
   :if (display-graphic-p))
 
