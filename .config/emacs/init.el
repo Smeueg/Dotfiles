@@ -151,8 +151,7 @@
 (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
-  (package-install 'use-package)
-  (package-initialize))
+  (package-install 'use-package))
 (setq use-package-always-defer t)
 
 
