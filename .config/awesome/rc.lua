@@ -553,7 +553,7 @@ do -- awful.widget.network
 					widget.icon.image = icons.wifi
 					widget.wifi_in_progress = net_name
 					widget.text.text = net_name .. " "
-				else
+				elseif net_type and net_type:match("-ethernet") then
 					widget.icon.image = icons.eth
 					widget.eth_in_progress = net_name
 					widget.text.text = net_name .. " "
