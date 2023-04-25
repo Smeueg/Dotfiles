@@ -839,7 +839,7 @@ do -- awful.widget.layout
 				elseif layout == awful.layout.suit.max then
 					awful.layout.set_all(awful.layout.suit.floating)
 				else
-					utils.layout.set_all(awful.layout.suit.tile.right)
+					awful.layout.set_all(awful.layout.suit.tile.right)
 				end
 		end),
 		{ widget = wibox.widget.imagebox }
@@ -906,7 +906,11 @@ do -- awful.widget.dashboard
 				widget = wibox.container.background,
 				id = "power_opt",
 				callback = function()
-					if utils.check_cmd("systemctl") then
+					notify {
+						title = "System",
+						text = callback:upper_first()
+					}
+					if gears.filesystem.find_executable("systemctl") then
 						awful.spawn("systemctl " .. callback)
 					else
 						awful.spawn("loginctl " .. callback)
