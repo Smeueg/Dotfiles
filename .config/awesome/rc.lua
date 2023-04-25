@@ -94,40 +94,6 @@ naughty.config.spacing = dpi(5)
 
 
 -- Custom Functions --
-local utils = {
-	check_cmd = function(cmd)
-		for dir in string.gmatch(os.getenv("PATH"), "([^:]+)") do
-			if gears.filesystem.file_executable(dir .. "/" .. cmd) then
-				return true
-			end
-		end
-		return false
-	end
-}
-
-function awful.spawn.launch(name, cmd)
-	notify { title = "Launching Application", text = name }
-	awful.spawn(cmd, {
-			tag = awful.screen.focused().selected_tag
-	})
-end
-
--- Sets a layout for every tag
-function awful.layout.set_all(layout)
-	for _, t in ipairs(root.tags()) do
-		awful.layout.set(layout, t)
-	end
-end
-
-function awful.layout.incmwf_all(factor)
-	if awful.layout.get() ~= awful.layout.suit.tile.right then return end
-	for _, t in ipairs(root.tags()) do awful.tag.incmwfact(factor, t) end
-end
-
-function string:upper_first()
-	return self:sub(1, 1):upper() .. self:sub(2)
-end
-
 function string:remove_trailing_whitespace()
 	return self:gsub(" +$", "")
 end
@@ -138,6 +104,29 @@ function string.style_for_pango(text, style)
 		options = options .. string.format(" %s='%s'", key, v)
 	end
 	return string.format("<span%s>%s</span>", options, text)
+end
+
+function string:upper_first()
+	return self:sub(1, 1):upper() .. self:sub(2)
+end
+
+function awful.spawn.launch(name, cmd)
+	notify { title = "Launching Application", text = name }
+	awful.spawn(cmd, {
+			tag = awful.screen.focused().selected_tag
+	})
+end
+
+function awful.layout.set_all(layout)
+	-- Sets a layout for every tag
+	for _, t in ipairs(root.tags()) do
+		awful.layout.set(layout, t)
+	end
+end
+
+function awful.layout.incmwf_all(factor)
+	if awful.layout.get() ~= awful.layout.suit.tile.right then return end
+	for _, t in ipairs(root.tags()) do awful.tag.incmwfact(factor, t) end
 end
 
 function awful.widget.border_wrapper(w, disabled)
@@ -174,30 +163,6 @@ function awful.widget.border_wrapper(w, disabled)
 	}
 end
 
-function root.execute_keybinding(modifiers, key)
-	local conversion = {
-		Mod4 = "Super_L",
-		Control = "Control_L",
-		Shift = "Shift_L",
-		Mod1 = "Alt_L",
-		Mod4 = "Super_R",
-		Control = "Control_R",
-		Shift = "Shift_R",
-		Mod1 = "Alt_R"
-	}
-
-	for _, mod in ipairs(modifiers or {}) do
-		root.fake_input("key_press", conversion[mod])
-	end
-
-	root.fake_input("key_press", key)
-	root.fake_input("key_release", key)
-
-	for _, mod in ipairs(modifiers or {}) do
-		root.fake_input("key_release", conversion[mod])
-	end
-end
-
 function cairo.CreateImage(body, size)
 	local tmp = {}
 	local size = size
@@ -222,6 +187,30 @@ function cairo.get_rgb_as_hex(pattern)
 	g = math.floor(g * 255 + 0.5)
 	b = math.floor(b * 255 + 0.5)
 	return string.format("#%02X%02X%02X", r, g, b)
+end
+
+function root.execute_keybinding(modifiers, key)
+	local conversion = {
+		Mod4 = "Super_L",
+		Control = "Control_L",
+		Shift = "Shift_L",
+		Mod1 = "Alt_L",
+		Mod4 = "Super_R",
+		Control = "Control_R",
+		Shift = "Shift_R",
+		Mod1 = "Alt_R"
+	}
+
+	for _, mod in ipairs(modifiers or {}) do
+		root.fake_input("key_press", conversion[mod])
+	end
+
+	root.fake_input("key_press", key)
+	root.fake_input("key_release", key)
+
+	for _, mod in ipairs(modifiers or {}) do
+		root.fake_input("key_release", conversion[mod])
+	end
 end
 
 function gears.filesystem.find_executable(executable)
