@@ -576,6 +576,7 @@
                 (setq-local evil-insert-state-cursor 'box)
                 (add-hook 'evil-insert-state-entry-hook
                           (lambda ()
+                            (read-only-mode 0)
                             (turn-off-evil-mode)
                             (eat-char-mode))
                           nil t)))
@@ -588,6 +589,7 @@
                     (or (gui-get-selection 'CLIPBOARD 'UTF8_STRING) "")))
       [?\C-\\?\C-n] (lambda () (interactive)
                       (evil-normal-state)
+                      (read-only-mode 1)
                       (eat-emacs-mode)))))
 
 
