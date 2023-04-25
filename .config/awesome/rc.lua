@@ -740,6 +740,14 @@ do -- awful.widget.screenshot & awful.widget.screenshot.popup
 	end
 
 	function popup.toggle()
+		if not gears.filesystem.find_executable("import") then
+			notify {
+				title = "Screenshot",
+				text = "Couldn't open screenshot tool, `import` isn't installed"
+			}
+			return
+		end
+
 		if popup.visible then
 			popup.visible = false
 			popup.keygrabber:stop()
