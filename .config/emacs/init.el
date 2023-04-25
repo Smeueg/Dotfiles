@@ -752,6 +752,20 @@
   (add-to-list 'eglot-server-programs
                '(rust-mode . ("rustup" "run" "stable" "rust-analyzer"))))
 
+(use-package project
+  :init
+  (setq project-list-file "/tmp/emacs-projects")
+  :config
+  (with-eval-after-load 'evil
+    (evil-define-key 'motion 'global
+      " po" #'project-find-file
+      " pd" #'project-find-dir
+      " pr" #'project-find-regexp
+      " pp" #'project-switch-project
+      " pb" #'project-switch-to-buffer
+      " pk" #'project-kill-buffers
+      " pd" #'project-dired)))
+
 (use-package xref
   :init
   (with-eval-after-load 'evil
