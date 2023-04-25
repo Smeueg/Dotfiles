@@ -641,14 +641,25 @@
   (add-hook 'dired-mode-hook
             (lambda () (setq-local evil-emacs-state-cursor '(bar . 0))))
   ;; Keybindings
-  (evil-set-leader '(normal motion visual) " ")
-  (evil-define-key '(normal motion visual emacs) 'global
-    ":" #'execute-extended-command)
-  (evil-define-key '(insert normal visual operator motion replace) 'global
-    [?\M-h] (lambda () (interactive) (evil-normal-state 1) (evil-backward-char))
-    [?\M-j] (lambda () (interactive) (evil-normal-state 1) (evil-next-line))
-    [?\M-k] (lambda () (interactive) (evil-normal-state 1) (evil-previous-line))
-    [?\M-l] (lambda () (interactive) (evil-normal-state 1) (evil-forward-char)))
+  (evil-set-leader 'motion " ")
+  (evil-define-key '(motion emacs) 'global ":" #'execute-extended-command)
+  (evil-define-key '(insert motion) 'global
+    [?\M-h] (lambda ()
+              (interactive)
+              (evil-normal-state 1)
+              (call-interactively (key-binding "h")))
+    [?\M-j] (lambda ()
+              (interactive)
+              (evil-normal-state 1)
+              (call-interactively (key-binding "j")))
+    [?\M-k] (lambda ()
+              (interactive)
+              (evil-normal-state 1)
+              (call-interactively (key-binding "k")))
+    [?\M-l] (lambda ()
+              (interactive)
+              (evil-normal-state 1)
+              (call-interactively (key-binding "l"))))
   ;; Insert Mode Keybindings
   (evil-define-key 'insert 'global
     [?\C-n] nil
@@ -666,7 +677,7 @@
                                 (filter-buffer-substring beg end)))
             (evil-normal-state 1))))
   ;; Normal/Motion Mode Keybindings
-  (evil-define-key '(normal motion) 'global
+  (evil-define-key 'motion 'global
     [?\C-\S-j] (lambda () (interactive) (text-scale-decrease 0.5))
     [?\C-\S-k] (lambda () (interactive) (text-scale-increase 0.5))
     [?\C-\S-o] (lambda () (interactive) (text-scale-set 0))
