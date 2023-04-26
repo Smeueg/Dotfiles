@@ -736,7 +736,6 @@
               (turn-on-auto-fill))))
 
 
-
 ;;; PROGRAMMING
 (use-package eglot
   :ensure t
@@ -757,7 +756,7 @@
   (setq project-list-file "/tmp/emacs-projects")
   :config
   (with-eval-after-load 'evil
-    (evil-define-key 'motion 'global
+    (evil-define-key 'normal 'global
       " po" #'project-find-file
       " pd" #'project-find-dir
       " pr" #'project-find-regexp
@@ -769,8 +768,11 @@
 (use-package xref
   :init
   (with-eval-after-load 'evil
+    (evil-set-initial-state 'xref--xref-buffer-mode 'motion)
     (evil-define-key 'normal 'global
-      " fd" '("Find Definition" . xref-find-definitions))))
+      " fd" #'xref-find-definitions)
+    (evil-define-key 'motion xref--xref-buffer-mode-map
+      [return] #'xref-goto-xref)))
 
 (use-package flymake
   :init
@@ -925,7 +927,7 @@
                '("\\*Metahelp\\*" display-buffer-same-window))
   :config
   (with-eval-after-load 'evil
-    (evil-define-key '(motion) help-mode-map
+    (evil-define-key 'motion help-mode-map
       [return] #'push-button
       " n" #'forward-button
       " p" #'backward-button)))
@@ -1004,7 +1006,14 @@
                       git-branch
                       " "
                       (symbol-name major-mode))
-           right (list (alist-get evil-state
+           right (list (if (bound-and-true-p evil-this-macro)
+                           (format "Defining Macro (%s) "
+                                   (propertize
+                                    (char-to-string evil-this-macro)
+                                    'face `(:foreground
+                                            ,(aref ansi-color-names-vector 2))))
+                         "")
+                       (alist-get evil-state
                                   '((normal . "Normal") (insert . "Insert")
                                     (visual . "Visual") (motion . "Motion")
                                     (emacs . "Emacs") (replace . "Replace")
