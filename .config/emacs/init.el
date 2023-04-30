@@ -668,7 +668,7 @@
     [?\C-e] #'evil-scroll-line-down)
   ;; Visual Mode Keybindings
   (evil-define-key 'visual 'global
-    "A" #'mark-whole-buffer
+    "ga" #'mark-whole-buffer
     "C" '("copy-to-clipboard" .
           (lambda (beg end)
             (interactive "r")
