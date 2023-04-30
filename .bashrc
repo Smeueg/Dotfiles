@@ -38,7 +38,6 @@ print_prompt() {
 		wrapper_end="%}"
 	elif ! [ "${KSH_VERSION}" ]; then
 		color=false
-		unset reset color_dir color_branch color_failed color_success
 	fi
 
 	if ${color}; then
@@ -47,15 +46,6 @@ print_prompt() {
 		color_branch="${wrapper_start}\033[38;5;4m${wrapper_end}"
 		color_failed="${wrapper_start}\033[38;5;1m${wrapper_end}"
 		color_success="${wrapper_start}\033[38;5;6m${wrapper_end}"
-	fi
-
-	tmp="$(tty)"
-
-
-	if [ "${wrapper+x}" ]; then
-		for var in reset color_dir color_branch color_failed color_success; do
-			eval "${var}=\"\${wrapper_start}\$${var}\${wrapper_end}\""
-		done
 	fi
 
 	# Change the directory color to red if the user doesn't have permissions to
@@ -70,8 +60,8 @@ print_prompt() {
 	fi
 
 	# Git Branch
-	branch=$(git branch --show-current 2>/dev/null)
-	[ "${branch}" ] && printf '%b [ %s ]' "${color_branch}" "${branch}"
+	branch=$(git branch --show-current 2>&1)
+	[ $? = 0 ] && printf '%b [ %s ]' "${color_branch}" "${branch}"
 
 	# Symbol color
 	if [ ${ret} -eq 0 ]; then
