@@ -354,7 +354,8 @@
             (lambda ()
               (with-eval-after-load 'evil
                 (evil-define-key '(normal motion) 'global
-                  " aj" 'avy-goto-char
+                  " aj" 'avy-goto-char-2
+                  " aJ" 'avy-goto-char
                   " an" 'avy-next
                   " ap" 'avy-prev)))))
 
@@ -853,6 +854,7 @@
   (add-hook 'sh-mode-hook
 			(lambda ()
               (sh-electric-here-document-mode 0)
+              (indent-tabs-mode 0)
               (when (= (buffer-size) 0) (insert "#!/bin/sh\n\n")))))
 
 (use-package emacs-lisp
@@ -883,7 +885,7 @@
 (use-package rust-mode
   :ensure t
   :init
-  (add-hook 'rust-mode-hook (lambda () (setq-local indent-tabs-mode nil)))
+  (add-hook 'rust-mode-hook (lambda () (indent-tabs-mode 0)))
   :config
   (with-eval-after-load 'evil
     (evil-define-key 'normal 'rust-mode-map
