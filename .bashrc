@@ -273,7 +273,7 @@ rcmnt() {
 if [ "$(command -v git)" ]; then
 	[ "$(git config --get-regexp ^alias\.graph)" ] ||
 		git config --global alias.graph "log --graph --oneline"
-	if [ -f "${HOME}/.gitconfig" ]; then
+	if [ -f "${HOME}/.gitconfig" ] && [ -d "${XDG_CONFIG_HOME}" ]; then
 		[ -d "${XDG_CONFIG_HOME}/git/" ] || mkdir -p "${XDG_CONFIG_HOME}/git/"
 		mv -f "${HOME}/.gitconfig" "${XDG_CONFIG_HOME}/git/config"
 	fi
