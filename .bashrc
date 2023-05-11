@@ -297,3 +297,16 @@ if ! [ "${TERM}" = "linux" ]; then
 	printf "\033[H\033[J%b\n"
 	fetch
 fi
+
+
+# Warnings
+# Emacs
+if [ -f "${XDG_CONFIG_HOME}/emacs/init.el" ]; then
+    for file in "${HOME}/.emacs" "${HOME}/.emacs.d" "${HOME}"; do
+        { [ -f "${file}" ] || [ -d "${file}" ]; } || continue
+        printf "%b: '%s' exists but '%s' is used instead\n" \
+               "\033[1;31mWarning\033[0m" \
+               "${XDG_CONFIG_HOME}/emacs/init.el" \
+               "${file}"
+    done
+fi
