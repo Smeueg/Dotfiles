@@ -354,6 +354,7 @@
             (lambda ()
               (with-eval-after-load 'evil
                 (evil-define-key '(normal motion) 'global
+                  " a" '("avy-prefix" . (keymap))
                   " aj" 'avy-goto-char-2
                   " aJ" 'avy-goto-char
                   " an" 'avy-next
@@ -377,9 +378,10 @@
   :config
   (with-eval-after-load 'evil
     (evil-define-key 'normal hs-minor-mode-map
-      " t" '("Toggle Fold" . hs-toggle-hiding)
-      " Ts" '("Open All Fold" . hs-show-all)
-      " Th" '("Hide All Fold" . hs-hide-all))))
+      " f" '("fold-prefix" . (keymap))
+      " ff" #'hs-toggle-hiding
+      " fs" #'hs-show-all
+      " fh" #'hs-hide-all)))
 
 (use-package all-the-icons
   ;; The fonts need to be installed using `all-the-icons-install-fonts'
@@ -693,7 +695,7 @@
     " l" #'global-display-line-numbers-mode
     " W" #'visual-line-mode
     " w" #'whitespace-mode
-    " i" '("set-auto-mode" . (lambda () (interactive) (set-auto-mode 1)))))
+    " I" '("set-auto-mode" . (lambda () (interactive) (set-auto-mode 1)))))
 
 (use-package evil-collection
   :ensure t
@@ -746,8 +748,8 @@
     (add-hook hook #'eglot-ensure))
   (with-eval-after-load 'evil
     (evil-define-key 'normal eglot-mode-map
-      " cr" '("Rename Symbol" . eglot-rename)
-      " ca" '("Code Action" . eglot-code-actions)))
+      " cr" #'eglot-rename
+      " ca" #'eglot-code-actions))
   :config
   (add-to-list 'eglot-server-programs
                '(rust-mode . ("rustup" "run" "stable" "rust-analyzer"))))
@@ -757,7 +759,9 @@
   (setq project-list-file "/tmp/emacs-projects")
   :config
   (with-eval-after-load 'evil
+    (setq project-keymap (make-sparse-keymap))
     (evil-define-key 'normal 'global
+      " p" '("project-prefix" . (keymap))
       " po" #'project-find-file
       " pd" #'project-find-dir
       " pr" #'project-find-regexp
@@ -771,7 +775,8 @@
   (with-eval-after-load 'evil
     (evil-set-initial-state 'xref--xref-buffer-mode 'motion)
     (evil-define-key 'normal 'global
-      " fd" #'xref-find-definitions)
+      " i" '("intellisense" . (keymap))
+      " if" #'xref-find-definitions)
     (evil-define-key 'motion xref--xref-buffer-mode-map
       [return] #'xref-goto-xref)))
 
@@ -792,9 +797,10 @@
   :config
   (with-eval-after-load 'evil
     (evil-define-key 'normal 'flymake-mode-map
-      " fn" '("Goto Next Error" . flymake-goto-next-error)
-      " fp" '("Goto Previous Error" . flymake-goto-prev-error)
-      " fs" '("Show Diagnostics" . flymake-diagnostic-at-point)))
+      " i" '("intellisense-prefix" . (keymap))
+      " in" #'flymake-goto-next-error
+      " ip" #'flymake-goto-prev-error
+      " id" #'flymake-diagnostic-at-point))
   (let ((v [#b00000000
             #b11000000
             #b11000000
@@ -872,6 +878,12 @@
                 (evil-define-key 'visual prog-mode-map "gc" #'comment-dwim)
                 (evil-define-key 'normal prog-mode-map
                   "gc" #'comment-line
+                  " c" '("code-prefix" . (keymap))
+                  " ce" #'run)
+                (evil-define-key 'visual mhtml-mode-map "gc" #'comment-dwim)
+                (evil-define-key 'normal mhtml-mode-map
+                  "gc" #'comment-line
+                  " c" '("code-prefix" . (keymap))
                   " ce" #'run)))))
 
 (use-package python
@@ -909,6 +921,16 @@
         bongo-logo nil
         bongo-enabled-backends '(mpg123))
   (with-eval-after-load 'evil
+    (evil-define-key 'normal 'global
+      " m" '("bongo-prefix" . (keymap))
+      " mm" #'bongo-playlist
+      " mn" #'bongo-next
+      " mp" #'bongo-previous
+      " mi" #'bongo-seek
+      " mt" #'bongo-pause/resume
+      " mq" #'bongo-stop
+      " ms" #'bongo-start
+      " mr" #'bongo-play-random)
     (evil-define-key 'normal bongo-mode-map
       "c" #'bongo-pause/resume
       [return] #'bongo-dwim))
