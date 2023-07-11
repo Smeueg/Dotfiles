@@ -473,6 +473,7 @@
   :ensure t
   :commands magit
   :init
+  (setq magit-diff-refine-hunk 'all)
   (defun magit-kill-diffs ()
     "Kill the diff buffers that's associated with the current repo"
     (kill-buffer (magit-get-mode-buffer 'magit-diff-mode)))
