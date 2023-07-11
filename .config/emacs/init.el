@@ -465,8 +465,9 @@
 (use-package which-key
   :ensure t
   :init
-  (setq which-key-idle-delay 0.25)
-  (add-hook 'after-init-hook #'which-key-mode))
+  (add-hook 'after-init-hook #'which-key-mode)
+  (setq which-key-idle-delay 0.25
+        which-key-sort-order 'which-key-prefix-then-key-order))
 
 (use-package magit
   :ensure t
