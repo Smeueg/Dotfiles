@@ -247,7 +247,7 @@ export LESS_TERMCAP_us=$'\033[1;4;31m'
 # Warnings
 # Emacs
 if [ -f "${XDG_CONFIG_HOME}/emacs/init.el" ]; then
-    for file in "${HOME}/.emacs" "${HOME}/.emacs.d" "${HOME}"; do
+    for file in "${HOME}/.emacs" "${HOME}/.emacs.d"; do
         { [ -f "${file}" ] || [ -d "${file}" ]; } || continue
         printf "%b: '%s' exists but '%s' is used instead\n" \
                "\033[1;31mWarning\033[0m" \
