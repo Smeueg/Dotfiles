@@ -69,3 +69,26 @@ export CARGO_HOME="${XDG_DATA_HOME}"/cargo
 if [ "$(command -v simplescreenrecorder)" ]; then
 	mkdir -vp "${XDG_CONFIG_HOME}/simplescreenrecorder/"
 fi
+
+while ! [ "${DISPLAY}" ]; do
+    printf "Start Xorg? [\033[32mY\033[m/\033[31mn\033[m] "
+    read response
+    case ${response} in
+        [Yy]|[Yy][Ee][Ss]|"")
+            if [ -f "${HOME}/.config/X11/xinitrc" ]; then
+                startx "${HOME}/.config/X11/xinitrc"
+            else
+                startx
+            fi
+            ;;
+        [Nn]|[Nn][Oo])
+            printf "Won't start Xorg\n"
+            break
+            ;;
+        *)
+            printf "Invalid Response"
+            ;;
+    esac
+done
+
+[ "${DISPLAY}" ] || . ${HOME}/.bashrc
