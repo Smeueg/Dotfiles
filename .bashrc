@@ -176,55 +176,6 @@ e() {
 }
 
 
-fetch() (
-	# Get the OS
-	for f in /etc/*-release; do
-		read os < ${f}
-		os=${os%%\"}
-		os=${os##*\"}
-	done
-
-	# Get the terminal
-	if [ "${TERM}" = "linux" ]; then
-		term=$(tty)
-	else
-		term=$(ps --pid $PPID -o cmd -h)
-		term=${term%% *}
-	fi
-
-	# The username and hostname
-	name="\033[1;33m${USER}\033[0m@\033[33m${HOSTNAME}\033[0m\n"
-
-	# String to seperate the user_info and all the other informations
-	underline=""
-	i=0
-	while [ ${i} -ne $((${#USER} + ${#HOSTNAME} + 1)) ]; do
-		underline="${underline}─"
-		i=$((i + 1))
-	done
-
-	# String to print colors
-	colors=""
-	i=0
-	while [ ${i} -ne 7 ]; do
-		colors="${colors}\033[3${i}m●\033[0m "
-		i=$((i + 1))
-	done
-
-	# Actual printing
-	printf "┌────────────────┐\n"
-	printf "│                │ ${name}"
-	printf "│   ·  ·   ·  ·  ├─${underline}─\n"
-	printf "│   ·      ●     │ \033[1;31mOS\033[0m      ─  ${os}\n"
-	printf "│      ·      ·  │ \033[1;33mTERM\033[0m    ─  ${term##*/}\n"
-	printf "│  ·     ·  ·    │ \033[1;34mSHELL\033[0m   ─  ${SHELL##*/}\n"
-	printf "│    ● ·  ·   ·  │ \033[1;35mEDITOR\033[0m  ─  ${EDITOR}\n"
-	printf "│     ·      ·   │ \033[1;36mKERNEL\033[0m  ─  $(uname -r)\n"
-	printf "│                │ ${colors}\n"
-	printf "└────────────────┘\n"
-)
-
-
 rcmnt() {
 	if ! [ "$(command -v rclone)" ]; then
 		printf "\033[1;31m|\033[0m Command 'rclone' not found\n" >&2
@@ -291,12 +242,6 @@ export LESS_TERMCAP_me=$'\033[0m'
 export LESS_TERMCAP_se=$'\033[0m'
 export LESS_TERMCAP_ue=$'\033[0m'
 export LESS_TERMCAP_us=$'\033[1;4;31m'
-
-
-if ! [ "${TERM}" = "linux" ]; then
-	printf "\033[H\033[J%b\n"
-	fetch
-fi
 
 
 # Warnings
