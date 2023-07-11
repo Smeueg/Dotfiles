@@ -27,48 +27,48 @@ fi
 # PROMPT #
 # Should work on dash, bash, zsh, and ksh
 print_prompt() {
-	ret=${?}
-	symbol=">"
-	color=true
-	if [ "${BASH_VERSION}" ]; then
-		wrapper_start="\001"
-		wrapper_end="\002"
-	elif [ "${ZSH_NAME}" ]; then
-		wrapper_start="%{"
-		wrapper_end="%}"
-	elif ! [ "${KSH_VERSION}" ]; then
-		color=false
-	fi
+	ret=$?
+    symbol=">"
+    color=true
+    if [ "${BASH_VERSION}" ]; then
+	    wrapper_start="\001"
+	    wrapper_end="\002"
+    elif [ "${ZSH_NAME}" ]; then
+	    wrapper_start="%{"
+	    wrapper_end="%}"
+    elif ! [ "${KSH_VERSION}" ]; then
+	    color=false
+    fi
 
-	if ${color}; then
-		reset="${wrapper_start}\033[0m${wrapper_end}"
-		color_dir="${wrapper_start}\033[38;5;11m${wrapper_end}"
-		color_branch="${wrapper_start}\033[38;5;4m${wrapper_end}"
-		color_failed="${wrapper_start}\033[38;5;1m${wrapper_end}"
-		color_success="${wrapper_start}\033[38;5;6m${wrapper_end}"
-	fi
+    if ${color}; then
+	    reset="${wrapper_start}\033[0m${wrapper_end}"
+	    color_dir="${wrapper_start}\033[38;5;11m${wrapper_end}"
+	    color_branch="${wrapper_start}\033[38;5;4m${wrapper_end}"
+	    color_failed="${wrapper_start}\033[38;5;1m${wrapper_end}"
+	    color_success="${wrapper_start}\033[38;5;6m${wrapper_end}"
+    fi
 
-	# Change the directory color to red if the user doesn't have permissions to
-	# write to the directory
-	[ -w "${PWD}" ] || color_dir=${color_failed}
+    # Change the directory color to red if the user doesn't have permissions to
+    # write to the directory
+    [ -w "${PWD}" ] || color_dir=${color_failed}
 
-	# Current Directory
-	if ! [ "${PWD%${HOME}*}" ]; then
-		printf '%b%s' "${color_dir}" "~${PWD#${HOME}}"
-	else
-		printf '%b%s' "${color_dir}" "${PWD}"
-	fi
+    # Current Directory
+    if ! [ "${PWD%${HOME}*}" ]; then
+	    printf '%b%s' "${color_dir}" "~${PWD#${HOME}}"
+    else
+	    printf '%b%s' "${color_dir}" "${PWD}"
+    fi
 
-	# Git Branch
-	branch=$(git branch --show-current 2>&1)
-	[ $? = 0 ] && printf '%b [ %s ]' "${color_branch}" "${branch}"
+    # Git Branch
+    branch=$(git branch --show-current 2>&1)
+    [ $? = 0 ] && printf '%b [ %s ]' "${color_branch}" "${branch}"
 
-	# Symbol color
-	if [ ${ret} -eq 0 ]; then
-		printf '\n%b%s%b ' "${color_success}" "${symbol}" "${reset}"
-	else
-		printf '\n%b%s%b ' "${color_failed}" "${symbol}" "${reset}"
-	fi
+    # Symbol color
+    if [ ${ret} -eq 0 ]; then
+	    printf '\n%b%s%b ' "${color_success}" "${symbol}" "${reset}"
+    else
+	    printf '\n%b%s%b ' "${color_failed}" "${symbol}" "${reset}"
+    fi
 }
 export PS1="\$(print_prompt)"
 
