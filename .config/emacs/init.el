@@ -912,15 +912,16 @@
 (use-package bongo
   :ensure t
   :commands bongo-playlist
+  :config
+  (setq-default bongo-mode-line-indicator-mode nil
+                bongo-insert-whole-directory-trees t
+                bongo-local-audio-file-track-icon nil
+                bongo-display-track-icons nil
+                bongo-display-header-icons nil
+                bongo-played-track-icon nil
+                bongo-logo nil
+                bongo-enabled-backends '(mpg123))
   :init
-  (setq bongo-mode-line-indicator-mode nil
-        bongo-insert-whole-directory-trees t
-        bongo-local-audio-file-track-icon nil
-        bongo-display-track-icons nil
-        bongo-display-header-icons nil
-        bongo-played-track-icon nil
-        bongo-logo nil
-        bongo-enabled-backends '(mpg123))
   (with-eval-after-load 'evil
     (evil-define-key 'normal 'global
       " m" '("bongo-prefix" . (keymap))
@@ -941,9 +942,7 @@
 			  (let ((dir "~/Music"))
 				(when (file-directory-p dir)
 				  (bongo-insert-file dir)
-				  (goto-char (point-min))))))
-  :config
-  (defalias 'bongo 'bongo-playlist))
+				  (goto-char (point-min)))))))
 
 (use-package help
   :init
