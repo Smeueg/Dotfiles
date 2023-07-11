@@ -219,6 +219,7 @@ function gears.filesystem.find_executable(executable)
 		path = dir .. "/" .. executable
 		if gears.filesystem.file_executable(path) then return path end
 	end
+	return nil
 end
 
 function awful.spawn.run_if_installed(cmds)
