@@ -618,10 +618,11 @@
 
 ;;; CONTROLS
 (define-key key-translation-map [?\C-h] [?\C-?])
-(define-key global-map [?\C-\S-v]
-  (lambda ()
-    (interactive)
-    (insert (or (gui-get-selection 'CLIPBOARD 'UTF8_STRING) ""))))
+(global-set-key [?\C-\S-v]
+                (lambda ()
+                  (interactive)
+                  (insert (or (gui-get-selection 'CLIPBOARD 'UTF8_STRING) ""))))
+
 
 (use-package mwheel
   :init
