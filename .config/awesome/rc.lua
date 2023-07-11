@@ -1404,7 +1404,7 @@ end
 -- Run Commands On Startup --
 awful.spawn.run_if_installed {
 	"setxkbmap -option keypad:pointerkeys -option compose:paus",
-	"xrandr --output DP-1 --mode 1280x1024 --scale 1.3x1.3",
+	"xrandr --output DP1 --mode 1280x1024 --scale 1.3x1.3",
 	"xset r rate 250 50 s off -dpms" -- Set keyboard rate and disable dpms
 }
 
