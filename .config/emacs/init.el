@@ -996,11 +996,12 @@
           (delete-backward-char 1))
         (read-only-mode 1)))))
 
-(setq initial-buffer-choice
-      (lambda ()
-        (let ((buffer (get-buffer-create "*splash*")))
-          (add-hook 'window-state-change-hook #'splash-format)
-          buffer)))
+(when (length< command-line-args 2)
+  (setq initial-buffer-choice
+        (lambda ()
+          (let ((buffer (get-buffer-create "*splash*")))
+            (add-hook 'window-state-change-hook #'splash-format)
+            buffer))))
 
 
 
