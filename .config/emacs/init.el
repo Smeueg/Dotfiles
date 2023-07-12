@@ -479,7 +479,8 @@
   :ensure t
   :commands magit
   :init
-  (setq magit-diff-refine-hunk 'all)
+  (setq-default magit-diff-refine-hunk 'all
+                magit-diff-refine-ignore-whitespace nil)
   (defun magit-kill-diffs ()
     "Kill the diff buffers that's associated with the current repo"
     (kill-buffer (magit-get-mode-buffer 'magit-diff-mode)))
