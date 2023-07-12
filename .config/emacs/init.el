@@ -52,6 +52,12 @@
       (call-interactively #'with-editor-cancel)
     (call-interactively #'kill-buffer)))
 
+(defun Q ()
+  "Kill a buffer then delete the current window"
+  (interactive)
+  (when (kill-buffer-ask nil)
+    (call-interactively #'delete-window)))
+
 (defun scratch ()
   "Open the `*scratch*' buffer"
   (interactive)
