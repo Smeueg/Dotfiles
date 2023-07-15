@@ -1,4 +1,11 @@
 ;; Smeueg's Emacs configuration
+;; Neat packages to checkout:
+;;  - https://github.com/jcaw/theme-magic
+;;  - https://github.com/pft/mingus
+;;  - https://github.com/minad/org-modern
+;;  - https://github.com/magit/forge/wiki
+;; TODO: use 'astro-ts-mode'
+
 ;;; CLEANER ENVIRONMENT
 (setq make-backup-files nil
       auto-save-default nil
