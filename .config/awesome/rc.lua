@@ -130,6 +130,18 @@ function awful.layout.incmwf_all(factor)
 	for _, t in ipairs(root.tags()) do awful.tag.incmwfact(factor, t) end
 end
 
+function awful.layout.incnmaster(n)
+	if awful.layout.get() ~= awful.layout.suit.tile.right then return end
+	if root.tags()[1].master_count == 1 and n < 0 then return end
+	for _, t in ipairs(root.tags()) do awful.tag.incnmaster(n, t, true) end
+	notify {
+		title = "Current Master Count",
+		text = tostring(root.tags()[1].master_count),
+		position = "top_left",
+		timeout = 2
+	}
+end
+
 function awful.widget.border_wrapper(w, disabled)
 	disabled = disabled or {}
 	local function border(orientation, position)
@@ -1414,22 +1426,22 @@ awful.spawn.run_if_installed {
 -- Keybindings --
 local globalkeys = gears.table.join(
 	awful.key( -- Focus previous window
-		{ "Mod4" }, "j", function() awful.client.focus.byidx(-1) end,
+		{ "Mod4" }, "k", function() awful.client.focus.byidx(1) end,
 		{ group = "Client", description = "Focus previous client " }
 	),
 	awful.key( -- Focus next window
-		{ "Mod4" }, "k", function() awful.client.focus.byidx(1) end,
+		{ "Mod4" }, "j", function() awful.client.focus.byidx(-1) end,
 		{ group = "Client", description = "Focus next client" }
 	),
 	awful.key( -- Swap with next window
-		{ "Mod4", "Shift" }, "j", function() awful.client.swap.byidx(-1) end,
+		{ "Mod4", "Shift" }, "k", function() awful.client.swap.byidx(1) end,
 		{
 			group = "Client",
 			description = "Swap the current client with the next client"
 		}
 	),
 	awful.key( -- Swap with next window
-		{ "Mod4", "Shift" }, "k", function() awful.client.swap.byidx(1) end,
+		{ "Mod4", "Shift" }, "j", function() awful.client.swap.byidx(-1) end,
 		{
 			group = "Client",
 			description = "Swap the current client with the previos client"
@@ -1491,15 +1503,22 @@ local globalkeys = gears.table.join(
 		{ "Mod4", "Shift" }, "Tab", function() awful.tag.viewidx(-1) end,
 		{ group = "Tag", description = "Switch to the previous tag" }
 	),
-	-- Increase master width
+	-- Master Stack
 	awful.key(
 		{ "Mod4" }, "l", function() awful.layout.incmwf_all(0.05) end,
 		{ group = "Layout", description = "Increase the master width factor" }
 	),
-	-- Decrease master width
 	awful.key(
 		{ "Mod4" }, "h", function() awful.layout.incmwf_all(-0.05) end,
 		{ group = "Layout", description = "Decrease the master width factor" }
+	),
+	awful.key(
+		{ "Mod4", "Control" }, "k", function() awful.layout.incnmaster(1) end,
+		{ group = "Layout", description = "Increase the number of master windows" }
+	),
+	awful.key(
+		{ "Mod4", "Control" }, "j", function() awful.layout.incnmaster(-1) end,
+		{ group = "Layout", description = "Decrease the number of master windows" }
 	),
 	-- Awesome Functions
 	awful.key(
