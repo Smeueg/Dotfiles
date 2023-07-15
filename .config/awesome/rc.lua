@@ -1,15 +1,16 @@
 --[[
 	Smeueg's AwesomeWM Configuration File
+	Documenation for AwesomeWM:
+	https://awesomewm.org/doc/api/documentation/01-readme.md.html
 
-	REQUIRES:
+	REQUIREMENTS:
 	- pactl (Pulseaudio)
 	- nmcli (NetworkManager)
 
-	TODO:
-	- Cleanup
-	- Add USEFULL comments
-	- Add a lock screen feature
-	- Add a hotkeys popup
+	TODO: Provide a lock screen
+	TODO: Show a popup to display keybindings
+	TODO: Add USEFULL comments
+	TODO: Use lgi to show wifi with NetworkManager -> https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/blob/main/examples/lua/lgi/show-wifi-networks.lua
 --]]
 
 -- Import Libraries
