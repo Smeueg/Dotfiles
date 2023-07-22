@@ -23,7 +23,6 @@ elif [ "${ZSH_NAME}" ]; then
 fi
 
 
-
 # PROMPT #
 # Should work on dash, bash, zsh, and ksh
 print_prompt() {
@@ -73,7 +72,6 @@ print_prompt() {
 export PS1="\$(print_prompt)"
 
 
-
 # ALIASES #
 alias emacs="emacs -nw"
 alias mkdir="mkdir -pv"
@@ -88,6 +86,32 @@ alias dit="git --git-dir=${HOME}/.local/dots --work-tree=${HOME}"
 alias smeuesic="sh <(curl -sNL https://raw.githubusercontent.com/Smeueg/ytpl-sync/main/ytpl-sync) --url 'https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc'"
 alias ytpl="sh <(curl -sNL https://raw.githubusercontent.com/Smeueg/ytpl-sync/main/ytpl-sync)"
 alias sudo="sudo --preserve-env=TERMINFO"
+
+
+
+# NEAT EXTERNAL SCRIPTS #
+if [ "${BASH_VERSION}" ]; then
+    alias gpipesX='$0 <(curl -Ls https://raw.githubusercontent.com/pipeseroni/pipesX.sh/master/pipesX.sh -o -)'
+    alias gpipes='$0 <(curl -Ls https://github.com/pipeseroni/pipes.sh/raw/master/pipes.sh -o -)'
+else
+    alias gpipesX="printf \"[\033[1;31mERROR\033[m]: 'pipesX' requires 'bash'\n\""
+    alias gpipes="printf \"[\033[1;31mERROR\033[m]: 'pipes' requires 'bash'\n\""
+fi
+
+gneofetch() {
+    if [ "$(command -v bash)" ]; then
+        curl -Lso - https://raw.githubusercontent.com/dylanaraps/neofetch/master/neofetch |
+            bash -s -- $@
+    else
+        printf "[\033[1;31mERROR\033[m]: 'neofetch' requires 'bash'\n"
+    fi
+}
+
+gsetup() {
+    curl -Lso - https://smeueg.github.io/smeueger |
+        sh -s -- $@
+}
+
 
 # FUNCTIONS #
 dra() {
@@ -237,9 +261,9 @@ fi
 export LESS_TERMCAP_mb=$'\033[1;32m'
 export LESS_TERMCAP_md=$'\033[1;32m'
 export LESS_TERMCAP_so=$'\033[1;33m'
-export LESS_TERMCAP_me=$'\033[0m'
-export LESS_TERMCAP_se=$'\033[0m'
-export LESS_TERMCAP_ue=$'\033[0m'
+export LESS_TERMCAP_me=$'\033[m'
+export LESS_TERMCAP_se=$'\033[m'
+export LESS_TERMCAP_ue=$'\033[m'
 export LESS_TERMCAP_us=$'\033[1;4;31m'
 
 
@@ -249,7 +273,7 @@ if [ -f "${XDG_CONFIG_HOME}/emacs/init.el" ]; then
     for file in "${HOME}/.emacs" "${HOME}/.emacs.d"; do
         { [ -f "${file}" ] || [ -d "${file}" ]; } || continue
         printf "%b: '%s' exists but '%s' is used instead\n" \
-               "\033[1;31mWarning\033[0m" \
+               "\033[1;31mWarning\033[m" \
                "${XDG_CONFIG_HOME}/emacs/init.el" \
                "${file}"
     done
