@@ -10,8 +10,9 @@
 	TODO: Provide a lock screen
 	TODO: Show a popup to display keybindings
 	TODO: Add USEFULL comments
+	TODO: Better code structure
 	TODO: More efficient resource usage
-	TODO: Use lgi to show wifi with NetworkManager -> https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/blob/main/examples/lua/lgi/show-wifi-networks.lua
+	TODO: (WIP) Create a right click menu to close the clients on the wibar using awful.menu
 --]]
 
 -- Import Libraries
@@ -72,6 +73,11 @@ beautiful.init {
 	wibar_icon_color = "#FABD2F",
 	wibar_position = "top",
 	wibar_padding = dpi(7.5),
+	-- Menu
+	menu_height = dpi(30),
+	menu_bg_focus = "#00000030",
+	menu_border_color = "#FE8019",
+	menu_border_width = dpi(1),
 	-- Notifications
 	notification_border_color = "#FE8019",
 	-- Tags/Taglist
@@ -461,6 +467,18 @@ function awful.widget.tasklist_styled(s)
 							{raise = true}
 						)
 					end
+			end),
+			awful.button({ }, 3, function(c)
+					local menu = awful.menu {
+						{"Close", function() c:kill() end, nil}
+					}
+					menu:show()
+
+					-- Hide and destroy the menu
+					menu.wibox.widget:connect_signal("mouse::leave", function()
+							menu:hide()
+							menu = nil
+					end)
 			end),
 			awful.button({ }, 4, function() awful.client.focus.byidx(1) end),
 			awful.button({ }, 5, function() awful.client.focus.byidx(-1) end)
