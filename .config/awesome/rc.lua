@@ -10,6 +10,7 @@
 	TODO: Provide a lock screen
 	TODO: Show a popup to display keybindings
 	TODO: Add USEFULL comments
+	TODO: More efficient resource usage
 	TODO: Use lgi to show wifi with NetworkManager -> https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/blob/main/examples/lua/lgi/show-wifi-networks.lua
 --]]
 
@@ -547,77 +548,25 @@ do -- awful.widget.network
 	widget.text = widget:get_children_by_id("text")[1]
 
 	-- Initial Setup
-	awful.spawn.with_line_callback(
-		"nmcli -t -f name,type connection show --active",
-		{
-			stdout = function(line)
-				local net_name, net_type = line:match("([^:]+):([^:]+)")
-				if net_type and net_type:match("-wireless") then
-					widget.icon.image = icons.wifi
-					widget.wifi_in_progress = net_name
-					widget.text.text = net_name .. " "
-				elseif net_type and net_type:match("-ethernet") then
-					widget.icon.image = icons.eth
-					widget.eth_in_progress = net_name
-					widget.text.text = net_name .. " "
-				end
+	local NM = require("nm")
+
+	local function display_connection(connection)
+		if connection then
+			if connection.type == NM.DEVICE.TYPE.WIFI then
+				widget.icon.image = icons.wifi
+			elseif connection.type == NM.DEVICE.TYPE.ETHERNET then
+				widget.icon.image = icons.eth
 			end
-		}
-	)
-
-	local function watch()
-		awful.spawn.with_line_callback(
-			"nmcli monitor",
-			{
-				stdout = function(line)
-					local wifi = line:match("wl[^:]+: using connection '(.*)'")
-					if wifi then
-						widget.wifi_in_progress = wifi
-					end
-
-					local eth = line:match("en[^:]+: using connection '(.*)'")
-					if eth then
-						widget.eth_in_progress = eth
-					end
-
-					if line:match(string.format(
-							"'%s' is now the primary connection",
-							widget.wifi_in_progress
-					)) then
-						widget.icon.image = icons.wifi
-						widget.text.text = widget.wifi_in_progress .. " "
-					end
-
-					if line:match(string.format(
-							"'%s' is now the primary connection",
-							widget.eth_in_progress
-					)) then
-						widget.icon.image = icons.eth
-						widget.text.text = widget.eth_in_progress .. " "
-					end
-
-					if line:match("'disconnected' state") then
-						widget.icon.image = icons.offline
-						widget.text.text = "- "
-					end
-				end,
-				exit = watch
-			}
-		)
+			widget.text.text = connection.id
+		else
+			widget.icon.image = icons.offline
+			widget.text.text = "-"
+		end
+		widget.text.text = widget.text.text .. " "
 	end
 
-	awful.spawn.with_line_callback(
-		"ps -C nmcli -o pid=,cmd=",
-		{
-			stdout = function()
-				local pid = line:match("(%d+)%s+nmcli monitor")
-				if pid then
-					awful.spawn("kill -9 " .. pid, false)
-				end
-			end,
-				output_done = watch
-			}
-		)
+	display_connection(NM.get_active_connection())
+	NM.watch_connections(display_connection)
 
 	function awful.widget.network() return widget end
 end
@@ -1559,21 +1508,35 @@ local globalkeys = gears.table.join(
 		function()
 			awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ +5%", false)
 		end,
-		{ group = "Volume", description = "Increase Volume"}
+		{ group = "Volume", description = "Increase The Volume By 5"}
 	),
 	awful.key(
 		{ "Mod4" }, "[",
 		function()
 			awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ -5%", false)
 		end,
-		{ group = "Volume", description = "Decrease Volume"}
+		{ group = "Volume", description = "Decrease The Volume By 5"}
+	),
+	awful.key(
+		{ "Mod4", "Control" }, "]",
+		function()
+			awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ +1%", false)
+		end,
+		{ group = "Volume", description = "Increase The Volume By 1"}
+	),
+	awful.key(
+		{ "Mod4", "Control" }, "[",
+		function()
+			awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ -1%", false)
+		end,
+		{ group = "Volume", description = "Decrease The Volume By 1"}
 	),
 	awful.key(
 		{ "Mod4" }, "\\",
 		function()
 			awful.spawn("pactl set-sink-mute @DEFAULT_SINK@ toggle", false)
 		end,
-		{ group = "Volume", description = "Decrease Volume"}
+		{ group = "Volume", description = "(Un)Mute Sound"}
 	),
 	-- Screenshot
 	awful.key(
