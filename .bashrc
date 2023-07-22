@@ -241,6 +241,16 @@ rcmnt() {
 }
 
 
+cht() {
+    if [ "$(command -v curl)" ]; then
+        curl -Ls cht.sh/"$1" | less -r
+    elif [ "$(command -v wget)" ]; then
+        wget -q cht.sh/"$1" | less -r
+    else
+        printf "[\033[1;31mERROR\033[m]: 'cht' requires either 'curl' or 'wget'\n"
+    fi
+}
+
 
 # MISC #
 # Git
