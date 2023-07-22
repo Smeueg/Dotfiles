@@ -1,10 +1,39 @@
 ;; Smeueg's Emacs configuration
+;;
+;; Great information for faster init time:
+;;   https://github.com/doomemacs/doomemacs/blob/develop/docs/faq.org#how-does-doom-start-up-so-quickly
+;;
 ;; Neat packages to checkout:
 ;;  - https://github.com/jcaw/theme-magic
 ;;  - https://github.com/pft/mingus
 ;;  - https://github.com/minad/org-modern
-;;  - https://github.com/magit/forge/wiki
+;;  - https://github.com/magit/forge
+;;  - https://github.com/m00natic/vlfi
 ;; TODO: use 'astro-ts-mode'
+
+;;; FASTER STARTUP
+(setq gc-cons-threshold most-positive-fixnum ; 2^61 bytes
+      gc-cons-percentage 0.6)
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (setq gc-cons-threshold 5000000
+                  gc-cons-percentage 0.1)))
+
+;; Defer the garbage collection when using the minibuffer
+(add-hook 'minibuffer-setup-hook
+          (lambda () (setq gc-cons-threshold most-positive-fixnum)))
+(add-hook 'minibuffer-exit-hook
+          (lambda ()
+            (run-at-time 1 nil
+                         (lambda ()
+                           (setq gc-cons-threshold 5000000)))))
+
+(setq file-name-handler-alist-dupe file-name-handler-alist)
+(setq file-name-handler-alist nil)
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (setq file-name-handler-alist file-name-handler-alist-dupe)))
+
 
 ;;; CLEANER ENVIRONMENT
 (setq make-backup-files nil
@@ -40,10 +69,8 @@
                 (apply fn args))))
 
 
-
 ;;; FUNCTIONS / ALIASES
 (setq disabled-command-function nil) ;; Enable all command/functions
-(defalias 'wd 'delete-window)
 
 (defun w ()
   "Save a buffer if modified or finish an edit `with-editor-finish()'"
@@ -57,63 +84,56 @@
   (interactive)
   (if (bound-and-true-p with-editor-mode)
       (call-interactively #'with-editor-cancel)
-    (call-interactively #'kill-buffer)))
+    (kill-buffer)))
 
-(defun Q ()
+(defun quit-window-kill ()
   "Kill a buffer then delete the current window"
   (interactive)
-  (when (kill-buffer-ask nil)
-    (call-interactively #'delete-window)))
+  (when (kill-buffer) (delete-window)))
 
-(defun scratch ()
-  "Open the `*scratch*' buffer"
+(defun find-file-config ()
+  "Open `user-init-file'"
   (interactive)
-  (switch-to-buffer "*scratch*"))
-
-(defun split ()
-  "Split the buffer horizontally and move focus to the new split"
-  (interactive)
-  (select-window (split-window-horizontally)))
-
-(defun vsplit ()
-  "Split the buffer horizontally and move focus to the new split"
-  (interactive)
-  (select-window (split-window-vertically)))
-
-(defalias 'sp 'split)
-(defalias 'vs 'vsplit)
+  (find-file user-init-file))
 
 (defun run ()
   "Run the current buffer"
   (interactive)
   (if (not buffer-file-name)
       (message "[%s] Buffer isn't a file" (propertize "ERROR" 'face 'error))
-    (let ((bin "'/tmp/emacs-output'") (file (format "'%s'" buffer-file-name))
+    (let ((bin "/tmp/emacs-output")
+          (file (format "./'%s'" (file-name-nondirectory buffer-file-name)))
           (pair nil) (chosen nil) (cmd nil) (func nil))
       (setq
        pair
        `((rust-mode (:cmd "cargo run"))
          (c++-mode (:cmd ,(format "g++ %s -o %s && %s" file bin bin)))
          (c-mode (:cmd ,(format "cc %s -o %s && %s" file bin bin)))
-         (mhtml-mode (:cmd ,(format "xdg-open %s; exit" file)))
+         (mhtml-mode (:cmd ,(format "setsid xdg-open %s; exit" file)))
          (python-mode (:cmd ,(format "python3 %s" file)))
          (lua-mode (:cmd ,(format "lua %s" file)))
-         (emacs-lisp-mode (:func eval-defun))
          (sh-mode (:cmd ,file)
-                  (:func executable-make-buffer-file-executable-if-script-p))))
+                  (:func executable-make-buffer-file-executable-if-script-p))
+         (emacs-lisp-mode (:func ,(lambda ()
+                                    (if mark-active
+                                        (call-interactively #'eval-region)
+                                      (call-interactively #'eval-defun)))))))
 
-      (setq chosen (cdr (assoc major-mode pair)))
-      (setq cmd (cadr (assq :cmd chosen)))
-      (setq func (cadr (assq :func chosen)))
+      (setq chosen (cdr (assoc major-mode pair))
+            cmd (cadr (assq :cmd chosen))
+            func (cadr (assq :func chosen)))
       (save-buffer)
       (when func (funcall func))
-      (if (fboundp #'eat-new)
-          (with-current-buffer (eat-new)
-            (eat-send-string-as-yank eat--terminal (format "clear; %s" cmd))
-            (eat-input-char ?\n 1))
-        (progn
-          (term (getenv "SHELL"))
-          (term-send-raw-string (format "clear; %s\n" cmd)))))))
+      (when cmd
+        (if (fboundp #'eat-new)
+            (with-current-buffer (eat-new)
+              (eat-send-string-as-yank eat--terminal "clear")
+              (eat-input-char ?\n 1)
+              (eat-send-string-as-yank eat--terminal cmd)
+              (eat-input-char ?\n 1))
+          (progn
+            (term (getenv "SHELL"))
+            (term-send-raw-string (format "clear; %s\n" cmd))))))))
 
 (defun resize-window ()
   "Resize a window interactively"
@@ -125,8 +145,8 @@
           (propertize "──── Resize Window Mode ────\n" 'face
                       (list :foreground (aref ansi-color-names-vector 3)))
           "h:\t Shrink Window Horizontally\n"
-          "j:\t Shrink Window\n"
-          "k:\t Enlarge Window\n"
+          "j:\t Shrink Window Vertically\n"
+          "k:\t Enlarge Window Vertically\n"
           "l:\t Enlarge Window Horizontally\n"
           "C-g: Quit"))
         (let ((key (make-vector 1 (read-key))))
@@ -146,6 +166,76 @@
           args (cddr args))
     (define-key mode-map key fn)))
 
+(defun get-gruvbox-colors ()
+  "Spawn a buffer that has the hex codes for gruvbox's colors"
+  (interactive)
+  (with-current-buffer (get-buffer-create "*Gruvbox Colors*")
+    (read-only-mode 0)
+    (erase-buffer)
+    (let* ((colors '((("bg0 hard" . "#1D2021")
+                      ("bg0 soft" . "#32302f")
+                      ("bg0" . "#282828")
+                      ("bg1" . "#3C3836")
+                      ("bg2" . "#584945")
+                      ("bg3" . "#665c54")
+                      ("bg4" . "#7c6f64"))
+                     (("fg0" . "#fbf1c7")
+                      ("fg1" . "#ebdbb2")
+                      ("fg2" . "#d5c4a1")
+                      ("fg3" . "#bdae93")
+                      ("fg4" . "#a88984"))
+                     (("red" . "#cc241d")
+                      ("green" . "#b8bb26")
+                      ("yellow" . "#fabd2f")
+                      ("blue" . "#83a598")
+                      ("purple" . "#d3869b")
+                      ("aqua" . "#8ec07c")
+                      ("white" . "#928374"))
+                     (("bright-red" . "#fb4934")
+                      ("bright-green" . "#b8bb26")
+                      ("bright-yellow" . "#fabd2f")
+                      ("bright-blue" . "#83a598")
+                      ("bright-purple" . "#d3869b")
+                      ("bright-aqua" . "#8ec07c")
+                      ("bright-white" . "#ebdbb2"))
+                     (("orange" . "#d65d0e")
+                      ("bright-orange" . "#fe8d19"))))
+           (height (apply #'max (mapcar #'length colors)))
+           (face-default (list
+                          :foreground (face-attribute 'default :background)
+                          :box 10))
+           (count) (face) (name) (hex) (fmt))
+      (dolist (section colors)
+        (setq count 0
+              fmt (format "%%%ds" (max 7 (apply #'max
+                                                (mapcar (lambda (l)
+                                                          (length (car l)))
+                                                        section)))))
+        (dolist (color section)
+          (setq count (+ count 1)
+                name (car color)
+                hex (cdr color)
+                face (list :foreground "#ffffff"
+                           :background hex
+                           :box `(:line-width 10 :color ,hex)))
+          (end-of-line)
+          (insert (propertize (format fmt name) 'face face) "  ")
+          (if (char-after) (next-line) (insert "\n"))
+          (end-of-line)
+          (insert (propertize (format fmt hex) 'face face) "  ")
+          (if (char-after) (next-line) (insert "\n")))
+        (while (< count height)
+          (setq count (+ count 1))
+          (end-of-line)
+          (insert (propertize (format fmt "") 'face face-default) "  ")
+          (if (char-after) (next-line) (insert "\n"))
+          (end-of-line)
+          (insert (propertize (format fmt "") 'face face-default) "  ")
+          (if (char-after) (next-line) (insert "\n")))
+        (goto-char (point-min))))
+    (read-only-mode 1))
+  (switch-to-buffer "*Gruvbox Colors*"))
+
 
 ;;; HOOKS
 (add-hook 'before-save-hook #'delete-trailing-whitespace)
@@ -159,13 +249,37 @@
 
 
 ;;; PACKAGES INIT
+(setq package-quickstart t)
 (require 'package nil 'noerror)
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
   (package-install 'use-package))
+
 (setq use-package-always-defer t)
+(require 'use-package)
+(use-package package
+  :init
+  (with-eval-after-load 'evil
+    (evil-define-key 'motion 'global
+      (kbd "<leader>P") '("package-prefix" . (keymap))
+      (kbd "<leader>Pr") #'package-refresh-contents
+      (kbd "<leader>Pd") #'package-delete
+      (kbd "<leader>Pi") #'package-install))
+  :config
+  (defun package-upgrade-all ()
+    "Upgrade all Emacs packages that are able to be updated"
+    (interactive)
+    (package-refresh-contents)
+    (with-temp-buffer
+      (package-menu-mode)
+      (package-menu--generate nil t)
+      (package-menu-mark-upgrades)
+      (package-menu-execute t)))
+  (with-eval-after-load 'evil
+    (evil-define-key 'motion 'global
+      (kbd "<leader>Pu")#'package-upgrade-all)))
 
 
 
@@ -210,8 +324,17 @@
   :ensure t
   :demand t
   :init
+  (setq underline-minimum-offset 3)
   (load-theme 'gruvbox-dark-soft t)
   :config
+  (set-face-attribute 'link nil
+                      :foreground
+                      (aref ansi-color-names-vector 4)
+                      :overline nil
+                      :underline t)
+  (set-face-attribute 'link-visited nil
+                      :foreground
+                      (aref ansi-color-names-vector 5))
   (set-face-foreground 'window-divider
                        (face-attribute 'vertical-border :foreground))
   (set-face-background 'highlight
@@ -256,6 +379,18 @@
                        '(".+" (dired-move-to-filename) nil
                          (0 `(:foreground ,(aref ansi-color-names-vector 2)))))
                  'append))
+  (with-eval-after-load 'info
+    (set-face-attribute 'info-node nil
+                        :foreground (aref ansi-color-names-vector 3))
+    (set-face-attribute 'info-menu-star nil
+                        :foreground (aref ansi-color-names-vector 1))
+    (set-face-attribute 'Info-quoted nil
+                        :italic t :foreground (aref ansi-color-names-vector 5))
+    (set-face-attribute 'fixed-pitch-serif nil
+                        :family
+                        (face-attribute 'default :family)))
+  (setq hl-todo-keyword-faces
+        `(("TODO" . ,(aref ansi-color-names-vector 5))))
   (set-face-attribute 'variable-pitch nil :font "JetBrainsMono Nerd Font Mono")
   (add-hook 'eww-mode-hook
             (lambda ()
@@ -360,23 +495,30 @@
   (setq read-buffer-completion-ignore-case t
         read-file-name-completion-ignore-case t))
 
+(use-package marginalia
+  :ensure t
+  :init
+  (add-hook 'after-init-hook 'marginalia-mode))
+
+(use-package consult
+  :ensure t
+  :init
+  (global-set-key [remap switch-to-buffer] #'consult-buffer))
+
 (use-package avy
   :ensure t
   :init
   (add-hook 'after-init-hook
             (lambda ()
               (with-eval-after-load 'evil
-                (evil-define-key '(normal motion) 'global
+                (evil-define-key 'motion 'global
                   " a" '("avy-prefix" . (keymap))
-                  " aj" 'avy-goto-char-2
-                  " aJ" 'avy-goto-char
-                  " an" 'avy-next
-                  " ap" 'avy-prev)))))
-
-(use-package marginalia
-  :ensure t
-  :init
-  (add-hook 'after-init-hook 'marginalia-mode))
+                  " aj" #'avy-goto-char-2
+                  " aJ" #'avy-goto-char
+                  " al" #'avy-goto-line
+                  " an" #'avy-next
+                  " ap" #'avy-prev
+                  " ai" #'imenu)))))
 
 (use-package hideshow
   :custom
@@ -421,6 +563,7 @@
 (use-package dirvish
   :ensure t
   :init
+  (global-set-key [remap dired] #'dirvish)
   (setq
    dirvish-cache-dir "/tmp/dirvish/"
    dirvish-reuse-session nil
@@ -431,7 +574,6 @@
                            ("Pictures" (extensions "jpg" "png" "svg" "gif"))
                            ("Audio" (extensions "mp3" "flac" "wav" "ape" "aac"))
                            ("Archives" (extensions "gz" "rar" "zip"))))
-  (dirvish-override-dired-mode)
   (add-hook 'dired-mode-hook (lambda () (setq-local whitespace-style nil)))
   (add-hook 'dirvish-find-entry-hook
             (lambda (&rest _)
@@ -453,6 +595,7 @@
           (dired-unmark 1)
         (dired-mark 1)))
     (dired-next-line 1))
+  (dirvish-override-dired-mode)
   :config
   (define-key-convenient dirvish-mode-map
     " " 'dired-toggle-mark
@@ -463,7 +606,7 @@
     "p" 'dirvish-yank
     "m" 'dirvish-move
     "r" 'dired-do-rename
-    "++" 'dired-create-directory
+    "+d" 'dired-create-directory
     "+f" 'dired-create-empty-file)
   (with-eval-after-load 'evil
     (define-key-convenient dirvish-mode-map
@@ -482,50 +625,17 @@
   (setq which-key-idle-delay 0.25
         which-key-sort-order 'which-key-prefix-then-key-order))
 
-(use-package magit
-  :ensure t
-  :commands magit
-  :init
-  (setq-default magit-diff-refine-hunk 'all
-                magit-diff-refine-ignore-whitespace nil)
-  (defun magit-kill-diffs ()
-    "Kill the diff buffers that's associated with the current repo"
-    (kill-buffer (magit-get-mode-buffer 'magit-diff-mode)))
-  (add-to-list 'display-buffer-alist
-               '("magit: .*" display-buffer-same-window))
-  (add-hook 'git-commit-setup-hook
-            (lambda ()
-              (flyspell-mode 1)
-              (add-hook 'with-editor-post-finish-hook #'magit-kill-diffs)
-              (add-hook 'with-editor-post-cancel-hook #'magit-kill-diffs)))
-  :config
-  (define-key magit-diff-mode-map "e" nil)
-  (define-key magit-mode-map " " nil)
-  ;; Use '~/' as the working tree and '~/.local/dots' as the git directory when
-  ;; modifying a file that's inside '~/'.
-  (advice-add
-   'magit-process-environment :filter-return
-   (lambda (env)
-     (unless (vc-call-backend 'Git 'root default-directory)
-       (let ((work-tree "~/") (bare-repo "~/.local/dots/"))
-         (when (file-in-directory-p default-directory work-tree)
-           (message "Inside dotfiles repository, adding to env")
-           (push (format "GIT_WORK_TREE=%s" (expand-file-name work-tree)) env)
-           (push (format "GIT_DIR=%s" (expand-file-name bare-repo)) env))))
-     env)))
-
 (use-package ibuffer
   :commands ibuffer
   :init
-  (add-hook 'ibuffer-mode-hook
-            (lambda ()
-              (setq-local cursor-type nil)
-              (hl-line-mode 1)
-              (ibuffer-auto-mode 1)))
   (with-eval-after-load 'evil
     (add-hook 'ibuffer-mode-hook
               (lambda () (setq-local evil-emacs-state-cursor '(bar . 0)))))
   :config
+  (add-hook 'ibuffer-mode-hook
+            (lambda ()
+              (setq-local cursor-type nil)
+              (hl-line-mode 1)))
   (defun ibuffer-toggle-mark ()
     "Toggle mark on the current file"
     (interactive)
@@ -569,11 +679,22 @@
         (setq i (+ i 1)))
       (setq current-prefix-arg i)
       (call-interactively #'eat)))
-  (add-hook 'after-init-hook
-            (lambda ()
-              (with-eval-after-load 'evil
-                (evil-define-key '(normal motion) 'global
-                  " s" #'eat-new))))
+  (with-eval-after-load 'evil
+    (evil-define-key 'motion 'global
+      (kbd "<leader>e") #'eat
+      (kbd "<leader>E") #'eat-new))
+  (with-eval-after-load 'dired
+    (define-key-convenient dirvish-mode-map
+      "e" (lambda () (interactive)
+            (let ((d default-directory))
+              (dirvish-quit)
+              (let ((default-directory d))
+                (call-interactively #'eat))))
+      "E" (lambda () (interactive)
+            (let ((d default-directory))
+              (dirvish-quit)
+              (let ((default-directory d))
+                (call-interactively #'eat-new))))))
   :config
   (set-face-attribute 'eat-term-color-11 nil
                       :foreground
@@ -585,7 +706,6 @@
               (eat-char-mode)
               (when (require 'server)
                 (unless (server-running-p) (server-start)))))
-
   (with-eval-after-load 'evil
     (add-hook 'eat-exec-hook
               (lambda (&rest r)
@@ -611,8 +731,114 @@
                       (read-only-mode 1)
                       (eat-emacs-mode)))))
 
+(use-package neotree
+  :ensure t
+  :commands neotree-toggle
+  :init
+  (setq neo-theme (if (display-graphic-p) 'icons 'ascii))
+  (with-eval-after-load 'evil
+    (add-hook 'evil-mode-hook
+              (lambda ()
+                (evil-define-key 'motion 'global
+                  (kbd "<leader>st") #'neotree-toggle))))
+  :config
+  (add-hook 'neotree-mode-hook (lambda () (setq-local mode-line-format nil)))
+  (with-eval-after-load 'evil
+    (evil-define-key 'motion neotree-mode-map
+      "q" #'neotree-hide
+      "." #'neotree-hidden-file-toggle
+      (kbd "SPC") #'neotree-quick-look
+      (kbd "RET") #'neotree-enter)))
+
+
+(use-package which-function-mode
+  :init
+  (with-eval-after-load 'evil
+    (add-hook 'evil-mode-hook
+              (lambda ()
+                (evil-define-key 'motion 'global
+                  (kbd "<leader>sf") #'which-function-mode)))))
+
+
+;;; MAGIT
+(use-package magit
+  :ensure t
+  :commands magit
+  :init
+  (setq-default magit-diff-refine-hunk 'all
+                magit-diff-refine-ignore-whitespace nil
+                magit-section-initial-visibility-alist
+                '((unpushed . show)))
+  :config
+  (defun magit-kill-diffs ()
+    "Kill the diff buffers that's associated with the current repo"
+    (kill-buffer (magit-get-mode-buffer 'magit-diff-mode)))
+  (add-to-list 'display-buffer-alist
+               '("magit: .*" display-buffer-same-window))
+  (add-hook 'git-commit-setup-hook
+            (lambda ()
+              (flyspell-mode 1)
+              (add-hook 'with-editor-post-finish-hook #'magit-kill-diffs)
+              (add-hook 'with-editor-post-cancel-hook #'magit-kill-diffs)))
+  (define-key magit-mode-map [remap magit-mode-bury-buffer]
+    (lambda () (interactive) (magit-mode-bury-buffer 16)))
+  (define-key magit-diff-mode-map "e" nil)
+  (define-key magit-mode-map " " nil)
+  ;; Use '~/' as the working tree and '~/.local/dots' as the git directory when
+  ;; modifying a file that's inside '~/'.
+  (advice-add
+   'magit-process-environment :filter-return
+   (lambda (env)
+     (unless (vc-call-backend 'Git 'root default-directory)
+       (let ((work-tree "~/") (bare-repo "~/.local/dots/"))
+         (when (file-in-directory-p default-directory work-tree)
+           (message "Inside dotfiles repository, adding to env")
+           (push (format "GIT_WORK_TREE=%s" (expand-file-name work-tree)) env)
+           (push (format "GIT_DIR=%s" (expand-file-name bare-repo)) env))))
+     env)))
+
+(use-package magit-todos
+  :ensure t
+  :init
+  (with-eval-after-load 'magit (magit-todos-mode))
+  :config
+  (magit-todos-defscanner "git grep bare"
+                          :test
+                          (and (string-match "--erl-regexp"
+                                             (shell-command-to-string
+                                              "git grep --magit-todos-testing-git-grep")))
+                          :command (list "git"
+                                         (format "--git-dir=%s" (expand-file-name "~/.local/dots"))
+                                         (format "--work-tree=%s" (expand-file-name "~"))
+                                         "--no-pager" "grep" "--full-name" "--no-color" "-n"
+                                         (when depth (list "--max-depth" depth))
+                                         (when magit-todos-ignore-case "--ignore-case")
+                                         "--perl-regexp"
+                                         "-e" search-regexp-pcre
+                                         extra-args "--" directory
+                                         (when magit-todos-exclude-globs
+                                           (--map (concat ":!" it)
+                                                  magit-todos-exclude-globs))
+                                         (unless magit-todos-submodule-list
+                                           (--map (list "--glob" (concat "!" it))
+                                                  (magit-list-module-paths)))))
+  (add-hook 'magit-mode-hook
+            (lambda ()
+              (when (and (file-directory-p "~/.local/dots")
+                         (file-in-directory-p default-directory "~")
+                         (not (vc-call-backend 'Git 'root default-directory)))
+                (setq-local magit-todos-scanner
+                            #'magit-todos--scan-with-git-grep-bare))))
+  (with-eval-after-load 'evil
+    (define-key magit-todos-section-map "j" #'evil-next-line)
+    (define-key magit-todos-item-section-map "j" #'evil-next-line)))
+
 
 ;;; BUILTIN
+(use-package man
+  :init
+  (setq Man-notify-method 'pushy))
+
 (use-package isearch
   :init
   (setq lazy-highlight-cleanup nil))
@@ -622,21 +848,27 @@
   (with-eval-after-load 'evil
     (evil-define-key 'motion Info-mode-map
       [return] #'Info-follow-nearest-node
-      " n" #'Info-next-reference
-      " p" #'Info-prev-reference
-      " l" #'Info-next
-      " h" #'Info-prev
+      (kbd "<leader>n") #'Info-next-reference
+      (kbd "<leader>p") #'Info-prev-reference
+      (kbd "<leader>l") #'Info-next
+      (kbd "<leader>h") #'Info-prev
       "N" #'evil-search-previous
       "n" #'evil-search-next)))
 
+(use-package ibuffer
+  :commands ibuffer
+  :init
+  (with-eval-after-load 'evil
+    (evil-define-key 'motion 'global (kbd "<leader>B") #'ibuffer)))
+
 
 ;;; CONTROLS
+(global-set-key [remap quit-window] (lambda () (interactive) (quit-window t)))
 (define-key key-translation-map [?\C-h] [?\C-?])
 (global-set-key [?\C-\S-v]
                 (lambda ()
                   (interactive)
                   (insert (or (gui-get-selection 'CLIPBOARD 'UTF8_STRING) ""))))
-
 
 (use-package mwheel
   :init
@@ -646,6 +878,8 @@
 (use-package evil
   :ensure t
   :init
+  (add-hook 'evil-mode-hook
+            (lambda () (evil-set-leader 'motion (kbd "SPC"))))
   (add-hook 'after-init-hook #'evil-mode)
   (defvaralias 'evil-shift-width 'tab-width)
   (setq evil-undo-system 'undo-redo
@@ -653,16 +887,33 @@
         evil-emacs-state-message nil
         evil-insert-state-message nil
         evil-replace-state-message nil
-        evil-want-keybinding nil)
+        evil-want-keybinding nil
+        evil-want-C-i-jump nil)
   :config
-  (fset 'evil-next-line 'evil-next-visual-line)
-  (fset 'evil-previous-line 'evil-previous-visual-line)
+  (add-hook 'evil-jumps-post-jump-hook
+            (lambda () (call-interactively #'evil-scroll-line-to-center)))
+  (evil-define-key 'motion 'global
+    [remap evil-window-split] (lambda ()
+                                (interactive)
+                                (select-window (split-window-below)))
+    [remap evil-window-vsplit] (lambda ()
+                                 (interactive)
+                                 (select-window (split-window-right)))
+    [remap evil-next-line] #'evil-next-visual-line
+    [remap evil-previous-line] #'evil-previous-visual-line)
   (add-to-list 'evil-emacs-state-modes 'dired-mode)
   (add-hook 'dired-mode-hook
             (lambda () (setq-local evil-emacs-state-cursor '(bar . 0))))
   ;; Keybindings
-  (evil-set-leader 'motion " ")
+  (evil-set-leader 'normal (kbd "SPC"))
   (evil-define-key '(motion emacs) 'global ":" #'execute-extended-command)
+  (evil-define-key 'motion 'global
+    [?\C-\S-o] #'evil-jump-forward
+    "J" #'evil-scroll-line-down
+    "K" #'evil-scroll-line-up)
+  (evil-define-key 'normal 'global
+    "J" #'evil-join
+    "K" #'evil-lookup)
   (evil-define-key '(insert motion) 'global
     [?\M-h] (lambda ()
               (interactive)
@@ -698,62 +949,71 @@
             (evil-normal-state 1))))
   ;; Normal/Motion Mode Keybindings
   (evil-define-key 'motion 'global
-    [?\C-\S-j] (lambda () (interactive) (text-scale-decrease 0.5))
-    [?\C-\S-k] (lambda () (interactive) (text-scale-increase 0.5))
-    [?\C-\S-o] (lambda () (interactive) (text-scale-set 0))
-    " d" '("dirvish/dired" . (lambda ()
-                               (interactive)
-                               (if (fboundp 'dirvish) (dirvish) (dired))))
-    " r" #'resize-window
-    " b" #'switch-to-buffer
-    " o" #'find-file
-    " O" #'find-alternate-file
-    " h" #'help
-    " l" #'global-display-line-numbers-mode
-    " W" #'visual-line-mode
-    " w" #'whitespace-mode
-    " I" '("set-auto-mode" . (lambda () (interactive) (set-auto-mode 1)))))
+    (kbd "C--")(lambda () (interactive) (text-scale-decrease 0.5))
+    (kbd "C-=")(lambda () (interactive) (text-scale-increase 0.5))
+    (kbd "C-0")(lambda () (interactive) (text-scale-set 0))
+    (kbd "C-w r") #'resize-window
+    (kbd "C-w C") #'quit-window-kill
+    (kbd "<leader>d") #'dired
+    (kbd "<leader>b") #'switch-to-buffer
+    (kbd "<leader>oo") #'find-file
+    (kbd "<leader>oa") #'find-alternate-file
+    (kbd "<leader>of") #'ffap
+    (kbd "<leader>oc") #'find-file-config
+    (kbd "<leader>h") #'help
+    (kbd "<leader>s") '("settings-prefix" . (keymap))
+    (kbd "<leader>sL") #'global-display-line-numbers-mode
+    (kbd "<leader>sl") #'display-line-numbers-mode
+    (kbd "<leader>sV") #'global-visual-line-mode
+    (kbd "<leader>sv") #'visual-line-mode
+    (kbd "<leader>sW") #'global-whitespace-mode
+    (kbd "<leader>sw") #'whitespace-mode
+    (kbd "<leader>si") '("set-auto-mode" . (lambda ()
+                                             (interactive)
+                                             (set-auto-mode 1)))))
 
 (use-package evil-collection
   :ensure t
-  :demand t
-  :after evil
-  :config
-  (with-eval-after-load 'magit
-    (evil-collection-init 'magit)
-    (evil-define-key 'normal magit-mode-map
-      ":" #'execute-extended-command
-      "h" #'evil-backward-char
-      "l" #'evil-forward-char)))
-
-(use-package evil-surround
-  :ensure t
   :init
-  (global-evil-surround-mode 1))
-
+  (with-eval-after-load 'evil
+    (with-eval-after-load 'magit
+      (evil-collection-init 'magit)
+      (evil-define-key 'normal magit-mode-map
+        ":" #'execute-extended-command
+        "h" #'evil-backward-char
+        "l" #'evil-forward-char))))
 
 
 ;;; ORG
-(use-package org-bullets
-  :ensure t
-  :init
-  (add-hook 'org-mode-hook #'org-bullets-mode)
-  (setq org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
-
 (use-package org
-  :custom
-  (org-ellipsis " ▼")
-  (org-startup-folded t)
-  (org-hide-emphasis-markers t)
-  (org-log-done t)
-  (org-export-with-toc nil)
   :init
+  (setq org-ellipsis " ▼"
+        org-startup-folded t
+        org-hide-emphasis-markers t
+        org-log-done t
+        org-export-with-toc nil
+        ;; src block indentation settings
+        org-edit-src-content-indentation 0
+        org-src-tab-acts-natively t
+        org-src-preserve-indentation t)
   (add-hook 'org-mode-hook
             (lambda ()
               (setq-local indent-tabs-mode nil)
               (display-line-numbers-mode 0)
               (org-indent-mode 1)
               (turn-on-auto-fill))))
+
+(use-package org-bullets
+  :ensure t
+  :after org
+  :init
+  (add-hook 'org-mode-hook #'org-bullets-mode)
+  (setq org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+
+(use-package org-modern
+  :ensure t
+  :after org
+  (add-hook 'org-mode-hook #'org-modern-mode))
 
 
 ;;; PROGRAMMING
@@ -765,8 +1025,8 @@
     (add-hook hook #'eglot-ensure))
   (with-eval-after-load 'evil
     (evil-define-key 'normal eglot-mode-map
-      " cr" #'eglot-rename
-      " ca" #'eglot-code-actions))
+      (kbd "<leader>cr") #'eglot-rename
+      (kbd "<leader>ca") #'eglot-code-actions))
   :config
   (add-to-list 'eglot-server-programs
                '(rust-mode . ("rustup" "run" "stable" "rust-analyzer"))))
@@ -776,24 +1036,23 @@
   (setq project-list-file "/tmp/emacs-projects")
   :config
   (with-eval-after-load 'evil
-    (setq project-keymap (make-sparse-keymap))
-    (evil-define-key 'normal 'global
-      " p" '("project-prefix" . (keymap))
-      " po" #'project-find-file
-      " pd" #'project-find-dir
-      " pr" #'project-find-regexp
-      " pp" #'project-switch-project
-      " pb" #'project-switch-to-buffer
-      " pk" #'project-kill-buffers
-      " pd" #'project-dired)))
+    (evil-define-key 'motion 'global
+      (kbd "<leader>p") '("project-prefix" . (keymap))
+      (kbd "<leader>po") #'project-find-file
+      (kbd "<leader>pd") #'project-find-dir
+      (kbd "<leader>pr") #'project-find-regexp
+      (kbd "<leader>pp") #'project-switch-project
+      (kbd "<leader>pb") #'project-switch-to-buffer
+      (kbd "<leader>pk") #'project-kill-buffers
+      (kbd "<leader>pd") #'project-dired)))
 
 (use-package xref
   :init
   (with-eval-after-load 'evil
     (evil-set-initial-state 'xref--xref-buffer-mode 'motion)
     (evil-define-key 'normal 'global
-      " i" '("intellisense" . (keymap))
-      " if" #'xref-find-definitions)
+      (kbd "<leader>i") '("intellisense-prefix" . (keymap))
+      (kbd "<leader>if") #'xref-find-definitions)
     (evil-define-key 'motion xref--xref-buffer-mode-map
       [return] #'xref-goto-xref)))
 
@@ -811,13 +1070,16 @@
               (if flymake-mode
                   (set-window-fringes nil 8 0)
                 (set-window-fringes nil 0 0))))
-  :config
   (with-eval-after-load 'evil
     (evil-define-key 'normal 'flymake-mode-map
-      " i" '("intellisense-prefix" . (keymap))
-      " in" #'flymake-goto-next-error
-      " ip" #'flymake-goto-prev-error
-      " id" #'flymake-diagnostic-at-point))
+      (kbd "<leader>i") '("intellisense-prefix" . (keymap))
+      (kbd "<leader>in") #'flymake-goto-next-error
+      (kbd "<leader>ip") #'flymake-goto-prev-error
+      (kbd "<leader>id") #'flymake-diagnostic-at-point)
+    (with-eval-after-load 'consult
+      (evil-define-key 'normal 'flymake-mode-map
+        (kbd "<leader>ii") #'consult-flymake)))
+  :config
   (let ((v [#b00000000
             #b11000000
             #b11000000
@@ -854,11 +1116,10 @@
 (use-package lua-mode
   :ensure t
   :init
-  (setq
-   lua-indent-level 4
-   lua-indent-string-contents t
-   lua-indent-close-paren-align nil
-   lua-indent-nested-block-content-align nil))
+  (setq lua-indent-level 4
+        lua-indent-string-contents t
+        lua-indent-close-paren-align nil
+        lua-indent-nested-block-content-align nil))
 
 (use-package mhtml-mode
   :init
@@ -895,13 +1156,13 @@
                 (evil-define-key 'visual prog-mode-map "gc" #'comment-dwim)
                 (evil-define-key 'normal prog-mode-map
                   "gc" #'comment-line
-                  " c" '("code-prefix" . (keymap))
-                  " ce" #'run)
+                  (kbd "<leader>c") '("code-prefix" . (keymap))
+                  (kbd "<leader>ce") #'run)
                 (evil-define-key 'visual mhtml-mode-map "gc" #'comment-dwim)
                 (evil-define-key 'normal mhtml-mode-map
                   "gc" #'comment-line
-                  " c" '("code-prefix" . (keymap))
-                  " ce" #'run)))))
+                  (kbd "<leader>c") '("code-prefix" . (keymap))
+                  (kbd "<leader>ce") #'run)))))
 
 (use-package python
   :init
@@ -918,10 +1179,10 @@
   :config
   (with-eval-after-load 'evil
     (evil-define-key 'normal 'rust-mode-map
-      " cf" 'rust-format-buffer
-      " cc" 'rust-compile
-      " ck" 'rust-check
-      " ct" 'rust-toggle-mutability)))
+      (kbd "<leader>cf") 'rust-format-buffer
+      (kbd "<leader>cc") 'rust-compile
+      (kbd "<leader>ck") 'rust-check
+      (kbd "<leader>ct") 'rust-toggle-mutability)))
 
 
 ;;; MISC
@@ -940,15 +1201,15 @@
   :init
   (with-eval-after-load 'evil
     (evil-define-key 'normal 'global
-      " m" '("bongo-prefix" . (keymap))
-      " mm" #'bongo-playlist
-      " mn" #'bongo-next
-      " mp" #'bongo-previous
-      " mi" #'bongo-seek
-      " mt" #'bongo-pause/resume
-      " mq" #'bongo-stop
-      " ms" #'bongo-start
-      " mr" #'bongo-play-random)
+      (kbd "<leader>m") '("bongo-prefix" . (keymap))
+      (kbd "<leader>mm") #'bongo-playlist
+      (kbd "<leader>mn") #'bongo-next
+      (kbd "<leader>mp") #'bongo-previous
+      (kbd "<leader>mi") #'bongo-seek
+      (kbd "<leader>mt") #'bongo-pause/resume
+      (kbd "<leader>mq") #'bongo-stop
+      (kbd "<leader>ms") #'bongo-start
+      (kbd "<leader>mr") #'bongo-play-random)
     (evil-define-key 'normal bongo-mode-map
       "c" #'bongo-pause/resume
       [return] #'bongo-dwim))
@@ -969,8 +1230,8 @@
   (with-eval-after-load 'evil
     (evil-define-key 'motion help-mode-map
       [return] #'push-button
-      " n" #'forward-button
-      " p" #'backward-button)))
+      (kbd "<leader>n") #'forward-button
+      (kbd "<leader>p") #'backward-button)))
 
 
 ;;; CUSTOM SPLASH SCREEN
@@ -1048,13 +1309,22 @@
                       " "
                       (symbol-name major-mode))
            right (list (if (bound-and-true-p evil-this-macro)
-                           (format "Defining Macro (%s) "
+                           (format "Defining Macro (%s)  "
                                    (propertize
                                     (char-to-string evil-this-macro)
                                     'face `(:foreground
                                             ,(aref ansi-color-names-vector 2))))
                          "")
-                       (alist-get evil-state
+                       ;; `which-function-mode'
+                       (when (bound-and-true-p which-function-mode)
+                         (let ((cur-fn (gethash (selected-window)
+                                                which-func-table))
+                               (face `(:foreground
+                                       ,(aref ansi-color-names-vector 3))))
+                           (if cur-fn
+                               (format "[%s]  " (propertize cur-fn 'face face))
+                             "[-]  ")))
+                       (alist-get evil-state ;; `evil-mode'
                                   '((normal . "Normal") (insert . "Insert")
                                     (visual . "Visual") (motion . "Motion")
                                     (emacs . "Emacs") (replace . "Replace")
