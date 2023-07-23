@@ -1021,9 +1021,18 @@
   :ensure t
   :init
   (setq eglot-autoshutdown t)
+
   (dolist (hook '(c-mode-hook rust-mode-hook))
     (add-hook hook #'eglot-ensure))
+
+  (defun eglot-toggle ()
+    "Turn eglot either on or off"
+    (interactive)
+    (call-interactively (if (eglot-managed-p) #'eglot-shutdown #'eglot)))
+
   (with-eval-after-load 'evil
+    (evil-define-key 'normal prog-mode-map
+      (kbd "<leader>cl") #'eglot-toggle)
     (evil-define-key 'normal eglot-mode-map
       (kbd "<leader>cr") #'eglot-rename
       (kbd "<leader>ca") #'eglot-code-actions))
