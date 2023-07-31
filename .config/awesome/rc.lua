@@ -50,7 +50,6 @@ do
 	)
 end
 
-
 -- Theme (Gruvbox) --
 beautiful.init {
 	wallpaper = "#282828",
@@ -58,6 +57,7 @@ beautiful.init {
 	font = "JetBrainsMono Nerd Font Mono 11",
 	bg_normal = "#32302f",
 	fg_normal = "#EBDBB2",
+	icon_color = "#FABD2F",
 	-- Windows
 	border_width = dpi(2),
 	border_focus = "#FE8019",
@@ -70,7 +70,6 @@ beautiful.init {
 	titlebar_btn_close = "#D65D0E",
 	-- Wibar
 	wibar_height = dpi(50),
-	wibar_icon_color = "#FABD2F",
 	wibar_position = "top",
 	wibar_padding = dpi(7.5),
 	-- Menu
@@ -99,6 +98,8 @@ beautiful.init {
 
 naughty.config.spacing = dpi(5)
 
+local icon = require("ui.icon")
+local modkey = "Mod4"
 
 
 -- Custom Functions --
@@ -185,19 +186,18 @@ end
 
 function cairo.CreateImage(body, size)
 	local tmp = {}
-	local size = size
-	if not size then
+
+	if not size then -- default value for `size`
 		size = { 20, 20 }
 	end
-	tmp.image = cairo.ImageSurface.create(cairo.Format.ARGB32, size[1], size[2])
-	tmp.cr = cairo.Context(tmp.image)
-	if type(body) == "table" then
-		for _, v in ipairs(body) do
-			v(tmp.cr)
-		end
-	elseif type(body) == "function" then
-		body(tmp.cr)
-	end
+
+	tmp.image = cairo.ImageSurface.create(
+		cairo.Format.ARGB32,
+		size[1],
+		size[2]
+	)
+
+	body(cairo.Context(tmp.image))
 	return tmp.image
 end
 
@@ -214,11 +214,7 @@ function root.execute_keybinding(modifiers, key)
 		Mod4 = "Super_L",
 		Control = "Control_L",
 		Shift = "Shift_L",
-		Mod1 = "Alt_L",
-		Mod4 = "Super_R",
-		Control = "Control_R",
-		Shift = "Shift_R",
-		Mod1 = "Alt_R"
+		Mod1 = "Alt_L"
 	}
 
 	for _, mod in ipairs(modifiers or {}) do
@@ -271,42 +267,12 @@ function awful.widget.date()
 		bg = "#00000030",
 		{
 			widget = wibox.widget.textclock,
-			format = " %a - %d/%m/%y  %H:%M "
+			format = " %a  %d•%m•%y  %H:%M "
 		}
 	}
 end
 
 do -- awful.widget.volume
-	local icons = {
-		unmuted = cairo.CreateImage(function(cr)
-				cr:set_source(gears.color(beautiful.wibar_icon_color))
-				shapes.transform(shapes.rectangle)
-					:translate(6, 8)(cr, 4, 4)
-				shapes.transform(shapes.isosceles_triangle)
-					:rotate_at(0, 0, pi / -2)
-					:translate(-14, 6)(cr, 8, 4)
-				shapes.transform(shapes.arc)
-					:translate(0, 4)(cr, 12, 12, 1, pi / -7, pi / 7, true, true)
-				shapes.transform(shapes.arc)
-					:translate(0, 3)(cr, 14, 14, 1, pi / -6, pi / 6, true, true)
-				shapes.transform(shapes.arc)
-					:translate(0, 2)(cr, 16, 16, 1, pi / -5, pi / 5, true, true)
-				cr:fill()
-		end),
-		muted = cairo.CreateImage(function(cr)
-				cr:set_source(gears.color(beautiful.wibar_icon_color))
-				shapes.transform(shapes.rectangle)
-					:translate(6, 8)(cr, 4, 4)
-				shapes.transform(shapes.isosceles_triangle)
-					:rotate_at(0, 0, pi / -2)
-					:translate(-14, 6)(cr, 8, 4)
-				shapes.transform(shapes.cross)
-					:rotate_at(0, 0, pi / 4)
-					:translate(13.5, -5)(cr, 6, 6, 1)
-				cr:fill()
-		end)
-	}
-
 	local widget = wibox.widget {
 		widget = wibox.container.background,
 		shape = gears.shape.rounded_rect_auto,
@@ -357,7 +323,7 @@ do -- awful.widget.volume
 	end
 
 	local function parse_mute(stdout)
-		widget.icon.image = stdout:match("no") and icons.unmuted or icons.muted
+		widget.icon.image = stdout:match("no") and icon.unmuted or icon.muted
 	end
 
 	local function watch()
@@ -426,8 +392,8 @@ function awful.widget.taglist_styled(s)
 						local c = client.focus
 						if c then c:move_to_tag(t) end
 			end),
-			awful.button({}, 4, function(t) awful.tag.viewidx(-1) end),
-			awful.button({}, 5, function(t) awful.tag.viewidx(1) end)
+			awful.button({}, 4, function() awful.tag.viewidx(-1) end),
+			awful.button({}, 5, function() awful.tag.viewidx(1) end)
 		),
 		layout = {
 			layout = wibox.layout.fixed.horizontal,
@@ -510,38 +476,6 @@ function awful.widget.tasklist_styled(s)
 end
 
 do -- awful.widget.network
-	local icons = {
-		offline = cairo.CreateImage(function(cr)
-				cr:set_source(gears.color(beautiful.wibar_icon_color))
-				local c_start = (1.5 - 1/5) * pi
-				local c_end = (1.5 + 1/5) * pi
-				shapes.transform(shapes.pie)
-					:translate(0, 5)(cr, 20, 20, c_start, c_end)
-				cr:set_line_width(1)
-				cr:stroke()
-		end),
-		wifi = cairo.CreateImage(function(cr)
-				cr:set_source(gears.color(beautiful.wibar_icon_color))
-				local c_start = (1.5 - 1/5) * pi
-				local c_end = (1.5 + 1/5) * pi
-				shapes.transform(shapes.pie)
-					:translate(0, 5)(cr, 20, 20, c_start, c_end)
-				cr:set_line_width(1)
-				cr:fill()
-		end),
-		eth = cairo.CreateImage(function(cr)
-				cr:set_source(gears.color(beautiful.wibar_icon_color))
-				cr:rectangle(8, 4, 3, 3)
-				cr:rectangle(5, 12, 3, 3)
-				cr:rectangle(11, 12, 3, 3)
-				cr:rectangle(9, 7, 1, 3)
-				cr:rectangle(6, 9, 1, 3)
-				cr:rectangle(12, 9, 1, 3)
-				cr:rectangle(6, 9, 6, 1)
-				cr:fill()
-		end)
-	}
-
 	local widget = wibox.widget {
 		widget = wibox.container.background,
 		shape = gears.shape.rounded_rect_auto,
@@ -551,7 +485,7 @@ do -- awful.widget.network
 			layout = wibox.layout.fixed.horizontal,
 			{
 				widget = wibox.widget.imagebox,
-				image = icons.offline,
+				image = icon.offline,
 				id = "icon",
 			},
 			{
@@ -566,18 +500,18 @@ do -- awful.widget.network
 	widget.text = widget:get_children_by_id("text")[1]
 
 	-- Initial Setup
-	local NM = require("nm")
+	local NM = require("daemons.nm")
 
 	local function display_connection(connection)
 		if connection then
 			if connection.type == NM.DEVICE.TYPE.WIFI then
-				widget.icon.image = icons.wifi
+				widget.icon.image = icon.wifi
 			elseif connection.type == NM.DEVICE.TYPE.ETHERNET then
-				widget.icon.image = icons.eth
+				widget.icon.image = icon.eth
 			end
 			widget.text.text = connection.id
 		else
-			widget.icon.image = icons.offline
+			widget.icon.image = icon.offline
 			widget.text.text = "-"
 		end
 		widget.text.text = widget.text.text .. " "
@@ -761,18 +695,7 @@ do -- awful.widget.screenshot & awful.widget.screenshot.popup
 		buttons = awful.button({}, 1, popup.toggle),
 		{
 			widget = wibox.widget.imagebox,
-			image = cairo.CreateImage(function(cr)
-					cr:set_source(gears.color(beautiful.wibar_icon_color))
-					cr:rectangle(4, 4, 4, 2)
-					cr:rectangle(4, 4, 2, 4)
-					cr:rectangle(4, 14, 4, 2)
-					cr:rectangle(4, 12, 2, 4)
-					cr:rectangle(12, 4, 4, 2)
-					cr:rectangle(14, 4, 2, 4)
-					cr:rectangle(12, 14, 4, 2)
-					cr:rectangle(14, 12, 2, 4)
-					cr:fill()
-			end)
+			image = icon.screenshot
 		}
 	}
 
@@ -783,37 +706,11 @@ do -- awful.widget.screenshot & awful.widget.screenshot.popup
 end
 
 do -- awful.widget.layout
-	local icons = {
-		tile = cairo.CreateImage(function(cr)
-				cr:rectangle(4, 4, 5, 12)
-				cr:set_source(gears.color(beautiful.wibar_icon_color))
-				cr:fill()
-				cr:rectangle(11, 4, 5, 5)
-				cr:rectangle(11, 11, 5, 5)
-				cr:set_source(gears.color(beautiful.fg_normal))
-				cr:fill()
-		end),
-		max = cairo.CreateImage(function(cr)
-				cr:rectangle(4, 4, 12, 12)
-				cr:set_source(gears.color(beautiful.wibar_icon_color))
-				cr:fill()
-		end),
-		float = cairo.CreateImage(function(cr)
-				cr:set_source(gears.color(beautiful.wibar_icon_color))
-				cr:rectangle(4, 4, 8, 8)
-				cr:fill()
-				cr:rectangle(13, 8, 3, 8)
-				cr:rectangle(8, 13, 8, 3)
-				cr:set_source(gears.color(beautiful.fg_normal))
-				cr:fill()
-		end)
-	}
-
 	local widget = wibox.widget {
 		widget = wibox.container.background,
 		shape = gears.shape.rounded_rect_auto,
 		bg = "#00000030",
-		buttons = awful.button({}, 1, function(self)
+		buttons = awful.button({}, 1, function()
 				local layout = root.tags()[1].layout
 				if layout == awful.layout.suit.tile.right then
 					awful.layout.set_all(awful.layout.suit.max)
@@ -829,11 +726,11 @@ do -- awful.widget.layout
 	local function update(t)
 		if t.index > 1 then return end
 		if t.layout == awful.layout.suit.tile.right then
-			widget:get_children()[1].image = icons.tile
+			widget:get_children()[1].image = icon.tile
 		elseif t.layout == awful.layout.suit.max then
-			widget:get_children()[1].image = icons.max
+			widget:get_children()[1].image = icon.max
 		else
-			widget:get_children()[1].image = icons.float
+			widget:get_children()[1].image = icon.float
 		end
 	end
 
@@ -845,42 +742,6 @@ do -- awful.widget.layout
 end
 
 do -- awful.widget.dashboard
-	local icons = {
-		shutdown = cairo.CreateImage(function(cr)
-				cr:set_source(gears.color(beautiful.wibar_icon_color))
-				shapes.transform(shapes.arc)
-					:translate(3, 3)(cr, 14, 14, 2, -0.4 * pi, -0.6 * pi)
-				shapes.transform(shapes.rounded_bar)
-					:translate(9, 1)(cr, 2, 8)
-				cr:fill()
-		end),
-		reboot = cairo.CreateImage(function(cr)
-				cr:set_source(gears.color(beautiful.wibar_icon_color))
-				shapes.transform(shapes.arc)
-					:translate(3, 3)(cr, 14, 14, 2, -0.3 * pi, -0.7 * pi)
-				shapes.transform(shapes.isosceles_triangle)
-					:translate(15, 2):rotate_at(15, 2, pi / 2.75)(cr, 5, 5)
-				cr:fill()
-		end),
-		suspend = cairo.CreateImage(function(cr)
-				cr:set_source(gears.color(beautiful.wibar_icon_color))
-				shapes.transform(shapes.circle):translate(2, 2)(cr, 16, 16)
-				cr:fill()
-				cr:set_operator(cr, cairo.Operator.clear)
-				shapes.transform(shapes.circle):translate(0, 0)(cr, 12, 12)
-				cr:fill()
-		end),
-		search = cairo.CreateImage(function(cr)
-				cr:set_source(gears.color(beautiful.wibar_icon_color))
-				shapes.transform(shapes.circle):translate(4, 4)(cr, 8, 8)
-				cr:stroke()
-				shapes.transform(shapes.rectangle)
-					:translate(11, 10)
-					:rotate_at(11, 10, pi / 4)(cr, 6, 3)
-				cr:fill()
-		end)
-	}
-
 	local templates = {
 		power_opt = function(icon, callback)
 			return {
@@ -942,9 +803,9 @@ do -- awful.widget.dashboard
 	popup.launcher = popup.widget:get_children_by_id("launcher")[1]
 	popup.power.widget = wibox.widget {
 		layout = wibox.layout.fixed.vertical,
-		templates.power_opt(icons.suspend, "suspend"),
-		templates.power_opt(icons.reboot, "reboot"),
-		templates.power_opt(icons.shutdown, "poweroff"),
+		templates.power_opt(icon.suspend, "suspend"),
+		templates.power_opt(icon.reboot, "reboot"),
+		templates.power_opt(icon.shutdown, "poweroff"),
 	}
 	popup.power.options = popup.power.widget:get_children()
 
@@ -956,10 +817,10 @@ do -- awful.widget.dashboard
 			spacing = dpi(5),
 			{
 				widget = wibox.widget.imagebox,
-				image = icons.search,
-					forced_height = dpi(25),
-					forced_width = dpi(25)
-				},
+				image = icon.search,
+				forced_height = dpi(25),
+				forced_width = dpi(25)
+			},
 				{
 					widget = wibox.widget.textbox,
 					id = "textbox"
@@ -1037,8 +898,6 @@ do -- awful.widget.dashboard
 		local launcher = popup.launcher
 		local offset = launcher.offset
 		local limit = launcher.limit
-		local first, last = nil
-		local i = 0
 		launcher.text = launcher.textbox.text:remove_trailing_whitespace()
 		launcher.grid:reset()
 
@@ -1272,7 +1131,6 @@ do -- awful.widget.dashboard
 	end
 
 	function popup.toggle()
-		local btf = beautiful
 		local launcher = popup.launcher
 		local power = popup.power
 		popup.visible = true
@@ -1359,19 +1217,12 @@ do -- awful.widget.dashboard
 			end)
 		),
 		{
-			widget = wibox.widget.imagebox,
-			image = cairo.CreateImage(function(cr)
-					cr:set_source(gears.color(beautiful.wibar_icon_color))
-					shapes.transform(shapes.rounded_rect)
-						:translate(4, 4)(cr, 5, 5, 1)
-					shapes.transform(shapes.rounded_rect)
-						:translate(4, 11)(cr, 5, 5, 1)
-					shapes.transform(shapes.rounded_rect)
-						:translate(11, 4)(cr, 5, 5, 1)
-					shapes.transform(shapes.rounded_rect)
-						:translate(11, 11)(cr, 5, 5, 1)
-					cr:fill()
-			end)
+			widget = wibox.container.margin,
+			margins = dpi(6),
+			{
+				widget = wibox.widget.imagebox,
+				image = icon.dashboard
+			}
 		}
 	}
 
@@ -1393,22 +1244,22 @@ awful.spawn.run_if_installed {
 -- Keybindings --
 local globalkeys = gears.table.join(
 	awful.key( -- Focus previous window
-		{ "Mod4" }, "k", function() awful.client.focus.byidx(1) end,
+		{ modkey }, "k", function() awful.client.focus.byidx(1) end,
 		{ group = "Client", description = "Focus previous client " }
 	),
 	awful.key( -- Focus next window
-		{ "Mod4" }, "j", function() awful.client.focus.byidx(-1) end,
+		{ modkey }, "j", function() awful.client.focus.byidx(-1) end,
 		{ group = "Client", description = "Focus next client" }
 	),
 	awful.key( -- Swap with next window
-		{ "Mod4", "Shift" }, "k", function() awful.client.swap.byidx(1) end,
+		{ modkey, "Shift" }, "k", function() awful.client.swap.byidx(1) end,
 		{
 			group = "Client",
 			description = "Swap the current client with the next client"
 		}
 	),
 	awful.key( -- Swap with next window
-		{ "Mod4", "Shift" }, "j", function() awful.client.swap.byidx(-1) end,
+		{ modkey, "Shift" }, "j", function() awful.client.swap.byidx(-1) end,
 		{
 			group = "Client",
 			description = "Swap the current client with the previos client"
@@ -1416,7 +1267,7 @@ local globalkeys = gears.table.join(
 	),
 	-- Screens
 	awful.key( -- Focus previous screen
-		{ "Mod4", "Control" }, "j", function()
+		{ modkey, "Control" }, "j", function()
 			awful.screen.focus_relative(-1)
 		end,
 		{
@@ -1425,7 +1276,7 @@ local globalkeys = gears.table.join(
 		}
 	),
 	awful.key( -- Focus next screen
-		{ "Mod4", "Control" }, "k", function()
+		{ modkey, "Control" }, "k", function()
 			awful.screen.focus_relative(1)
 		end,
 		{
@@ -1435,7 +1286,7 @@ local globalkeys = gears.table.join(
 	),
 	-- Layout
 	awful.key(
-		{ "Mod4" }, "t", function()
+		{ modkey }, "t", function()
 			awful.layout.set_all(awful.layout.suit.tile.right)
 		end,
 		{
@@ -1444,7 +1295,7 @@ local globalkeys = gears.table.join(
 		}
 	),
 	awful.key(
-		{ "Mod4" }, "m", function()
+		{ modkey }, "m", function()
 			awful.layout.set_all(awful.layout.suit.max)
 		end,
 		{
@@ -1453,7 +1304,7 @@ local globalkeys = gears.table.join(
 		}
 	),
 	awful.key(
-		{ "Mod4" }, "f", function()
+		{ modkey }, "f", function()
 			awful.layout.set_all(awful.layout.suit.floating)
 		end,
 		{
@@ -1463,49 +1314,49 @@ local globalkeys = gears.table.join(
 	),
 	-- Tags
 	awful.key(
-		{ "Mod4" }, "Tab", function() awful.tag.viewidx(1) end,
+		{ modkey }, "Tab", function() awful.tag.viewidx(1) end,
 		{ group = "Tag", description = "Switch to the next tag" }
 	),
 	awful.key(
-		{ "Mod4", "Shift" }, "Tab", function() awful.tag.viewidx(-1) end,
+		{ modkey, "Shift" }, "Tab", function() awful.tag.viewidx(-1) end,
 		{ group = "Tag", description = "Switch to the previous tag" }
 	),
 	-- Master Stack
 	awful.key(
-		{ "Mod4" }, "l", function() awful.layout.incmwf_all(0.05) end,
+		{ modkey }, "l", function() awful.layout.incmwf_all(0.05) end,
 		{ group = "Layout", description = "Increase the master width factor" }
 	),
 	awful.key(
-		{ "Mod4" }, "h", function() awful.layout.incmwf_all(-0.05) end,
+		{ modkey }, "h", function() awful.layout.incmwf_all(-0.05) end,
 		{ group = "Layout", description = "Decrease the master width factor" }
 	),
 	awful.key(
-		{ "Mod4", "Control" }, "k", function() awful.layout.incnmaster(1) end,
+		{ modkey, "Control" }, "k", function() awful.layout.incnmaster(1) end,
 		{ group = "Layout", description = "Increase the number of master windows" }
 	),
 	awful.key(
-		{ "Mod4", "Control" }, "j", function() awful.layout.incnmaster(-1) end,
+		{ modkey, "Control" }, "j", function() awful.layout.incnmaster(-1) end,
 		{ group = "Layout", description = "Decrease the number of master windows" }
 	),
 	-- Awesome Functions
 	awful.key(
-		{ "Mod4", "Control" }, "r", awesome.restart,
+		{ modkey, "Control" }, "r", awesome.restart,
 		{ group = "Awesome", description = "Restart Awesome" }
 	),
 	awful.key(
-		{ "Mod4", "Shift" }, "q", awesome.quit,
+		{ modkey, "Shift" }, "q", awesome.quit,
 		{ group = "Awesome", description = "Quit Awesome" }
 	),
 	-- Applications --
 	awful.key(
-		{ "Mod4" }, "Return",
+		{ modkey }, "Return",
 		function()
 			awful.spawn.launch("Emacs", "emacs --internal-border=20")
 		end,
 		{ group = "Application", description = "Launch Emacs"}
 	),
 	awful.key(
-		{ "Mod4" }, "b",
+		{ modkey }, "b",
 		function()
 			local AppInfo = Gio.AppInfo
 			local app = AppInfo.get_default_for_type("text/html")
@@ -1522,35 +1373,35 @@ local globalkeys = gears.table.join(
 	),
 	-- Volume
 	awful.key(
-		{ "Mod4" }, "]",
+		{ modkey }, "]",
 		function()
 			awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ +5%", false)
 		end,
 		{ group = "Volume", description = "Increase The Volume By 5"}
 	),
 	awful.key(
-		{ "Mod4" }, "[",
+		{ modkey }, "[",
 		function()
 			awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ -5%", false)
 		end,
 		{ group = "Volume", description = "Decrease The Volume By 5"}
 	),
 	awful.key(
-		{ "Mod4", "Control" }, "]",
+		{ modkey, "Control" }, "]",
 		function()
 			awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ +1%", false)
 		end,
 		{ group = "Volume", description = "Increase The Volume By 1"}
 	),
 	awful.key(
-		{ "Mod4", "Control" }, "[",
+		{ modkey, "Control" }, "[",
 		function()
 			awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ -1%", false)
 		end,
 		{ group = "Volume", description = "Decrease The Volume By 1"}
 	),
 	awful.key(
-		{ "Mod4" }, "\\",
+		{ modkey }, "\\",
 		function()
 			awful.spawn("pactl set-sink-mute @DEFAULT_SINK@ toggle", false)
 		end,
@@ -1558,12 +1409,12 @@ local globalkeys = gears.table.join(
 	),
 	-- Screenshot
 	awful.key(
-		{ "Mod4" }, "s", awful.widget.screenshot.popup,
+		{ modkey }, "s", awful.widget.screenshot.popup,
 		{ group = "Screenshot", description = "Take A Screenshot" }
 	),
 	-- Dashboard
 	awful.key(
-		{ "Mod4" }, "p", awful.widget.dashboard.popup,
+		{ modkey }, "p", awful.widget.dashboard.popup,
 		{ group = "Dashboard", description = "Open The Power Menu" }
 	)
 )
@@ -1574,7 +1425,7 @@ for i = 1, beautiful.tag_amount or 5 do
 		globalkeys,
 		-- View tag only.
 		awful.key(
-			{ "Mod4" }, i,
+			{ modkey }, i,
 			function()
 				local tag = awful.screen.focused().tags[i]
 				if tag then tag:view_only() end
@@ -1583,7 +1434,7 @@ for i = 1, beautiful.tag_amount or 5 do
 		),
 		-- Toggle tag display.
 		awful.key(
-			{ "Mod4", "Control" }, i,
+			{ modkey, "Control" }, i,
 			function()
 				local tag = awful.screen.focused().tags[i]
 				if tag then awful.tag.viewtoggle(tag) end
@@ -1592,7 +1443,7 @@ for i = 1, beautiful.tag_amount or 5 do
 		),
 		-- Move client to tag.
 		awful.key(
-			{ "Mod4", "Shift" }, i,
+			{ modkey, "Shift" }, i,
 			function()
 				if not client.focus then return end
 				local tag = client.focus.screen.tags[i]
@@ -1608,19 +1459,19 @@ root.keys(globalkeys)
 -- Clients
 local clientkeys = gears.table.join(
 	awful.key(
-		{ "Mod4", "Shift" }, "c", function(c) c:kill() end,
+		{ modkey, "Shift" }, "c", function(c) c:kill() end,
 		{ group = "Client", description = "Kill the client" }
 	),
 	awful.key(
-		{ "Mod4", "Shift" }, "f", function(c) c.floating = not c.floating end,
+		{ modkey, "Shift" }, "f", function(c) c.floating = not c.floating end,
 		{ group = "Client", description = "Toggle floating" }
 	),
 	awful.key(
-		{ "Mod4", "Shift" }, "o", function(c) c:move_to_screen() end,
+		{ modkey, "Shift" }, "o", function(c) c:move_to_screen() end,
 		{ group = "Client", description = "Move client to the current screen" }
 	),
 	awful.key(
-		{ "Mod4" }, "o", function(c) c:move_to_screen() end,
+		{ modkey }, "o", function(c) c:move_to_screen() end,
 		{ group = "Client", description = "Move client to the current screen" }
 	)
 )
@@ -1637,7 +1488,7 @@ do -- Move and resize clients using the arrow keys
 		clientkeys = gears.table.join(
 			clientkeys,
 			awful.key(
-				{ "Mod4" }, direction, function(c)
+				{ modkey }, direction, function(c)
 					c:relative_move(coords[1], coords[2], 0, 0)
 				end,
 				{
@@ -1646,7 +1497,7 @@ do -- Move and resize clients using the arrow keys
 				}
 			),
 			awful.key(
-				{ "Mod4", "Shift" }, direction, function(c)
+				{ modkey, "Shift" }, direction, function(c)
 					c:relative_move(0, 0, coords[1], coords[2])
 				end,
 				{
@@ -1663,11 +1514,11 @@ local clientbuttons = gears.table.join(
 	awful.button({}, 1, function(c)
 			c:emit_signal("request::activate", "mouse_click", { raise = true })
 	end),
-	awful.button({ "Mod4" }, 1, function(c)
+	awful.button({ modkey }, 1, function(c)
 			c:emit_signal("request::activate", "mouse_click", { raise = true })
 			awful.mouse.client.move(c)
 	end),
-	awful.button({ "Mod4" }, 3, function(c)
+	awful.button({ modkey }, 3, function(c)
 			c:emit_signal("request::activate", "mouse_click", { raise = true })
 			awful.mouse.client.resize(c)
 	end)
@@ -1876,6 +1727,7 @@ tag.connect_signal("property::layout", function(t)
 		end
 end)
 
+local collectgarbage = collectgarbage
 gears.timer { -- More frequent garbage collection
 	timeout = 30,
 	autostart = true,

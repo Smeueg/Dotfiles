@@ -2,12 +2,10 @@
 	https://networkmanager.dev/docs/api/latest/
 ]]
 local lgi = require("lgi")
-local dbus = require("dbus")
+local dbus = require("daemons.dbus")
 local Gio = lgi.Gio
-local GLib = lgi.GLib
 
-
-local NM = {
+local nm = {
 	DEVICE = {
 		TYPE = {
 			UNKNOWN = 0,
@@ -96,7 +94,7 @@ end
 --  type (string): NetworkManager active connection type
 --  id   (string): NetworkManager active connection id
 -- }
-function NM.get_active_connection()
+function nm.get_active_connection()
 	local active_connection
 	local network = dbus.get_properties {
 		name = "org.freedesktop.NetworkManager",
@@ -127,7 +125,7 @@ function NM.get_active_connection()
 			interface = "org.freedesktop.NetworkManager.Device"
 		}
 
-		if device.State == NM.DEVICE.STATE.ACTIVATED and device.DeviceType ~= NM.DEVICE.TYPE.LOOPBACK then
+		if device.State == nm.DEVICE.STATE.ACTIVATED and device.DeviceType ~= nm.DEVICE.TYPE.LOOPBACK then
 			local active_connection_path = dbus.get_property {
 				name = "org.freedesktop.NetworkManager",
 				path = device_path,
@@ -141,7 +139,7 @@ function NM.get_active_connection()
 				type = device.DeviceType
 			}
 
-			if device.DeviceType == NM.DEVICE.TYPE.ETHERNET then
+			if device.DeviceType == nm.DEVICE.TYPE.ETHERNET then
 				return active_connection
 			end
 		end
@@ -156,9 +154,9 @@ end
 -- callback should accept a table with the following structure:
 -- {
 --   id (string),
---   type (NM.DEVICE.TYPE)
+--   type (nm.DEVICE.TYPE)
 -- }
-function NM.watch_connections(callback)
+function nm.watch_connections(callback)
 	dbus.BusSYSTEM:signal_subscribe(
 		"org.freedesktop.NetworkManager", -- sender
 		"org.freedesktop.NetworkManager.Connection.Active", -- interface
@@ -169,15 +167,15 @@ function NM.watch_connections(callback)
 		function(...) -- callback
 			local user_data = ({...})[6]
 			local state = user_data:get_child_value(0).value
-			local nm_states = NM.ACTIVE_CONNECTION.STATE
+			local nm_states = nm.ACTIVE_CONNECTION.STATE
 			if state == nm_states.ACTIVATED or state == nm_states.DEACTIVATED then
-				callback(NM.get_active_connection())
+				callback(nm.get_active_connection())
 			end
 		end
 	)
 end
 
--- NM.watch_connections(function(connection)
+-- nm.watch_connections(function(connection)
 -- 		if connection then
 -- 			print(string.format(
 -- 					"Connected to: %s\nType: %s\n----",
@@ -190,4 +188,4 @@ end
 -- end)
 
 
-return NM
+return nm
