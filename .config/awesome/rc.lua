@@ -1351,7 +1351,7 @@ local globalkeys = gears.table.join(
 	awful.key(
 		{ modkey }, "Return",
 		function()
-			awful.spawn.launch("Emacs", "emacs --internal-border=20")
+			awful.spawn.launch("Emacs", "emacs")
 		end,
 		{ group = "Application", description = "Launch Emacs"}
 	),
