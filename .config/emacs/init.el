@@ -10,6 +10,7 @@
 ;;  - https://github.com/magit/forge
 ;;  - https://github.com/m00natic/vlfi
 ;; TODO: use 'astro-ts-mode'
+;; TODO: use keymaps replacing "<leader>..."
 
 ;;; FASTER STARTUP
 (setq gc-cons-threshold most-positive-fixnum ; 2^61 bytes
@@ -72,6 +73,7 @@
 ;;; FUNCTIONS / ALIASES
 (setq disabled-command-function nil) ;; Enable all command/functions
 
+
 (defun w ()
   "Save a buffer if modified or finish an edit `with-editor-finish()'"
   (interactive)
@@ -90,11 +92,6 @@
   "Kill a buffer then delete the current window"
   (interactive)
   (when (kill-buffer) (delete-window)))
-
-(defun find-file-config ()
-  "Open `user-init-file'"
-  (interactive)
-  (find-file user-init-file))
 
 (defun run ()
   "Run the current buffer"
@@ -166,6 +163,11 @@
           args (cddr args))
     (define-key mode-map key fn)))
 
+(defun detect-mode ()
+  "Detect what mode the current buffer should be in"
+  (interactive)
+  (set-auto-mode 1))
+
 (defun get-gruvbox-colors ()
   "Spawn a buffer that has the hex codes for gruvbox's colors"
   (interactive)
@@ -236,6 +238,17 @@
     (read-only-mode 1))
   (switch-to-buffer "*Gruvbox Colors*"))
 
+(defun make-tmp-map (parent key fn &rest args)
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map parent)
+    (define-key map key fn)
+    (while args
+      (setq key (car args)
+            fn (cadr args)
+            args (cddr args))
+      (define-key map key fn))
+    map))
+
 
 ;;; HOOKS
 (add-hook 'before-save-hook #'delete-trailing-whitespace)
@@ -245,6 +258,26 @@
               (unless (get-buffer buffer)
                 (generate-new-buffer buffer)
                 (set-buffer-major-mode (get-buffer buffer))))))
+
+
+
+;;; PREFIXED/KEYMAPS
+(defvar settings-keymap (make-sparse-keymap)
+  "A keymap to toggle \"settings\"")
+(defvar package-keymap (make-sparse-keymap)
+  "A keymap to run \"package\" functions")
+(defvar open-keymap (make-sparse-keymap)
+  "A keymap to open files/urls")
+(defvar jump-keymap (make-sparse-keymap)
+  "A keymap to jump and navigate quickly")
+(defvar code-keymap (make-sparse-keymap)
+  "A keymap for anything programming related")
+(defvar fold-keymap (make-sparse-keymap)
+  "A keymap to control folding")
+(defvar music-keymap (make-sparse-keymap)
+  "A keymap for anything music related")
+(defvar project-keymap (make-sparse-keymap)
+  "A keymap for anything project related")
 
 
 
@@ -261,12 +294,10 @@
 (require 'use-package)
 (use-package package
   :init
-  (with-eval-after-load 'evil
-    (evil-define-key 'motion 'global
-      (kbd "<leader>P") '("package-prefix" . (keymap))
-      (kbd "<leader>Pr") #'package-refresh-contents
-      (kbd "<leader>Pd") #'package-delete
-      (kbd "<leader>Pi") #'package-install))
+  (define-key-convenient package-keymap
+    "R" #'package-refresh-contents
+    "r" #'package-delete
+    "i" #'package-install)
   :config
   (defun package-upgrade-all ()
     "Upgrade all Emacs packages that are able to be updated"
@@ -277,9 +308,7 @@
       (package-menu--generate nil t)
       (package-menu-mark-upgrades)
       (package-menu-execute t)))
-  (with-eval-after-load 'evil
-    (evil-define-key 'motion 'global
-      (kbd "<leader>Pu")#'package-upgrade-all)))
+  (define-key package-keymap "u" #'package-upgrade-all))
 
 
 
@@ -508,17 +537,12 @@
 (use-package avy
   :ensure t
   :init
-  (add-hook 'after-init-hook
-            (lambda ()
-              (with-eval-after-load 'evil
-                (evil-define-key 'motion 'global
-                  " a" '("avy-prefix" . (keymap))
-                  " aj" #'avy-goto-char-2
-                  " aJ" #'avy-goto-char
-                  " al" #'avy-goto-line
-                  " an" #'avy-next
-                  " ap" #'avy-prev
-                  " ai" #'imenu)))))
+  (define-key-convenient jump-keymap
+    "j" #'avy-goto-char-2
+    "J" #'avy-goto-char
+    "l" #'avy-goto-line
+    "n" #'avy-next
+    "p" #'avy-prev))
 
 (use-package hideshow
   :custom
@@ -736,11 +760,7 @@
   :commands neotree-toggle
   :init
   (setq neo-theme (if (display-graphic-p) 'icons 'ascii))
-  (with-eval-after-load 'evil
-    (add-hook 'evil-mode-hook
-              (lambda ()
-                (evil-define-key 'motion 'global
-                  (kbd "<leader>st") #'neotree-toggle))))
+  (define-key settings-keymap "t" #'neotree-toggle)
   :config
   (add-hook 'neotree-mode-hook (lambda () (setq-local mode-line-format nil)))
   (with-eval-after-load 'evil
@@ -753,11 +773,7 @@
 
 (use-package which-function-mode
   :init
-  (with-eval-after-load 'evil
-    (add-hook 'evil-mode-hook
-              (lambda ()
-                (evil-define-key 'motion 'global
-                  (kbd "<leader>sf") #'which-function-mode)))))
+  (define-key settings-keymap "f" #'which-function-mode))
 
 
 ;;; MAGIT
@@ -861,6 +877,23 @@
   (with-eval-after-load 'evil
     (evil-define-key 'motion 'global (kbd "<leader>B") #'ibuffer)))
 
+(use-package files
+  :init
+  (defun find-file-config ()
+    "Open `user-init-file'"
+    (interactive)
+    (find-file user-init-file))
+  (define-key-convenient open-keymap
+    "o" #'find-file
+    "a" #'find-alternate-file
+    "c" #'find-file-config
+    "p" #'ffap))
+
+(use-package imenu
+  :init
+  (define-key jump-keymap "i" #'imenu))
+
+
 
 ;;; CONTROLS
 (global-set-key [remap quit-window] (lambda () (interactive) (quit-window t)))
@@ -869,6 +902,15 @@
                 (lambda ()
                   (interactive)
                   (insert (or (gui-get-selection 'CLIPBOARD 'UTF8_STRING) ""))))
+
+(define-key-convenient settings-keymap
+  "L" #'global-display-line-numbers-mode
+  "l" #'display-line-numbers-mode
+  "V" #'global-visual-line-mode
+  "v" #'visual-line-mode
+  "W" #'global-whitespace-mode
+  "w" #'whitespace-mode
+  "i" #'detect-mode)
 
 (use-package mwheel
   :init
@@ -949,28 +991,20 @@
             (evil-normal-state 1))))
   ;; Normal/Motion Mode Keybindings
   (evil-define-key 'motion 'global
-    (kbd "C--")(lambda () (interactive) (text-scale-decrease 0.5))
-    (kbd "C-=")(lambda () (interactive) (text-scale-increase 0.5))
-    (kbd "C-0")(lambda () (interactive) (text-scale-set 0))
+    (kbd "C--") (lambda () (interactive) (text-scale-decrease 0.5))
+    (kbd "C-=") (lambda () (interactive) (text-scale-increase 0.5))
+    (kbd "C-0") (lambda () (interactive) (text-scale-set 0))
     (kbd "C-w r") #'resize-window
     (kbd "C-w C") #'quit-window-kill
     (kbd "<leader>d") #'dired
     (kbd "<leader>b") #'switch-to-buffer
-    (kbd "<leader>oo") #'find-file
-    (kbd "<leader>oa") #'find-alternate-file
-    (kbd "<leader>of") #'ffap
-    (kbd "<leader>oc") #'find-file-config
     (kbd "<leader>h") #'help
-    (kbd "<leader>s") '("settings-prefix" . (keymap))
-    (kbd "<leader>sL") #'global-display-line-numbers-mode
-    (kbd "<leader>sl") #'display-line-numbers-mode
-    (kbd "<leader>sV") #'global-visual-line-mode
-    (kbd "<leader>sv") #'visual-line-mode
-    (kbd "<leader>sW") #'global-whitespace-mode
-    (kbd "<leader>sw") #'whitespace-mode
-    (kbd "<leader>si") '("set-auto-mode" . (lambda ()
-                                             (interactive)
-                                             (set-auto-mode 1)))))
+    (kbd "<leader>c") `("code-prefix" . ,code-keymap)
+    (kbd "<leader>P") `("package-prefix" . ,package-keymap)
+    (kbd "<leader>o") `("open-prefix" . ,open-keymap)
+    (kbd "<leader>s") `("settings-prefix" . ,settings-keymap)
+    (kbd "<leader>m") `("music-prefix" . ,music-keymap)
+    (kbd "<leader>j") `("jump-prefix" . ,jump-keymap)))
 
 (use-package evil-collection
   :ensure t
@@ -1021,22 +1055,18 @@
   :ensure t
   :init
   (setq eglot-autoshutdown t)
-
   (dolist (hook '(c-mode-hook rust-mode-hook))
     (add-hook hook #'eglot-ensure))
-
+  (define-key settings-keymap "e" #'eglot-toggle)
   (defun eglot-toggle ()
     "Turn eglot either on or off"
     (interactive)
     (call-interactively (if (eglot-managed-p) #'eglot-shutdown #'eglot)))
-
-  (with-eval-after-load 'evil
-    (evil-define-key 'normal prog-mode-map
-      (kbd "<leader>cl") #'eglot-toggle)
-    (evil-define-key 'normal eglot-mode-map
-      (kbd "<leader>cr") #'eglot-rename
-      (kbd "<leader>ca") #'eglot-code-actions))
   :config
+  (define-key eglot-mode-map (kbd "<leader>c")
+    (make-tmp-map code-keymap
+                  "r" #'eglot-rename
+                  "a" #'eglot-code-actions))
   (add-to-list 'eglot-server-programs
                '(rust-mode . ("rustup" "run" "stable" "rust-analyzer"))))
 
@@ -1044,24 +1074,21 @@
   :init
   (setq project-list-file "/tmp/emacs-projects")
   :config
-  (with-eval-after-load 'evil
-    (evil-define-key 'motion 'global
-      (kbd "<leader>p") '("project-prefix" . (keymap))
-      (kbd "<leader>po") #'project-find-file
-      (kbd "<leader>pd") #'project-find-dir
-      (kbd "<leader>pr") #'project-find-regexp
-      (kbd "<leader>pp") #'project-switch-project
-      (kbd "<leader>pb") #'project-switch-to-buffer
-      (kbd "<leader>pk") #'project-kill-buffers
-      (kbd "<leader>pd") #'project-dired)))
+  (define-key-convenient project-keymap
+    "o" #'project-find-file
+    "d" #'project-find-dir
+    "r" #'project-find-regexp
+    "p" #'project-switch-project
+    "b" #'project-switch-to-buffer
+    "k" #'project-kill-buffers
+    "d" #'project-dired))
 
 (use-package xref
   :init
+  (define-key code-keymap "i" #'xref-find-definitions)
+  :config
   (with-eval-after-load 'evil
     (evil-set-initial-state 'xref--xref-buffer-mode 'motion)
-    (evil-define-key 'normal 'global
-      (kbd "<leader>i") '("intellisense-prefix" . (keymap))
-      (kbd "<leader>if") #'xref-find-definitions)
     (evil-define-key 'motion xref--xref-buffer-mode-map
       [return] #'xref-goto-xref)))
 
@@ -1076,19 +1103,14 @@
 
   (add-hook 'flymake-mode-hook
             (lambda ()
-              (if flymake-mode
-                  (set-window-fringes nil 8 0)
-                (set-window-fringes nil 0 0))))
-  (with-eval-after-load 'evil
-    (evil-define-key 'normal 'flymake-mode-map
-      (kbd "<leader>i") '("intellisense-prefix" . (keymap))
-      (kbd "<leader>in") #'flymake-goto-next-error
-      (kbd "<leader>ip") #'flymake-goto-prev-error
-      (kbd "<leader>id") #'flymake-diagnostic-at-point)
-    (with-eval-after-load 'consult
-      (evil-define-key 'normal 'flymake-mode-map
-        (kbd "<leader>ii") #'consult-flymake)))
+              (set-window-fringes nil (if flymake-mode 8 0) 0)))
   :config
+  (define-key flymake-mode-map (kbd "<leader>c")
+    (make-tmp-map code-keymap
+                  "n" #'flymake-goto-next-error
+                  "p" #'flymake-goto-prev-error
+                  "d" #'flymake-diagnostic-at-point
+                  "I" #'consult-flymake))
   (let ((v [#b00000000
             #b11000000
             #b11000000
@@ -1155,23 +1177,20 @@
   (add-hook 'emacs-lisp-mode-hook
 			(lambda () (setq-local indent-tabs-mode nil))))
 
+(use-package mhtml-mode
+  :init
+  (with-eval-after-load 'evil
+    (evil-define-key 'visual mhtml-mode-map "gc" #'comment-dwim)
+    (evil-define-key 'normal mhtml-mode-map "gc" #'comment-line)))
+
 (use-package prog-mode
   :init
+  (define-key code-keymap "e" #'run)
+  (with-eval-after-load 'evil
+    (evil-define-key 'visual mhtml-mode-map "gc" #'comment-dwim)
+    (evil-define-key 'normal mhtml-mode-map "gc" #'comment-line))
   (add-hook 'prog-mode-hook ;; Disable line wrapping
-            (lambda () (visual-line-mode 0)))
-  (add-hook 'after-init-hook
-            (lambda ()
-              (with-eval-after-load 'evil
-                (evil-define-key 'visual prog-mode-map "gc" #'comment-dwim)
-                (evil-define-key 'normal prog-mode-map
-                  "gc" #'comment-line
-                  (kbd "<leader>c") '("code-prefix" . (keymap))
-                  (kbd "<leader>ce") #'run)
-                (evil-define-key 'visual mhtml-mode-map "gc" #'comment-dwim)
-                (evil-define-key 'normal mhtml-mode-map
-                  "gc" #'comment-line
-                  (kbd "<leader>c") '("code-prefix" . (keymap))
-                  (kbd "<leader>ce") #'run)))))
+            (lambda () (visual-line-mode 0))))
 
 (use-package python
   :init
@@ -1186,19 +1205,19 @@
   :init
   (add-hook 'rust-mode-hook (lambda () (indent-tabs-mode 0)))
   :config
-  (with-eval-after-load 'evil
-    (evil-define-key 'normal 'rust-mode-map
-      (kbd "<leader>cf") 'rust-format-buffer
-      (kbd "<leader>cc") 'rust-compile
-      (kbd "<leader>ck") 'rust-check
-      (kbd "<leader>ct") 'rust-toggle-mutability)))
+  (define-key rust-mode-map (kbd "<leader>c")
+    (make-tmp-map code-keymap
+                  "f" #'rust-format-buffer
+                  "c" #'rust-compile
+                  "k" #'rust-check
+                  "m" #'rust-toggle-mutability)))
 
 
 ;;; MISC
 (use-package bongo
   :ensure t
   :commands bongo-playlist
-  :config
+  :init
   (setq-default bongo-mode-line-indicator-mode nil
                 bongo-insert-whole-directory-trees t
                 bongo-local-audio-file-track-icon nil
@@ -1207,18 +1226,17 @@
                 bongo-played-track-icon nil
                 bongo-logo nil
                 bongo-enabled-backends '(mpg123))
-  :init
+  (define-key-convenient music-keymap
+    "m" #'bongo-playlist
+    "n" #'bongo-next
+    "p" #'bongo-previous
+    "i" #'bongo-seek
+    "t" #'bongo-pause/resume
+    "q" #'bongo-stop
+    "s" #'bongo-start
+    "r" #'bongo-play-random)
+  :config
   (with-eval-after-load 'evil
-    (evil-define-key 'normal 'global
-      (kbd "<leader>m") '("bongo-prefix" . (keymap))
-      (kbd "<leader>mm") #'bongo-playlist
-      (kbd "<leader>mn") #'bongo-next
-      (kbd "<leader>mp") #'bongo-previous
-      (kbd "<leader>mi") #'bongo-seek
-      (kbd "<leader>mt") #'bongo-pause/resume
-      (kbd "<leader>mq") #'bongo-stop
-      (kbd "<leader>ms") #'bongo-start
-      (kbd "<leader>mr") #'bongo-play-random)
     (evil-define-key 'normal bongo-mode-map
       "c" #'bongo-pause/resume
       [return] #'bongo-dwim))
