@@ -41,7 +41,7 @@
       auto-save-default nil
       auto-save-list-file-prefix nil
       create-lockfiles nil
-      x-select-enable-clipboard nil
+      select-enable-clipboard nil
       byte-compile-warnings nil
       custom-file (make-temp-file ""))
 (let ((buffer "*Messages*")) ;; Disable *Messages* buffer
@@ -72,7 +72,6 @@
 
 ;;; FUNCTIONS / ALIASES
 (setq disabled-command-function nil) ;; Enable all command/functions
-
 
 (defun w ()
   "Save a buffer if modified or finish an edit `with-editor-finish()'"
@@ -168,87 +167,6 @@
   (interactive)
   (set-auto-mode 1))
 
-(defun get-gruvbox-colors ()
-  "Spawn a buffer that has the hex codes for gruvbox's colors"
-  (interactive)
-  (with-current-buffer (get-buffer-create "*Gruvbox Colors*")
-    (read-only-mode 0)
-    (erase-buffer)
-    (let* ((colors '((("bg0 hard" . "#1D2021")
-                      ("bg0 soft" . "#32302f")
-                      ("bg0" . "#282828")
-                      ("bg1" . "#3C3836")
-                      ("bg2" . "#584945")
-                      ("bg3" . "#665c54")
-                      ("bg4" . "#7c6f64"))
-                     (("fg0" . "#fbf1c7")
-                      ("fg1" . "#ebdbb2")
-                      ("fg2" . "#d5c4a1")
-                      ("fg3" . "#bdae93")
-                      ("fg4" . "#a88984"))
-                     (("red" . "#cc241d")
-                      ("green" . "#b8bb26")
-                      ("yellow" . "#fabd2f")
-                      ("blue" . "#83a598")
-                      ("purple" . "#d3869b")
-                      ("aqua" . "#8ec07c")
-                      ("white" . "#928374"))
-                     (("bright-red" . "#fb4934")
-                      ("bright-green" . "#b8bb26")
-                      ("bright-yellow" . "#fabd2f")
-                      ("bright-blue" . "#83a598")
-                      ("bright-purple" . "#d3869b")
-                      ("bright-aqua" . "#8ec07c")
-                      ("bright-white" . "#ebdbb2"))
-                     (("orange" . "#d65d0e")
-                      ("bright-orange" . "#fe8d19"))))
-           (height (apply #'max (mapcar #'length colors)))
-           (face-default (list
-                          :foreground (face-attribute 'default :background)
-                          :box 10))
-           (count) (face) (name) (hex) (fmt))
-      (dolist (section colors)
-        (setq count 0
-              fmt (format "%%%ds" (max 7 (apply #'max
-                                                (mapcar (lambda (l)
-                                                          (length (car l)))
-                                                        section)))))
-        (dolist (color section)
-          (setq count (+ count 1)
-                name (car color)
-                hex (cdr color)
-                face (list :foreground "#ffffff"
-                           :background hex
-                           :box `(:line-width 10 :color ,hex)))
-          (end-of-line)
-          (insert (propertize (format fmt name) 'face face) "  ")
-          (if (char-after) (next-line) (insert "\n"))
-          (end-of-line)
-          (insert (propertize (format fmt hex) 'face face) "  ")
-          (if (char-after) (next-line) (insert "\n")))
-        (while (< count height)
-          (setq count (+ count 1))
-          (end-of-line)
-          (insert (propertize (format fmt "") 'face face-default) "  ")
-          (if (char-after) (next-line) (insert "\n"))
-          (end-of-line)
-          (insert (propertize (format fmt "") 'face face-default) "  ")
-          (if (char-after) (next-line) (insert "\n")))
-        (goto-char (point-min))))
-    (read-only-mode 1))
-  (switch-to-buffer "*Gruvbox Colors*"))
-
-(defun make-tmp-map (parent key fn &rest args)
-  (let ((map (make-sparse-keymap)))
-    (set-keymap-parent map parent)
-    (define-key map key fn)
-    (while args
-      (setq key (car args)
-            fn (cadr args)
-            args (cddr args))
-      (define-key map key fn))
-    map))
-
 
 ;;; HOOKS
 (add-hook 'before-save-hook #'delete-trailing-whitespace)
@@ -258,26 +176,6 @@
               (unless (get-buffer buffer)
                 (generate-new-buffer buffer)
                 (set-buffer-major-mode (get-buffer buffer))))))
-
-
-
-;;; PREFIXED/KEYMAPS
-(defvar settings-keymap (make-sparse-keymap)
-  "A keymap to toggle \"settings\"")
-(defvar package-keymap (make-sparse-keymap)
-  "A keymap to run \"package\" functions")
-(defvar open-keymap (make-sparse-keymap)
-  "A keymap to open files/urls")
-(defvar jump-keymap (make-sparse-keymap)
-  "A keymap to jump and navigate quickly")
-(defvar code-keymap (make-sparse-keymap)
-  "A keymap for anything programming related")
-(defvar fold-keymap (make-sparse-keymap)
-  "A keymap to control folding")
-(defvar music-keymap (make-sparse-keymap)
-  "A keymap for anything music related")
-(defvar project-keymap (make-sparse-keymap)
-  "A keymap for anything project related")
 
 
 
@@ -292,23 +190,113 @@
 
 (setq use-package-always-defer t)
 (require 'use-package)
-(use-package package
+
+
+;;; CONTROLS
+(global-set-key [remap quit-window] (lambda () (interactive) (quit-window t)))
+(define-key key-translation-map [?\C-h] [?\C-?])
+(global-set-key [?\C-\S-v]
+                (lambda ()
+                  (interactive)
+                  (insert (or (gui-get-selection 'CLIPBOARD 'UTF8_STRING) ""))))
+
+(use-package evil
+  :ensure t
   :init
-  (define-key-convenient package-keymap
-    "R" #'package-refresh-contents
-    "r" #'package-delete
-    "i" #'package-install)
+  (add-hook 'evil-mode-hook
+            (lambda () (evil-set-leader 'motion (kbd "SPC"))))
+  (add-hook 'after-init-hook #'evil-mode)
+  (defvaralias 'evil-shift-width 'tab-width)
+  (setq evil-undo-system 'undo-redo
+        evil-insert-state-cursor 'bar
+        evil-emacs-state-message nil
+        evil-insert-state-message nil
+        evil-replace-state-message nil
+        evil-want-keybinding nil
+        evil-want-C-i-jump nil)
   :config
-  (defun package-upgrade-all ()
-    "Upgrade all Emacs packages that are able to be updated"
-    (interactive)
-    (package-refresh-contents)
-    (with-temp-buffer
-      (package-menu-mode)
-      (package-menu--generate nil t)
-      (package-menu-mark-upgrades)
-      (package-menu-execute t)))
-  (define-key package-keymap "u" #'package-upgrade-all))
+  (add-hook 'evil-jumps-post-jump-hook
+            (lambda () (call-interactively #'evil-scroll-line-to-center)))
+  (evil-define-key 'motion 'global
+    [remap evil-window-split] (lambda ()
+                                (interactive)
+                                (select-window (split-window-below)))
+    [remap evil-window-vsplit] (lambda ()
+                                 (interactive)
+                                 (select-window (split-window-right)))
+    [remap evil-next-line] #'evil-next-visual-line
+    [remap evil-previous-line] #'evil-previous-visual-line)
+  (add-to-list 'evil-emacs-state-modes 'dired-mode)
+  (add-hook 'dired-mode-hook
+            (lambda () (setq-local evil-emacs-state-cursor '(bar . 0))))
+  ;; Keybindings
+  (evil-set-leader 'normal (kbd "SPC"))
+  (evil-define-key '(motion emacs) 'global ":" #'execute-extended-command)
+  (evil-define-key 'motion 'global
+    [?\C-\S-o] #'evil-jump-forward
+    "J" #'evil-scroll-line-down
+    "K" #'evil-scroll-line-up)
+  (evil-define-key 'normal 'global
+    "J" #'evil-join
+    "K" #'evil-lookup)
+  (evil-define-key '(insert motion) 'global
+    [?\M-h] (lambda ()
+              (interactive)
+              (evil-normal-state 1)
+              (call-interactively (key-binding "h")))
+    [?\M-j] (lambda ()
+              (interactive)
+              (evil-normal-state 1)
+              (call-interactively (key-binding "j")))
+    [?\M-k] (lambda ()
+              (interactive)
+              (evil-normal-state 1)
+              (call-interactively (key-binding "k")))
+    [?\M-l] (lambda ()
+              (interactive)
+              (evil-normal-state 1)
+              (call-interactively (key-binding "l"))))
+  ;; Insert Mode Keybindings
+  (evil-define-key 'insert 'global
+    [?\C-n] nil
+    [?\C-p] nil
+    [?\C-y] #'evil-scroll-line-up
+    [?\C-e] #'evil-scroll-line-down)
+  ;; Visual Mode Keybindings
+  (evil-define-key 'visual 'global
+    "ga" #'mark-whole-buffer
+    "C" '("copy-to-clipboard" .
+          (lambda (beg end)
+            (interactive "r")
+            (gui-set-selection 'CLIPBOARD
+                               (substring-no-properties
+                                (filter-buffer-substring beg end)))
+            (evil-normal-state 1))))
+  ;; Normal/Motion Mode Keybindings
+  (evil-define-key 'motion 'global
+    (kbd "C--") (lambda () (interactive) (text-scale-decrease 0.5))
+    (kbd "C-=") (lambda () (interactive) (text-scale-increase 0.5))
+    (kbd "C-0") (lambda () (interactive) (text-scale-set 0))
+    (kbd "C-w r") #'resize-window
+    (kbd "C-w C") #'quit-window-kill
+    (kbd "<leader>d") #'dired
+    (kbd "<leader>b") #'switch-to-buffer
+    (kbd "<leader>h") #'help))
+
+(with-eval-after-load 'evil
+  (evil-define-key 'motion 'global
+    (kbd "<leader>sL") #'global-display-line-numbers-mode
+    (kbd "<leader>sl") #'display-line-numbers-mode
+    (kbd "<leader>sV") #'global-visual-line-mode
+    (kbd "<leader>sv") #'visual-line-mode
+    (kbd "<leader>sW") #'global-whitespace-mode
+    (kbd "<leader>sw") #'whitespace-mode
+    (kbd "<leader>si") #'detect-mode))
+
+(use-package mwheel
+  :init
+  (setq mouse-wheel-scroll-amount '(1)
+        mouse-wheel-progressive-speed nil))
 
 
 
@@ -484,6 +472,24 @@
       scoll-margin 5
       use-dialog-box nil)
 
+(use-package package
+  :config
+  (defun package-upgrade-all ()
+    "Upgrade all Emacs packages that are able to be updated"
+    (interactive)
+    (package-refresh-contents)
+    (with-temp-buffer
+      (package-menu-mode)
+      (package-menu--generate nil t)
+      (package-menu-mark-upgrades)
+      (package-menu-execute t)))
+  (with-eval-after-load 'evil
+    (evil-define-key 'normal 'global
+      (kbd "<leader>PR") #'package-refresh-contents
+      (kbd "<leader>Pr") #'package-delete
+      (kbd "<leader>Pi") #'package-install
+      (kbd "<leader>Pu") #'package-upgrade-all)))
+
 (use-package window
   :init
   (add-to-list 'display-buffer-alist
@@ -537,12 +543,13 @@
 (use-package avy
   :ensure t
   :init
-  (define-key-convenient jump-keymap
-    "j" #'avy-goto-char-2
-    "J" #'avy-goto-char
-    "l" #'avy-goto-line
-    "n" #'avy-next
-    "p" #'avy-prev))
+  (with-eval-after-load 'evil
+    (evil-define-key 'motion 'global
+      (kbd "<leader>aj") #'avy-goto-char-2
+      (kbd "<leader>aJ") #'avy-goto-char
+      (kbd "<leader>al") #'avy-goto-line
+      (kbd "<leader>an") #'avy-next
+      (kbd "<leader>ap") #'avy-prev)))
 
 (use-package hideshow
   :custom
@@ -555,9 +562,12 @@
               (unless (derived-mode-p 'html-mode)
                 (hs-hide-all))))
   :config
+  (add-hook 'post-command-hook
+            (lambda ()
+              (when hs-minor-mode)
+              ))
   (with-eval-after-load 'evil
-    (evil-define-key 'normal hs-minor-mode-map
-      " f" '("fold-prefix" . (keymap))
+    (evil-define-key 'normal 'hs-minor-mode
       " ff" #'hs-toggle-hiding
       " fs" #'hs-show-all
       " fh" #'hs-hide-all)))
@@ -582,7 +592,9 @@
 (use-package rainbow-mode
   :ensure t
   :init
-  (add-hook 'prog-mode-hook #'rainbow-mode))
+  (add-hook 'prog-mode-hook #'rainbow-mode)
+  (with-eval-after-load 'evil
+    (evil-define-key 'motion 'global (kbd "<leader>sc") #'rainbow-mode)))
 
 (use-package dirvish
   :ensure t
@@ -647,19 +659,22 @@
   :init
   (add-hook 'after-init-hook #'which-key-mode)
   (setq which-key-idle-delay 0.25
-        which-key-sort-order 'which-key-prefix-then-key-order))
+        which-key-sort-order 'which-key-prefix-then-key-order)
+  :config
+  (which-key-add-key-based-replacements
+    "SPC c" "Code Prefix"
+    "SPC i" "Intellisense Prefix"
+    "SPC P" "Package Prefix"
+    "SPC p" "Project Prefix"
+    "SPC o" "Open Prefix"
+    "SPC s" "Settings Prefix"
+    "SPC m" "Music Prefix"
+    "SPC a" "Jump Prefix"
+    "SPC f" "Fold Prefix"))
 
 (use-package ibuffer
   :commands ibuffer
   :init
-  (with-eval-after-load 'evil
-    (add-hook 'ibuffer-mode-hook
-              (lambda () (setq-local evil-emacs-state-cursor '(bar . 0)))))
-  :config
-  (add-hook 'ibuffer-mode-hook
-            (lambda ()
-              (setq-local cursor-type nil)
-              (hl-line-mode 1)))
   (defun ibuffer-toggle-mark ()
     "Toggle mark on the current file"
     (interactive)
@@ -670,6 +685,8 @@
         (call-interactively 'ibuffer-mark-forward)))
     (dired-next-line 1))
   (with-eval-after-load 'evil
+    (add-hook 'ibuffer-mode-hook
+              (lambda () (setq-local evil-emacs-state-cursor '(bar . 0))))
     (evil-define-key 'emacs ibuffer-mode-map
       "j" 'ibuffer-forward-line
       "k" 'ibuffer-backward-line
@@ -677,7 +694,12 @@
       [return] (lambda ()
                  (interactive)
                  (call-interactively 'ibuffer-visit-buffer)
-                 (kill-buffer "*Ibuffer*")))))
+                 (kill-buffer "*Ibuffer*"))))
+  :config
+  (add-hook 'ibuffer-mode-hook
+            (lambda ()
+              (setq-local cursor-type nil)
+              (hl-line-mode 1))))
 
 (use-package visual-regexp
   :ensure t
@@ -757,10 +779,10 @@
 
 (use-package neotree
   :ensure t
-  :commands neotree-toggle
   :init
   (setq neo-theme (if (display-graphic-p) 'icons 'ascii))
-  (define-key settings-keymap "t" #'neotree-toggle)
+  (with-eval-after-load 'evil
+    (evil-define-key 'motion 'global (kbd "<leader>st") #'neotree-toggle))
   :config
   (add-hook 'neotree-mode-hook (lambda () (setq-local mode-line-format nil)))
   (with-eval-after-load 'evil
@@ -770,10 +792,11 @@
       (kbd "SPC") #'neotree-quick-look
       (kbd "RET") #'neotree-enter)))
 
-
 (use-package which-function-mode
-  :init
-  (define-key settings-keymap "f" #'which-function-mode))
+  :config
+  (with-eval-after-load 'evil
+    (evil-define-key 'normal prog-mode-map
+      (kbd "<leader>sF") #'which-function-mode)))
 
 
 ;;; MAGIT
@@ -786,6 +809,14 @@
                 magit-section-initial-visibility-alist
                 '((unpushed . show)))
   :config
+  (with-eval-after-load 'evil
+    (evil-define-key 'emacs magit-mode-map
+      "J" #'magit-section-forward
+      "K" #'magit-section-backward
+      "j" #'magit-next-line
+      "k" #'magit-previous-line
+      "v" #'evil-visual-char
+      "V" #'evil-visual-line))
   (defun magit-kill-diffs ()
     "Kill the diff buffers that's associated with the current repo"
     (kill-buffer (magit-get-mode-buffer 'magit-diff-mode)))
@@ -883,139 +914,18 @@
     "Open `user-init-file'"
     (interactive)
     (find-file user-init-file))
-  (define-key-convenient open-keymap
-    "o" #'find-file
-    "a" #'find-alternate-file
-    "c" #'find-file-config
-    "p" #'ffap))
+  (with-eval-after-load 'evil
+    (evil-define-key 'motion 'global
+      (kbd "<leader>oo") #'find-file
+      (kbd "<leader>oa") #'find-alternate-file
+      (kbd "<leader>oc") #'find-file-config
+      (kbd "<leader>op") #'ffap)))
 
 (use-package imenu
   :init
-  (define-key jump-keymap "i" #'imenu))
-
-
-
-;;; CONTROLS
-(global-set-key [remap quit-window] (lambda () (interactive) (quit-window t)))
-(define-key key-translation-map [?\C-h] [?\C-?])
-(global-set-key [?\C-\S-v]
-                (lambda ()
-                  (interactive)
-                  (insert (or (gui-get-selection 'CLIPBOARD 'UTF8_STRING) ""))))
-
-(define-key-convenient settings-keymap
-  "L" #'global-display-line-numbers-mode
-  "l" #'display-line-numbers-mode
-  "V" #'global-visual-line-mode
-  "v" #'visual-line-mode
-  "W" #'global-whitespace-mode
-  "w" #'whitespace-mode
-  "i" #'detect-mode)
-
-(use-package mwheel
-  :init
-  (setq mouse-wheel-scroll-amount '(1)
-        mouse-wheel-progressive-speed nil))
-
-(use-package evil
-  :ensure t
-  :init
-  (add-hook 'evil-mode-hook
-            (lambda () (evil-set-leader 'motion (kbd "SPC"))))
-  (add-hook 'after-init-hook #'evil-mode)
-  (defvaralias 'evil-shift-width 'tab-width)
-  (setq evil-undo-system 'undo-redo
-        evil-insert-state-cursor 'bar
-        evil-emacs-state-message nil
-        evil-insert-state-message nil
-        evil-replace-state-message nil
-        evil-want-keybinding nil
-        evil-want-C-i-jump nil)
-  :config
-  (add-hook 'evil-jumps-post-jump-hook
-            (lambda () (call-interactively #'evil-scroll-line-to-center)))
-  (evil-define-key 'motion 'global
-    [remap evil-window-split] (lambda ()
-                                (interactive)
-                                (select-window (split-window-below)))
-    [remap evil-window-vsplit] (lambda ()
-                                 (interactive)
-                                 (select-window (split-window-right)))
-    [remap evil-next-line] #'evil-next-visual-line
-    [remap evil-previous-line] #'evil-previous-visual-line)
-  (add-to-list 'evil-emacs-state-modes 'dired-mode)
-  (add-hook 'dired-mode-hook
-            (lambda () (setq-local evil-emacs-state-cursor '(bar . 0))))
-  ;; Keybindings
-  (evil-set-leader 'normal (kbd "SPC"))
-  (evil-define-key '(motion emacs) 'global ":" #'execute-extended-command)
-  (evil-define-key 'motion 'global
-    [?\C-\S-o] #'evil-jump-forward
-    "J" #'evil-scroll-line-down
-    "K" #'evil-scroll-line-up)
-  (evil-define-key 'normal 'global
-    "J" #'evil-join
-    "K" #'evil-lookup)
-  (evil-define-key '(insert motion) 'global
-    [?\M-h] (lambda ()
-              (interactive)
-              (evil-normal-state 1)
-              (call-interactively (key-binding "h")))
-    [?\M-j] (lambda ()
-              (interactive)
-              (evil-normal-state 1)
-              (call-interactively (key-binding "j")))
-    [?\M-k] (lambda ()
-              (interactive)
-              (evil-normal-state 1)
-              (call-interactively (key-binding "k")))
-    [?\M-l] (lambda ()
-              (interactive)
-              (evil-normal-state 1)
-              (call-interactively (key-binding "l"))))
-  ;; Insert Mode Keybindings
-  (evil-define-key 'insert 'global
-    [?\C-n] nil
-    [?\C-p] nil
-    [?\C-y] #'evil-scroll-line-up
-    [?\C-e] #'evil-scroll-line-down)
-  ;; Visual Mode Keybindings
-  (evil-define-key 'visual 'global
-    "ga" #'mark-whole-buffer
-    "C" '("copy-to-clipboard" .
-          (lambda (beg end)
-            (interactive "r")
-            (gui-set-selection 'CLIPBOARD
-                               (substring-no-properties
-                                (filter-buffer-substring beg end)))
-            (evil-normal-state 1))))
-  ;; Normal/Motion Mode Keybindings
-  (evil-define-key 'motion 'global
-    (kbd "C--") (lambda () (interactive) (text-scale-decrease 0.5))
-    (kbd "C-=") (lambda () (interactive) (text-scale-increase 0.5))
-    (kbd "C-0") (lambda () (interactive) (text-scale-set 0))
-    (kbd "C-w r") #'resize-window
-    (kbd "C-w C") #'quit-window-kill
-    (kbd "<leader>d") #'dired
-    (kbd "<leader>b") #'switch-to-buffer
-    (kbd "<leader>h") #'help
-    (kbd "<leader>c") `("code-prefix" . ,code-keymap)
-    (kbd "<leader>P") `("package-prefix" . ,package-keymap)
-    (kbd "<leader>o") `("open-prefix" . ,open-keymap)
-    (kbd "<leader>s") `("settings-prefix" . ,settings-keymap)
-    (kbd "<leader>m") `("music-prefix" . ,music-keymap)
-    (kbd "<leader>j") `("jump-prefix" . ,jump-keymap)))
-
-(use-package evil-collection
-  :ensure t
-  :init
   (with-eval-after-load 'evil
-    (with-eval-after-load 'magit
-      (evil-collection-init 'magit)
-      (evil-define-key 'normal magit-mode-map
-        ":" #'execute-extended-command
-        "h" #'evil-backward-char
-        "l" #'evil-forward-char))))
+    (evil-define-key 'motion 'global (kbd "<leader>ai") #'imenu)))
+
 
 
 ;;; ORG
@@ -1057,38 +967,44 @@
   (setq eglot-autoshutdown t)
   (dolist (hook '(c-mode-hook rust-mode-hook))
     (add-hook hook #'eglot-ensure))
-  (define-key settings-keymap "e" #'eglot-toggle)
   (defun eglot-toggle ()
     "Turn eglot either on or off"
     (interactive)
-    (call-interactively (if (eglot-managed-p) #'eglot-shutdown #'eglot)))
+    (call-interactively (if (and (fboundp 'eglot-managed-p) (eglot-managed-p))
+                            #'eglot-shutdown
+                          #'eglot)))
+  (with-eval-after-load 'evil
+    (evil-define-key 'normal prog-mode-map
+      (kbd "<leader>se") #'eglot-toggle))
   :config
-  (define-key eglot-mode-map (kbd "<leader>c")
-    (make-tmp-map code-keymap
-                  "r" #'eglot-rename
-                  "a" #'eglot-code-actions))
+  (with-eval-after-load 'evil
+    (evil-define-key 'normal 'eglot--managed-mode
+      (kbd "<leader>cr") #'eglot-rename
+      (kbd "<leader>ca") #'eglot-code-actions))
   (add-to-list 'eglot-server-programs
                '(rust-mode . ("rustup" "run" "stable" "rust-analyzer"))))
 
 (use-package project
   :init
   (setq project-list-file "/tmp/emacs-projects")
-  :config
-  (define-key-convenient project-keymap
-    "o" #'project-find-file
-    "d" #'project-find-dir
-    "r" #'project-find-regexp
-    "p" #'project-switch-project
-    "b" #'project-switch-to-buffer
-    "k" #'project-kill-buffers
-    "d" #'project-dired))
+  (with-eval-after-load 'evil
+    (evil-define-key 'motion 'global
+      (kbd "<leader>po") #'project-find-file
+      (kbd "<leader>pd") #'project-find-dir
+      (kbd "<leader>pr") #'project-find-regexp
+      (kbd "<leader>pp") #'project-switch-project
+      (kbd "<leader>pb") #'project-switch-to-buffer
+      (kbd "<leader>pk") #'project-kill-buffers
+      (kbd "<leader>pd") #'project-dired)))
 
 (use-package xref
   :init
-  (define-key code-keymap "i" #'xref-find-definitions)
-  :config
   (with-eval-after-load 'evil
     (evil-set-initial-state 'xref--xref-buffer-mode 'motion)
+    (evil-define-key 'normal prog-mode-map
+      (kbd "<leader>id") #'xref-find-definitions))
+  :config
+  (with-eval-after-load 'evil
     (evil-define-key 'motion xref--xref-buffer-mode-map
       [return] #'xref-goto-xref)))
 
@@ -1104,13 +1020,17 @@
   (add-hook 'flymake-mode-hook
             (lambda ()
               (set-window-fringes nil (if flymake-mode 8 0) 0)))
+  (with-eval-after-load 'evil
+    (evil-define-key 'normal 'global
+      (kbd "<leader>sf") #'flymake-mode)
+    (evil-define-key 'normal 'flymake-mode
+      (kbd "<leader>in") #'flymake-goto-next-error
+      (kbd "<leader>ip") #'flymake-goto-prev-error
+      (kbd "<leader>ip") #'flymake-diagnostic-at-point)
+    (when (fboundp 'consult-flymake)
+      (evil-define-key 'normal 'flymake-mode
+        (kbd "<leader>ii") #'consult-flymake)))
   :config
-  (define-key flymake-mode-map (kbd "<leader>c")
-    (make-tmp-map code-keymap
-                  "n" #'flymake-goto-next-error
-                  "p" #'flymake-goto-prev-error
-                  "d" #'flymake-diagnostic-at-point
-                  "I" #'consult-flymake))
   (let ((v [#b00000000
             #b11000000
             #b11000000
@@ -1139,7 +1059,6 @@
 
 (use-package flymake-shellcheck
   :ensure t
-  :commands flymake-shellcheck-load
   :init
   (setq flymake-shellcheck-use-file t)
   (add-hook 'sh-mode-hook 'flymake-shellcheck-load))
@@ -1184,11 +1103,12 @@
     (evil-define-key 'normal mhtml-mode-map "gc" #'comment-line)))
 
 (use-package prog-mode
-  :init
-  (define-key code-keymap "e" #'run)
+  :config
   (with-eval-after-load 'evil
-    (evil-define-key 'visual mhtml-mode-map "gc" #'comment-dwim)
-    (evil-define-key 'normal mhtml-mode-map "gc" #'comment-line))
+    (evil-define-key 'visual prog-mode-map "gc" #'comment-dwim)
+    (evil-define-key 'normal prog-mode-map
+      "gc" #'comment-line
+      (kbd "<leader>ce") #'run))
   (add-hook 'prog-mode-hook ;; Disable line wrapping
             (lambda () (visual-line-mode 0))))
 
@@ -1202,15 +1122,14 @@
 
 (use-package rust-mode
   :ensure t
-  :init
-  (add-hook 'rust-mode-hook (lambda () (indent-tabs-mode 0)))
   :config
-  (define-key rust-mode-map (kbd "<leader>c")
-    (make-tmp-map code-keymap
-                  "f" #'rust-format-buffer
-                  "c" #'rust-compile
-                  "k" #'rust-check
-                  "m" #'rust-toggle-mutability)))
+  (with-eval-after-load 'evil
+    (evil-define-key 'normal rust-mode-map
+      (kbd "<leader>cf") #'rust-format-buffer
+      (kbd "<leader>cc") #'rust-compile
+      (kbd "<leader>ck") #'rust-check
+      (kbd "<leader>cm") #'rust-toggle-mutability))
+  (add-hook 'rust-mode-hook (lambda () (indent-tabs-mode 0))))
 
 
 ;;; MISC
@@ -1226,20 +1145,21 @@
                 bongo-played-track-icon nil
                 bongo-logo nil
                 bongo-enabled-backends '(mpg123))
-  (define-key-convenient music-keymap
-    "m" #'bongo-playlist
-    "n" #'bongo-next
-    "p" #'bongo-previous
-    "i" #'bongo-seek
-    "t" #'bongo-pause/resume
-    "q" #'bongo-stop
-    "s" #'bongo-start
-    "r" #'bongo-play-random)
-  :config
+  (with-eval-after-load 'evil
+    (evil-define-key 'motion 'global
+      (kbd "<leader>mm") #'bongo-playlist
+      (kbd "<leader>mn") #'bongo-next
+      (kbd "<leader>mp") #'bongo-previous
+      (kbd "<leader>mi") #'bongo-seek
+      (kbd "<leader>mt") #'bongo-pause/resume
+      (kbd "<leader>mq") #'bongo-stop
+      (kbd "<leader>ms") #'bongo-start
+      (kbd "<leader>mr") #'bongo-play-random))
   (with-eval-after-load 'evil
     (evil-define-key 'normal bongo-mode-map
       "c" #'bongo-pause/resume
       [return] #'bongo-dwim))
+  :config
   (add-hook 'bongo-playlist-mode-hook
 			(lambda ()
 			  (display-line-numbers-mode 0)
@@ -1253,7 +1173,6 @@
   (add-to-list 'display-buffer-alist '("\\*Help\\*" display-buffer-same-window))
   (add-to-list 'display-buffer-alist
                '("\\*Metahelp\\*" display-buffer-same-window))
-  :config
   (with-eval-after-load 'evil
     (evil-define-key 'motion help-mode-map
       [return] #'push-button

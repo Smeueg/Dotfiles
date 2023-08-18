@@ -51,52 +51,64 @@ do
 end
 
 -- Theme (Gruvbox) --
-beautiful.init {
-	wallpaper = "#282828",
+do
+	local settings = {}
+	local colors = {
+		bg = "#282828",
+		red = "#D65D0E",
+		green = "#B8BB26",
+		yellow = "#FABD2F",
+		blue = "#458588",
+		magenta = "#B16286",
+		cyan = "#689D6A",
+		white = "#EBDBB2",
+		black = "#3C3836",
+		black_bright = "#32302f",
+		black_brighter = "#504945",
+		orange = "#FE8019"
+	}
 	-- Default
-	font = "JetBrainsMono Nerd Font Mono 11",
-	bg_normal = "#32302f",
-	fg_normal = "#EBDBB2",
-	icon_color = "#FABD2F",
+	settings.wallpaper = colors.bg
+	settings.font = "JetBrainsMono Nerd Font Mono 11"
+	settings.bg_normal = colors.black_bright
+	settings.fg_normal = colors.white
+	settings.icon_color = colors.yellow
 	-- Windows
-	border_width = dpi(2),
-	border_focus = "#FE8019",
-	border_normal = "#282828",
-	useless_gap = dpi(10),
+	settings.useless_gap = dpi(10)
+	settings.border_width = dpi(2)
+	settings.border_focus = colors.orange
+	settings.border_normal = settings.wallpaper
 	-- Titlebar
-	titlebar_bg = "#32302f",
-	titlebar_btn_max = "#B8BB26",
-	titlebar_btn_min = "#FABD2F",
-	titlebar_btn_close = "#D65D0E",
+	settings.titlebar_bg = settings.bg_normal
+	settings.titlebar_btn_max = colors.green
+	settings.titlebar_btn_min = colors.yellow
+	settings.titlebar_btn_close = colors.red
 	-- Wibar
-	wibar_height = dpi(50),
-	wibar_position = "top",
-	wibar_padding = dpi(7.5),
-	-- Menu
-	menu_height = dpi(30),
-	menu_bg_focus = "#00000030",
-	menu_border_color = "#FE8019",
-	menu_border_width = dpi(1),
+	settings.wibar_height = dpi(50)
+	settings.wibar_padding = dpi(7.5)
+	settings.wibar_position = "top"
 	-- Notifications
-	notification_border_color = "#FE8019",
-	-- Tags/Taglist
-	tag_amount = 3,
-	taglist_fg_focus = "#FABD2F",
-	taglist_fg_normal = "#504945",
+	settings.notification_border_color = settings.border_focus
+	settings.notification_shape = nil
+	naughty.config.spacing = dpi(5)
+	-- Tags
+	settings.tag_amount = 3
+	settings.taglist_fg_focus = colors.yellow
+	settings.taglist_fg_normal = colors.black_brighter
 	-- Tasklist
-	tasklist_bg_focus = "#00000030",
-	tasklist_inner_margin = dpi(5),
+	settings.tasklist_bg_focus = "#00000030"
+	settings.tasklist_inner_margin = dpi(5)
 	-- Dashboard
-	dashboard_app_margins = dpi(10),
-	dashboard_app_text_width = dpi(300),
-	dashboard_app_limit = 10,
+	settings.dashboard_margins = dpi(10)
+	settings.dashboard_text_width = dpi(300)
+	settings.dashboard_limit = 10
 	-- Edge Snapping
-	snap_shape = gears.shape.rectangle,
-	snap_border_width = dpi(2),
-	snap_bg = "#FE8019"
-}
+	settings.snap_shape = gears.shape.rectangle
+	settings.snap_border_width = settings.border_width
+	settings.snap_bg = settings.border_focus
 
-naughty.config.spacing = dpi(5)
+	beautiful.init(settings)
+end
 
 local icon = require("ui.icon")
 local modkey = "Mod4"
@@ -874,11 +886,11 @@ do -- awful.widget.dashboard
 					launch = launch_fn,
 					{
 						widget = wibox.container.margin,
-						margins = beautiful.dashboard_app_margins,
+						margins = beautiful.dashboard_margins,
 						{
 							widget = wibox.widget.textbox,
 							text = name,
-							forced_width = beautiful.dashboard_app_text_width
+							forced_width = beautiful.dashboard_text_width
 						}
 					}
 
@@ -935,7 +947,7 @@ do -- awful.widget.dashboard
 		if sample then
 			sample = sample.widget.widget
 			local _, h = sample:get_preferred_size(awful.screen.focused())
-			h = h + beautiful.dashboard_app_margins * 2
+			h = h + beautiful.dashboard_margins * 2
 			if #launcher.entries_filtered < limit then
 				h = h * #launcher.entries_filtered
 			else
@@ -1031,7 +1043,7 @@ do -- awful.widget.dashboard
 		local launcher = popup.launcher
 		launcher.chosen = 1
 		launcher.offset = 0
-		launcher.limit = beautiful.dashboard_app_limit
+		launcher.limit = beautiful.dashboard_limit
 		awful.prompt.run {
 			textbox = popup.launcher.textbox,
 			bg_cursor = beautiful.fg_normal,
@@ -1148,9 +1160,9 @@ do -- awful.widget.dashboard
 
 		-- Default Values
 		local themes_default = {
-			dashboard_app_margins = dpi(10),
-			dashboard_app_text_width = dpi(300),
-			dashboard_app_limit = 10
+			dashboard_margins = dpi(10),
+			dashboard_text_width = dpi(300),
+			dashboard_limit = 10
 		}
 		for k, v in pairs(themes_default) do
 			beautiful[k] = beautiful[k] or v
@@ -1539,7 +1551,7 @@ awful.rules.rules = {
 			keys = clientkeys,
 			buttons = clientbuttons,
 			screen = awful.screen.preferred,
-			placement = awful.placement.no_overlap+awful.placement.no_offscreen,
+			placement = awful.placement.no_overlap+awful.placement.no_offscreen
 		}
 	}
 }
@@ -1602,13 +1614,14 @@ end)
 
 
 -- Sets the wallpaper
-gears.wallpaper.set(beautiful.wallpaper or "#222222")
+gears.wallpaper.set(beautiful.wallpaper)
 screen.connect_signal("property::geometry", function()
-		gears.wallpaper.set(beautiful.wallpaper or "#222222")
+		gears.wallpaper.set(beautiful.wallpaper)
 end)
 
 
 client.connect_signal("manage", function(c)
+		-- Disable the border when the layout is the max layout
 		if c.first_tag.layout == awful.layout.suit.max then
 			c.border_width = 0
 		end
@@ -1619,12 +1632,12 @@ client.connect_signal("manage", function(c)
 end)
 
 
-client.connect_signal("focus", function(c)
+client.connect_signal("focus", function(c) -- Recolor the border when focused
 		c.border_color = beautiful.border_focus
 end)
 
 
-client.connect_signal("unfocus", function(c)
+client.connect_signal("unfocus", function(c) -- Recolor the border when unfocused
 		c.border_color = beautiful.border_normal
 end)
 
@@ -1700,6 +1713,7 @@ client.connect_signal("request::titlebars", function(c)
 
 
 end)
+
 
 tag.connect_signal("property::layout", function(t)
 		local titlebar_show = false
