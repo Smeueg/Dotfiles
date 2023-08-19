@@ -509,39 +509,54 @@ do -- awful.widget.battery
 			},
 			{
 				widget = wibox.widget.textbox,
-				text = " "
+				text = "% "
 			}
 		}
 	}
-	widget.icon = widget:get_children_by_id("icon")[1]
-	widget.percentage = widget:get_children_by_id("percentage")[1]
+	widget.icon_widget = widget:get_children_by_id("icon")[1]
+	widget.percentage_widget = widget:get_children_by_id("percentage")[1]
 
 	local function set_icon(state)
+		widget.state = state
 		if state == upower.state.CHARGING then
-			widget.icon.image = icon.battery_charging
+			widget.icon_widget.image = icon.battery_charging
+			if widget.notification then
+				naughty.destroy(widget.notification, nil)
+				widget.notification = nil
+			end
 		elseif state == upower.state.DISCHARGING then
-			widget.icon.image = icon.battery_discharging
+			widget.icon_widget.image = icon.battery_discharging
+		end
+	end
+
+	local function set_percentage(percentage)
+		widget.percentage = math.floor(percentage)
+		widget.percentage_widget.text = widget.percentage
+		if widget.percentage < 15 and widget.state == upower.state.DISCHARGING then
+			widget.notification = notify {
+				title = "Warning",
+				text = "Your battery is at " .. widget.percentage .. "%",
+				timeout = 0,
+				replaces_id = 0
+			}
 		end
 	end
 
 	local info = upower.get_bat_info()
 	if info then
-		widget.percentage.text = info.percentage
 		set_icon(info.state)
+		set_percentage(info.percentage)
 	end
-
 
 	upower.watch_battery(function(property)
 			if property.name == "State" then
 				set_icon(property.value)
 			elseif property.name == "Percentage" then
-				widget.percentage.text = tostring(property.value)
+				set_percentage(property.value)
 			end
 	end)
 
-function awful.widget.battery()
-		return widget
-	end
+	function awful.widget.battery() return widget end
 end
 
 do -- awful.widget.network
@@ -1496,6 +1511,17 @@ local globalkeys = gears.table.join(
 			awful.spawn("pactl set-sink-mute @DEFAULT_SINK@ toggle", false)
 		end,
 		{ group = "Volume", description = "(Un)Mute Sound"}
+	),
+	-- Brightness
+	awful.key(
+		{ }, "XF86MonBrightnessUp",
+		function() awful.spawn.run_if_installed { "brightnessctl s +1%" } end,
+		{ group = "Brightness", description = "Increase the screen's brightness"}
+	),
+	awful.key(
+		{ }, "XF86MonBrightnessDown",
+		function() awful.spawn.run_if_installed { "brightnessctl s 1%-" } end,
+		{ group = "Brightness", description = "Decrease the screen's brightness"}
 	),
 	-- Screenshot
 	awful.key(
