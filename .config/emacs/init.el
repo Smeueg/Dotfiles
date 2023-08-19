@@ -56,7 +56,6 @@
             (when (get-buffer "*Completions*")
               (kill-buffer "*Completions*"))))
 
-
 ;;; INDENTATION
 (defvaralias 'c-basic-offset 'tab-width)
 (setq-default indent-tabs-mode t
@@ -563,15 +562,11 @@
               (unless (derived-mode-p 'html-mode)
                 (hs-hide-all))))
   :config
-  (add-hook 'post-command-hook
-            (lambda ()
-              (when hs-minor-mode)
-              ))
   (with-eval-after-load 'evil
     (evil-define-key 'normal 'hs-minor-mode
-      " ff" #'hs-toggle-hiding
-      " fs" #'hs-show-all
-      " fh" #'hs-hide-all)))
+      (kbd "<leader>ff") #'hs-toggle-hiding
+      (kbd "<leader>fs") #'hs-show-all
+      (kbd "<leader>fh") #'hs-hide-all)))
 
 (use-package all-the-icons
   ;; The fonts need to be installed using `all-the-icons-install-fonts'
@@ -663,15 +658,15 @@
         which-key-sort-order 'which-key-prefix-then-key-order)
   :config
   (which-key-add-key-based-replacements
-    "SPC c" "Code Prefix"
-    "SPC i" "Intellisense Prefix"
-    "SPC P" "Package Prefix"
-    "SPC p" "Project Prefix"
-    "SPC o" "Open Prefix"
-    "SPC s" "Settings Prefix"
-    "SPC m" "Music Prefix"
-    "SPC a" "Jump Prefix"
-    "SPC f" "Fold Prefix"))
+    "<leader>c" "Code Prefix"
+    "<leader>i" "Intellisense Prefix"
+    "<leader>P" "Package Prefix"
+    "<leader>p" "Project Prefix"
+    "<leader>o" "Open Prefix"
+    "<leader>s" "Settings Prefix"
+    "<leader>m" "Music Prefix"
+    "<leader>a" "Jump Prefix"
+    "<leader>f" "Fold Prefix"))
 
 (use-package ibuffer
   :commands ibuffer
