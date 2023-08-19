@@ -11,6 +11,7 @@ if [ "${BASH_VERSION}" ]; then
 	complete -cf sudo
 	shopt -s autocd
 	shopt -s checkwinsize
+    bind 'set bell-style none'
 
 	[ -f /usr/share/bash-completion/bash_completion ] &&
 		. /usr/share/bash-completion/bash_completion
