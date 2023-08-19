@@ -17,12 +17,12 @@ dbus.BusSYSTEM = Gio.bus_get_sync(Gio.BusType("SYSTEM"))
 --- Parses a GLib.Variant
 -- @param v[type=Glib.Variant]
 -- @return [table]
-local function parse_variant(v)
+function dbus.parse_variant(v)
 	if v:is_container() then
 		local t = {}
 		for i = 0, v:n_children() - 1 do
 			local value = v:get_child_value(i)
-			t[i + 1] = parse_variant(value)
+			t[i + 1] = dbus.parse_variant(value)
 		end
 		if #t == 1 then
 			t = t[1]
@@ -46,7 +46,7 @@ function dbus.call(args)
 	local interface = args.method:sub(1, i-1)
 	local method = args.method:sub(i+1)
 
-	return parse_variant(
+	return dbus.parse_variant(
 		dbus.BusSYSTEM:call_sync(
 			args.name, -- bus_name
 			args.path, -- object_path

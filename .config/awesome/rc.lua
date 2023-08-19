@@ -487,6 +487,62 @@ function awful.widget.tasklist_styled(s)
 	}
 end
 
+do -- awful.widget.battery
+	local upower = require("daemons.upower")
+	local widget = wibox.widget {
+		widget = wibox.container.background,
+		shape = gears.shape.rounded_rect_auto,
+		bg = "#00000030",
+		{
+			widget = wibox.container.background,
+			layout = wibox.layout.fixed.horizontal,
+			{
+				widget = wibox.widget.imagebox,
+				image = icon.battery_none,
+				id = "icon"
+			},
+			{
+				widget = wibox.widget.textbox,
+				text = "-",
+				id = "percentage"
+			},
+			{
+				widget = wibox.widget.textbox,
+				text = " "
+			}
+		}
+	}
+	widget.icon = widget:get_children_by_id("icon")[1]
+	widget.percentage = widget:get_children_by_id("percentage")[1]
+
+	local function set_icon(state)
+		if state == upower.state.CHARGING then
+			widget.icon.image = icon.battery_charging
+		elseif state == upower.state.DISCHARGING then
+			widget.icon.image = icon.battery_discharging
+		end
+	end
+
+	local info = upower.get_bat_info()
+	if info then
+		widget.percentage.text = info.percentage
+		set_icon(info.state)
+	end
+
+
+	upower.watch_battery(function(property)
+			if property.name == "State" then
+				set_icon(property.value)
+			elseif property.name == "Percentage" then
+				widget.percentage.text = tostring(property.value)
+			end
+	end)
+
+function awful.widget.battery()
+		return widget
+	end
+end
+
 do -- awful.widget.network
 	local widget = wibox.widget {
 		widget = wibox.container.background,
@@ -1392,7 +1448,21 @@ local globalkeys = gears.table.join(
 		{ group = "Volume", description = "Increase The Volume By 5"}
 	),
 	awful.key(
+		{}, "XF86AudioRaiseVolume",
+		function()
+			awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ +5%", false)
+		end,
+		{ group = "Volume", description = "Increase The Volume By 5"}
+	),
+	awful.key(
 		{ modkey }, "[",
+		function()
+			awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ -5%", false)
+		end,
+		{ group = "Volume", description = "Decrease The Volume By 5"}
+	),
+	awful.key(
+		{ }, "XF86AudioLowerVolume",
 		function()
 			awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ -5%", false)
 		end,
@@ -1411,6 +1481,13 @@ local globalkeys = gears.table.join(
 			awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ -1%", false)
 		end,
 		{ group = "Volume", description = "Decrease The Volume By 1"}
+	),
+	awful.key(
+		{ }, "XF86AudioMute",
+		function()
+			awful.spawn("pactl set-sink-mute @DEFAULT_SINK@ toggle", false)
+		end,
+		{ group = "Volume", description = "(Un)Mute Sound"}
 	),
 	awful.key(
 		{ modkey }, "\\",
@@ -1597,6 +1674,7 @@ awful.screen.connect_for_each_screen(function(s)
 						awful.widget.screenshot(),
 						awful.widget.network(),
 						awful.widget.volume(),
+						awful.widget.battery(),
 						awful.widget.date()
 					},
 				}

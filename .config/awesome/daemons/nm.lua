@@ -70,15 +70,6 @@ local nm = {
 }
 
 
---- Turns a table of bytes to a string
-local function bytes_to_string(bytes)
-	local str = ""
-	for _, b in ipairs(bytes) do
-		str = str .. string.char(b)
-	end
-	return str
-end
-
 local function get_connection_property(path)
 	return dbus.get_properties {
 		name = "org.freedesktop.NetworkManager",
@@ -174,18 +165,6 @@ function nm.watch_connections(callback)
 		end
 	)
 end
-
--- nm.watch_connections(function(connection)
--- 		if connection then
--- 			print(string.format(
--- 					"Connected to: %s\nType: %s\n----",
--- 					connection.id,
--- 					connection.type
--- 			))
--- 		else
--- 			print("Not connected to anything")
--- 		end
--- end)
 
 
 return nm

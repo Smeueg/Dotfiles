@@ -8,7 +8,6 @@ local pi = math.pi
 
 local icon = {}
 
-
 function icon_create(body, size)
 	local tmp = {}
 
@@ -83,7 +82,6 @@ icon.eth = icon_create(function(cr)
 		cr:rectangle(6, 9, 6, 1)
 		cr:fill()
 end)
-
 
 icon.tile = icon_create(function(cr)
 		cr:rectangle(4, 4, 5, 12)
@@ -161,23 +159,60 @@ icon.screenshot = icon_create(function(cr)
 		cr:fill()
 end)
 
--- icon.dashboard = icon_create(function(cr)
--- 		cr:set_source(icon_color)
--- 		shape.transform(shape.rounded_rect)
--- 			:translate(4, 4)(cr, 5, 5, 1)
--- 		shape.transform(shape.rounded_rect)
--- 			:translate(4, 11)(cr, 5, 5, 1)
--- 		shape.transform(shape.rounded_rect)
--- 			:translate(11, 4)(cr, 5, 5, 1)
--- 		shape.transform(shape.rounded_rect)
--- 			:translate(11, 11)(cr, 5, 5, 1)
--- 		cr:fill()
--- end)
+icon.battery_none = icon_create(function(cr)
+		cr:set_source(icon_color)
+		shape.transform(shape.rounded_rect)
+			:translate(15, 10)(cr, 10, 20, 2)
+		cr:stroke()
+		shape.transform(shape.rectangle)
+			:rotate_at(16, 15, pi / 4)
+			:translate(16, 15)(cr, 14, 2)
+		shape.transform(shape.rounded_rect)
+			:translate(17, 6)(cr, 6, 4, 2)
+		cr:fill()
+end, {40, 40})
+
+icon.battery_charging = icon_create(function(cr)
+		cr:set_source(icon_color)
+		shape.transform(shape.rounded_rect)
+			:translate(15, 10)(cr, 10, 20, 2)
+		cr:stroke()
+		shape.transform(shape.isosceles_triangle)
+			:translate(17, 13)(cr, 6, 8)
+		shape.transform(shape.isosceles_triangle)
+			:rotate_at(23, 27, pi)
+			:translate(23, 27)(cr, 6, 8)
+		shape.transform(shape.rounded_rect)
+			:translate(17, 6)(cr, 6, 4, 2)
+		cr:fill()
+		cr:set_operator(cr, cairo.Operator.clear)
+		shape.transform(shape.rectangle)
+			:translate(20, 13)(cr, 3, 6)
+		shape.transform(shape.rectangle)
+			:translate(17, 20)(cr, 3, 6)
+		cr:fill()
+end, {40, 40})
+
+icon.battery_discharging = icon_create(function(cr)
+		cr:set_source(icon_color)
+		shape.transform(shape.rounded_rect)
+			:translate(15, 10)(cr, 10, 20, 2)
+		cr:stroke()
+		shape.transform(shape.rounded_rect)
+			:translate(17, 6)(cr, 6, 4, 2)
+		shape.transform(shape.rounded_rect)
+			:translate(18, 17)(cr, 4, 10, 2)
+		cr:fill()
+end, {40, 40})
+
+
+
 
 icon.dashboard = beautiful.theme_assets.awesome_icon(
 	20,
 	icon_color2,
 	nil
 )
+
 
 return icon
