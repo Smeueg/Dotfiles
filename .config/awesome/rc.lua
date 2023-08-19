@@ -12,6 +12,7 @@
 	TODO: Add USEFULL comments
 	TODO: Better code structure
 	TODO: More efficient resource usage
+	TODO: Higher quality icons (use {40, 40} instead of {20, 20})
 	TODO: (WIP) Create a right click menu to close the clients on the wibar using awful.menu
 --]]
 
