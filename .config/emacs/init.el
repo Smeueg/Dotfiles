@@ -806,7 +806,8 @@
                 '((unpushed . show)))
   :config
   (with-eval-after-load 'evil
-    (evil-define-key 'emacs magit-mode-map
+    (evil-set-initial-state 'magit-status-mode 'motion)
+    (evil-define-key 'motion magit-mode-map
       "J" #'magit-section-forward
       "K" #'magit-section-backward
       "j" #'magit-next-line
