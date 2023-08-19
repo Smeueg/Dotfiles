@@ -307,6 +307,7 @@
 (fringe-mode 3)
 (show-paren-mode 1)
 (set-window-buffer nil (current-buffer))
+(setq ring-bell-function #'ignore)
 (let ((font "JetBrainsMono Nerd Font Mono"))
   (when (and (display-graphic-p) (member font (font-family-list)))
     (set-frame-font (format "%s 12" font))))
