@@ -1,0 +1,28 @@
+{
+		"runtime ": {
+				"version": "LuaJIT",
+				"path": [
+						"?/init",
+						"?"
+				]
+		},
+		"workspace": {
+				"library": [
+						"/usr/share/nvim/runtime/lua",
+						"/usr/share/nvim/runtime/lua/lsp",
+						"/usr/share/awesome/lib",
+            "${3rd}/lfs/library"
+				]
+		},
+		"completion": {
+				"enable": true,
+		},
+		"diagnostics": {
+				"enable": true,
+				"globals": [ "vim", "awesome", "client", "root",
+            "lfs" ]
+		},
+		"telemetry": {
+				"enable": false
+		}
+}
