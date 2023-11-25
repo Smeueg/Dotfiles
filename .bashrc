@@ -161,7 +161,7 @@ fix_time() {
 }
 
 
-jmtpfs_auto_mount() {
+jmtpfs_auto() {
 	if ! [ "$(command -v jmtpfs)" ]; then
 		printf "\033[1;31m|\033[0m Command 'jmtpfs' not found\n" >&2
 		return 1
