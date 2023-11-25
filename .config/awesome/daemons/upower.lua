@@ -1,5 +1,5 @@
 local dbus = require("daemons.dbus")
-local notify = require("naughty").notify
+local naughty = require("naughty")
 local Gio = require("lgi").Gio
 
 local upower = {}
@@ -29,10 +29,11 @@ function upower.get_bat_info()
 
 	return {
 		percentage = device.Percentage,
-		state = device.State
+		state = device.State,
+		time_to_full = device.TimeToFull,
+		time_to_empty = device.TimeToEmpty
 	}
 end
-
 
 --- Watches UPower for battery percentage/state chcanges
 -- @param callback[type=function]
@@ -43,14 +44,14 @@ end
 -- }
 function upower.watch_battery(callback)
 	dbus.BusSYSTEM:signal_subscribe(
-		"org.freedesktop.UPower", -- sender
-		"org.freedesktop.DBus.Properties", -- interface
-		"PropertiesChanged", -- member/signal
+		"org.freedesktop.UPower",                  -- sender
+		"org.freedesktop.DBus.Properties",         -- interface
+		"PropertiesChanged",                       -- member/signal
 		"/org/freedesktop/UPower/devices/DisplayDevice", -- Object Path
-		nil, -- arg0
-		Gio.DBusSignalFlags.NONE, -- flags
-		function(...) -- callback
-			local changed_properties = ({...})[6]:get_child_value(1)
+		nil,                                       -- arg0
+		Gio.DBusSignalFlags.NONE,                  -- flags
+		function(...)                              -- callback
+			local changed_properties = ({ ... })[6]:get_child_value(1)
 			for i = 0, changed_properties:n_children() - 1 do
 				local property = changed_properties:get_child_value(i)
 				local property_name = property:get_child_value(0).value
@@ -64,5 +65,37 @@ function upower.watch_battery(callback)
 	)
 end
 
+function upower.show_time()
+	if upower.notification then
+		naughty.destroy(upower.notification)
+		upower.notification = nil
+	end
+	local info = upower.get_bat_info()
+	local time_seconds = 0
+	local annotation
+	local text
+	if info.time_to_full ~= 0 then
+		time_seconds = info.time_to_full
+		annotation = "full"
+	elseif info.time_to_empty ~= 0 then
+		time_seconds = info.time_to_empty
+		annotation = "empty"
+	end
+	local time_minutes = math.floor(time_seconds / 60)
+	if time_minutes > 60 then
+		local time_hours = math.floor(time_minutes / 60)
+		text = string.format(
+			"%s hours and %s minutes 'til %s", time_hours,
+			time_minutes % 60,
+			annotation
+		)
+	else
+		text = string.format("%s minutes 'til %s", time_minutes, annotation)
+	end
+	upower.notification = naughty.notify {
+		title = "Battery",
+		text = text
+	}
+end
 
 return upower

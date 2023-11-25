@@ -19,8 +19,7 @@
 		},
 		"diagnostics": {
 				"enable": true,
-				"globals": [ "vim", "awesome", "client", "root",
-            "lfs" ]
+				"globals": [ "awesome", "screen", "tag", "client", "root", "lfs" ]
 		},
 		"telemetry": {
 				"enable": false
