@@ -9,8 +9,6 @@
 ;;  - https://github.com/minad/org-modern
 ;;  - https://github.com/magit/forge
 ;;  - https://github.com/m00natic/vlfi
-;; TODO: use 'astro-ts-mode'
-;; TODO: use keymaps replacing "<leader>..."
 
 ;;; FASTER STARTUP
 (setq gc-cons-threshold most-positive-fixnum ; 2^61 bytes
@@ -55,6 +53,13 @@
           (lambda ()
             (when (get-buffer "*Completions*")
               (kill-buffer "*Completions*"))))
+;; Hides the message "Mark activated" and "Mark deactivated"
+;; set-mark-command
+(advice-add 'set-mark-command :around
+            (lambda (fn &rest args)
+              "Hides the messages \"Mark activated\" and \"Mark deactivated\""
+              (let ((inhibit-message t))
+                (apply fn args))))
 
 ;;; INDENTATION
 (defvaralias 'c-basic-offset 'tab-width)
@@ -187,7 +192,8 @@
   (package-refresh-contents)
   (package-install 'use-package))
 
-(setq use-package-always-defer t)
+(setq use-package-always-defer t
+      use-package-hook-name-suffix nil)
 (require 'use-package)
 
 
@@ -198,13 +204,12 @@
                 (lambda ()
                   (interactive)
                   (insert (or (gui-get-selection 'CLIPBOARD 'UTF8_STRING) ""))))
+(global-set-key [?\C-\\] nil)
 
 (use-package evil
   :ensure t
+  :hook (after-init-hook . evil-mode)
   :init
-  (add-hook 'evil-mode-hook
-            (lambda () (evil-set-leader 'motion (kbd "SPC"))))
-  (add-hook 'after-init-hook #'evil-mode)
   (defvaralias 'evil-shift-width 'tab-width)
   (setq evil-undo-system 'undo-redo
         evil-insert-state-cursor 'bar
@@ -214,8 +219,14 @@
         evil-want-keybinding nil
         evil-want-C-i-jump nil)
   :config
+  (evil-set-leader 'motion (kbd "SPC"))
+  (add-to-list 'evil-emacs-state-modes 'dired-mode)
   (add-hook 'evil-jumps-post-jump-hook
             (lambda () (call-interactively #'evil-scroll-line-to-center)))
+  (add-hook 'dired-mode-hook
+            (lambda () (setq-local evil-emacs-state-cursor '(bar . 0))))
+  ;; Keybindings
+  (evil-define-key '(motion emacs) 'global ":" #'execute-extended-command)
   (evil-define-key 'motion 'global
     [remap evil-window-split] (lambda ()
                                 (interactive)
@@ -225,12 +236,6 @@
                                  (select-window (split-window-right)))
     [remap evil-next-line] #'evil-next-visual-line
     [remap evil-previous-line] #'evil-previous-visual-line)
-  (add-to-list 'evil-emacs-state-modes 'dired-mode)
-  (add-hook 'dired-mode-hook
-            (lambda () (setq-local evil-emacs-state-cursor '(bar . 0))))
-  ;; Keybindings
-  (evil-set-leader 'normal (kbd "SPC"))
-  (evil-define-key '(motion emacs) 'global ":" #'execute-extended-command)
   (evil-define-key 'motion 'global
     [?\C-\S-o] #'evil-jump-forward
     "J" #'evil-scroll-line-down
@@ -238,7 +243,7 @@
   (evil-define-key 'normal 'global
     "J" #'evil-join
     "K" #'evil-lookup)
-  (evil-define-key '(insert motion) 'global
+  (evil-define-key '(insert motion replace) 'global
     [?\M-h] (lambda ()
               (interactive)
               (evil-normal-state 1)
@@ -329,8 +334,8 @@
         whitespace-line-column 80))
 
 (use-package frame
+  :hook (after-init-hook . window-divider-mode)
   :init
-  (add-hook 'after-init-hook #'window-divider-mode)
   (setq window-divider-default-places t
         window-divider-default-bottom-width 1
         window-divider-default-right-width 1))
@@ -508,32 +513,30 @@
 
 (use-package company
   :ensure t
+  :hook (after-init-hook . global-company-mode)
   :custom
   (company-minimum-prefix-length 2)
   (company-idle-delay 0)
   (company-selection-wrap-around t)
   (company-require-match nil)
-  (company-tooltip-align-annotations t)
-  :init
-  (add-hook 'after-init-hook 'global-company-mode))
+  (company-tooltip-align-annotations t))
 
 (use-package aggressive-indent
   :ensure t
-  :init
-  (add-hook 'after-init-hook 'global-aggressive-indent-mode))
+  :hook (after-init-hook . global-aggressive-indent-mode))
 
 (use-package vertico
   :ensure t
+  :hook
+  (after-init-hook . vertico-mode)
+  (vertico-mode-hook . vertico-mouse-mode)
   :init
-  (add-hook 'after-init-hook #'vertico-mode)
-  (add-hook 'vertico-mode #'vertico-mouse-mode)
   (setq read-buffer-completion-ignore-case t
         read-file-name-completion-ignore-case t))
 
 (use-package marginalia
   :ensure t
-  :init
-  (add-hook 'after-init-hook 'marginalia-mode))
+  :hook (after-init-hook . marginalia-mode))
 
 (use-package consult
   :ensure t
@@ -552,8 +555,6 @@
       (kbd "<leader>ap") #'avy-prev)))
 
 (use-package hideshow
-  :custom
-  (hs-hide-comments-when-hiding-all nil)
   :init
   (setq hs-hide-comments-when-hiding-all nil)
   (add-hook 'prog-mode-hook
@@ -575,20 +576,21 @@
 
 (use-package all-the-icons-completion
   :ensure t
+  :hook
+  (after-init-hook . all-the-icons-completion-mode)
+  (marginalia-mode-hook . all-the-icons-completion-marginalia-setup)
   :init
-  (setq inhibit-compacting-font-caches t)
-  (add-hook 'after-init-hook #'all-the-icons-completion-mode)
-  (add-hook 'marginalia-mode-hook #'all-the-icons-completion-marginalia-setup))
+  (setq inhibit-compacting-font-caches t))
 
 (use-package all-the-icons-ibuffer
   :ensure t
-  :init
-  (add-hook 'ibuffer-mode-hook #'all-the-icons-ibuffer-mode))
+  :hook
+  (ibuffer-mode-hook . all-the-icons-ibuffer-mode))
 
 (use-package rainbow-mode
   :ensure t
+  :hook (prog-mode-hook . rainbow-mode)
   :init
-  (add-hook 'prog-mode-hook #'rainbow-mode)
   (with-eval-after-load 'evil
     (evil-define-key 'motion 'global (kbd "<leader>sc") #'rainbow-mode)))
 
@@ -652,21 +654,22 @@
 
 (use-package which-key
   :ensure t
+  :hook
+  (after-init-hook . which-key-mode)
   :init
-  (add-hook 'after-init-hook #'which-key-mode)
   (setq which-key-idle-delay 0.25
         which-key-sort-order 'which-key-prefix-then-key-order)
   :config
   (which-key-add-key-based-replacements
-    "<leader>c" "Code Prefix"
-    "<leader>i" "Intellisense Prefix"
-    "<leader>P" "Package Prefix"
-    "<leader>p" "Project Prefix"
-    "<leader>o" "Open Prefix"
-    "<leader>s" "Settings Prefix"
-    "<leader>m" "Music Prefix"
-    "<leader>a" "Jump Prefix"
-    "<leader>f" "Fold Prefix"))
+    "SPC c" "Code Prefix"
+    "SPC i" "Intellisense Prefix"
+    "SPC P" "Package Prefix"
+    "SPC p" "Project Prefix"
+    "SPC o" "Open Prefix"
+    "SPC s" "Settings Prefix"
+    "SPC m" "Music Prefix"
+    "SPC a" "Jump Prefix"
+    "SPC f" "Fold Prefix"))
 
 (use-package ibuffer
   :commands ibuffer
@@ -721,22 +724,23 @@
         (setq i (+ i 1)))
       (setq current-prefix-arg i)
       (call-interactively #'eat)))
+
   (with-eval-after-load 'evil
     (evil-define-key 'motion 'global
       (kbd "<leader>e") #'eat
       (kbd "<leader>E") #'eat-new))
   (with-eval-after-load 'dired
-    (define-key-convenient dirvish-mode-map
-      "e" (lambda () (interactive)
-            (let ((d default-directory))
-              (dirvish-quit)
-              (let ((default-directory d))
-                (call-interactively #'eat))))
-      "E" (lambda () (interactive)
-            (let ((d default-directory))
-              (dirvish-quit)
-              (let ((default-directory d))
-                (call-interactively #'eat-new))))))
+    (define-key-convenient dired-mode-map
+                           "e" (lambda () (interactive)
+                                 (let ((d default-directory))
+                                   (dirvish-quit)
+                                   (let ((default-directory d))
+                                     (call-interactively #'eat))))
+                           "E" (lambda () (interactive)
+                                 (let ((d default-directory))
+                                   (dirvish-quit)
+                                   (let ((default-directory d))
+                                     (call-interactively #'eat-new))))))
   :config
   (set-face-attribute 'eat-term-color-11 nil
                       :foreground
@@ -749,9 +753,7 @@
               (when (require 'server)
                 (unless (server-running-p) (server-start)))))
   (with-eval-after-load 'evil
-    (add-hook 'eat-exec-hook
-              (lambda (&rest r)
-                (turn-off-evil-mode)))
+    (add-hook 'eat-exec-hook (lambda (&rest r) (turn-off-evil-mode)))
     (add-hook 'eat-mode-hook
               (lambda ()
                 (setq-local evil-insert-state-cursor 'box)
@@ -761,17 +763,16 @@
                             (turn-off-evil-mode)
                             (eat-char-mode))
                           nil t)))
-    (define-prefix-command 'term-esc-map)
     (define-key-convenient eat-char-mode-map
-      [?\C-\\] #'term-esc-map
-      [?\C-\S-v] (lambda () (interactive)
-                   (eat-send-string-as-yank
-                    eat--terminal
-                    (or (gui-get-selection 'CLIPBOARD 'UTF8_STRING) "")))
-      [?\C-\\?\C-n] (lambda () (interactive)
-                      (evil-normal-state)
-                      (read-only-mode 1)
-                      (eat-emacs-mode)))))
+                           [escape] #'eat-self-input
+                           [?\C-\S-v] (lambda () (interactive)
+                                        (eat-send-string-as-yank
+                                         eat--terminal
+                                         (or (gui-get-selection 'CLIPBOARD 'UTF8_STRING) "")))
+                           [?\C-\\] (lambda () (interactive)
+                                      (evil-normal-state)
+                                      (read-only-mode 1)
+                                      (eat-emacs-mode)))))
 
 (use-package neotree
   :ensure t
@@ -923,7 +924,9 @@
   (with-eval-after-load 'evil
     (evil-define-key 'motion 'global (kbd "<leader>ai") #'imenu)))
 
-
+(use-package eldoc
+  :init
+  (setq eldoc-echo-area-use-multiline-p t))
 
 ;;; ORG
 (use-package org
@@ -947,14 +950,14 @@
 (use-package org-bullets
   :ensure t
   :after org
+  :hook (org-mode-hook . org-bullets-mode)
   :init
-  (add-hook 'org-mode-hook #'org-bullets-mode)
   (setq org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
 (use-package org-modern
   :ensure t
   :after org
-  (add-hook 'org-mode-hook #'org-modern-mode))
+  :hook (org-mode-hook . org-modern-mode))
 
 
 ;;; PROGRAMMING
@@ -962,14 +965,22 @@
   :ensure t
   :init
   (setq eglot-autoshutdown t)
-  (dolist (hook '(c-mode-hook rust-mode-hook))
-    (add-hook hook #'eglot-ensure))
+  (defmacro eglot-add-hook (hook executable)
+    `(add-hook ,hook (lambda ()
+                       (if (executable-find ,executable) (eglot-ensure)
+                         (message "%s isn't installed, won't start `eglot'"
+                                  ,executable)))))
+
+  (eglot-add-hook 'c-mode-hook "clangd")
+  (eglot-add-hook 'rust-mode-hook "rust-analyzer")
+  (eglot-add-hook 'lua-mode-hook "lua-language-server")
+
   (defun eglot-toggle ()
     "Turn eglot either on or off"
     (interactive)
     (call-interactively (if (and (fboundp 'eglot-managed-p) (eglot-managed-p))
-                            #'eglot-shutdown
-                          #'eglot)))
+                            #'eglot-shutdown #'eglot)))
+
   (with-eval-after-load 'evil
     (evil-define-key 'normal prog-mode-map
       (kbd "<leader>se") #'eglot-toggle))
@@ -977,9 +988,8 @@
   (with-eval-after-load 'evil
     (evil-define-key 'normal 'eglot--managed-mode
       (kbd "<leader>cr") #'eglot-rename
-      (kbd "<leader>ca") #'eglot-code-actions))
-  (add-to-list 'eglot-server-programs
-               '(rust-mode . ("rustup" "run" "stable" "rust-analyzer"))))
+      (kbd "<leader>ca") #'eglot-code-actions
+      (kbd "<leader>cf") #'eglot-format)))
 
 (use-package project
   :init
@@ -999,7 +1009,8 @@
   (with-eval-after-load 'evil
     (evil-set-initial-state 'xref--xref-buffer-mode 'motion)
     (evil-define-key 'normal prog-mode-map
-      (kbd "<leader>id") #'xref-find-definitions))
+      (kbd "<leader>id") #'xref-find-definitions
+      (kbd "<leader>ir") #'xref-find-references))
   :config
   (with-eval-after-load 'evil
     (evil-define-key 'motion xref--xref-buffer-mode-map
@@ -1056,9 +1067,9 @@
 
 (use-package flymake-shellcheck
   :ensure t
+  :hook (sh-mode-hook . flymake-shellcheck-load)
   :init
-  (setq flymake-shellcheck-use-file t)
-  (add-hook 'sh-mode-hook 'flymake-shellcheck-load))
+  (setq flymake-shellcheck-use-file t))
 
 (use-package lua-mode
   :ensure t
@@ -1076,9 +1087,8 @@
 
 (use-package emmet-mode
   :ensure t
-  :init
-  (add-hook 'mhtml-mode-hook #'emmet-mode)
-  (add-hook 'css-mode-hook #'emmet-mode))
+  :hook
+  ((mhtml-mode-hook css-mode-hook astro-ts-mode-hook) . emmet-mode))
 
 (use-package sh-script
   :init
@@ -1127,6 +1137,30 @@
       (kbd "<leader>ck") #'rust-check
       (kbd "<leader>cm") #'rust-toggle-mutability))
   (add-hook 'rust-mode-hook (lambda () (indent-tabs-mode 0))))
+
+(unless (version< emacs-version "29")
+  (use-package treesit
+    :init
+    (setq treesit-language-source-alist
+          '((astro "https://github.com/virchau13/tree-sitter-astro")
+            (css "https://github.com/tree-sitter/tree-sitter-css")
+            (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+            (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src"))))
+
+  (use-package astro-ts-mode
+    :ensure t
+    :init
+    (defvaralias 'astro-ts-mode-indent-offset 'tab-width)
+    (add-to-list 'auto-mode-alist '("\\.astro\\'" . astro-ts-mode))
+    (defun treesit-grammar-ensure (mode &rest _)
+      (when (eq mode 'astro-ts-mode)
+        (let ((treesit-languages '(astro css tsx typescript)))
+          (dolist (language treesit-languages)
+            (unless (treesit-language-available-p language)
+              (message "Installing the \"%s\" language grammar" language)
+              (let ((inhibit-message t))
+                (treesit-install-language-grammar language)))))))
+    (advice-add 'set-auto-mode-0 :before #'treesit-grammar-ensure)))
 
 
 ;;; MISC
