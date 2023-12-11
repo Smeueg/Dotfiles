@@ -119,7 +119,14 @@
                                         (call-interactively #'eval-region)
                                       (call-interactively #'eval-defun)))))))
 
-      (setq chosen (cdr (assoc major-mode pair))
+      (setq chosen (cdr
+                    (assoc
+                     (intern-soft
+                      (string-replace
+                       "-ts-"
+                       "-"  (string-replace "bash" "sh"
+                                            (symbol-name major-mode))))
+                     pair))
             cmd (cadr (assq :cmd chosen))
             func (cadr (assq :func chosen)))
       (save-buffer)
@@ -127,9 +134,9 @@
       (when cmd
         (if (fboundp #'eat-new)
             (with-current-buffer (eat-new)
-              (eat-send-string-as-yank eat--terminal "clear")
+              (eat-term-send-string-as-yank eat-terminal "clear")
               (eat-input-char ?\n 1)
-              (eat-send-string-as-yank eat--terminal cmd)
+              (eat-term-send-string-as-yank eat-terminal cmd)
               (eat-input-char ?\n 1))
           (progn
             (term (getenv "SHELL"))
@@ -149,13 +156,13 @@
           "k:\t Enlarge Window Vertically\n"
           "l:\t Enlarge Window Horizontally\n"
           "C-g: Quit"))
-        (let ((key (make-vector 1 (read-key))))
+        (let ((key (read-key)))
           (cond
-           ((equal key [?h]) (call-interactively 'shrink-window-horizontally))
-           ((equal key [?j]) (call-interactively 'shrink-window))
-           ((equal key [?k]) (call-interactively 'enlarge-window))
-           ((equal key [?l]) (call-interactively 'enlarge-window-horizontally))
-           ((equal key [?\C-g]) (keyboard-quit) (message "")))))
+           ((equal key ?h) (call-interactively 'shrink-window-horizontally))
+           ((equal key ?j) (call-interactively 'shrink-window))
+           ((equal key ?k) (call-interactively 'enlarge-window))
+           ((equal key ?l) (call-interactively 'enlarge-window-horizontally))
+           ((equal key ?\C-g) (keyboard-quit) (message "")))))
     (message "Won't resize ONLY window")))
 
 (defun define-key-convenient (mode-map key fn &rest args)
@@ -503,6 +510,30 @@
                     (buffer-file-name (get-buffer buffer)))
                  display-buffer-same-window)))
 
+(use-package simple
+  :config
+  ;; Replaces the default "Kill Unsaved Buffer" UI/UX
+  (advice-add 'kill-buffer--possibly-save :override
+              (lambda (buffer &rest _)
+                (let ((run t) key response)
+                  (while run
+                    (message
+                     (concat
+                      (propertize "──── Buffer is Modified ────\n" 'face
+                                  (list :foreground (aref ansi-color-names-vector 3)))
+                      "s:\t Save and Kill\n"
+                      "k:\t Kill anyway\n"
+                      "C-g: Cancel"))
+                    (setq run nil
+                          key (read-key)
+                          response
+                          (cond
+                           ((= key ?s) (with-current-buffer buffer (save-buffer)) t)
+                           ((= key ?k) t)
+                           ((= key ?\C-g) nil)
+                           (t (setq run t)))))
+                  response))))
+
 (use-package saveplace
   :custom
   (save-place-forget-unreadable-files nil)
@@ -630,23 +661,28 @@
         (dired-mark 1)))
     (dired-next-line 1))
   (dirvish-override-dired-mode)
+  (defun dirvish-cd ()
+    "Open a different directory immediately in dirvish"
+    (interactive)
+    (dirvish (read-directory-name "Go to directory: ")))
   :config
   (define-key-convenient dirvish-mode-map
-    " " 'dired-toggle-mark
-    "h" 'dired-up-directory
-    "j" 'dired-next-line
-    "k" 'dired-previous-line
-    "l" 'dired-find-file
-    "p" 'dirvish-yank
-    "m" 'dirvish-move
-    "r" 'dired-do-rename
-    "+d" 'dired-create-directory
-    "+f" 'dired-create-empty-file)
+                         " " #'dired-toggle-mark
+                         "h" #'dired-up-directory
+                         "j" #'dired-next-line
+                         "k" #'dired-previous-line
+                         "l" #'dired-find-file
+                         "p" #'dirvish-yank
+                         "m" #'dirvish-move
+                         "r" #'dired-do-rename
+                         "c" #'dirvish-cd
+                         "+d" #'dired-create-directory
+                         "+f" #'dired-create-empty-file)
   (with-eval-after-load 'evil
     (define-key-convenient dirvish-mode-map
-      "/" 'evil-search-forward
-      "n" 'evil-search-next
-      "N" 'evil-search-previous))
+                           "/" #'evil-search-forward
+                           "n" #'evil-search-next
+                           "N" #'evil-search-previous))
   (setq-default dirvish-default-layout '(0 0.4 0.6)
                 dirvish-attributes '(file-time file-size)
                 dired-listing-switches "-lAh --group-directories-first"
@@ -687,9 +723,10 @@
     (add-hook 'ibuffer-mode-hook
               (lambda () (setq-local evil-emacs-state-cursor '(bar . 0))))
     (evil-define-key 'emacs ibuffer-mode-map
-      "j" 'ibuffer-forward-line
-      "k" 'ibuffer-backward-line
-      " " 'ibuffer-toggle-mark
+      "j" #'ibuffer-forward-line
+      "k" #'ibuffer-backward-line
+      "d" #'ibuffer-do-delete
+      " " #'ibuffer-toggle-mark
       [return] (lambda ()
                  (interactive)
                  (call-interactively 'ibuffer-visit-buffer)
@@ -766,8 +803,8 @@
     (define-key-convenient eat-char-mode-map
                            [escape] #'eat-self-input
                            [?\C-\S-v] (lambda () (interactive)
-                                        (eat-send-string-as-yank
-                                         eat--terminal
+                                        (eat-term-send-string-as-yank
+                                         eat-terminal
                                          (or (gui-get-selection 'CLIPBOARD 'UTF8_STRING) "")))
                            [?\C-\\] (lambda () (interactive)
                                       (evil-normal-state)
@@ -927,6 +964,7 @@
 (use-package eldoc
   :init
   (setq eldoc-echo-area-use-multiline-p t))
+
 
 ;;; ORG
 (use-package org
@@ -1145,7 +1183,17 @@
           '((astro "https://github.com/virchau13/tree-sitter-astro")
             (css "https://github.com/tree-sitter/tree-sitter-css")
             (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
-            (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src"))))
+            (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
+            (python "https://github.com/tree-sitter/tree-sitter-python"))))
+
+  (use-package treesit-auto
+    :ensure t
+    :hook (after-init-hook . global-treesit-auto-mode)
+    :init
+    (setq treesit-auto-install 'prompt
+          treesit-auto-langs '(python rust bash c))
+    :config
+    (treesit-auto-add-to-auto-mode-alist 'all))
 
   (use-package astro-ts-mode
     :ensure t
