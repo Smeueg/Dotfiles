@@ -476,7 +476,6 @@
 ;;; LIFE IMPROVEMENTS
 (electric-pair-mode 1) ;; Auto pairs
 (global-auto-revert-mode 1) ;; Autorefresh buffers
-(global-eldoc-mode 0) ;; Disable eldoc-mode
 (fset 'yes-or-no-p 'y-or-n-p) ;; Shorter version of prompt
 (setq require-final-newline t
       hscroll-margin 1000
@@ -963,6 +962,7 @@
 
 (use-package eldoc
   :init
+  (global-eldoc-mode 0)
   (setq eldoc-echo-area-use-multiline-p t))
 
 
@@ -1175,6 +1175,9 @@
       (kbd "<leader>ck") #'rust-check
       (kbd "<leader>cm") #'rust-toggle-mutability))
   (add-hook 'rust-mode-hook (lambda () (indent-tabs-mode 0))))
+
+(use-package markdown-mode
+  :ensure t)
 
 (unless (version< emacs-version "29")
   (use-package treesit
