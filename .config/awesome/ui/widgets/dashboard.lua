@@ -18,9 +18,9 @@ local templates = {
 			callback = function()
 				notify {
 					title = "System",
-					text = callback:upper_first()
+					text = callback:capitalize()
 				}
-				if gears.filesystem.find_executable("systemctl") then
+				if gears.filesystem.get_command_path("systemctl") then
 					awful.spawn("systemctl " .. callback)
 				else
 					awful.spawn("loginctl " .. callback)

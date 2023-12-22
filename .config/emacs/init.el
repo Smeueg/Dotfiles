@@ -1072,7 +1072,7 @@
     (evil-define-key 'normal 'flymake-mode
       (kbd "<leader>in") #'flymake-goto-next-error
       (kbd "<leader>ip") #'flymake-goto-prev-error
-      (kbd "<leader>ip") #'flymake-diagnostic-at-point)
+      (kbd "<leader>iP") #'flymake-diagnostic-at-point)
     (when (fboundp 'consult-flymake)
       (evil-define-key 'normal 'flymake-mode
         (kbd "<leader>ii") #'consult-flymake)))

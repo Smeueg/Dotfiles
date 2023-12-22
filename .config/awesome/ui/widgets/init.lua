@@ -20,4 +20,6 @@ while true do
 	end
 end
 
+print(require)
+
 return tmp

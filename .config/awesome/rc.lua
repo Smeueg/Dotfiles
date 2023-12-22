@@ -17,6 +17,7 @@
 -- Import Libraries
 pcall(require, "luarocks.loader") -- Make sure LuaRocks packages is loaded
 require("awful.autofocus")
+require("libmods")
 local beautiful = require("beautiful")
 local naughty = require("naughty")
 local gears = require("gears")
@@ -27,7 +28,8 @@ local dpi = beautiful.xresources.apply_dpi
 local notify = naughty.notify
 local cairo = lgi.cairo
 local Gio = lgi.Gio
-
+local pulseaudio = require("system.pulseaudio")
+local brightness = require("system.brightness")
 -- Error Handling --
 do
 	local in_error = false
@@ -115,10 +117,6 @@ local modkey = "Mod4"
 
 
 -- Custom Functions --
-function string:upper_first()
-	return self:sub(1, 1):upper() .. self:sub(2)
-end
-
 function awful.spawn.launch(name, cmd)
 	notify { title = "Launching Application", text = name }
 	awful.spawn(cmd, {
@@ -505,70 +503,46 @@ local globalkeys = gears.table.join(
 	),
 	-- Volume
 	awful.key(
-		{ modkey }, "]",
-		function()
-			awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ +5%", false)
-		end,
+		{ modkey }, "]", function() pulseaudio.modify_vol(5) end,
 		{ group = "Volume", description = "Increase The Volume By 5"}
 	),
 	awful.key(
-		{}, "XF86AudioRaiseVolume",
-		function()
-			awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ +5%", false)
-		end,
+		{ modkey }, "[", function() pulseaudio.modify_vol(-5) end,
+		{ group = "Volume", description = "Decrease The Volume By 5"}
+	),
+	awful.key(
+		{}, "XF86AudioRaiseVolume", function() pulseaudio.modify_vol(5) end,
 		{ group = "Volume", description = "Increase The Volume By 5"}
 	),
 	awful.key(
-		{ modkey }, "[",
-		function()
-			awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ -5%", false)
-		end,
+		{}, "XF86AudioLowerVolume", function() pulseaudio.modify_vol(-5) end,
 		{ group = "Volume", description = "Decrease The Volume By 5"}
 	),
 	awful.key(
-		{ }, "XF86AudioLowerVolume",
-		function()
-			awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ -5%", false)
-		end,
-		{ group = "Volume", description = "Decrease The Volume By 5"}
-	),
-	awful.key(
-		{ modkey, "Control" }, "]",
-		function()
-			awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ +1%", false)
-		end,
+		{ modkey, "Control" }, "]", function() pulseaudio.modify_vol(1) end,
 		{ group = "Volume", description = "Increase The Volume By 1"}
 	),
 	awful.key(
-		{ modkey, "Control" }, "[",
-		function()
-			awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ -1%", false)
-		end,
+		{ modkey, "Control" }, "[", function() pulseaudio.modify_vol(-1) end,
 		{ group = "Volume", description = "Decrease The Volume By 1"}
 	),
 	awful.key(
-		{ }, "XF86AudioMute",
-		function()
-			awful.spawn("pactl set-sink-mute @DEFAULT_SINK@ toggle", false)
-		end,
+		{ }, "XF86AudioMute", pulseaudio.toggle_mute,
 		{ group = "Volume", description = "(Un)Mute Sound"}
 	),
 	awful.key(
-		{ modkey }, "\\",
-		function()
-			awful.spawn("pactl set-sink-mute @DEFAULT_SINK@ toggle", false)
-		end,
+		{ modkey }, "\\", pulseaudio.toggle_mute,
 		{ group = "Volume", description = "(Un)Mute Sound"}
 	),
 	-- Brightness
 	awful.key(
 		{ }, "XF86MonBrightnessUp",
-		function() awful.spawn.run_if_installed { "brightnessctl s +1%" } end,
+		function() brightness.modify(1) end,
 		{ group = "Brightness", description = "Increase the screen's brightness"}
 	),
 	awful.key(
 		{ }, "XF86MonBrightnessDown",
-		function() awful.spawn.run_if_installed { "brightnessctl s 1%-" } end,
+		function() brightness.modify(-1) end,
 		{ group = "Brightness", description = "Decrease the screen's brightness"}
 	),
 	-- Screenshot

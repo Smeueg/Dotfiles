@@ -137,7 +137,7 @@ function popup.press()
 end
 
 function popup.toggle()
-	if not gears.filesystem.find_executable("import") then
+	if not gears.filesystem.get_command_path("import") then
 		notify {
 			title = "Screenshot",
 			text = "Couldn't open screenshot tool, `import` isn't installed"
