@@ -36,5 +36,4 @@ function utils.border_wrapper(w, disabled)
 	}
 end
 
-
 return utils

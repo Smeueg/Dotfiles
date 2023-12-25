@@ -4,27 +4,16 @@ local awful = require("awful")
 local gears = require("gears")
 local icon = require("ui.icons")
 local dpi = beautiful.xresources.apply_dpi
-
-local function vol_toggle()
-	awful.spawn("pactl set-sink-mute @DEFAULT_SINK@ toggle", false)
-end
-
-local function vol_inc()
-	awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ +1%", false)
-end
-
-local function vol_dec()
-	awful.spawn("pactl set-sink-volume @DEFAULT_SINK@ -1%", false)
-end
+local pulseaudio = require("system.pulseaudio")
 
 local widget = wibox.widget {
 	widget = wibox.container.background,
 	shape = beautiful.shape_universal,
 	bg = "#00000030",
 	buttons = gears.table.join(
-		awful.button({}, 1, vol_toggle),
-		awful.button({}, 4, vol_inc),
-		awful.button({}, 5, vol_dec)
+		awful.button({}, 1, pulseaudio.toggle_mute),
+		awful.button({}, 4, function() pulseaudio.modify_vol(1) end),
+		awful.button({}, 5, function() pulseaudio.modify_vol(-1) end)
 	),
 	{
 		widget = wibox.container.margin,
