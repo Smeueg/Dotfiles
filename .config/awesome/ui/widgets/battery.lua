@@ -1,22 +1,26 @@
 local upower    = require("daemons.upower")
 local beautiful = require("beautiful")
 local wibox     = require("wibox")
-local naughty   = require("naughty")
 local awful     = require("awful")
-local icon      = require("ui.icons")
+local icons     = require("ui.icons")
 
+local bat_info = upower.get_info()
 
-local widget = wibox.widget {
+local battery_widget = wibox.widget {
 	widget = wibox.container.background,
 	shape = beautiful.shape_universal,
 	bg = "#00000030",
-	buttons = awful.button({}, 1, upower.show_time),
+	buttons = awful.button({}, 1, function()
+			if bat_info then
+				bat_info:notify_time()
+			end
+	end),
 	{
 		widget = wibox.container.background,
 		layout = wibox.layout.fixed.horizontal,
 		{
 			widget = wibox.widget.imagebox,
-			image = icon.battery_none,
+			image = icons.battery_none,
 			id = "icon"
 		},
 		{
@@ -31,49 +35,47 @@ local widget = wibox.widget {
 	}
 }
 
-local widget_icon       = widget:get_children_by_id("icon")[1]
-local widget_percentage = widget:get_children_by_id("percentage")[1]
 
-local function set_icon(state)
-	widget.state = state
+--- Updates the icon for the battery widget
+---@param state BatState
+function battery_widget:update_icon(state)
+	local icon = self:get_children_by_id("icon")[1]
 	if state == upower.state.CHARGING then
-		widget_icon.image = icon.battery_charging
-		if widget.notification then
-			naughty.destroy(widget.notification, nil)
-			widget.notification = nil
-		end
+		icon.image = icons.battery_charging
 	elseif state == upower.state.DISCHARGING then
-		widget_icon.image = icon.battery_discharging
+		icon.image = icons.battery_discharging
+	elseif state == upower.state.FULLY_CHARGED then
+		icon.image = icons.battery_fully_charged
 	end
 end
 
-local function set_percentage(percentage)
-	widget.percentage = math.floor(percentage)
-	widget_percentage.text = widget.percentage
-	if widget.percentage <= 15 and widget.state == upower.state.DISCHARGING then
-		widget.notification = naughty.notify {
-			title = "Warning",
-			text = "Your battery is at " .. widget.percentage .. "%",
-			timeout = 0,
-			replaces_id = 0
-		}
-	end
+
+--- Updates the percentage string for the battery widget
+---@param percentage number
+function battery_widget:update_percentage(percentage)
+	self:get_children_by_id("percentage")[1].text = string.format(
+		"%d", percentage
+	)
 end
 
-local function watch_handler(property)
-	if property.name == "State" then
-		set_icon(property.value)
-	elseif property.name == "Percentage" then
-		set_percentage(property.value)
-	end
+
+if bat_info then
+	battery_widget:update_icon(bat_info.state)
+	battery_widget:update_percentage(bat_info.percentage)
+
+	upower.watch(
+		function(name, value)
+			if name == "State" then
+				bat_info.state = value
+				battery_widget:update_icon(value)
+			elseif name == "Percentage" then
+				battery_widget:update_percentage(value)
+				bat_info.percentage = value
+				bat_info:notify_when_low(15)
+			end
+		end
+	)
 end
 
-local info = upower.get_bat_info()
-if info then
-	set_icon(info.state)
-	set_percentage(info.percentage)
-end
 
-upower.watch_battery(watch_handler)
-
-return widget
+return battery_widget

@@ -8,7 +8,7 @@ local pi = math.pi
 
 local icon = {}
 
-function icon_create(body, size)
+local function icon_create(body, size)
 	local tmp = {}
 
 	if not size then -- default value for `size`
@@ -157,6 +157,7 @@ icon.screenshot = icon_create(function(cr)
 		cr:fill()
 end)
 
+--- Batteries
 icon.battery_none = icon_create(function(cr)
 		cr:set_source(icon_color)
 		shape.transform(shape.rounded_rect)
@@ -199,7 +200,19 @@ icon.battery_discharging = icon_create(function(cr)
 		shape.transform(shape.rounded_rect)
 			:translate(17, 6)(cr, 6, 4, 2)
 		shape.transform(shape.rounded_rect)
-			:translate(18, 17)(cr, 4, 10, 2)
+			:translate(18, 18)(cr, 4, 9, 2)
+		cr:fill()
+end)
+
+icon.battery_fully_charged = icon_create(function(cr)
+		cr:set_source(icon_color)
+		shape.transform(shape.rounded_rect)
+			:translate(15, 10)(cr, 10, 20, 2)
+		cr:stroke()
+		shape.transform(shape.rounded_rect)
+			:translate(17, 6)(cr, 6, 4, 2)
+		shape.transform(shape.rounded_rect)
+			:translate(18, 12)(cr, 4, 16, 2)
 		cr:fill()
 end)
 

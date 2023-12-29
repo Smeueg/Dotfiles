@@ -26,13 +26,13 @@ local templates = {
 					awful.spawn("loginctl " .. callback)
 				end
 			end,
-	shape = gears.shape.rounded_rect_auto,
-	{
-		widget = wibox.container.margin,
-		margins = dpi(10),
-		{
-			widget = wibox.widget.imagebox,
-			image = icon,
+			shape = gears.shape.rounded_rect_auto,
+			{
+				widget = wibox.container.margin,
+				margins = dpi(10),
+				{
+					widget = wibox.widget.imagebox,
+					image = icon,
 					forced_height = dpi(25),
 					forced_width = dpi(25)
 				}
@@ -67,6 +67,7 @@ local popup = awful.popup {
 			}
 	}, { top = true, left = true })
 }
+
 popup.power = popup.widget:get_children_by_id("power")[1]
 popup.launcher = popup.widget:get_children_by_id("launcher")[1]
 popup.power.widget = wibox.widget {
@@ -75,6 +76,7 @@ popup.power.widget = wibox.widget {
 	templates.power_opt(icons.reboot, "reboot"),
 	templates.power_opt(icons.shutdown, "poweroff"),
 }
+
 popup.power.options = popup.power.widget:get_children()
 
 popup.launcher.widget = wibox.widget {
@@ -167,7 +169,7 @@ function popup.launcher.filter(text)
 	local offset = launcher.offset
 	local limit = launcher.limit
 	launcher.text = launcher.textbox.text:gsub(" +$", "") -- remove trailing ws
-		launcher.grid:reset()
+	launcher.grid:reset()
 
 	launcher.entries_filtered = {}
 	for _, w in ipairs(launcher.entries) do
@@ -216,7 +218,7 @@ function popup.launcher.filter(text)
 				cr:set_source(gears.color(beautiful.fg_normal))
 				cr:rectangle(0, offset / r, 2, limit / r)
 				cr:fill(((#launcher.entries_filtered - limit) / r))
-		end, {2, h})
+		end, { 2, h })
 	end
 end
 
@@ -305,20 +307,20 @@ function popup.launcher.start()
 		bg_cursor = beautiful.fg_normal,
 		changed_callback = popup.launcher.filter,
 		hooks = {
-			{{}, "Tab", function()
+			{ {}, "Tab", function()
 					launcher.textbox.text = launcher.text .. " "
 					for _, w in ipairs(launcher.entries_filtered) do
 						w.bg = nil
 					end
 					popup.power.start()
-			end},
-			{{}, "Escape", function() popup.visible = false end},
-			{{ "Control" }, "g", function() popup.visible = false end},
+			end },
+			{ {},            "Escape", function() popup.visible = false end },
+			{ { "Control" }, "g",      function() popup.visible = false end },
 		},
 		keypressed_callback = function(mod, key)
 			local keys = {
-				{ n = launcher.next, mod = "Control" },
-				{ p = launcher.prev, mod = "Control" },
+				{ n = launcher.next,   mod = "Control" },
+				{ p = launcher.prev,   mod = "Control" },
 				{ Down = launcher.next },
 				{ Up = launcher.prev },
 			}
@@ -366,7 +368,6 @@ function popup.power.switch()
 	popup.power.stop()
 	popup.launcher.start()
 end
-
 
 function popup.power.next()
 	local power = popup.power
@@ -430,20 +431,19 @@ function popup.toggle()
 	power.chosen = 1
 	power.keygrabber = awful.keygrabber {
 		keybindings = {
-			{{}, "j", power.next},
-			{{}, "k", power.prev},
-			{{}, "Down", power.next},
-			{{}, "Up", power.prev},
-			{{}, "Escape", power.exit},
-			{{}, "Return", power.press},
-			{{}, "Tab", power.switch},
-			{{"Control"}, "n", power.next},
-			{{"Control"}, "p", power.prev},
-			{{"Control"}, "g", power.exit},
-			{{"Control"}, "j", power.press}
+			{ {},          "j",      power.next },
+			{ {},          "k",      power.prev },
+			{ {},          "Down",   power.next },
+			{ {},          "Up",     power.prev },
+			{ {},          "Escape", power.exit },
+			{ {},          "Return", power.press },
+			{ {},          "Tab",    power.switch },
+			{ { "Control" }, "n",    power.next },
+			{ { "Control" }, "p",    power.prev },
+			{ { "Control" }, "g",    power.exit },
+			{ { "Control" }, "j",    power.press }
 		}
 	}
-
 end
 
 -- Mouse support for popup.power

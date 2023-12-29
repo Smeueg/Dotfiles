@@ -178,6 +178,16 @@
   (interactive)
   (set-auto-mode 1))
 
+(defvar window-configuration nil)
+(defun toggle-maximize-window ()
+  (interactive)
+  (if window-configuration
+      (progn
+        (set-window-configuration window-configuration)
+        (setq window-configuration nil))
+    (setq window-configuration (current-window-configuration))
+    (delete-other-windows)))
+
 
 ;;; HOOKS
 (add-hook 'before-save-hook #'delete-trailing-whitespace)
@@ -289,6 +299,7 @@
     (kbd "C-=") (lambda () (interactive) (text-scale-increase 0.5))
     (kbd "C-0") (lambda () (interactive) (text-scale-set 0))
     (kbd "C-w r") #'resize-window
+    (kbd "C-w F") #'toggle-maximize-window
     (kbd "C-w C") #'quit-window-kill
     (kbd "<leader>d") #'dired
     (kbd "<leader>b") #'switch-to-buffer
@@ -660,10 +671,18 @@
         (dired-mark 1)))
     (dired-next-line 1))
   (dirvish-override-dired-mode)
+
   (defun dirvish-cd ()
     "Open a different directory immediately in dirvish"
     (interactive)
     (dirvish (read-directory-name "Go to directory: ")))
+
+  (defun dired-run-shell-command ()
+    "Run a shell command on the current working directory while automatically
+reverting the buffer"
+    (interactive)
+    (call-interactively #'shell-command)
+    (call-interactively #'revert-buffer))
   :config
   (define-key-convenient dirvish-mode-map
                          " " #'dired-toggle-mark
@@ -676,7 +695,8 @@
                          "r" #'dired-do-rename
                          "c" #'dirvish-cd
                          "+d" #'dired-create-directory
-                         "+f" #'dired-create-empty-file)
+                         "+f" #'dired-create-empty-file
+                         "$" #'dired-run-shell-command)
   (with-eval-after-load 'evil
     (define-key-convenient dirvish-mode-map
                            "/" #'evil-search-forward
@@ -819,8 +839,10 @@
   :config
   (add-hook 'neotree-mode-hook (lambda () (setq-local mode-line-format nil)))
   (with-eval-after-load 'evil
-    (evil-define-key 'motion neotree-mode-map
-      "q" #'neotree-hide
+    (evil-define-key 'motion 'global
+      (kbd "<leader>sn") #'neotree)
+    (evil-define-key 'normal neotree-mode-map
+      "q" (lambda () (interactive) (kill-buffer))
       "." #'neotree-hidden-file-toggle
       (kbd "SPC") #'neotree-quick-look
       (kbd "RET") #'neotree-enter)))
@@ -964,7 +986,6 @@
   :init
   (global-eldoc-mode 0)
   (setq eldoc-echo-area-use-multiline-p t))
-
 
 ;;; ORG
 (use-package org

@@ -2,7 +2,7 @@ local wibox = require("wibox")
 local beautiful = require("beautiful")
 local icon = require("ui.icons")
 
-local widget = wibox.widget {
+local network_widget = wibox.widget {
 	widget = wibox.container.background,
 	shape = beautiful.shape_universal,
 	bg = "#00000030",
@@ -22,16 +22,15 @@ local widget = wibox.widget {
 	}
 }
 
-local widget_text = widget:get_children_by_id("text")[1]
 
-local widget_icon = widget:get_children_by_id("icon")[1]
+local widget_text = network_widget:get_children_by_id("text")[1]
+local widget_icon = network_widget:get_children_by_id("icon")[1]
 
 -- Initial Setup
 local NM = require("daemons.nm")
 
-local function display_connection(connection)
-	local text
-	local image
+local function update_widget(connection)
+	local text, image
 	if connection then
 		if connection.type == NM.DEVICE.TYPE.WIFI then
 			image = icon.wifi
@@ -47,7 +46,7 @@ local function display_connection(connection)
 	widget_icon.image = image
 end
 
-display_connection(NM.get_active_connection())
-NM.watch_connections(display_connection)
+update_widget(NM.get_active_connection())
+NM.watch(update_widget)
 
-return widget
+return network_widget

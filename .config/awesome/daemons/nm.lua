@@ -6,6 +6,7 @@ local dbus = require("daemons.dbus")
 local Gio = lgi.Gio
 
 local nm = {
+	---@class NetworkManagerDeviceType
 	DEVICE = {
 		TYPE = {
 			UNKNOWN = 0,
@@ -70,7 +71,22 @@ local nm = {
 }
 
 
-local function get_connection_property(path)
+---@class NetworkManagerConnection
+---@field id string
+---@field type NetworkManagerDeviceType
+
+---@param id string
+---@param type NetworkManagerDeviceType
+---@return NetworkManagerConnection
+local function NetworkManagerConnection(id, type)
+	return {
+		id = id,
+		type = type
+	}
+end
+
+
+local function get_connection_properties(path)
 	return dbus.get_properties {
 		name = "org.freedesktop.NetworkManager",
 		path = path,
@@ -80,11 +96,7 @@ end
 
 
 --- Gets the current active network using DBus
--- @return [table]
--- {
---  type (string): NetworkManager active connection type
---  id   (string): NetworkManager active connection id
--- }
+--- @return NetworkManagerConnection
 function nm.get_active_connection()
 	local active_connection
 	local network = dbus.get_properties {
@@ -95,17 +107,14 @@ function nm.get_active_connection()
 
 	-- Use the path of PrimaryConnection if defined
 	if network.PrimaryConnection ~= "/" then
-		local ac = get_connection_property(network.PrimaryConnection)
+		local ac = get_connection_properties(network.PrimaryConnection)
 		local device_type = dbus.get_property {
 			name = "org.freedesktop.NetworkManager",
 			path = ac.Devices,
 			property = "org.freedesktop.NetworkManager.Device.DeviceType"
 		}
 
-		return {
-			id = ac.Id,
-			type = device_type
-		}
+		return NetworkManagerConnection(ac.Id, device_type)
 	end
 
 	-- Loop through activated devices if PrimaryConnection isn't defined
@@ -123,12 +132,10 @@ function nm.get_active_connection()
 				property = "org.freedesktop.NetworkManager.Device.ActiveConnection"
 			}
 
-			local ac = get_connection_property(active_connection_path)
-
-			active_connection = {
-				id = ac.Id,
-				type = device.DeviceType
-			}
+			NetworkManagerConnection(
+				get_connection_properties(active_connection_path).Id,
+				device.DeviceType
+			)
 
 			if device.DeviceType == nm.DEVICE.TYPE.ETHERNET then
 				return active_connection
@@ -141,13 +148,8 @@ end
 
 
 --- Watches NetworkManager for active connection changes
--- @param callback[type=function]
--- callback should accept a table with the following structure:
--- {
---   id (string),
---   type (nm.DEVICE.TYPE)
--- }
-function nm.watch_connections(callback)
+--- @param callback fun(type: NetworkManagerConnection)
+function nm.watch(callback)
 	dbus.BusSYSTEM:signal_subscribe(
 		"org.freedesktop.NetworkManager", -- sender
 		"org.freedesktop.NetworkManager.Connection.Active", -- interface

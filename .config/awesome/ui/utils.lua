@@ -4,6 +4,7 @@ local utils = {}
 
 function utils.border_wrapper(w, disabled)
 	disabled = disabled or {}
+
 	local function border(orientation, position)
 		if disabled[position] then
 			return { widget = wibox.container.background }
