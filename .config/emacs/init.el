@@ -902,29 +902,30 @@ reverting the buffer"
 
 (use-package magit-todos
   :ensure t
+  :disabled t
   :init
   (with-eval-after-load 'magit (magit-todos-mode))
   :config
   (magit-todos-defscanner "git grep bare"
-                          :test
-                          (and (string-match "--erl-regexp"
-                                             (shell-command-to-string
-                                              "git grep --magit-todos-testing-git-grep")))
-                          :command (list "git"
-                                         (format "--git-dir=%s" (expand-file-name "~/.local/dots"))
-                                         (format "--work-tree=%s" (expand-file-name "~"))
-                                         "--no-pager" "grep" "--full-name" "--no-color" "-n"
-                                         (when depth (list "--max-depth" depth))
-                                         (when magit-todos-ignore-case "--ignore-case")
-                                         "--perl-regexp"
-                                         "-e" search-regexp-pcre
-                                         extra-args "--" directory
-                                         (when magit-todos-exclude-globs
-                                           (--map (concat ":!" it)
-                                                  magit-todos-exclude-globs))
-                                         (unless magit-todos-submodule-list
-                                           (--map (list "--glob" (concat "!" it))
-                                                  (magit-list-module-paths)))))
+    :test
+    (and (string-match "--erl-regexp"
+                       (shell-command-to-string
+                        "git grep --magit-todos-testing-git-grep")))
+    :command (list "git"
+                   (format "--git-dir=%s" (expand-file-name "~/.local/dots"))
+                   (format "--work-tree=%s" (expand-file-name "~"))
+                   "--no-pager" "grep" "--full-name" "--no-color" "-n"
+                   (when depth (list "--max-depth" depth))
+                   (when magit-todos-ignore-case "--ignore-case")
+                   "--perl-regexp"
+                   "-e" search-regexp-pcre
+                   extra-args "--" directory
+                   (when magit-todos-exclude-globs
+                     (--map (concat ":!" it)
+                            magit-todos-exclude-globs))
+                   (unless magit-todos-submodule-list
+                     (--map (list "--glob" (concat "!" it))
+                            (magit-list-module-paths)))))
   (add-hook 'magit-mode-hook
             (lambda ()
               (when (and (file-directory-p "~/.local/dots")
