@@ -176,13 +176,13 @@ icon.battery_charging = icon_create(function(cr)
 		shape.transform(shape.rounded_rect)
 			:translate(15, 10)(cr, 10, 20, 2)
 		cr:stroke()
+		shape.transform(shape.rounded_rect)
+			:translate(17, 6)(cr, 6, 4, 2)
 		shape.transform(shape.isosceles_triangle)
 			:translate(17, 13)(cr, 6, 8)
 		shape.transform(shape.isosceles_triangle)
 			:rotate_at(23, 27, pi)
 			:translate(23, 27)(cr, 6, 8)
-		shape.transform(shape.rounded_rect)
-			:translate(17, 6)(cr, 6, 4, 2)
 		cr:fill()
 		cr:set_operator(cr, cairo.Operator.clear)
 		shape.transform(shape.rectangle)
@@ -221,6 +221,44 @@ icon.dashboard = beautiful.theme_assets.awesome_icon(
 	icon_color2,
 	nil
 )
+
+function icon.create_battery_discharging(percentage)
+	local value = percentage * 16 / 100
+	local surface = cairo.ImageSurface.create(
+		cairo.Format.ARGB32,
+		40,
+		40
+	)
+
+	local cr = cairo.Context(surface)
+	cr:set_source(icon_color)
+	shape.transform(shape.rounded_rect)
+		:translate(15, 10)(cr, 10, 20, 2)
+	cr:stroke()
+	shape.transform(shape.rounded_rect)
+		:translate(17, 6)(cr, 6, 4, 2)
+	shape.transform(shape.rounded_rect)
+		:translate(18, 28 - value)(cr, 4, value, 2)
+	cr:fill()
+	return surface
+end
+
+function icon.create_battery_charging(percentage)
+	local surface = icon.create_battery_discharging(percentage)
+	local cr = cairo.Context(surface)
+	cr:set_source(icon_color)
+	cr:set_operator(cairo.Operator.XOR)
+	cr:move_to(20, 21)
+	cr:line_to(18, 21)
+	cr:line_to(20.5, 12)
+	cr:close_path()
+	cr:move_to(20, 19)
+	cr:line_to(22, 19)
+	cr:line_to(19.5, 28)
+	cr:close_path()
+	cr:fill()
+	return surface
+end
 
 
 return icon

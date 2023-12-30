@@ -36,42 +36,33 @@ local battery_widget = wibox.widget {
 }
 
 
---- Updates the icon for the battery widget
----@param state BatState
-function battery_widget:update_icon(state)
-	local icon = self:get_children_by_id("icon")[1]
-	if state == upower.state.CHARGING then
-		icon.image = icons.battery_charging
-	elseif state == upower.state.DISCHARGING then
-		icon.image = icons.battery_discharging
-	elseif state == upower.state.FULLY_CHARGED then
-		icon.image = icons.battery_fully_charged
+function battery_widget:update()
+	-- Update the icon
+	local icon_function
+	if bat_info.state == upower.state.CHARGING then
+		icon_function = icons.create_battery_charging
+	elseif bat_info.state == upower.state.DISCHARGING or bat_info.state == upower.state.FULLY_CHARGED then
+		icon_function = icons.create_battery_discharging
 	end
-end
+	self:get_children_by_id("icon")[1].image = icon_function(bat_info.percentage)
 
-
---- Updates the percentage string for the battery widget
----@param percentage number
-function battery_widget:update_percentage(percentage)
+	-- Update the percentage (text)
 	self:get_children_by_id("percentage")[1].text = string.format(
-		"%d", percentage
+		"%d", bat_info.percentage
 	)
 end
 
 
 if bat_info then
-	battery_widget:update_icon(bat_info.state)
-	battery_widget:update_percentage(bat_info.percentage)
-
+	battery_widget:update()
 	upower.watch(
 		function(name, value)
 			if name == "State" then
 				bat_info.state = value
-				battery_widget:update_icon(value)
+				battery_widget:update()
 			elseif name == "Percentage" then
-				battery_widget:update_percentage(value)
 				bat_info.percentage = value
-				bat_info:notify_when_low(15)
+				battery_widget:update()
 			end
 		end
 	)
