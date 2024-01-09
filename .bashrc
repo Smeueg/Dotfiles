@@ -24,7 +24,7 @@ elif [ "${ZSH_NAME}" ]; then
 fi
 
 
-# PROMPT #
+# Prompt #
 # Should work on dash, bash, zsh, and ksh
 print_prompt() {
 	ret=$?
@@ -73,8 +73,7 @@ print_prompt() {
 export PS1="\$(print_prompt)"
 
 
-# ALIASES #
-alias emacs="emacs -nw"
+# Aliases #
 alias mkdir="mkdir -pv"
 alias diff="diff --color=always"
 alias less="less -r"
@@ -91,31 +90,11 @@ alias sudo="sudo --preserve-env=TERMINFO"
 
 
 
-# NEAT EXTERNAL SCRIPTS #
-if [ "${BASH_VERSION}" ]; then
-    alias gpipesX='$0 <(curl -Ls https://raw.githubusercontent.com/pipeseroni/pipesX.sh/master/pipesX.sh -o -)'
-    alias gpipes='$0 <(curl -Ls https://github.com/pipeseroni/pipes.sh/raw/master/pipes.sh -o -)'
-else
-    alias gpipesX="printf \"[\033[1;31mERROR\033[m]: 'pipesX' requires 'bash'\n\""
-    alias gpipes="printf \"[\033[1;31mERROR\033[m]: 'pipes' requires 'bash'\n\""
-fi
-
-gneofetch() {
-    if [ "$(command -v bash)" ]; then
-        curl -Lso - https://raw.githubusercontent.com/dylanaraps/neofetch/master/neofetch |
-            bash -s -- $@
-    else
-        printf "[\033[1;31mERROR\033[m]: 'neofetch' requires 'bash'\n"
-    fi
-}
-
-gsetup() {
-    curl -Lso - https://smeueg.github.io/smeueger |
-        sh -s -- $@
-}
+# @section Custom Functions/Commands
 
 
-# FUNCTIONS #
+# @description A wrapper around `droidcam-cli` to automatically use audio
+# @noargs
 dra() {
 	if ! [ "$(command -v droidcam-cli)" ]; then
 		printf "\033[1;31m|\033[0m 'droidcam-cli' isn't installed\n" >&2
@@ -147,8 +126,9 @@ dra() {
 }
 
 
+# @description Fix time desync in Linux
+# @noargs
 fix_time() {
-	# Fix time desync in Linux
 	err=false
 	for dep in ntpd hwclock sudo; do
 		[ "$(command -v ${dep})" ] && continue
@@ -161,6 +141,8 @@ fix_time() {
 }
 
 
+# @description Automatically mount a phone's filesystem using `jmtpfs`
+# @noargs
 jmtpfs_auto() {
 	if ! [ "$(command -v jmtpfs)" ]; then
 		printf "\033[1;31m|\033[0m Command 'jmtpfs' not found\n" >&2
@@ -182,8 +164,9 @@ jmtpfs_auto() {
 }
 
 
+# @description A shortcut to start the X server using `xinitrc`
+# @noargs
 sx() {
-	# Start x server
 	if [ -f "${HOME}/.config/X11/xinitrc" ]; then
 		startx "${HOME}/.config/X11/xinitrc"
 	else
@@ -191,7 +174,8 @@ sx() {
 	fi
 }
 
-
+# @description A shortcut to edit using `emacsclient` if $EDITOR is `emacs`
+# @noargs
 e() {
 	if [ "${EDITOR}" = "emacs" ] && [ "$(command -v emacsclient)" ]; then
 		emacsclient -a ${EDITOR} $@ &
@@ -201,6 +185,8 @@ e() {
 }
 
 
+# @description Automatically mount rclone
+# @noargs
 rcmnt() {
 	if ! [ "$(command -v rclone)" ]; then
 		printf "\033[1;31m|\033[0m Command 'rclone' not found\n" >&2
@@ -243,19 +229,7 @@ rcmnt() {
 }
 
 
-cht() {
-    if [ "$(command -v curl)" ]; then
-        curl -Ls cht.sh/"$1" | less -r
-    elif [ "$(command -v wget)" ]; then
-        wget -q cht.sh/"$1" | less -r
-    else
-        printf "[\033[1;31mERROR\033[m]: 'cht' requires either 'curl' or 'wget'\n"
-    fi
-}
-
-
-# MISC #
-# Git
+# @section Configuration for `git`
 if [ "$(command -v git)" ]; then
 	[ "$(git config --get-regexp ^alias\.graph)" ] ||
 		git config --global alias.graph "log --graph --oneline"
@@ -265,11 +239,11 @@ if [ "$(command -v git)" ]; then
 	fi
 fi
 
-# Rust
+# @section Configuration for `cargo`
 [ -f "${HOME}/.local/share/cargo/env" ] &&
 	. "${HOME}/.local/share/cargo/env"
 
-# Less
+# @section Configuration for `less`
 export LESS_TERMCAP_mb=$'\033[1;32m'
 export LESS_TERMCAP_md=$'\033[1;32m'
 export LESS_TERMCAP_so=$'\033[1;33m'
@@ -279,13 +253,13 @@ export LESS_TERMCAP_ue=$'\033[m'
 export LESS_TERMCAP_us=$'\033[1;4;31m'
 
 
-# Warnings
+# @section Give warnings based on XDG_BASE_DIRECTORY compliance
 # Emacs
 if [ -f "${XDG_CONFIG_HOME}/emacs/init.el" ]; then
     for file in "${HOME}/.emacs" "${HOME}/.emacs.d"; do
         { [ -f "${file}" ] || [ -d "${file}" ]; } || continue
         printf "%b: '%s' exists but '%s' is used instead\n" \
-               "\033[1;31mWarning\033[m" \
+               "\033[1;31mWARN\033[m" \
                "${XDG_CONFIG_HOME}/emacs/init.el" \
                "${file}"
     done

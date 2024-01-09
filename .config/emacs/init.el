@@ -180,6 +180,8 @@
 
 (defvar window-configuration nil)
 (defun toggle-maximize-window ()
+  "Maximize a window then, when the function is ran again, restore the previous
+window configuration"
   (interactive)
   (if window-configuration
       (progn
@@ -188,6 +190,30 @@
     (setq window-configuration (current-window-configuration))
     (delete-other-windows)))
 
+(defun get-long-line-regexp ()
+  (let ((line-column (or whitespace-line-column fill-column)))
+    (format
+     "^\\([^\t\n]\\{%s\\}\\|[^\t\n]\\{0,%s\\}\t\\)\\{%d\\}%s\\(?2:\\(?3:.\\).*\\)$"
+     tab-width
+     (1- tab-width)
+     (/ line-column tab-width)
+     (let ((rem (% line-column tab-width)))
+       (if (zerop rem)
+           ""
+         (format ".\\{%d\\}" rem))))))
+
+(defun next-long-line ()
+  "Move the point to a following line with a longer width than 80 characters"
+  (interactive)
+  (let ((pos (re-search-forward (get-long-line-regexp) nil t)))
+    (if pos (goto-char pos) (message "No more long lines found"))))
+
+(defun prev-long-line ()
+  "Move the point to a previous line with a longer width than 80 characters"
+  (interactive)
+  (let ((pos (re-search-backward (get-long-line-regexp) nil t)))
+    (if pos (goto-char pos) (message "No more long lines found")))
+  (message "No more long lines found"))
 
 ;;; HOOKS
 (add-hook 'before-save-hook #'delete-trailing-whitespace)
@@ -254,6 +280,8 @@
     [remap evil-next-line] #'evil-next-visual-line
     [remap evil-previous-line] #'evil-previous-visual-line)
   (evil-define-key 'motion 'global
+    (kbd "<leader>il") #'next-long-line
+    (kbd "<leader>iL") #'prev-long-line
     [?\C-\S-o] #'evil-jump-forward
     "J" #'evil-scroll-line-down
     "K" #'evil-scroll-line-up)
@@ -303,10 +331,7 @@
     (kbd "C-w C") #'quit-window-kill
     (kbd "<leader>d") #'dired
     (kbd "<leader>b") #'switch-to-buffer
-    (kbd "<leader>h") #'help))
-
-(with-eval-after-load 'evil
-  (evil-define-key 'motion 'global
+    (kbd "<leader>h") #'help
     (kbd "<leader>sL") #'global-display-line-numbers-mode
     (kbd "<leader>sl") #'display-line-numbers-mode
     (kbd "<leader>sV") #'global-visual-line-mode
@@ -319,7 +344,6 @@
   :init
   (setq mouse-wheel-scroll-amount '(1)
         mouse-wheel-progressive-speed nil))
-
 
 
 ;;; VISUALS
@@ -661,6 +685,13 @@
               (lambda (&rest _) (revert-buffer)))
   (advice-add 'dired-create-directory :after
               (lambda (&rest _) (revert-buffer)))
+  (dirvish-override-dired-mode)
+
+  (defun dired-run-command ()
+    (interactive)
+    (call-interactively #'shell-command)
+    (call-interactively #'revert-buffer))
+
   (defun dired-toggle-mark ()
     "Toggle mark on the current file"
     (interactive)
@@ -670,19 +701,11 @@
           (dired-unmark 1)
         (dired-mark 1)))
     (dired-next-line 1))
-  (dirvish-override-dired-mode)
 
-  (defun dirvish-cd ()
+  (defun dirvish-cd (directory)
     "Open a different directory immediately in dirvish"
-    (interactive)
-    (dirvish (read-directory-name "Go to directory: ")))
-
-  (defun dired-run-shell-command ()
-    "Run a shell command on the current working directory while automatically
-reverting the buffer"
-    (interactive)
-    (call-interactively #'shell-command)
-    (call-interactively #'revert-buffer))
+    (interactive "DGo to directory: ")
+    (dirvish directory))
   :config
   (define-key-convenient dirvish-mode-map
                          " " #'dired-toggle-mark
@@ -694,9 +717,9 @@ reverting the buffer"
                          "m" #'dirvish-move
                          "r" #'dired-do-rename
                          "c" #'dirvish-cd
+                         "$" #'dired-run-command
                          "+d" #'dired-create-directory
-                         "+f" #'dired-create-empty-file
-                         "$" #'dired-run-shell-command)
+                         "+f" #'dired-create-empty-file)
   (with-eval-after-load 'evil
     (define-key-convenient dirvish-mode-map
                            "/" #'evil-search-forward
@@ -829,23 +852,6 @@ reverting the buffer"
                                       (evil-normal-state)
                                       (read-only-mode 1)
                                       (eat-emacs-mode)))))
-
-(use-package neotree
-  :ensure t
-  :init
-  (setq neo-theme (if (display-graphic-p) 'icons 'ascii))
-  (with-eval-after-load 'evil
-    (evil-define-key 'motion 'global (kbd "<leader>st") #'neotree-toggle))
-  :config
-  (add-hook 'neotree-mode-hook (lambda () (setq-local mode-line-format nil)))
-  (with-eval-after-load 'evil
-    (evil-define-key 'motion 'global
-      (kbd "<leader>sn") #'neotree)
-    (evil-define-key 'normal neotree-mode-map
-      "q" (lambda () (interactive) (kill-buffer))
-      "." #'neotree-hidden-file-toggle
-      (kbd "SPC") #'neotree-quick-look
-      (kbd "RET") #'neotree-enter)))
 
 (use-package which-function-mode
   :config
@@ -1043,7 +1049,8 @@ reverting the buffer"
 
   (with-eval-after-load 'evil
     (evil-define-key 'normal prog-mode-map
-      (kbd "<leader>se") #'eglot-toggle))
+      (kbd "<leader>se") #'eglot-toggle
+      (kbd "<leader>sE") #'eglot-reconnect))
   :config
   (with-eval-after-load 'evil
     (evil-define-key 'normal 'eglot--managed-mode
@@ -1127,9 +1134,10 @@ reverting the buffer"
 
 (use-package flymake-shellcheck
   :ensure t
-  :hook (sh-mode-hook . flymake-shellcheck-load)
   :init
-  (setq flymake-shellcheck-use-file t))
+  (setq flymake-shellcheck-use-file t)
+  (add-hook (if (boundp 'sh-base-mode-hook) 'sh-base-mode-hook 'sh-mode-hook)
+            #'flymake-shellcheck-load))
 
 (use-package lua-mode
   :ensure t
@@ -1137,7 +1145,28 @@ reverting the buffer"
   (setq lua-indent-level 4
         lua-indent-string-contents t
         lua-indent-close-paren-align nil
-        lua-indent-nested-block-content-align nil))
+        lua-indent-nested-block-content-align nil)
+  (defun lua-heading (description)
+    "Insert a heading for the current file"
+    (interactive "MDescription: ")
+    (let ((border (concat (make-string 80 ?-) "\n"))
+          (comment "---")
+          (contents `((,description)
+                      ("")
+                      ("@author Smeueg (https://github.com/Smeueg)")
+                      ("@copyright %s Smeueg" ,(format-time-string "%Y"))
+                      ("")
+                      ("Relevant Documentation:")
+                      ("* "))))
+      (save-excursion
+        (goto-char (point-min))
+        (insert border)
+        (dolist (content contents)
+          (insert comment)
+          (insert " ")
+          (insert (apply #'format content))
+          (newline))
+        (insert border)))))
 
 (use-package mhtml-mode
   :init
@@ -1152,11 +1181,12 @@ reverting the buffer"
 
 (use-package sh-script
   :init
-  (add-hook 'sh-mode-hook
-			(lambda ()
-              (sh-electric-here-document-mode 0)
-              (indent-tabs-mode 0)
-              (when (= (buffer-size) 0) (insert "#!/bin/sh\n\n")))))
+  (defun insert-shebang ()
+    (sh-electric-here-document-mode 0)
+    (indent-tabs-mode 0)
+    (when (= (buffer-size) 0) (insert "#!/bin/sh\n\n")))
+  (add-hook (if (boundp 'sh-base-mode-hook) 'sh-base-mode-hook 'sh-mode-hook)
+            #'insert-shebang))
 
 (use-package emacs-lisp
   :init
@@ -1173,6 +1203,8 @@ reverting the buffer"
   :config
   (with-eval-after-load 'evil
     (evil-define-key 'visual prog-mode-map "gc" #'comment-dwim)
+    (evil-define-key 'insert prog-mode-map
+      (kbd "<M-RET>") #'comment-indent-new-line)
     (evil-define-key 'normal prog-mode-map
       "gc" #'comment-line
       (kbd "<leader>ce") #'run))

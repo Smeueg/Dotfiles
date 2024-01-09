@@ -2,7 +2,10 @@
 export XDG_DATA_HOME=${XDG_DATA_HOME:="$HOME/.local/share"}
 export XDG_CACHE_HOME=${XDG_CACHE_HOME:="$HOME/.cache"}
 export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:="$HOME/.config"}
+export XDG_STATE_HOME=${XDG_STATE_HOME:="$HOME/.local/state"}
 export XDG_DESKTOP_DIR="${HOME}"
+export XCURSOR_PATH=/usr/share/icons:$XDG_DATA_HOME/icons
+export XAUTHORITY="${XDG_RUNTIME_DIR}"/Xauthority
 
 # Add directories to PATH if they don't exist already
 for dir in /sbin/ "${HOME}"/.local/bin/ "${HOME}"/.local/share/cargo/bin; do
