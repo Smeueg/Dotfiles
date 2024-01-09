@@ -1,10 +1,18 @@
+--------------------------------------------------------------------------------
+--- A NetworkManager widget for the Wibar
+---
+--- @author Smeueg (https://github.com/Smeueg)
+--- @copyright 2024 Smeueg
+--------------------------------------------------------------------------------
+
+local nm = require("system.nm")
 local wibox = require("wibox")
 local beautiful = require("beautiful")
 local icon = require("ui.icons")
 
 local network_widget = wibox.widget {
 	widget = wibox.container.background,
-	shape = beautiful.shape_universal,
+	shape = beautiful.wibar_widget_shape,
 	bg = "#00000030",
 	{
 		widget = wibox.container.background,
@@ -23,18 +31,12 @@ local network_widget = wibox.widget {
 }
 
 
-local widget_text = network_widget:get_children_by_id("text")[1]
-local widget_icon = network_widget:get_children_by_id("icon")[1]
-
--- Initial Setup
-local NM = require("daemons.nm")
-
 local function update_widget(connection)
 	local text, image
 	if connection then
-		if connection.type == NM.DEVICE.TYPE.WIFI then
+		if connection.type == nm.DEVICE.TYPE.WIFI then
 			image = icon.wifi
-		elseif connection.type == NM.DEVICE.TYPE.ETHERNET then
+		elseif connection.type == nm.DEVICE.TYPE.ETHERNET then
 			image = icon.eth
 		end
 		text = connection.id
@@ -42,11 +44,14 @@ local function update_widget(connection)
 		image = icon.offline
 		text = "-"
 	end
-	widget_text.text = text .. " "
-	widget_icon.image = image
+	network_widget:get_children_by_id("text")[1].text = text .. " "
+	network_widget:get_children_by_id("icon")[1].image = image
 end
 
-update_widget(NM.get_active_connection())
-NM.watch(update_widget)
+local active_connection = nm.get_active_connection()
+if active_connection then
+	update_widget(nm.get_active_connection())
+	nm.watch(update_widget)
+end
 
 return network_widget

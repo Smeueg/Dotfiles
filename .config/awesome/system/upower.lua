@@ -1,4 +1,13 @@
-local dbus = require("daemons.dbus")
+--------------------------------------------------------------------------------
+--- Work with UPower using DBus for AwesomeWM
+---
+--- @author Smeueg (https://github.com/Smeueg)
+--- @copyright 2024 Smeueg
+---
+--- Relevant Documentation:
+--- * https://upower.freedesktop.org/docs/ref-dbus.html
+--------------------------------------------------------------------------------
+local dbus = require("system.dbus")
 local naughty = require("naughty")
 local Gio = require("lgi").Gio
 
@@ -25,7 +34,12 @@ upower.state = {
 ---@field time_to_full number In seconds
 ---@field time_to_empty number In seconds
 local BatInfo = setmetatable({}, {
-		--- Creates a new BatInfo instance using information from dbus
+		--- Creates a new BatInfo instance
+		---@param args table
+		--- * Percentage (number)
+		--- * state (number/upower.state)
+		--- * time_to_full (number)
+		--- * time_to_empty (number)
 		---@return BatInfo
 		__call = function(self, args)
 			return setmetatable(
@@ -35,7 +49,7 @@ local BatInfo = setmetatable({}, {
 					time_to_full = args.TimeToFull,
 					time_to_empty = args.TimeToEmpty
 				},
-				{__index = self}
+				{ __index = self }
 			)
 		end
 })
@@ -43,6 +57,7 @@ local BatInfo = setmetatable({}, {
 
 --- Sends a warning notification if the battery percentage is below a certain
 --- threshold
+---@param threshold number
 function BatInfo:notify_when_low(threshold)
 	if self.percentage <= threshold and self.state == upower.state.DISCHARGING then
 		GlobalLowBatNotification = naughty.notify {
@@ -55,14 +70,13 @@ function BatInfo:notify_when_low(threshold)
 	end
 end
 
-
 --- Sends a notification of the battery's progress,
 --- could either be the time till it's full or the time till it's empty
 --- depending whether it's currently charging or not
 function BatInfo:notify_time()
-		local notification_suffix, notification_text, seconds
+	local notification_suffix, notification_text, seconds
 
-		if GlobalTimeNotification then
+	if GlobalTimeNotification then
 		naughty.destroy(GlobalTimeNotification)
 		GlobalTimeNotification = nil
 	end
@@ -98,18 +112,17 @@ function BatInfo:notify_time()
 	}
 end
 
-
 --- Watches UPower for battery percentage/state chcanges
 ---@param callback function(name:string, value)
 function upower.watch(callback)
 	dbus.BusSYSTEM:signal_subscribe(
-		"org.freedesktop.UPower",                        -- sender
-		"org.freedesktop.DBus.Properties",               -- interface
-		"PropertiesChanged",                             -- member/signal
+		"org.freedesktop.UPower",                  -- sender
+		"org.freedesktop.DBus.Properties",         -- interface
+		"PropertiesChanged",                       -- member/signal
 		"/org/freedesktop/UPower/devices/DisplayDevice", -- Object Path
-		nil,                                             -- arg0
-		Gio.DBusSignalFlags.NONE,                        -- flags
-		function(...)                                    -- callback
+		nil,                                       -- arg0
+		Gio.DBusSignalFlags.NONE,                  -- flags
+		function(...)                              -- callback
 			local changed_properties = ({ ... })[6]:get_child_value(1)
 			for i = 0, changed_properties:n_children() - 1 do
 				local property = changed_properties:get_child_value(i)
@@ -120,7 +133,6 @@ function upower.watch(callback)
 		end
 	)
 end
-
 
 --- Gets the current battery information using DBus
 ---@return BatInfo|nil The current battery information
@@ -140,4 +152,4 @@ function upower.get_info()
 	)
 end
 
-	return upower
+return upower

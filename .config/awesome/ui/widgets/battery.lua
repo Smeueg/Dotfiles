@@ -1,14 +1,20 @@
-local upower    = require("daemons.upower")
-local beautiful = require("beautiful")
-local wibox     = require("wibox")
-local awful     = require("awful")
-local icons     = require("ui.icons")
+--------------------------------------------------------------------------------
+--- A battery widget for the Wibar
+---
+--- @author Smeueg (https://github.com/Smeueg)
+--- @copyright 2024 Smeueg
+--------------------------------------------------------------------------------
+local upower         = require("system.upower")
+local beautiful      = require("beautiful")
+local wibox          = require("wibox")
+local awful          = require("awful")
+local icons          = require("ui.icons")
 
-local bat_info = upower.get_info()
+local bat_info       = upower.get_info()
 
 local battery_widget = wibox.widget {
 	widget = wibox.container.background,
-	shape = beautiful.shape_universal,
+	shape = beautiful.wibar_widget_shape,
 	bg = "#00000030",
 	buttons = awful.button({}, 1, function()
 			if bat_info then
@@ -16,7 +22,6 @@ local battery_widget = wibox.widget {
 			end
 	end),
 	{
-		widget = wibox.container.background,
 		layout = wibox.layout.fixed.horizontal,
 		{
 			widget = wibox.widget.imagebox,
@@ -44,14 +49,15 @@ function battery_widget:update()
 	elseif bat_info.state == upower.state.DISCHARGING or bat_info.state == upower.state.FULLY_CHARGED then
 		icon_function = icons.create_battery_discharging
 	end
-	self:get_children_by_id("icon")[1].image = icon_function(bat_info.percentage)
+	self:get_children_by_id("icon")[1].image = icon_function(
+		bat_info.percentage
+	)
 
 	-- Update the percentage (text)
 	self:get_children_by_id("percentage")[1].text = string.format(
 		"%d", bat_info.percentage
 	)
 end
-
 
 if bat_info then
 	battery_widget:update()

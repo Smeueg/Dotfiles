@@ -400,6 +400,13 @@ function popup.power.start()
 end
 
 function popup.toggle()
+	if popup.visible then
+		root.execute_keybinding(nil, "Escape")
+		popup.visible = false
+		return
+	end
+
+
 	local launcher = popup.launcher
 	local power = popup.power
 	popup.visible = true
@@ -475,14 +482,7 @@ local widget = {
 	shape = gears.shape.rounded_rect_auto,
 	bg = "#00000030",
 	buttons = gears.table.join(
-		awful.button({}, 1, function()
-				if popup.visible then
-					root.execute_keybinding(nil, "Escape")
-					popup.visible = false
-				else
-					popup.toggle()
-				end
-		end)
+		awful.button({}, 1, popup.toggle)
 	),
 	{
 		widget = wibox.container.margin,

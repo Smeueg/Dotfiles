@@ -1,11 +1,13 @@
---[[
-	@author https://github.com/Smeueg
-	@copyright 2023-2023 Smeueg
-
-	Relevant Documentation
-	Gio:  https://docs.gtk.org/gio/
-	GLib: https://docs.gtk.org/glib/
-]]
+--------------------------------------------------------------------------------
+--- Work with DBus within AwesomeWM
+---
+--- @author Smeueg (https://github.com/Smeueg)
+--- @copyright 2024 Smeueg
+---
+--- Relevant Documentation:
+--- * Gio:  https://docs.gtk.org/gio/
+--- * GLib: https://docs.gtk.org/glib/
+--------------------------------------------------------------------------------
 
 local lgi = require("lgi")
 local GLib, Gio = lgi.GLib, lgi.Gio
@@ -15,8 +17,8 @@ dbus.BusSYSTEM = Gio.bus_get_sync(Gio.BusType("SYSTEM"))
 
 
 --- Parses a GLib.Variant
--- @param v[type=Glib.Variant]
--- @return [table]
+---@param v GLib.Variant
+---@return table The parsed GLib Variant
 function dbus.parse_variant(v)
 	if v:is_container() then
 		local t = {}
@@ -35,12 +37,12 @@ end
 
 
 --- Calls a DBus method
--- @param args[type=table]
---	* name            (string) : The bus name
---	* path            (string) : The object path
---	* method          (string) : The full string of the method
---                               (e.g. org.freedesktop.DBus.Properties.GetAll)
---  * parameters (GLib.Variant): The parameters to pass onto the method
+---@param args table
+---	* name            (string) : The bus name
+---	* path            (string) : The object path
+---	* method          (string) : The full string of the method
+---                              (e.g. org.freedesktop.DBus.Properties.GetAll)
+--- * parameters (GLib.Variant): The parameters to pass onto the method
 function dbus.call(args)
 	local _, i = args.method:find(".*[.]")
 	local interface = args.method:sub(1, i-1)
@@ -62,14 +64,12 @@ end
 
 
 --- Get a property from a DBus object
--- @param args[type=table]
---   * name     (string) : The Bus name
---   * path     (string) : The Bus Object path
---   * property (string) : The full path of the property
---                         (e.g. org.freedesktop.NetworkManager.Devices)
---
--- @return [table]
---   * table[property_name] = property_value
+---@param args table
+---  * name     (string) : The Bus name
+---  * path     (string) : The Bus Object path
+---  * property (string) : The full path of the property
+---                        (e.g. org.freedesktop.NetworkManager.Devices)
+---@return any A the property returned by the captured DBus object
 function dbus.get_property(args)
 	local _, i = args.property:find(".*[.]")
 	local interface = args.property:sub(1, i-1)
@@ -85,13 +85,12 @@ end
 
 
 --- Get properties from a DBus object
--- @param args[type=table]
---   * name      (string) : The Bus name
---   * path      (string) : The Bus Object path
---   * interface (string) : The interface
---
--- @return [table]
---   * table[property_name] = property_value
+---@param args table
+---  * name      (string) : The Bus name
+---  * path      (string) : The Bus Object path
+---  * interface (string) : The interface
+---
+---@return table A table of properties from the captured DBus object
 function dbus.get_properties(args)
 		local bus = {}
 

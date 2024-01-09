@@ -1,8 +1,14 @@
---[[
-	https://networkmanager.dev/docs/api/latest/
-]]
+--------------------------------------------------------------------------------
+--- Work with NetworkManager using DBus within AwesomeWM
+---
+--- @author Smeueg (https://github.com/Smeueg)
+--- @copyright 2024 Smeueg
+---
+--- Relevant Documentation:
+--- * https://networkmanager.dev/docs/api/latest/
+--------------------------------------------------------------------------------
 local lgi = require("lgi")
-local dbus = require("daemons.dbus")
+local dbus = require("system.dbus")
 local Gio = lgi.Gio
 
 local nm = {
@@ -75,6 +81,7 @@ local nm = {
 ---@field id string
 ---@field type NetworkManagerDeviceType
 
+--- Creates a NetworkManagerConnection instance
 ---@param id string
 ---@param type NetworkManagerDeviceType
 ---@return NetworkManagerConnection
@@ -86,17 +93,27 @@ local function NetworkManagerConnection(id, type)
 end
 
 
-local function get_connection_properties(path)
-	return dbus.get_properties {
+--- Gets aconnection from a path
+---@param path string The path to the active connection
+local function get_connection(path)
+	local connection = dbus.get_properties {
 		name = "org.freedesktop.NetworkManager",
 		path = path,
 		interface = "org.freedesktop.NetworkManager.Connection.Active"
 	}
+
+	local device_type = dbus.get_property {
+		name = "org.freedesktop.NetworkManager",
+		path = connection.Devices,
+		property = "org.freedesktop.NetworkManager.Device.DeviceType"
+	}
+
+	return NetworkManagerConnection(connection.Id, device_type)
 end
 
 
 --- Gets the current active network using DBus
---- @return NetworkManagerConnection
+---@return NetworkManagerConnection
 function nm.get_active_connection()
 	local active_connection
 	local network = dbus.get_properties {
@@ -107,14 +124,7 @@ function nm.get_active_connection()
 
 	-- Use the path of PrimaryConnection if defined
 	if network.PrimaryConnection ~= "/" then
-		local ac = get_connection_properties(network.PrimaryConnection)
-		local device_type = dbus.get_property {
-			name = "org.freedesktop.NetworkManager",
-			path = ac.Devices,
-			property = "org.freedesktop.NetworkManager.Device.DeviceType"
-		}
-
-		return NetworkManagerConnection(ac.Id, device_type)
+		return get_connection(network.PrimaryConnection)
 	end
 
 	-- Loop through activated devices if PrimaryConnection isn't defined
@@ -125,15 +135,23 @@ function nm.get_active_connection()
 			interface = "org.freedesktop.NetworkManager.Device"
 		}
 
-		if device.State == nm.DEVICE.STATE.ACTIVATED and device.DeviceType ~= nm.DEVICE.TYPE.LOOPBACK then
+		local device_is_activated = (device.State == nm.DEVICE.STATE.ACTIVATED)
+		local device_is_loopback = (device.DeviceType == nm.DEVICE.TYPE.LOOPBACK)
+		if device_is_activated and not device_is_loopback then
 			local active_connection_path = dbus.get_property {
 				name = "org.freedesktop.NetworkManager",
 				path = device_path,
 				property = "org.freedesktop.NetworkManager.Device.ActiveConnection"
 			}
 
-			NetworkManagerConnection(
-				get_connection_properties(active_connection_path).Id,
+			local device_id = dbus.get_property {
+				name = "org.freedesktop.NetworkManager",
+				path = active_connection_path,
+				property = "org.freedesktop.NetworkManager.Connection.Active.Id"
+			}
+
+			active_connection = NetworkManagerConnection(
+				device_id,
 				device.DeviceType
 			)
 
@@ -146,19 +164,18 @@ function nm.get_active_connection()
 	return active_connection
 end
 
-
 --- Watches NetworkManager for active connection changes
---- @param callback fun(type: NetworkManagerConnection)
+---@param callback fun(type: NetworkManagerConnection)
 function nm.watch(callback)
 	dbus.BusSYSTEM:signal_subscribe(
-		"org.freedesktop.NetworkManager", -- sender
+		"org.freedesktop.NetworkManager",             -- sender
 		"org.freedesktop.NetworkManager.Connection.Active", -- interface
-		"StateChanged", -- member/signal
-		nil, -- Object Path
-		nil, -- arg0
-		Gio.DBusSignalFlags.NONE, -- flags
-		function(...) -- callback
-			local user_data = ({...})[6]
+		"StateChanged",                               -- member/signal
+		nil,                                          -- Object Path
+		nil,                                          -- arg0
+		Gio.DBusSignalFlags.NONE,                     -- flags
+		function(...)                                 -- callback
+			local user_data = ({ ... })[6]
 			local state = user_data:get_child_value(0).value
 			local nm_states = nm.ACTIVE_CONNECTION.STATE
 			if state == nm_states.ACTIVATED or state == nm_states.DEACTIVATED then
@@ -167,6 +184,5 @@ function nm.watch(callback)
 		end
 	)
 end
-
 
 return nm

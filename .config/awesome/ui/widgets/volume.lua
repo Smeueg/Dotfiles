@@ -8,7 +8,7 @@ local pulseaudio = require("system.pulseaudio")
 
 local widget = wibox.widget {
 	widget = wibox.container.background,
-	shape = beautiful.shape_universal,
+	shape = beautiful.wibar_widget_shape,
 	bg = "#00000030",
 	buttons = gears.table.join(
 		awful.button({}, 1, pulseaudio.toggle_mute),

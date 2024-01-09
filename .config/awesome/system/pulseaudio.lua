@@ -1,3 +1,13 @@
+--------------------------------------------------------------------------------
+--- A wrapper for PulseAudio for use in AwesomeWM
+---
+--- @author Smeueg (https://github.com/Smeueg)
+--- @copyright 2024 Smeueg
+---
+--- Relevant Documentation:
+--- * pactl(1)
+--------------------------------------------------------------------------------
+
 local awful = require("awful")
 
 local pulseaudio = {}

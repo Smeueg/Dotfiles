@@ -1,14 +1,20 @@
+--------------------------------------------------------------------------------
+--- A date widget for the Wibar
+---
+--- @author Smeueg (https://github.com/Smeueg)
+--- @copyright 2024 Smeueg
+--------------------------------------------------------------------------------
 local wibox = require("wibox")
 local beautiful = require("beautiful")
 
-local widget_date = {
+local widget = {
 	widget = wibox.container.background,
-	shape = beautiful.shape_universal,
+	shape = beautiful.wibar_widget_shape,
 	bg = "#00000030",
 	{
 		widget = wibox.widget.textclock,
-		format = " %a  %d•%m•%y  %H:%M "
+		format = " %a  %d·%m·%y  %H:%M "
 	}
 }
 
-return function() return widget_date end
+return widget
