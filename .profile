@@ -73,7 +73,7 @@ if [ "$(command -v simplescreenrecorder)" ]; then
 	mkdir -vp "${XDG_CONFIG_HOME}/simplescreenrecorder/"
 fi
 
-while ! [ "${DISPLAY}" ]; do
+while ! [ "${DISPLAY}" ] && [ "$(command -v startx)" ]; do
     printf "Start Xorg? [\033[32mY\033[m/\033[31mn\033[m] "
     read response
     case ${response} in
