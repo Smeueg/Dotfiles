@@ -1178,8 +1178,9 @@ window configuration"
 
 (use-package emmet-mode
   :ensure t
-  :hook
-  ((mhtml-mode-hook css-mode-hook astro-ts-mode-hook) . emmet-mode))
+  :init
+  (dolist (mode '(mhtml-mode-hook css-mode-hook astro-ts-mode-hook))
+    (add-hook mode #'emmet-mode)))
 
 (use-package sh-script
   :init
@@ -1199,7 +1200,9 @@ window configuration"
   :init
   (with-eval-after-load 'evil
     (evil-define-key 'visual mhtml-mode-map "gc" #'comment-dwim)
-    (evil-define-key 'normal mhtml-mode-map "gc" #'comment-line)))
+    (evil-define-key 'normal mhtml-mode-map
+      "gc" #'comment-line
+      (kbd "<leader>ce") #'run)))
 
 (use-package prog-mode
   :config
