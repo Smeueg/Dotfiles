@@ -116,44 +116,6 @@ local widgets = require("ui.widgets")
 local modkey = "Mod4"
 
 
--- Custom Functions --
-function root.execute_keybinding(modifiers, key)
-	local conversion = {
-		Mod4 = "Super_L",
-		Control = "Control_L",
-		Shift = "Shift_L",
-		Mod1 = "Alt_L"
-	}
-
-	for _, mod in ipairs(modifiers or {}) do
-		root.fake_input("key_press", conversion[mod])
-	end
-
-	root.fake_input("key_press", key)
-	root.fake_input("key_release", key)
-
-	for _, mod in ipairs(modifiers or {}) do
-		root.fake_input("key_release", conversion[mod])
-	end
-end
-
----@param cmds table<string>
----@return number
-function awful.spawn.run_if_installed(cmds)
-	for _, cmd in ipairs(cmds) do
-		local bin = cmd:match("^[^ ]+")
-		if gears.filesystem.get_command_path(bin) then
-			awful.spawn(cmd, false)
-		else
-			notify {
-				title = "Warning",
-				text = string.format("'%s' isn't installed", bin)
-			}
-		end
-	end
-	return 1
-end
-
 -- Run Commands On Startup --
 table.map(
 	{

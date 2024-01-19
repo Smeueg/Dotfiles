@@ -661,9 +661,18 @@ window configuration"
 
 (use-package dirvish
   :ensure t
+  :hook
+  (dirvish-setup-hook . #'dirvish-emerge-mode)
+  (dired-mode-hook . (lambda () (setq-local whitespace-style nil)))
+  ((dirvish-find-entry-hook dirvish-directory-view-mode-hook) .
+   (lambda (&rest _) (setq truncate-lines t)))
   :init
   (global-set-key [remap dired] #'dirvish)
   (setq
+   dirvish-default-layout '(0 0.4 0.6)
+   dirvish-attributes '(file-time file-size all-the-icons git-msg)
+   dired-listing-switches "-lAh --group-directories-first"
+   dirvish-path-separators '("  ⌂" "  /" " ⋗ ")
    dirvish-cache-dir "/tmp/dirvish/"
    dirvish-reuse-session nil
    dirvish-emerge-groups '(("Directories" (predicate . directories))
@@ -673,14 +682,6 @@ window configuration"
                            ("Pictures" (extensions "jpg" "png" "svg" "gif"))
                            ("Audio" (extensions "mp3" "flac" "wav" "ape" "aac"))
                            ("Archives" (extensions "gz" "rar" "zip"))))
-  (add-hook 'dired-mode-hook (lambda () (setq-local whitespace-style nil)))
-  (add-hook 'dirvish-find-entry-hook
-            (lambda (&rest _)
-              (setq truncate-lines t)
-              (revert-buffer)))
-  (add-hook 'dirvish-directory-view-mode-hook
-            (lambda () (setq truncate-lines t)))
-  (add-hook 'dirvish-setup-hook #'dirvish-emerge-mode)
   (advice-add 'dired-create-empty-file :after
               (lambda (&rest _) (revert-buffer)))
   (advice-add 'dired-create-directory :after
@@ -724,11 +725,7 @@ window configuration"
     (define-key-convenient dirvish-mode-map
                            "/" #'evil-search-forward
                            "n" #'evil-search-next
-                           "N" #'evil-search-previous))
-  (setq-default dirvish-default-layout '(0 0.4 0.6)
-                dirvish-attributes '(file-time file-size)
-                dired-listing-switches "-lAh --group-directories-first"
-                dirvish-path-separators '("  ⌂" "  /" " ⋗ ")))
+                           "N" #'evil-search-previous)))
 
 (use-package which-key
   :ensure t
@@ -977,11 +974,16 @@ window configuration"
     "Open `user-init-file'"
     (interactive)
     (find-file user-init-file))
+  (defun find-tmp-file (file-extension)
+    "Opens a temporary file in '/tmp/'"
+    (interactive "MFile Extension: ")
+    (find-file (format "/tmp/test.%s" file-extension)))
   (with-eval-after-load 'evil
     (evil-define-key 'motion 'global
       (kbd "<leader>oo") #'find-file
       (kbd "<leader>oa") #'find-alternate-file
       (kbd "<leader>oc") #'find-file-config
+      (kbd "<leader>ot") #'find-tmp-file
       (kbd "<leader>op") #'ffap)))
 
 (use-package imenu

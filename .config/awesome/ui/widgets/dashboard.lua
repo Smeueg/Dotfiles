@@ -118,6 +118,26 @@ do
 	launcher.scrollbar = launcher.widget:get_children_by_id("scrollbar")[1]
 end
 
+function execute_keybinding(modifiers, key)
+	local conversion = {
+		Mod4 = "Super_L",
+		Control = "Control_L",
+		Shift = "Shift_L",
+		Mod1 = "Alt_L"
+	}
+
+	for _, mod in ipairs(modifiers or {}) do
+		root.fake_input("key_press", conversion[mod])
+	end
+
+	root.fake_input("key_press", key)
+	root.fake_input("key_release", key)
+
+	for _, mod in ipairs(modifiers or {}) do
+		root.fake_input("key_release", conversion[mod])
+	end
+end
+
 function popup.find_current_entry_pos(entry)
 	local launcher = popup.launcher
 	for i, e in ipairs(launcher.entries_filtered) do
@@ -401,7 +421,7 @@ end
 
 function popup.toggle()
 	if popup.visible then
-		root.execute_keybinding(nil, "Escape")
+		execute_keybinding(nil, "Escape")
 		popup.visible = false
 		return
 	end
@@ -464,14 +484,14 @@ end
 popup.power.widget:buttons(awful.button({}, 1, popup.power.press))
 popup.power:connect_signal("mouse::enter", function()
 		if awful.keygrabber.current_instance ~= popup.power.keygrabber then
-			root.execute_keybinding(nil, "Tab")
+			execute_keybinding(nil, "Tab")
 		end
 end)
 
 -- Mouse support for popup.launcher
 popup.launcher:connect_signal("mouse::enter", function()
 		if awful.keygrabber.current_instance == popup.power.keygrabber then
-			root.execute_keybinding(nil, "Tab")
+			execute_keybinding(nil, "Tab")
 		end
 end)
 

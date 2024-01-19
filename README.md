@@ -10,11 +10,6 @@ These dotfiles consists of configuration for:
 - [Emacs](https://emacs.org/)
 - And any POSIX compliant shell. (Screw you [Fish](https://fishshell.com/))
 
-There are also configuration files for programs that I used to use but no longer
-do like:
-- [Neovim](https://neovim.io/) and [Vim](https://www.vim.org/)
-- [Tmux](https://github.com/tmux/tmux)
-
 I no longer use any suckless utilities and as such, my forks of those are now
 deleted. When I do try it out again, I will use:
 - [dwm-flexipatch](https://github.com/bakkeby/dwm-flexipatch)
