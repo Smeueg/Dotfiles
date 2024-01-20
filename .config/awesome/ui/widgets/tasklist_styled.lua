@@ -8,6 +8,7 @@
 --- * https://awesomewm.org/doc/api/classes/awful.widget.tasklist.html
 --- * https://awesomewm.org/doc/api/classes/client.html
 --------------------------------------------------------------------------------
+local cursor = require("lib.cursor")
 local awful = require("awful")
 local gears = require("gears")
 local beautiful = require("beautiful")
@@ -77,6 +78,7 @@ local function tasklist_styled(s)
 				end
 
 				self:get_children_by_id("imagebox")[1].image = icon
+				cursor.add_clickable_to_wibox(self)
 			end
 		}
 	}

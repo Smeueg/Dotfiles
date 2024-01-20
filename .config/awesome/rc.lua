@@ -110,6 +110,7 @@ do
 	settings.snap_bg = settings.border_focus
 
 	beautiful.init(settings)
+	root.cursor("left_ptr")
 end
 
 local widgets = require("ui.widgets")

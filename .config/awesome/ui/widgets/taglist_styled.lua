@@ -3,18 +3,25 @@ local gears = require("gears")
 local beautiful = require("beautiful")
 local dpi = beautiful.xresources.apply_dpi
 local wibox = require("wibox")
+local cursor = require("lib.cursor")
+
+local function update(self, t)
+	local widget = self:get_children_by_id("icon")[1]
+	if t.selected then
+		widget.shape_border_color = beautiful.taglist_fg_focus
+	else
+		widget.shape_border_color = beautiful.taglist_fg_normal
+	end
+	widget.bg = next(t:clients()) and widget.shape_border_color or nil
+end
+
+local function init(self, t)
+	cursor.add_clickable_to_wibox(self.widget)
+	update(self, t)
+end
+
 
 function awful.widget.taglist_styled(s)
-	local function update(self, t)
-		local widget = self:get_children_by_id("icon")[1]
-		if t.selected then
-			widget.shape_border_color = beautiful.taglist_fg_focus
-		else
-			widget.shape_border_color = beautiful.taglist_fg_normal
-		end
-		widget.bg = next(t:clients()) and widget.shape_border_color or nil
-	end
-
 	return awful.widget.taglist {
 		screen = s,
 		filter = awful.widget.taglist.filter.all,
@@ -43,7 +50,7 @@ function awful.widget.taglist_styled(s)
 				forced_width = dpi(15),
 				{ widget = wibox.widget {} }
 			},
-			create_callback = update,
+			create_callback = init,
 			update_callback = update
 		}
 	}

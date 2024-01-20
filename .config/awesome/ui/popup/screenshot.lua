@@ -6,12 +6,14 @@
 --------------------------------------------------------------------------------
 -- require("libmods")
 local enum = require("lib.enum")
+local cursor = require("lib.cursor")
 local awful = require("awful")
 local beautiful = require("beautiful")
 local dpi = beautiful.xresources.apply_dpi
 local wibox = require("wibox")
 local utils = require("ui.popup.utils")
 local notify = require("naughty").notify
+require("libmods")
 
 local module = {}
 
@@ -50,7 +52,7 @@ end
 ---@param text string The text to be displayed on the option
 ---@param screenshot_type ScreenshotType The type of the screenshot
 local function option(text, screenshot_type)
-	return wibox.widget {
+	local widget = wibox.widget {
 		widget = wibox.container.background,
 		screenshot_type = screenshot_type,
 		id = "option",
@@ -60,11 +62,15 @@ local function option(text, screenshot_type)
 			{
 				widget = wibox.widget.textbox,
 				markup = text:to_pango { font = 12 },
+				cursor = "hand1",
 				align = "center"
 			}
 		}
 	}
+	cursor.add_clickable_to_wibox(widget)
+	return widget
 end
+
 
 
 ---@class Popup
@@ -159,7 +165,7 @@ local ScreenshotPopup = setmetatable(
 
 
 --- Positions the popup to the bottom center of the wibar
-function ScreenshotPopup:place()
+																			function ScreenshotPopup:place()
 	awful.placement.next_to(
 		self,
 		{

@@ -1,3 +1,4 @@
+local cursor = require("lib.cursor")
 local wibox = require("wibox")
 local notify = require("naughty").notify
 local gears = require("gears")
@@ -12,7 +13,7 @@ local utils = require("ui.utils")
 
 local templates = {
 	power_opt = function(icon, callback)
-		return {
+		local widget = wibox.widget {
 			widget = wibox.container.background,
 			id = "power_opt",
 			callback = function()
@@ -38,6 +39,8 @@ local templates = {
 				}
 			}
 		}
+		cursor.add_clickable_to_wibox(widget)
+		return widget
 	end
 }
 
@@ -178,6 +181,8 @@ function popup.get_entries() -- Load Entries as widgets to the grid
 					launcher.chosen = popup.find_current_entry_pos(w)
 					launcher.filter(launcher.text)
 			end)
+
+			cursor.add_clickable_to_wibox(w)
 
 			table.insert(popup.launcher.entries, w)
 		end
@@ -497,7 +502,7 @@ end)
 
 
 
-local widget = {
+local widget = wibox.widget {
 	widget = wibox.container.background,
 	shape = gears.shape.rounded_rect_auto,
 	bg = "#00000030",
@@ -513,6 +518,8 @@ local widget = {
 		}
 	}
 }
+
+cursor.add_clickable_to_wibox(widget)
 
 
 awful.widget.dashboard = setmetatable(
