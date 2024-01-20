@@ -715,12 +715,14 @@ window configuration"
                          "k" #'dired-previous-line
                          "l" #'dired-find-file
                          "p" #'dirvish-yank
+                         "d" #'dired-do-delete
                          "m" #'dirvish-move
                          "r" #'dired-do-rename
                          "c" #'dirvish-cd
                          "$" #'dired-run-command
                          "+d" #'dired-create-directory
-                         "+f" #'dired-create-empty-file)
+                         "+f" #'dired-create-empty-file
+                         "D" nil)
   (with-eval-after-load 'evil
     (define-key-convenient dirvish-mode-map
                            "/" #'evil-search-forward
