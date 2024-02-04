@@ -216,7 +216,6 @@ window configuration"
   (message "No more long lines found"))
 
 ;;; HOOKS
-(add-hook 'before-save-hook #'delete-trailing-whitespace)
 (add-hook 'buffer-list-update-hook ;; Always have `*scratch*' ready to go
           (lambda ()
             (let ((buffer "*scratch*"))
@@ -282,29 +281,19 @@ window configuration"
   (evil-define-key 'motion 'global
     (kbd "<leader>il") #'next-long-line
     (kbd "<leader>iL") #'prev-long-line
-    [?\C-\S-o] #'evil-jump-forward
-    "J" #'evil-scroll-line-down
-    "K" #'evil-scroll-line-up)
-  (evil-define-key 'normal 'global
-    "J" #'evil-join
-    "K" #'evil-lookup)
-  (evil-define-key '(insert motion replace) 'global
-    [?\M-h] (lambda ()
-              (interactive)
-              (evil-normal-state 1)
-              (call-interactively (key-binding "h")))
-    [?\M-j] (lambda ()
-              (interactive)
-              (evil-normal-state 1)
-              (call-interactively (key-binding "j")))
-    [?\M-k] (lambda ()
-              (interactive)
-              (evil-normal-state 1)
-              (call-interactively (key-binding "k")))
-    [?\M-l] (lambda ()
-              (interactive)
-              (evil-normal-state 1)
-              (call-interactively (key-binding "l"))))
+    [?\C-\S-o] #'evil-jump-forward)
+  (evil-define-key 'normal 'global "J" #'evil-join "K" #'man)
+  (defmacro evil-define-escape-key (&rest keys)
+    (let ((key-pairs '()))
+      (dolist (key keys)
+        (push `(lambda ()
+                 (interactive)
+                 (evil-normal-state 1)
+                 (call-interactively (key-binding ,key)))
+              key-pairs)
+        (push (kbd (format "M-%s" key)) key-pairs))
+      `(evil-define-key '(insert motion replace) 'global ,@key-pairs)))
+  (evil-define-escape-key "h" "j" "k" "l")
   ;; Insert Mode Keybindings
   (evil-define-key 'insert 'global
     [?\C-n] nil
@@ -327,7 +316,7 @@ window configuration"
     (kbd "C-=") (lambda () (interactive) (text-scale-increase 0.5))
     (kbd "C-0") (lambda () (interactive) (text-scale-set 0))
     (kbd "C-w r") #'resize-window
-    (kbd "C-w F") #'toggle-maximize-window
+    (kbd "C-w m") #'toggle-maximize-window
     (kbd "C-w C") #'quit-window-kill
     (kbd "<leader>d") #'dired
     (kbd "<leader>b") #'switch-to-buffer
@@ -372,7 +361,7 @@ window configuration"
             (lambda ()
               (unless (derived-mode-p 'html-mode)
                 (whitespace-mode 1))))
-  (setq whitespace-style '(face lines-tail)
+  (setq whitespace-style '(face lines-tail empty)
         whitespace-line-column 80))
 
 (use-package frame
@@ -554,7 +543,8 @@ window configuration"
                     (message
                      (concat
                       (propertize "──── Buffer is Modified ────\n" 'face
-                                  (list :foreground (aref ansi-color-names-vector 3)))
+                                  (list :foreground
+                                        (aref ansi-color-names-vector 3)))
                       "s:\t Save and Kill\n"
                       "k:\t Kill anyway\n"
                       "C-g: Cancel"))
@@ -562,7 +552,8 @@ window configuration"
                           key (read-key)
                           response
                           (cond
-                           ((= key ?s) (with-current-buffer buffer (save-buffer)) t)
+                           ((= key ?s)
+                            (with-current-buffer buffer (save-buffer)) t)
                            ((= key ?k) t)
                            ((= key ?\C-g) nil)
                            (t (setq run t)))))
@@ -846,7 +837,10 @@ window configuration"
                            [?\C-\S-v] (lambda () (interactive)
                                         (eat-term-send-string-as-yank
                                          eat-terminal
-                                         (or (gui-get-selection 'CLIPBOARD 'UTF8_STRING) "")))
+                                         (or (gui-get-selection
+                                              'CLIPBOARD
+                                              'UTF8_STRING)
+                                             "")))
                            [?\C-\\] (lambda () (interactive)
                                       (evil-normal-state)
                                       (read-only-mode 1)
@@ -857,6 +851,14 @@ window configuration"
   (with-eval-after-load 'evil
     (evil-define-key 'normal prog-mode-map
       (kbd "<leader>sF") #'which-function-mode)))
+
+(use-package centered-cursor-mode
+  :ensure t
+  :init
+  (with-eval-after-load 'evil
+    (evil-define-key '(normal motion) 'global
+      (kbd "<leader>ss") #'centered-cursor-mode
+      (kbd "<leader>sS") #'global-centered-cursor-mode)))
 
 
 ;;; MAGIT
@@ -889,7 +891,7 @@ window configuration"
               (add-hook 'with-editor-post-finish-hook #'magit-kill-diffs)
               (add-hook 'with-editor-post-cancel-hook #'magit-kill-diffs)))
   (define-key magit-mode-map [remap magit-mode-bury-buffer]
-    (lambda () (interactive) (magit-mode-bury-buffer 16)))
+              (lambda () (interactive) (magit-mode-bury-buffer 16)))
   (define-key magit-diff-mode-map "e" nil)
   (define-key magit-mode-map " " nil)
   ;; Use '~/' as the working tree and '~/.local/dots' as the git directory when
@@ -971,15 +973,19 @@ window configuration"
     (evil-define-key 'motion 'global (kbd "<leader>B") #'ibuffer)))
 
 (use-package files
+  :hook
+  (before-save-hook . whitespace-cleanup)
   :init
   (defun find-file-config ()
     "Open `user-init-file'"
     (interactive)
     (find-file user-init-file))
+
   (defun find-tmp-file (file-extension)
     "Opens a temporary file in '/tmp/'"
     (interactive "MFile Extension: ")
     (find-file (format "/tmp/test.%s" file-extension)))
+
   (with-eval-after-load 'evil
     (evil-define-key 'motion 'global
       (kbd "<leader>oo") #'find-file
@@ -997,6 +1003,7 @@ window configuration"
   :init
   (global-eldoc-mode 0)
   (setq eldoc-echo-area-use-multiline-p t))
+
 
 ;;; ORG
 (use-package org
@@ -1064,7 +1071,8 @@ window configuration"
 
 (use-package project
   :init
-  (setq project-list-file "/tmp/emacs-projects")
+  (setq project-list-file "/tmp/emacs-projects"
+        project-vc-extra-root-markers '(".project.el" ".projectile" "rc.lua"))
   (with-eval-after-load 'evil
     (evil-define-key 'motion 'global
       (kbd "<leader>po") #'project-find-file
@@ -1214,7 +1222,8 @@ window configuration"
       (kbd "<M-RET>") #'comment-indent-new-line)
     (evil-define-key 'normal prog-mode-map
       "gc" #'comment-line
-      (kbd "<leader>ce") #'run))
+      (kbd "<leader>ce") #'run
+      (kbd "<leader>cs") #'shell-command))
   (add-hook 'prog-mode-hook ;; Disable line wrapping
             (lambda () (visual-line-mode 0))))
 
@@ -1246,8 +1255,10 @@ window configuration"
     (setq treesit-language-source-alist
           '((astro "https://github.com/virchau13/tree-sitter-astro")
             (css "https://github.com/tree-sitter/tree-sitter-css")
-            (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
-            (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
+            (typescript "https://github.com/tree-sitter/tree-sitter-typescript"
+                        "master" "typescript/src")
+            (tsx "https://github.com/tree-sitter/tree-sitter-typescript"
+                 "master" "tsx/src")
             (python "https://github.com/tree-sitter/tree-sitter-python"))))
 
   (use-package treesit-auto
