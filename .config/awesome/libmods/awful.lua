@@ -27,9 +27,10 @@ end
 ---@param app string The applicatoin to launch
 function awful.spawn.launch(name, app)
 	notify { title = "Launching Application", text = name }
-	awful.spawn(app, {
-			tag = awful.screen.focused().selected_tag
-	})
+	awful.spawn(
+		app,
+		{ tag = awful.screen.focused().selected_tag }
+	)
 end
 
 --- Set the layout for every tag

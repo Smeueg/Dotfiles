@@ -29,7 +29,6 @@ local cairo = lgi.cairo
 local Gio = lgi.Gio
 local pulseaudio = require("system.pulseaudio")
 local brightness = require("system.brightness")
-local screenshot_popup = require("ui.popup.screenshot")
 -- Error Handling --
 do
 	local in_error = false
@@ -71,6 +70,7 @@ do
 	settings.bg_normal = colors.black_bright
 	settings.fg_normal = colors.white
 	settings.icon_color = colors.yellow
+	settings.common_margin = dpi(10)
 	-- Windows
 	settings.useless_gap = dpi(10)
 	settings.border_width = dpi(2)
@@ -102,8 +102,15 @@ do
 	settings.tasklist_inner_margin = dpi(5)
 	-- Dashboard
 	settings.dashboard_margins = dpi(10)
+	settings.dashboard_spacing = dpi(1)
 	settings.dashboard_text_width = dpi(300)
 	settings.dashboard_limit = 10
+	settings.dashboard_separator_color = "#ffffff10"
+	settings.dashboard_power_icon_size = dpi(25)
+	settings.dashboard_launcher_spacing = dpi(5)
+	settings.dashboard_search_icon_size = dpi(25)
+	settings.dashboard_scrollbar_width = dpi(10)
+	settings.dashboard_chosen_bg = "#00000030"
 	-- Edge Snapping
 	settings.snap_shape = gears.shape.rectangle
 	settings.snap_border_width = settings.border_width
@@ -113,6 +120,8 @@ do
 	root.cursor("left_ptr")
 end
 
+local screenshot_popup = require("ui.popup.screenshot")
+local dashboard_popup = require("ui.popup.dashboard")
 local widgets = require("ui.widgets")
 local modkey = "Mod4"
 
@@ -324,8 +333,17 @@ local globalkeys = gears.table.join(
 	),
 	-- Dashboard
 	awful.key(
-		{ modkey }, "p", awful.widget.dashboard.popup,
+		{ modkey }, "p", dashboard_popup.toggle,
 		{ group = "Dashboard", description = "Open The Power Menu" }
+	),
+	-- Wibar
+	awful.key(
+		{ modkey, "Shift" }, "b",
+		function()
+			local wibar = awful.screen.focused().wibar
+			wibar.visible = not wibar.visible
+		end,
+		{ group = "Wibar", description = "Toggle the Wibar" }
 	)
 )
 
@@ -422,15 +440,15 @@ end
 
 local clientbuttons = gears.table.join(
 	awful.button({}, 1, function(c)
-			c:emit_signal("request::activate", "mouse_click", { raise = true })
+		c:emit_signal("request::activate", "mouse_click", { raise = true })
 	end),
 	awful.button({ modkey }, 1, function(c)
-			c:emit_signal("request::activate", "mouse_click", { raise = true })
-			awful.mouse.client.move(c)
+		c:emit_signal("request::activate", "mouse_click", { raise = true })
+		awful.mouse.client.move(c)
 	end),
 	awful.button({ modkey }, 3, function(c)
-			c:emit_signal("request::activate", "mouse_click", { raise = true })
-			awful.mouse.client.resize(c)
+		c:emit_signal("request::activate", "mouse_click", { raise = true })
+		awful.mouse.client.resize(c)
 	end)
 )
 
@@ -449,7 +467,7 @@ awful.rules.rules = {
 			keys = clientkeys,
 			buttons = clientbuttons,
 			screen = awful.screen.preferred,
-			placement = awful.placement.no_overlap+awful.placement.no_offscreen
+			placement = awful.placement.no_overlap + awful.placement.no_offscreen
 		}
 	}
 }
@@ -458,99 +476,99 @@ awful.rules.rules = {
 
 -- Wibar --
 awful.screen.connect_for_each_screen(function(s)
-		local tags = {}
-		for i = 1, beautiful.tag_amount or 5 do tags[i] = tostring(i) end
-		awful.tag(tags, s, awful.layout.suit.tile.right)
+	local tags = {}
+	for i = 1, beautiful.tag_amount or 5 do tags[i] = tostring(i) end
+	awful.tag(tags, s, awful.layout.suit.tile.right)
 
-		s.wibar = awful.wibar {
-			screen = s,
-			ontop = false,
-			position = beautiful.wibar_position or "top"
-		}
+	s.wibar = awful.wibar {
+		screen = s,
+		ontop = false,
+		position = beautiful.wibar_position or "top"
+	}
 
-		s.wibar:setup {
-			layout = wibox.layout.align.vertical,
-			spacing = 0,
-			{ widget = wibox.container.background },
+	s.wibar:setup {
+		layout = wibox.layout.align.vertical,
+		spacing = 0,
+		{ widget = wibox.container.background },
+		{
+			widget = wibox.container.margin,
+			margins = dpi(beautiful.wibar_padding),
 			{
-				widget = wibox.container.margin,
-				margins = dpi(beautiful.wibar_padding),
+				layout = wibox.layout.align.horizontal,
+				expand = "none",
 				{
-					layout = wibox.layout.align.horizontal,
-					expand = "none",
-					{
-						layout = wibox.layout.fixed.horizontal,
-						spacing = dpi(10),
-						awful.widget.dashboard(),
-						awful.widget.taglist_styled(s),
-						widgets.layout
-					},
-					{
-						layout = wibox.layout.fixed.horizontal,
-						widgets.tasklist_styled(s)
-					},
-					{
-						layout = wibox.layout.fixed.horizontal,
-						spacing = dpi(10),
-						widgets.screenshot,
-						widgets.network,
-						widgets.volume,
-						widgets.battery,
-						widgets.date
-					}
-				}
-			},
-			{
-				widget = wibox.container.background,
-				bg = beautiful.border_focus,
+					layout = wibox.layout.fixed.horizontal,
+					spacing = dpi(10),
+					widgets.dashboard,
+					awful.widget.taglist_styled(s),
+					widgets.layout
+				},
 				{
-					widget = wibox.container.constraint,
-					forced_height = beautiful.border_width
+					layout = wibox.layout.fixed.horizontal,
+					widgets.tasklist_styled(s)
+				},
+				{
+					layout = wibox.layout.fixed.horizontal,
+					spacing = dpi(10),
+					widgets.screenshot,
+					widgets.network,
+					widgets.volume,
+					widgets.battery,
+					widgets.date
 				}
 			}
+		},
+		{
+			widget = wibox.container.background,
+			bg = beautiful.border_focus,
+			{
+				widget = wibox.container.constraint,
+				forced_height = beautiful.border_width
+			}
 		}
+	}
 end)
 
 -- Sets the wallpaper
 gears.wallpaper.set(beautiful.wallpaper)
 screen.connect_signal("property::geometry", function()
-		gears.wallpaper.set(beautiful.wallpaper)
+	gears.wallpaper.set(beautiful.wallpaper)
 end)
 
 --- Function to run when a client is spawned
 client.connect_signal("manage", function(c)
-		-- Disable the border when the layout is the max layout
-		if c.first_tag.layout == awful.layout.suit.max then
-			c.border_width = 0
-		end
-		if not awesome.startup then return end
-		if c.size_hints.user_position then return end
-		if c.size_hints.program_position then return end
-		awful.placement.no_offscreen(c)
+	-- Disable the border when the layout is the max layout
+	if c.first_tag.layout == awful.layout.suit.max then
+		c.border_width = 0
+	end
+	if not awesome.startup then return end
+	if c.size_hints.user_position then return end
+	if c.size_hints.program_position then return end
+	awful.placement.no_offscreen(c)
 end)
 
 
 -- Recolor the border when focused
 client.connect_signal("focus", function(c)
-		c.border_color = beautiful.border_focus
+	c.border_color = beautiful.border_focus
 end)
 
 -- Recolor the border when unfocused
 client.connect_signal("unfocus", function(c)
-		c.border_color = beautiful.border_normal
+	c.border_color = beautiful.border_normal
 end)
 
 
 client.connect_signal("property::floating", function(c)
-		if c.floating then
-			awful.titlebar.show(c)
-			c.border_width = 0
-		else
-			awful.titlebar.hide(c)
-			if root.tags()[1].layout ~= awful.layout.suit.max then
-				c.border_width = beautiful.border_width
-			end
+	if c.floating then
+		awful.titlebar.show(c)
+		c.border_width = 0
+	else
+		awful.titlebar.hide(c)
+		if root.tags()[1].layout ~= awful.layout.suit.max then
+			c.border_width = beautiful.border_width
 		end
+	end
 end)
 
 
@@ -569,47 +587,47 @@ local function titlebar_create_btn(btn_color, callback)
 	}
 
 	btn:connect_signal("mouse::enter", function()
-			btn.bg = cairo.surface_to_rgba(btn.bg) .. "90"
+		btn.bg = cairo.surface_to_rgba(btn.bg) .. "90"
 	end)
 
 	btn:connect_signal("mouse::leave", function()
-			btn.bg = cairo.surface_to_rgba(btn.bg)
+		btn.bg = cairo.surface_to_rgba(btn.bg)
 	end)
 
 	return btn
 end
 
 client.connect_signal("request::titlebars", function(c)
-		awful.titlebar(c, { size = dpi(40) }):setup {
-			layout = wibox.layout.align.horizontal,
-			wibox.widget {},
-			{
-				layout = wibox.layout.flex.horizontal,
-				buttons = gears.table.join(
-					awful.button({}, 1, function()
-							awful.mouse.client.move(c)
-					end),
-					awful.button({}, 3, function()
-							awful.mouse.client.resize(c)
-					end)
-				)
-			},
-			{
-				widget = wibox.container.background,
-				layout = wibox.layout.fixed.horizontal,
-				spacing = dpi(10),
-				titlebar_create_btn(beautiful.titlebar_btn_max, function()
-						c.maximized = not c.maximized
+	awful.titlebar(c, { size = dpi(40) }):setup {
+		layout = wibox.layout.align.horizontal,
+		wibox.widget {},
+		{
+			layout = wibox.layout.flex.horizontal,
+			buttons = gears.table.join(
+				awful.button({}, 1, function()
+					awful.mouse.client.move(c)
 				end),
-				titlebar_create_btn(beautiful.titlebar_btn_min, function()
-						c.minimized = not c.minimized
-				end),
-				titlebar_create_btn(beautiful.titlebar_btn_close, function()
-						c:kill()
-				end),
-				wibox.widget {}
-			}
+				awful.button({}, 3, function()
+					awful.mouse.client.resize(c)
+				end)
+			)
+		},
+		{
+			widget = wibox.container.background,
+			layout = wibox.layout.fixed.horizontal,
+			spacing = dpi(10),
+			titlebar_create_btn(beautiful.titlebar_btn_max, function()
+				c.maximized = not c.maximized
+			end),
+			titlebar_create_btn(beautiful.titlebar_btn_min, function()
+				c.minimized = not c.minimized
+			end),
+			titlebar_create_btn(beautiful.titlebar_btn_close, function()
+				c:kill()
+			end),
+			wibox.widget {}
 		}
+	}
 end)
 
 

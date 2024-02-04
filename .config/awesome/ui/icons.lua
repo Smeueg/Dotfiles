@@ -144,11 +144,7 @@ do
 end
 
 --- Dashboard
-module.dashboard = beautiful.theme_assets.awesome_icon(
-	20,
-	icon_color2,
-	nil
-)
+module.dashboard = beautiful.theme_assets.awesome_icon(20, icon_color2, nil)
 
 do
 	module.shutdown, cr = icon_create()

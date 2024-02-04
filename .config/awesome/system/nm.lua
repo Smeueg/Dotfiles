@@ -150,14 +150,10 @@ function nm.get_active_connection()
 				property = "org.freedesktop.NetworkManager.Connection.Active.Id"
 			}
 
-			active_connection = NetworkManagerConnection(
+			return NetworkManagerConnection(
 				device_id,
 				device.DeviceType
 			)
-
-			if device.DeviceType == nm.DEVICE.TYPE.ETHERNET then
-				return active_connection
-			end
 		end
 	end
 
