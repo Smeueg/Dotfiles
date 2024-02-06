@@ -1,7 +1,12 @@
+--------------------------------------------------------------------------------
+--- A popup module for a dashboard
+---
+--- @author Smeueg (https://github.com/Smeueg)
+--- @copyright 2024 Smeueg
+--------------------------------------------------------------------------------
 local border_wrapper = require("ui.popup.utils").border_wrapper
 local beautiful = require("beautiful")
 local cursor = require("lib.cursor")
-local class = require("lib.class")
 local notify = require("naughty").notify
 local gears = require("gears")
 local wibox = require("wibox")
@@ -90,7 +95,6 @@ end
 ---@class PowerSection
 ---@field chosen number
 local PowerSection = {}
-local PowerSection_mt = { __index = PowerSection }
 
 --- Create a new PowerSection
 function PowerSection:new()
@@ -203,7 +207,6 @@ end
 ---@field height number
 ---@field appinfo AppInfo
 local Entry = {}
-local Entry_mt = { __index = Entry }
 
 --- Creates a new Entry object
 ---@param launcher_section LauncherSection
@@ -246,14 +249,14 @@ function Entry:new(launcher_section, appinfo)
 		}
 
 	}
-	setmetatable(entry, Entry_mt)
+	setmetatable(entry, { __index = self })
 	entry:connect_signal(
 		"mouse::enter",
 		function(hovered_entry)
-			for i, entry in ipairs(launcher_section.entries_filtered) do
-				entry:unhighlight()
-				if entry == hovered_entry then
-					entry:highlight()
+			for i, e in ipairs(launcher_section.entries_filtered) do
+				e:unhighlight()
+				if e == hovered_entry then
+					e:highlight()
 					launcher_section.chosen = i
 				end
 			end
@@ -264,6 +267,10 @@ end
 
 --- Launch an entry
 function Entry:run()
+	notify {
+		title = "Launching Application",
+		text = self.name
+	}
 	self.appinfo:launch()
 end
 
@@ -288,6 +295,7 @@ local LauncherSection = {}
 local LauncherSection_mt = { __index = LauncherSection }
 --- Create a new LauncherSection
 function LauncherSection:new()
+	local section
 	local textbox = wibox.widget { widget = wibox.widget.textbox }
 	local grid = wibox.widget {
 		layout = wibox.layout.grid,
@@ -298,9 +306,18 @@ function LauncherSection:new()
 		forced_width = beautiful.dashboard_scrollbar_width,
 		resize = false
 	}
-	local section = wibox.widget {
+	section = wibox.widget {
 		layout = wibox.layout.fixed.vertical,
 		spacing = beautiful.dashboard_launcher_spacing,
+		buttons = awful.button(
+			{}, 1,
+			function()
+				local entry = section.entries_filtered[section.chosen]
+				if not entry then return end
+				entry:run()
+				dashboard.toggle()
+			end
+		),
 		{
 			layout = wibox.layout.fixed.horizontal,
 			spacing = beautiful.dashboard_launcher_spacing,
