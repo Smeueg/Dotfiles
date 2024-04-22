@@ -18,19 +18,20 @@ dbus.BusSYSTEM = Gio.bus_get_sync(Gio.BusType("SYSTEM"))
 
 --- Parses a GLib.Variant
 ---@param v GLib.Variant
----@return table The parsed GLib Variant
-function dbus.parse_variant(v)
+---@return any The parsed GLib Variant
+function dbus.parse_variant(v, nested)
+	if v == nil then return nil end
 	if v:is_container() then
 		local t = {}
 		for i = 0, v:n_children() - 1 do
-			local value = v:get_child_value(i)
-			t[i + 1] = dbus.parse_variant(value)
+			t[i + 1] = dbus.parse_variant(v:get_child_value(i), true)
 		end
-		if #t == 1 then
-			t = t[1]
-		end
+		if #t == 1 then return t[1] end
 		return t
 	else
+		if not nested then
+			require("gears.debug").dump(v, "foo")
+		end
 		return v.value
 	end
 end
@@ -44,10 +45,9 @@ end
 ---                              (e.g. org.freedesktop.DBus.Properties.GetAll)
 --- * parameters (GLib.Variant): The parameters to pass onto the method
 function dbus.call(args)
-	local _, i = args.method:find(".*[.]")
+	local i = args.method:find("(.)[^.]+$")
 	local interface = args.method:sub(1, i-1)
 	local method = args.method:sub(i+1)
-
 	return dbus.parse_variant(
 		dbus.BusSYSTEM:call_sync(
 			args.name, -- bus_name
@@ -74,7 +74,6 @@ function dbus.get_property(args)
 	local _, i = args.property:find(".*[.]")
 	local interface = args.property:sub(1, i-1)
 	local property = args.property:sub(i+1)
-
 	return dbus.call {
 		name = args.name,
 		path = args.path,
@@ -92,13 +91,13 @@ end
 ---
 ---@return table A table of properties from the captured DBus object
 function dbus.get_properties(args)
-		local bus = {}
+	local bus = {}
 
-		local properties = dbus.call {
-			name = args.name,
-			path = args.path,
-			method = "org.freedesktop.DBus.Properties.GetAll",
-			parameters = GLib.Variant("(s)", {args.interface})
+	local properties = dbus.call {
+		name = args.name,
+		path = args.path,
+		method = "org.freedesktop.DBus.Properties.GetAll",
+		parameters = GLib.Variant("(s)", {args.interface})
 	}
 
 	for _, v in ipairs(properties) do

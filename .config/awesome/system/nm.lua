@@ -10,6 +10,9 @@
 local lgi = require("lgi")
 local dbus = require("system.dbus")
 local Gio = lgi.Gio
+local GLib = lgi.GLib
+local active_watcher_id
+local load_watcher_id
 
 local nm = {
 	---@class NetworkManagerDeviceType
@@ -116,19 +119,26 @@ end
 ---@return NetworkManagerConnection
 function nm.get_active_connection()
 	local active_connection
-	local network = dbus.get_properties {
+	local primary_connection = dbus.get_property {
 		name = "org.freedesktop.NetworkManager",
 		path = "/org/freedesktop/NetworkManager",
-		interface = "org.freedesktop.NetworkManager"
+		property = "org.freedesktop.NetworkManager.PrimaryConnection"
 	}
 
-	-- Use the path of PrimaryConnection if defined
-	if network.PrimaryConnection ~= "/" then
-		return get_connection(network.PrimaryConnection)
+	-- Use the path of PrimaryConnection if exists
+	if primary_connection and primary_connection ~= "/" then
+		return get_connection(primary_connection)
 	end
 
+	local devices = dbus.get_property {
+		name = "org.freedesktop.NetworkManager",
+		path = "/org/freedesktop/NetworkManager",
+		property = "org.freedesktop.NetworkManager.Devices"
+	}
+
+
 	-- Loop through activated devices if PrimaryConnection isn't defined
-	for _, device_path in ipairs(network.Devices) do
+	for _, device_path in ipairs(devices) do
 		local device = dbus.get_properties {
 			name = "org.freedesktop.NetworkManager",
 			path = device_path,
@@ -163,7 +173,9 @@ end
 --- Watches NetworkManager for active connection changes
 ---@param callback fun(type: NetworkManagerConnection)
 function nm.watch(callback)
-	dbus.BusSYSTEM:signal_subscribe(
+	if active_watcher_id then nm.unwatch() end
+	callback(nm.get_active_connection())
+	active_watcher_id = dbus.BusSYSTEM:signal_subscribe(
 		"org.freedesktop.NetworkManager",             -- sender
 		"org.freedesktop.NetworkManager.Connection.Active", -- interface
 		"StateChanged",                               -- member/signal
@@ -177,6 +189,42 @@ function nm.watch(callback)
 			if state == nm_states.ACTIVATED or state == nm_states.DEACTIVATED then
 				callback(nm.get_active_connection())
 			end
+		end
+	)
+end
+
+--- Unsubscribe from the NetworkManager signal that `nm.watch()` uses
+function nm.unwatch()
+	if active_watcher_id then
+		dbus.BusSYSTEM:signal_unsubscribe(active_watcher_id)
+		active_watcher_id = nil
+	end
+end
+
+--- Returns true if Network Manager is active
+---@return boolean
+function nm.is_active()
+		return dbus.call {
+			name = "org.freedesktop.DBus",
+			path = "/org/freedesktop/dbus",
+			method = "org.freedesktop.DBus.NameHasOwner",
+			parameters = GLib.Variant("(s)", {"org.freedesktop.NetworkManager"})
+		}
+end
+
+--- Runs a callback function when NetworkManager is loaded
+---@param callback function The callback to run
+function nm.run_when_loaded(callback)
+	dbus.BusSYSTEM:signal_subscribe(
+		"org.freedesktop.NetworkManager",
+		"org.freedesktop.NetworkManager",
+		"StateChanged",
+		nil,
+		nil,
+		Gio.DBusSignalFlags.NONE,
+		function(_, _, _, _, _, userdata)
+			if userdata:get_child_value(0).value ~= 70 then return end
+			callback()
 		end
 	)
 end

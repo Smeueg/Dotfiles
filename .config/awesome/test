@@ -2,6 +2,7 @@
 # @name test.sh
 # @description Run a Xephyr session to test AwesomeWM
 # Use Ctrl-c to stop it
+display=:3
 
 # @section Color definitions
 color_error="\033[1;31m"
@@ -34,7 +35,6 @@ check_dependency() {
 
 # @description The main function
 main() {
-	display=:2
 	for dep in Xephyr awesome kill; do
 		check_dependency "${dep}"
 	done

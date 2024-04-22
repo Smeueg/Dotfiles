@@ -169,8 +169,9 @@ function PowerSection:focus()
 	local fn_next = function() self:select_next() end
 	local fn_prev = function() self:select_prev() end
 	local fn_select = function()
-		self:select()
+		keygrabber:stop()
 		dashboard.toggle()
+		self:select()
 	end
 	local fn_stop = function()
 		keygrabber:stop()

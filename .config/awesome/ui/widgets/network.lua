@@ -48,10 +48,15 @@ local function update_widget(connection)
 	network_widget:get_children_by_id("icon")[1].image = image
 end
 
-local active_connection = nm.get_active_connection()
-if active_connection then
-	update_widget(nm.get_active_connection())
+
+if nm.is_active() then
 	nm.watch(update_widget)
 end
+
+nm.run_when_loaded(
+	function()
+		nm.watch(update_widget)
+	end
+)
 
 return network_widget
