@@ -42,9 +42,18 @@ export RUSTUP_HOME="${HOME}/.local/share/rustup"
 export _JAVA_AWT_WM_NONREPARENTING=1
 export _JAVA_OPTIONS=-Djava.util.prefs.userRoot="$XDG_CONFIG_HOME"/java
 
+# Python
+export PYTHON_HISTORY=${XDG_STATE_HOME}/python/history
+export PYTHONPYCACHEPREFIX=${XDG_CACHE_HOME}/python
+export PYTHONUSERBASE=${XDG_DATA_HOME}/python
+
+
 # Android
 export ANDROID_PREFS_ROOT="$XDG_CONFIG_HOME"/android
 export ANDROID_EMULATOR_HOME="$XDG_DATA_HOME"/android/emulator
+
+# Wget
+export WGETRC="${XDG_CONFIG_HOME}/wgetrc"
 
 # Zoom
 export SSB_HOME="$XDG_DATA_HOME"/zoom

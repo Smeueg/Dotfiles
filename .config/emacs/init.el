@@ -179,6 +179,7 @@
   (set-auto-mode 1))
 
 (defvar window-configuration nil)
+
 (defun toggle-maximize-window ()
   "Maximize a window then, when the function is ran again, restore the previous
 window configuration"
@@ -198,8 +199,7 @@ window configuration"
      (1- tab-width)
      (/ line-column tab-width)
      (let ((rem (% line-column tab-width)))
-       (if (zerop rem)
-           ""
+       (if (zerop rem) ""
          (format ".\\{%d\\}" rem))))))
 
 (defun next-long-line ()
@@ -215,6 +215,34 @@ window configuration"
     (if pos (goto-char pos) (message "No more long lines found")))
   (message "No more long lines found"))
 
+(defvar config--error-buffer "*Config Errors*"
+  "The buffer name for configuration errors")
+
+(defun config--user-error (string)
+  "Print out a formatted error message
+
+STRING is the string to format and display to the user"
+  (let ((message (format "[%s]: %s" (propertize "ERR" 'face 'error) string)))
+    (message message)
+    (unless (get-buffer config--error-buffer)
+      (split-window)
+      (switch-to-buffer config--error-buffer))
+    (with-current-buffer config--error-buffer
+      (read-only-mode -1)
+      (goto-char (point-max))
+      (insert (format-time-string "[%d-%m-%Y %T:%3N] ") message "\n")
+      (read-only-mode 1))))
+
+(defun config--set-font (font)
+  "Set Emacs' font to FONT"
+  (when (display-graphic-p)
+    (if (member font (font-family-list))
+        (set-frame-font (format "%s 12" font))
+      (config--user-error (format "font `%s' not found" font))))
+  (when (and (display-graphic-p) (member font (font-family-list)))
+    (set-frame-font (format "%s 12" font))))
+
+
 ;;; HOOKS
 (add-hook 'buffer-list-update-hook ;; Always have `*scratch*' ready to go
           (lambda ()
@@ -225,10 +253,12 @@ window configuration"
 
 
 
-;;; PACKAGES INIT
+;; Initialize Packages
 (setq package-quickstart t)
 (require 'package nil 'noerror)
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+(add-to-list 'package-archives '( "jcs-elpa" . "https://jcs-emacs.github.io/jcs-elpa/packages/") t)
+(setq package-archive-priorities '(("melpa"    . 5) ("jcs-elpa" . 0)))
 (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
@@ -260,6 +290,18 @@ window configuration"
         evil-replace-state-message nil
         evil-want-keybinding nil
         evil-want-C-i-jump nil)
+  (defun evil-search-highlighted (region-beginning region-end)
+    "Search the buffer for another occurance of text the same as the selected
+region"
+    (interactive (if (use-region-p)
+                     (list (region-beginning) (region-end))
+                   (list nil nil)))
+    (when (and region-beginning region-end)
+      (when (evil-visual-state-p) (evil-exit-visual-state))
+      (let ((string (buffer-substring-no-properties region-beginning
+                                                    region-end)))
+        (evil-push-search-history string t)
+        (evil-search string t t))))
   :config
   (evil-set-leader 'motion (kbd "SPC"))
   (add-to-list 'evil-emacs-state-modes 'dired-mode)
@@ -292,7 +334,7 @@ window configuration"
                  (call-interactively (key-binding ,key)))
               key-pairs)
         (push (kbd (format "M-%s" key)) key-pairs))
-      `(evil-define-key '(insert motion replace) 'global ,@key-pairs)))
+      `(evil-define-key '(insert replace) 'global ,@key-pairs)))
   (evil-define-escape-key "h" "j" "k" "l")
   ;; Insert Mode Keybindings
   (evil-define-key 'insert 'global
@@ -303,6 +345,7 @@ window configuration"
   ;; Visual Mode Keybindings
   (evil-define-key 'visual 'global
     "ga" #'mark-whole-buffer
+    "*" #'evil-search-highlighted
     "C" '("copy-to-clipboard" .
           (lambda (beg end)
             (interactive "r")
@@ -318,6 +361,8 @@ window configuration"
     (kbd "C-w r") #'resize-window
     (kbd "C-w m") #'toggle-maximize-window
     (kbd "C-w C") #'quit-window-kill
+    (kbd "M-j") #'evil-scroll-line-down
+    (kbd "M-k") #'evil-scroll-line-up
     (kbd "<leader>d") #'dired
     (kbd "<leader>b") #'switch-to-buffer
     (kbd "<leader>h") #'help
@@ -335,43 +380,78 @@ window configuration"
         mouse-wheel-progressive-speed nil))
 
 
-;;; VISUALS
+;;; UI
 (blink-cursor-mode 0)
 (tool-bar-mode 0)
 (tooltip-mode 0)
 (fringe-mode 3)
 (show-paren-mode 1)
 (set-window-buffer nil (current-buffer))
-(setq ring-bell-function #'ignore)
-(let ((font "JetBrainsMono Nerd Font Mono"))
-  (when (and (display-graphic-p) (member font (font-family-list)))
-    (set-frame-font (format "%s 12" font))))
+(setq ring-bell-function #'ignore
+      hscroll-margin 1000
+      scroll-conservatively 101
+      scroll-margin 5
+      use-dialog-box nil
+      bidi-inhibit-bpa t)
 
-(setq-default
- truncate-lines t
- cursor-in-non-selected-windows nil
- left-margin-width 1
- right-margin-width 1
- fringe-indicator-alist (add-to-list 'fringe-indicator-alist
-                                     '(truncation nil right-arrow)))
-
+(setq-default truncate-lines t
+              cursor-in-non-selected-windows nil
+              left-margin-width 1
+              right-margin-width 1)
+(add-to-list 'fringe-indicator-alist '(truncation nil right-arrow))
 (use-package whitespace
+  :hook (prog-mode-hook . whitespace-mode)
   :init
-  (add-hook 'prog-mode-hook
-            (lambda ()
-              (unless (derived-mode-p 'html-mode)
-                (whitespace-mode 1))))
+  (let ((turn-off-whitespace-mode (lambda () (whitespace-mode -1))))
+    (add-hook 'html-mode-hook turn-off-whitespace-mode))
   (setq whitespace-style '(face lines-tail empty)
         whitespace-line-column 80))
 
 (use-package frame
   :hook (after-init-hook . window-divider-mode)
   :init
+  (config--set-font "JetBrainsMono Nerd Font Mono")
   (setq window-divider-default-places t
         window-divider-default-bottom-width 1
         window-divider-default-right-width 1))
 
+
 (use-package ansi-color :demand t)
+
+(use-package tab-bar
+  :init
+  (defalias 'tn #'tab-new)
+  (defalias 'tc #'tab-close)
+  (setq tab-bar-auto-width nil
+        tab-bar-tab-name-function #'tab-bar-tab-name-truncated
+        tab-bar-tab-name-format-function
+        (lambda (tab i)
+          (let ((tab-face (funcall tab-bar-tab-face-function tab))
+                (close-color (aref ansi-color-names-vector 1)))
+            (concat
+             (propertize (format " %s" (alist-get 'name tab)) 'face tab-face)
+             (propertize " ⤫ "
+                         'close-tab t
+                         'face
+                         (list :weight 'bold
+                               :foreground close-color
+                               :background (face-attribute tab-face :background)
+                               :box (face-attribute tab-face :box)))))))
+  (fset 'tab-bar-format-add-tab
+        (lambda ()
+          (let ((face `(:foreground ,(aref ansi-color-names-vector 2))))
+            `((add-tab menu-item (propertize "■" 'face ,face)
+                       tab-bar-new-tab :help "New tab")))))
+  :config
+  (advice-add 'tab-bar-close-tab :before
+              (lambda (&rest r)
+                (when (= (length (tab-bar-tabs)) 2)
+                  (tab-bar-mode 0)))))
+
+(use-package faces
+  :config
+  (add-to-list 'display-buffer-alist
+               '("\\*Faces\\*" display-buffer-same-window)))
 
 (use-package gruvbox-theme
   :ensure t
@@ -380,6 +460,11 @@ window configuration"
   (setq underline-minimum-offset 3)
   (load-theme 'gruvbox-dark-soft t)
   :config
+  (defun shift-hexcolor (color red green blue)
+    (format "#%X%X%X"
+            (+ (string-to-number (substring color 1 3) 16) red)
+            (+ (string-to-number (substring color 3 5) 16) green)
+            (+ (string-to-number (substring color 5 7) 16) blue)))
   (set-face-attribute 'link nil
                       :foreground
                       (aref ansi-color-names-vector 4)
@@ -412,18 +497,39 @@ window configuration"
                       :background (face-attribute 'default :background)
                       :box
                       (face-attribute 'mode-line :box))
-  (set-face-attribute 'tab-bar-tab nil
+  ;; Tab Bar
+  (set-face-attribute 'tab-bar nil
                       :foreground
                       (face-attribute 'default :foreground)
                       :background
-                      (face-attribute 'default :background))
-  (set-face-attribute 'tab-bar-tab-inactive nil
+                      (shift-hexcolor (face-attribute 'default :background)
+                                      -10 -10 -10)
+                      :box
+                      (list :line-width 7
+                            :color
+                            (shift-hexcolor
+                             (face-attribute 'default :background)
+                             -10 -10 -10)))
+  (set-face-attribute 'tab-bar-tab nil
+                      :weight 'bold
                       :foreground
-                      (face-attribute 'ansi-color-black :foreground))
+                      (face-attribute 'tab-bar :foreground)
+                      :background
+                      (face-attribute 'default :background)
+                      :box
+                      (list :line-width 7
+                            :color (face-attribute 'default :background)))
+  (set-face-attribute 'tab-bar-tab-inactive nil
+                      :weight 'bold
+                      :foreground
+                      (face-attribute 'ansi-color-black :foreground)
+                      :background
+                      (face-attribute 'tab-bar :background))
   (set-face-attribute 'header-line nil
                       :box
                       (list :line-width 5 :color
                             (face-attribute 'header-line :background)))
+  ;; Dired
   (with-eval-after-load 'dired
     (set-face-attribute 'dired-symlink nil
                         :foreground (aref ansi-color-names-vector 6))
@@ -476,36 +582,11 @@ window configuration"
       'flymake-warning nil :underline
       (face-attribute 'font-lock-function-name-face :foreground)))))
 
-(use-package tab-bar
-  :init
-  (defalias 'tc 'tab-bar-close-tab)
-  (defalias 'tn 'tab-new)
-  (setq tab-bar-close-button (propertize " ●" 'close-tab t 'display '(height 1))
-        tab-bar-new-button
-        (propertize " + "
-                    'close-tab t 'display '(height 1)
-                    'face (list
-                           :background
-                           (face-attribute 'tab-bar-tab-inactive :background)
-                           :foreground
-                           (aref ansi-color-names-vector 2))))
-  :config
-  (advice-add 'tab-bar-close-tab :before
-              (lambda (&rest r)
-                (when (= (length (tab-bar-tabs)) 2)
-                  (tab-bar-mode 0)))))
 
 
 
-;;; LIFE IMPROVEMENTS
-(electric-pair-mode 1) ;; Auto pairs
-(global-auto-revert-mode 1) ;; Autorefresh buffers
+;;; QUALITY OF LIFE IMPROVEMENTS
 (fset 'yes-or-no-p 'y-or-n-p) ;; Shorter version of prompt
-(setq require-final-newline t
-      hscroll-margin 1000
-      scroll-conservatively 101
-      scoll-margin 5
-      use-dialog-box nil)
 
 (use-package package
   :config
@@ -524,6 +605,15 @@ window configuration"
       (kbd "<leader>Pr") #'package-delete
       (kbd "<leader>Pi") #'package-install
       (kbd "<leader>Pu") #'package-upgrade-all)))
+
+(use-package autorevert
+  ;;; Auto revert buffers (automatically update the buffer when a filebuffer is
+  ;;; changed)
+  :hook (after-init-hook . global-auto-revert-mode))
+
+(use-package elec-pair
+  ;;; Auto close parentheses, double quotes, etc.
+  :hook (after-init-hook . electric-pair-mode))
 
 (use-package window
   :init
@@ -579,7 +669,9 @@ window configuration"
 
 (use-package aggressive-indent
   :ensure t
-  :hook (after-init-hook . global-aggressive-indent-mode))
+  :hook (after-init-hook . global-aggressive-indent-mode)
+  :config
+  (push 'python-base-mode aggressive-indent-excluded-modes))
 
 (use-package vertico
   :ensure t
@@ -597,7 +689,10 @@ window configuration"
 (use-package consult
   :ensure t
   :init
-  (global-set-key [remap switch-to-buffer] #'consult-buffer))
+  (global-set-key [remap switch-to-buffer] #'consult-buffer)
+  (with-eval-after-load 'evil
+    (evil-define-key 'normal 'global
+      (kbd "<leader>Cl") #'consult-line)))
 
 (use-package avy
   :ensure t
@@ -737,7 +832,10 @@ window configuration"
     "SPC s" "Settings Prefix"
     "SPC m" "Music Prefix"
     "SPC a" "Jump Prefix"
-    "SPC f" "Fold Prefix"))
+    "SPC f" "Fold Prefix"
+    "SPC l" "Lorem Prefix"
+    "SPC e" "Eat Prefix"
+    "SPC C" "Consult Prefix"))
 
 (use-package ibuffer
   :commands ibuffer
@@ -794,10 +892,36 @@ window configuration"
       (setq current-prefix-arg i)
       (call-interactively #'eat)))
 
+  (defun eat-rerun-previous-command ()
+    "Tell an `eat' buffer to run the previous command (by running \"!!\")"
+    (interactive)
+    (let ((eat-buffer-list '()))
+      (dolist (window (window-list))
+        (let ((buffer-name (buffer-name (window-buffer window))))
+          (when (string-match-p "^\\*eat\\*\\(<[0-9]+>\\)?$" buffer-name)
+            (add-to-list 'eat-buffer-list
+                         (format "%s (%s)"
+                                 buffer-name
+                                 (with-current-buffer buffer-name
+                                   (propertize
+                                    (abbreviate-file-name default-directory)
+                                    'face 'font-lock-comment-face)))))))
+      (if (seq-empty-p eat-buffer-list)
+          (message "No *eat* buffers found on the current windows")
+        (with-current-buffer
+            (replace-regexp-in-string
+             "^\\(\\*eat\\*\\(<[0-9]+>\\)?\\) .*"
+             "\\1"
+             (completing-read "Rerun previous command for:"
+                              eat-buffer-list))
+          (eat-term-send-string-as-yank eat-terminal "!!")
+          (eat-input-char ?\n 1)))))
+
   (with-eval-after-load 'evil
     (evil-define-key 'motion 'global
-      (kbd "<leader>e") #'eat
-      (kbd "<leader>E") #'eat-new))
+      (kbd "<leader>ee") #'eat
+      (kbd "<leader>e!") #'eat-rerun-previous-command
+      (kbd "<leader>eE") #'eat-new))
   (with-eval-after-load 'dired
     (define-key-convenient dired-mode-map
                            "e" (lambda () (interactive)
@@ -973,9 +1097,9 @@ window configuration"
     (evil-define-key 'motion 'global (kbd "<leader>B") #'ibuffer)))
 
 (use-package files
-  :hook
-  (before-save-hook . whitespace-cleanup)
+  :hook (before-save-hook . whitespace-cleanup)
   :init
+  (setq require-final-newline t)
   (defun find-file-config ()
     "Open `user-init-file'"
     (interactive)
@@ -1038,31 +1162,39 @@ window configuration"
 
 
 ;;; PROGRAMMING
+(use-package conf-mode
+  :config
+  (add-hook 'conf-desktop-mode-hook
+            (lambda ()
+              (when (= (buffer-size) 0)
+                (insert "[Desktop Entry]\n"
+                        "Encoding=UTF-8\n"
+                        "Version=1.0\n"
+                        "Type=Application\n"
+                        "Terminal=false\n"
+                        "Name=\n"
+                        "Icon=\n"
+                        "Exec=")))))
+
 (use-package eglot
   :ensure t
   :init
   (setq eglot-autoshutdown t)
-  (defmacro eglot-add-hook (hook executable)
-    `(add-hook ,hook (lambda ()
-                       (if (executable-find ,executable) (eglot-ensure)
-                         (message "%s isn't installed, won't start `eglot'"
-                                  ,executable)))))
-
-  (eglot-add-hook 'c-mode-hook "clangd")
-  (eglot-add-hook 'rust-mode-hook "rust-analyzer")
-  (eglot-add-hook 'lua-mode-hook "lua-language-server")
 
   (defun eglot-toggle ()
     "Turn eglot either on or off"
     (interactive)
     (call-interactively (if (and (fboundp 'eglot-managed-p) (eglot-managed-p))
                             #'eglot-shutdown #'eglot)))
-
   (with-eval-after-load 'evil
     (evil-define-key 'normal prog-mode-map
       (kbd "<leader>se") #'eglot-toggle
       (kbd "<leader>sE") #'eglot-reconnect))
   :config
+  (add-to-list 'eglot-server-programs
+               '(astro-mode . ("astro-ls" "--stdio"
+                               :initializationOptions
+                               (:typescript (:tsdk "./node_modules/typescript/lib")))))
   (with-eval-after-load 'evil
     (evil-define-key 'normal 'eglot--managed-mode
       (kbd "<leader>cr") #'eglot-rename
@@ -1180,33 +1312,14 @@ window configuration"
           (newline))
         (insert border)))))
 
-(use-package mhtml-mode
-  :init
-  (add-hook 'mhtml-mode-hook (lambda ()
-                               (setq-local tab-width 2)
-                               (whitespace-mode 0))))
-
 (use-package emmet-mode
   :ensure t
   :init
-  (dolist (mode '(mhtml-mode-hook css-mode-hook astro-ts-mode-hook))
+  (dolist (mode '(mhtml-mode-hook css-mode-hook astro-ts-mode-hook astro-mode-hook))
     (add-hook mode #'emmet-mode)))
 
-(use-package sh-script
-  :init
-  (defun insert-shebang ()
-    (sh-electric-here-document-mode 0)
-    (indent-tabs-mode 0)
-    (when (= (buffer-size) 0) (insert "#!/bin/sh\n\n")))
-  (add-hook (if (boundp 'sh-base-mode-hook) 'sh-base-mode-hook 'sh-mode-hook)
-            #'insert-shebang))
-
-(use-package emacs-lisp
-  :init
-  (add-hook 'emacs-lisp-mode-hook
-			(lambda () (setq-local indent-tabs-mode nil))))
-
 (use-package mhtml-mode
+  :hook (mhtml-mode-hook . (lambda () (setq-local tab-width 2)))
   :init
   (with-eval-after-load 'evil
     (evil-define-key 'visual mhtml-mode-map "gc" #'comment-dwim)
@@ -1227,14 +1340,6 @@ window configuration"
   (add-hook 'prog-mode-hook ;; Disable line wrapping
             (lambda () (visual-line-mode 0))))
 
-(use-package python
-  :init
-  (setq python-indent-guess-indent-offset nil)
-  (add-hook 'python-mode-hook
-            (lambda ()
-              (setq-local tab-width (default-value 'tab-width)
-                          indent-tabs-mode nil))))
-
 (use-package rust-mode
   :ensure t
   :config
@@ -1248,6 +1353,37 @@ window configuration"
 
 (use-package markdown-mode
   :ensure t)
+
+(use-package sh-script
+  :init
+  (defun insert-shebang ()
+    (sh-electric-here-document-mode 0)
+    (indent-tabs-mode 0)
+    (when (= (buffer-size) 0) (insert "#!/bin/sh\n\n")))
+  (add-hook (if (boundp 'sh-base-mode-hook) 'sh-base-mode-hook 'sh-mode-hook)
+            #'insert-shebang))
+
+(use-package emacs-lisp
+  :init
+  (add-hook 'emacs-lisp-mode-hook
+			(lambda () (setq-local indent-tabs-mode nil))))
+
+(use-package python
+  :hook
+  ((python-mode-hook python-base-mode-hook) .
+   (lambda ()
+     (setq-local tab-width (default-value 'tab-width))))
+  :init
+  (setq python-indent-guess-indent-offset nil))
+
+(use-package lorem-ipsum
+  :ensure t
+  :init
+  (with-eval-after-load 'evil
+    (evil-define-key 'normal 'global
+      (kbd "<leader>ls") #'lorem-ipsum-insert-sentences
+      (kbd "<leader>lp") #'lorem-ipsum-insert-paragraphs
+      (kbd "<leader>ll") #'lorem-ipsum-insert-list)))
 
 (unless (version< emacs-version "29")
   (use-package treesit

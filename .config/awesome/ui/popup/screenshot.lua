@@ -165,7 +165,7 @@ local ScreenshotPopup = setmetatable(
 
 
 --- Positions the popup to the bottom center of the wibar
-																			function ScreenshotPopup:place()
+function ScreenshotPopup:place()
 	awful.placement.next_to(
 		self,
 		{
@@ -178,10 +178,9 @@ local ScreenshotPopup = setmetatable(
 end
 
 --- Destroys the popup while also turning of the keygrabber
-function ScreenshotPopup:destroy()
+function ScreenshotPopup:stop()
 	self.popup.visible = false
 	self.keygrabber:stop()
-	self = nil
 end
 
 --- Changes the currently chosen option to the option with the new index
@@ -196,16 +195,16 @@ end
 --- Takes a screenshot when enter is pressed or was clicked by the mouse
 function ScreenshotPopup:press()
 	screenshot(self.options[self.option_index].screenshot_type)
-	self:destroy()
+	module.toggle()
 end
 
 --- Toggles a global screenshot popup
 function module.toggle()
-	if module.popup == nil then
-		module.popup = ScreenshotPopup()
-	else
-		module.popup:destroy()
+	if module.popup then
+		module.popup:stop()
 		module.popup = nil
+	else
+		module.popup = ScreenshotPopup()
 	end
 end
 

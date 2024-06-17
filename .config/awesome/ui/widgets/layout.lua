@@ -39,7 +39,6 @@ local widget = wibox.widget {
 --- Updates the Widget's imagebox
 ---@param t tag
 local function update(t)
-	if true then return end
 	if t.index ~= 1 then return end
 	widget.widget.image = nil
 	if t.layout == awful.layout.suit.tile.right then

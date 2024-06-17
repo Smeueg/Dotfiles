@@ -115,7 +115,8 @@ do
 	settings.snap_shape = gears.shape.rectangle
 	settings.snap_border_width = settings.border_width
 	settings.snap_bg = settings.border_focus
-
+	-- UPower/Battery
+	settings.battery_warn_threshold = 15
 	beautiful.init(settings)
 	root.cursor("left_ptr")
 end
@@ -537,16 +538,19 @@ screen.connect_signal("property::geometry", function()
 end)
 
 --- Function to run when a client is spawned
-client.connect_signal("manage", function(c)
-	-- Disable the border when the layout is the max layout
-	if c.first_tag.layout == awful.layout.suit.max then
-		c.border_width = 0
+client.connect_signal(
+	"manage",
+	function(c)
+		-- Disable the border when the layout is the max layout
+		if c.floating or c.first_tag.layout == awful.layout.suit.max then
+			c.border_width = 0
+		end
+		if c.size_hints.user_position then return end
+		if c.size_hints.program_position then return end
+		awful.placement.centered(c)
+		awful.placement.no_offscreen(c)
 	end
-	if not awesome.startup then return end
-	if c.size_hints.user_position then return end
-	if c.size_hints.program_position then return end
-	awful.placement.no_offscreen(c)
-end)
+)
 
 
 -- Recolor the border when focused
