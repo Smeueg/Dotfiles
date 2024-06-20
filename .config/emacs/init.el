@@ -917,11 +917,27 @@ region"
           (eat-term-send-string-as-yank eat-terminal "!!")
           (eat-input-char ?\n 1)))))
 
+  (defun eat-change-cwd ()
+    "Changes the working directory of the current eat buffer to match the shell"
+    (setq-local default-directory
+                (substring
+                 (nth 1
+                      (split-string
+                       (shell-command-to-string
+                        (format "lsof -an -dcwd -Fn -p%s"
+                                (string-trim
+                                 (shell-command-to-string
+                                  (format "ps -o pid --ppid %d --no-headers"
+                                          (process-id (get-buffer-process (buffer-name))))))))
+                       "\n"))
+                 1)))
+
   (with-eval-after-load 'evil
     (evil-define-key 'motion 'global
       (kbd "<leader>ee") #'eat
       (kbd "<leader>e!") #'eat-rerun-previous-command
       (kbd "<leader>eE") #'eat-new))
+
   (with-eval-after-load 'dired
     (define-key-convenient dired-mode-map
                            "e" (lambda () (interactive)
@@ -968,7 +984,8 @@ region"
                            [?\C-\\] (lambda () (interactive)
                                       (evil-normal-state)
                                       (read-only-mode 1)
-                                      (eat-emacs-mode)))))
+                                      (eat-emacs-mode)
+                                      (eat-change-cwd)))))
 
 (use-package which-function-mode
   :config
