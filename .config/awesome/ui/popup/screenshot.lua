@@ -37,38 +37,46 @@ local function screenshot(screenshot_type)
 	end
 
 	awful.spawn.easy_async_with_shell(
-		string.format("sleep 0.05; import -silent %s %s", import_flags, filepath),
-		function(_, _, _, exit_code)
-			if exit_code ~= 0 then return end
-			notify {
-				title = "Took Screenshot",
-				text = filepath
-			}
-		end
+		string.format("import -silent %s %s", import_flags, filepath),
+		screenshot_command_handler
 	)
+end
+
+--- Handles the output of the screenshot command
+local function screenshot_command_handler(_, _, _, exit_code)
+	if exit_code ~= 0 then
+		notify {
+			title = "Failed To Take Screenshot"
+		}
+	else
+		notify {
+			title = "Took Screenshot",
+			text = filepath
+		}
+	end
 end
 
 --- Applies a template for an option for the popup widget
 ---@param text string The text to be displayed on the option
 ---@param screenshot_type ScreenshotType The type of the screenshot
 local function option(text, screenshot_type)
-	local widget = wibox.widget {
-		widget = wibox.container.background,
-		screenshot_type = screenshot_type,
-		id = "option",
-		{
-			widget = wibox.container.margin,
-			margins = dpi(10),
+		local widget = wibox.widget {
+			widget = wibox.container.background,
+			screenshot_type = screenshot_type,
+			id = "option",
 			{
-				widget = wibox.widget.textbox,
-				markup = text:to_pango { font = 12 },
-				cursor = "hand1",
-				align = "center"
+				widget = wibox.container.margin,
+				margins = dpi(10),
+				{
+					widget = wibox.widget.textbox,
+					markup = text:to_pango { font = 12 },
+					cursor = "hand1",
+					align = "center"
+				}
 			}
 		}
-	}
-	cursor.add_clickable_to_wibox(widget)
-	return widget
+		cursor.add_clickable_to_wibox(widget)
+		return widget
 end
 
 
@@ -97,9 +105,10 @@ local ScreenshotPopup = setmetatable(
 				ontop = true,
 				visible = true,
 				widget = utils.border_wrapper({
+						id = "widget",
 						widget = wibox.container.margin,
 						buttons = awful.button(
-							nil, 1,
+							nil, 1, nil,
 							function() screenshot_popup:press() end
 						),
 						margins = dpi(10),
