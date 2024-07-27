@@ -1471,7 +1471,7 @@ region"
   (add-hook 'bongo-playlist-mode-hook
 			(lambda ()
 			  (display-line-numbers-mode 0)
-			  (let ((dir "~/Music"))
+			  (let ((dir "/tmp/jmtpfs/Internal shared storage/Music"))
 				(when (file-directory-p dir)
 				  (bongo-insert-file dir)
 				  (goto-char (point-min)))))))
