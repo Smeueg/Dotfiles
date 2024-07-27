@@ -157,7 +157,12 @@ jmtpfs_auto() {
 
 	if ! [ -d "/tmp/jmtpfs" ]; then
 		mkdir "/tmp/jmtpfs"
-		jmtpfs "/tmp/jmtpfs"
+		jmtpfs "/tmp/jmtpfs"\
+			   -o direct_io\
+			   -o no_remote_lock\
+			   -o use_ino\
+			   -o default_permissions
+		[ $? -ne 0 ] && rmdir "/tmp/jmtpfs"
 	else
 		umount "/tmp/jmtpfs"
 		rmdir "/tmp/jmtpfs"
