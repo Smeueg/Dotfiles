@@ -1164,7 +1164,11 @@ region"
               (setq-local indent-tabs-mode nil)
               (display-line-numbers-mode 0)
               (org-indent-mode 1)
-              (turn-on-auto-fill))))
+              (turn-on-auto-fill)))
+  :config
+  (with-eval-after-load 'evil
+    (evil-define-key 'motion org-mode-map
+      (kbd "RET") #'org-open-at-point)))
 
 (use-package org-bullets
   :ensure t
