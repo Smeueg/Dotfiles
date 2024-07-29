@@ -22,6 +22,7 @@ local module = {}
 ---@field Partial table
 local ScreenshotType = enum { "Full", "Partial" }
 
+
 --- Takes a screenshot of the system
 --- (see: import(1))
 --- @param screenshot_type ScreenshotType
@@ -36,25 +37,21 @@ local function screenshot(screenshot_type)
 		error("screenshot() expects a ScreenshotType as an argument")
 	end
 
-	awful.spawn.easy_async_with_shell(
+	awful.spawn.easy_async(
 		string.format("import -silent %s %s", import_flags, filepath),
-		screenshot_command_handler
+		function(_, _, _, exit_code)
+			if exit_code ~= 0 then
+				notify { text = "Failed To Take Screenshot" }
+			else
+				notify {
+					title = "Took Screenshot",
+					text = filepath
+				}
+			end
+		end
 	)
 end
 
---- Handles the output of the screenshot command
-local function screenshot_command_handler(_, _, _, exit_code)
-	if exit_code ~= 0 then
-		notify {
-			title = "Failed To Take Screenshot"
-		}
-	else
-		notify {
-			title = "Took Screenshot",
-			text = filepath
-		}
-	end
-end
 
 --- Applies a template for an option for the popup widget
 ---@param text string The text to be displayed on the option
