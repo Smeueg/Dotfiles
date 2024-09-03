@@ -112,6 +112,7 @@
          (mhtml-mode (:cmd ,(format "setsid xdg-open %s; exit" file)))
          (python-mode (:cmd ,(format "python3 %s" file)))
          (lua-mode (:cmd ,(format "lua %s" file)))
+         (java-mode (:cmd ,(format "java %s" file)))
          (sh-mode (:cmd ,file)
                   (:func executable-make-buffer-file-executable-if-script-p))
          (emacs-lisp-mode (:func ,(lambda ()
