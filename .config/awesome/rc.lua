@@ -47,9 +47,10 @@ do
 	)
 end
 
--- Theme (Gruvbox) --
+-- Theme --
 do
 	local settings = {}
+	-- Gruvbox --
 	local colors = {
 		bg = "#282828",
 		red = "#D65D0E",
@@ -62,22 +63,37 @@ do
 		black = "#3C3836",
 		black_bright = "#32302f",
 		black_brighter = "#504945",
-		orange = "#FE8019"
+		accent = "#FE8019"
+	}
+	-- Default Dark --
+	local colors = {
+		bg = "#202020",
+		red = "#AC4142",
+		green = "#90A959",
+		yellow = "#F4BF75",
+		blue = "#6A9FB5",
+		magenta = "#AA759F",
+		cyan = "#75B5AA",
+		white = "#D0D0D0",
+		black = "#202020",
+		black_bright = "#222222",
+		black_brighter = "#303030",
+		accent = "#404040"
 	}
 	-- Default
 	settings.wallpaper = colors.bg
 	settings.font = "JetBrainsMono Nerd Font Mono 11"
 	settings.bg_normal = colors.black_bright
 	settings.fg_normal = colors.white
-	settings.icon_color = colors.yellow
+	settings.icon_color = colors.white
 	settings.common_margin = dpi(10)
 	-- Windows
 	settings.useless_gap = dpi(10)
 	settings.border_width = dpi(2)
-	settings.border_focus = colors.orange
+	settings.border_focus = colors.accent
 	settings.border_normal = settings.wallpaper
 	-- Titlebar
-	settings.titlebar_bg = settings.bg_normal
+	settings.titlebar_bg = colors.black_brighter
 	settings.titlebar_btn_max = colors.green
 	settings.titlebar_btn_min = colors.yellow
 	settings.titlebar_btn_close = colors.red
@@ -95,7 +111,7 @@ do
 	naughty.config.spacing = dpi(5)
 	-- Tags
 	settings.tag_amount = 3
-	settings.taglist_fg_focus = colors.yellow
+	settings.taglist_fg_focus = colors.white
 	settings.taglist_fg_normal = colors.black_brighter
 	-- Tasklist
 	settings.tasklist_bg_focus = "#00000030"

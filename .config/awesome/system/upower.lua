@@ -91,8 +91,10 @@ function BatInfo:notify_time()
 		return
 	end
 
+
 	local hours = math.floor(seconds / 3600)
 	local minutes = math.floor(seconds % 3600 / 60)
+
 
 	if hours == 0 then
 		notification_text = string.format(
@@ -105,6 +107,7 @@ function BatInfo:notify_time()
 			hours, minutes, notification_suffix
 		)
 	end
+
 
 	GlobalTimeNotification = naughty.notify {
 		title = "Battery",

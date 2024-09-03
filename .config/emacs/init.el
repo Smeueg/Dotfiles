@@ -242,6 +242,11 @@ STRING is the string to format and display to the user"
   (when (and (display-graphic-p) (member font (font-family-list)))
     (set-frame-font (format "%s 12" font))))
 
+(defun config--reload-theme ()
+  "Reload the currently enabled themes"
+  (interactive)
+  (mapc (lambda (theme) (load-theme theme t)) custom-enabled-themes))
+
 
 ;;; HOOKS
 (add-hook 'buffer-list-update-hook ;; Always have `*scratch*' ready to go
@@ -270,13 +275,11 @@ STRING is the string to format and display to the user"
 
 
 ;;; CONTROLS
-(global-set-key [remap quit-window] (lambda () (interactive) (quit-window t)))
-(define-key key-translation-map [?\C-h] [?\C-?])
-(global-set-key [?\C-\S-v]
-                (lambda ()
-                  (interactive)
-                  (insert (or (gui-get-selection 'CLIPBOARD 'UTF8_STRING) ""))))
+(define-key key-translation-map [?\C-h] [?\C-?]) ;; <C-h> -> <backspace>
+(define-key key-translation-map [?\C-\S-v] [paste])
 (global-set-key [?\C-\\] nil)
+;; Q always kills the associated buffer as well
+(global-set-key [remap quit-window] (lambda () (interactive) (quit-window t)))
 
 (use-package evil
   :ensure t
@@ -355,6 +358,11 @@ region"
             (evil-normal-state 1))))
   ;; Normal/Motion Mode Keybindings
   (evil-define-key 'motion 'global
+    "*" #'isearch-forward-highlighted
+    "/" #'isearch-forward-regexp
+    "?" #'isearch-backward-regexp
+    "n" #'isearch-repeat-forward
+    "N" #'isearch-repeat-backward
     (kbd "C--") (lambda () (interactive) (text-scale-decrease 0.5))
     (kbd "C-=") (lambda () (interactive) (text-scale-increase 0.5))
     (kbd "C-0") (lambda () (interactive) (text-scale-set 0))
@@ -415,7 +423,6 @@ region"
         window-divider-default-bottom-width 1
         window-divider-default-right-width 1))
 
-
 (use-package ansi-color :demand t)
 
 (use-package tab-bar
@@ -427,21 +434,20 @@ region"
         tab-bar-tab-name-format-function
         (lambda (tab i)
           (let ((tab-face (funcall tab-bar-tab-face-function tab))
-                (close-color (aref ansi-color-names-vector 1)))
+                (close-color (face-foreground 'ansi-color-red)))
             (concat
              (propertize (format " %s" (alist-get 'name tab)) 'face tab-face)
              (propertize " ⤫ "
                          'close-tab t
-                         'face
-                         (list :weight 'bold
-                               :foreground close-color
-                               :background (face-attribute tab-face :background)
-                               :box (face-attribute tab-face :box)))))))
+                         'face (list :weight 'bold
+                                     :foreground close-color
+                                     :background (face-background tab-face)
+                                     :box (face-attribute tab-face :box)))))))
+
   (fset 'tab-bar-format-add-tab
         (lambda ()
-          (let ((face `(:foreground ,(aref ansi-color-names-vector 2))))
-            `((add-tab menu-item (propertize "■" 'face ,face)
-                       tab-bar-new-tab :help "New tab")))))
+          `((add-tab menu-item (propertize "■" 'face `(:foreground ,(face-foreground 'ansi-color-green)))
+                     tab-bar-new-tab :help "New tab"))))
   :config
   (advice-add 'tab-bar-close-tab :before
               (lambda (&rest r)
@@ -453,134 +459,135 @@ region"
   (add-to-list 'display-buffer-alist
                '("\\*Faces\\*" display-buffer-same-window)))
 
+(use-package custom
+  :demand t
+  :init
+  (setq underline-minimum-offset 3)
+  (load-theme 'default-dark t))
+
 (use-package gruvbox-theme
   :ensure t
+  :if (display-graphic-p)
   :demand t
+  :disabled t
   :init
   (setq underline-minimum-offset 3)
   (load-theme 'gruvbox-dark-soft t)
   :config
-  (defun shift-hexcolor (color red green blue)
-    (format "#%X%X%X"
-            (+ (string-to-number (substring color 1 3) 16) red)
-            (+ (string-to-number (substring color 3 5) 16) green)
-            (+ (string-to-number (substring color 5 7) 16) blue)))
-  (set-face-attribute 'link nil
-                      :foreground
-                      (aref ansi-color-names-vector 4)
-                      :overline nil
-                      :underline t)
-  (set-face-attribute 'link-visited nil
-                      :foreground
-                      (aref ansi-color-names-vector 5))
-  (set-face-foreground 'window-divider
-                       (face-attribute 'vertical-border :foreground))
-  (set-face-background 'highlight
-                       (face-attribute 'ansi-color-black :background))
-  (set-face-attribute 'internal-border nil
-		              :background (face-attribute 'default :background))
-  (set-face-attribute 'line-number nil
-		              :background (face-attribute 'default :background))
-  (set-face-attribute 'line-number-current-line nil
-                      :weight 'bold
-                      :background (face-attribute 'default :background))
-  (set-face-attribute 'mode-line nil
-                      :foreground (face-attribute 'mode-line :background)
-                      :background
-                      (face-attribute 'default :background)
-                      :weight 'bold
-                      :box
-                      (list :line-width 7 :color
-                            (face-attribute 'default :background)))
-  (set-face-attribute 'mode-line-inactive nil
-                      :foreground (face-attribute 'ansi-color-black :foreground)
-                      :background (face-attribute 'default :background)
-                      :box
-                      (face-attribute 'mode-line :box))
-  ;; Tab Bar
-  (set-face-attribute 'tab-bar nil
-                      :foreground
-                      (face-attribute 'default :foreground)
-                      :background
-                      (shift-hexcolor (face-attribute 'default :background)
-                                      -10 -10 -10)
-                      :box
-                      (list :line-width 7
-                            :color
-                            (shift-hexcolor
-                             (face-attribute 'default :background)
-                             -10 -10 -10)))
-  (set-face-attribute 'tab-bar-tab nil
-                      :weight 'bold
-                      :foreground
-                      (face-attribute 'tab-bar :foreground)
-                      :background
-                      (face-attribute 'default :background)
-                      :box
-                      (list :line-width 7
-                            :color (face-attribute 'default :background)))
-  (set-face-attribute 'tab-bar-tab-inactive nil
-                      :weight 'bold
-                      :foreground
-                      (face-attribute 'ansi-color-black :foreground)
-                      :background
-                      (face-attribute 'tab-bar :background))
-  (set-face-attribute 'header-line nil
-                      :box
-                      (list :line-width 5 :color
-                            (face-attribute 'header-line :background)))
-  ;; Dired
-  (with-eval-after-load 'dired
-    (set-face-attribute 'dired-symlink nil
-                        :foreground (aref ansi-color-names-vector 6))
-    (add-to-list 'dired-font-lock-keywords ;; Recolor executables in dired
-                 (list dired-re-exe
-                       '(".+" (dired-move-to-filename) nil
-                         (0 `(:foreground ,(aref ansi-color-names-vector 2)))))
-                 'append))
-  (with-eval-after-load 'info
-    (set-face-attribute 'info-node nil
-                        :foreground (aref ansi-color-names-vector 3))
-    (set-face-attribute 'info-menu-star nil
-                        :foreground (aref ansi-color-names-vector 1))
-    (set-face-attribute 'Info-quoted nil
-                        :italic t :foreground (aref ansi-color-names-vector 5))
-    (set-face-attribute 'fixed-pitch-serif nil
-                        :family
-                        (face-attribute 'default :family)))
-  (setq hl-todo-keyword-faces
-        `(("TODO" . ,(aref ansi-color-names-vector 5))))
-  (set-face-attribute 'variable-pitch nil :font "JetBrainsMono Nerd Font Mono")
-  (add-hook 'eww-mode-hook
-            (lambda ()
-              (set-face-attribute
-               'eww-form-submit nil
-               :font "JetBrainsMono Nerd Font Mono"
-               :foreground (face-attribute 'default :foreground)
-               :background (face-attribute 'mode-line :background)
-               :box
-               (list
-                :line-width 5
-                :color (face-attribute 'mode-line :background)
-                :style nil))
-              (set-face-attribute
-               'eww-form-text nil
-               :background (face-attribute 'header-line :background)
-               :box
-               (list :line-width 2 :color (aref ansi-color-names-vector 3)))))
+  (let ((bg-darker (color-darken-name (face-background 'default) 10)))
+    (set-face-attribute 'link nil
+                        :foreground (aref ansi-color-names-vector 4)
+                        :overline nil
+                        :underline t)
+    (set-face-attribute 'link-visited nil
+                        :foreground (aref ansi-color-names-vector 5))
+    (set-face-attribute 'window-divider nil
+                        :foreground (face-attribute 'vertical-border :foreground))
+    (set-face-attribute 'highlight nil
+                        :background bg-darker)
+    (set-face-attribute 'internal-border nil
+		                :background (face-attribute 'default :background))
+    (set-face-attribute 'line-number nil
+		                :background (face-attribute 'default :background))
+    (set-face-attribute 'line-number-current-line nil
+                        :weight 'bold
+                        :background (face-attribute 'default :background))
+    (set-face-attribute 'mode-line nil
+                        :foreground (face-attribute 'mode-line :background)
+                        :background
+                        (face-attribute 'default :background)
+                        :weight 'bold
+                        :box
+                        (list :line-width 7 :color
+                              (face-attribute 'default :background)))
+    (set-face-attribute 'mode-line-inactive nil
+                        :foreground (face-attribute 'ansi-color-black :foreground)
+                        :background (face-attribute 'default :background)
+                        :box
+                        (face-attribute 'mode-line :box))
+    ;; Tab Bar
+    (set-face-attribute 'tab-bar nil
+                        :foreground (face-foreground 'default)
+                        :background bg-darker
+                        :box
+                        `(:line-width 7 :color ,bg-darker))
+    (set-face-attribute 'tab-bar-tab nil
+                        :weight 'bold
+                        :foreground (face-foreground 'tab-bar)
+                        :background (face-background 'default)
+                        :box
+                        `(:line-width 7 :color ,(face-background 'default)))
+    (set-face-attribute 'tab-bar-tab-inactive nil
+                        :weight 'bold
+                        :foreground
+                        (face-attribute 'ansi-color-black :foreground)
+                        :background
+                        (face-attribute 'tab-bar :background))
+    (set-face-attribute 'header-line nil
+                        :box
+                        (list :line-width 5 :color
+                              (face-attribute 'header-line :background)))
+    ;; xref
+    (eval-after-load 'xref
+      `(set-face-attribute 'xref-match 'nil
+                           :background ,bg-darker
+                           :box '(:line-width 7 :color ,bg-darker)))
+    
+    
+    ;; Dired
+    (with-eval-after-load 'dired
+      (set-face-attribute 'dired-symlink nil
+                          :foreground (aref ansi-color-names-vector 6))
+      (add-to-list 'dired-font-lock-keywords ;; Recolor executables in dired
+                   (list dired-re-exe
+                         '(".+" (dired-move-to-filename) nil
+                           (0 `(:foreground ,(aref ansi-color-names-vector 2)))))
+                   'append))
+    (with-eval-after-load 'info
+      (set-face-attribute 'info-node nil
+                          :foreground (aref ansi-color-names-vector 3))
+      (set-face-attribute 'info-menu-star nil
+                          :foreground (aref ansi-color-names-vector 1))
+      (set-face-attribute 'Info-quoted nil
+                          :italic t
+                          :foreground (aref ansi-color-names-vector 5))
+      (set-face-attribute 'fixed-pitch-serif nil
+                          :family
+                          (face-attribute 'default :family)))
+    (setq hl-todo-keyword-faces
+          `(("TODO" . ,(aref ansi-color-names-vector 5))))
+    (set-face-attribute 'variable-pitch nil
+                        :font "JetBrainsMono Nerd Font Mono")
+    (add-hook 'eww-mode-hook
+              (lambda ()
+                (set-face-attribute
+                 'eww-form-submit nil
+                 :font "JetBrainsMono Nerd Font Mono"
+                 :foreground (face-attribute 'default :foreground)
+                 :background (face-attribute 'mode-line :background)
+                 :box
+                 (list
+                  :line-width 5
+                  :color (face-attribute 'mode-line :background)
+                  :style nil))
+                (set-face-attribute
+                 'eww-form-text nil
+                 :background (face-attribute 'header-line :background)
+                 :box
+                 (list :line-width 2 :color (aref ansi-color-names-vector 3)))))
 
-  (add-hook
-   'flymake-mode-hook
-   (lambda ()
-     (set-face-attribute
-      'flymake-error nil
-      :underline (face-attribute 'error :foreground))
-     (set-face-attribute
-      'flymake-note nil
-      :underline (face-attribute 'font-lock-doc-face :foreground))
-     (set-face-attribute
-      'flymake-warning nil :underline
-      (face-attribute 'font-lock-function-name-face :foreground)))))
+    (add-hook
+     'flymake-mode-hook
+     (lambda ()
+       (set-face-attribute
+        'flymake-error nil
+        :underline (face-attribute 'error :foreground))
+       (set-face-attribute
+        'flymake-note nil
+        :underline (face-attribute 'font-lock-doc-face :foreground))
+       (set-face-attribute
+        'flymake-warning nil :underline
+        (face-attribute 'font-lock-function-name-face :foreground))))))
 
 
 
@@ -720,23 +727,15 @@ region"
       (kbd "<leader>fs") #'hs-show-all
       (kbd "<leader>fh") #'hs-hide-all)))
 
-(use-package all-the-icons
-  ;; The fonts need to be installed using `all-the-icons-install-fonts'
+(use-package nerd-icons-completion
   :ensure t
-  :if (display-graphic-p))
+  :hook (marginalia-mode-hook . nerd-icons-completion-marginalia-setup)
+  :config
+  (nerd-icons-completion-mode))
 
-(use-package all-the-icons-completion
+(use-package nerd-icons-ibuffer
   :ensure t
-  :hook
-  (after-init-hook . all-the-icons-completion-mode)
-  (marginalia-mode-hook . all-the-icons-completion-marginalia-setup)
-  :init
-  (setq inhibit-compacting-font-caches t))
-
-(use-package all-the-icons-ibuffer
-  :ensure t
-  :hook
-  (ibuffer-mode-hook . all-the-icons-ibuffer-mode))
+  :hook (ibuffer-mode-hook . nerd-icons-ibuffer-mode))
 
 (use-package rainbow-mode
   :ensure t
@@ -756,8 +755,8 @@ region"
   (global-set-key [remap dired] #'dirvish)
   (setq
    dirvish-default-layout '(0 0.4 0.6)
-   dirvish-attributes '(file-time file-size all-the-icons git-msg)
-   dired-listing-switches "-lAh --group-directories-first"
+   dirvish-attributes '(nerd-icons file-time file-size git-msg)
+   dired-listing-switches "-lAhX --group-directories-first"
    dirvish-path-separators '("  ⌂" "  /" " ⋗ ")
    dirvish-cache-dir "/tmp/dirvish/"
    dirvish-reuse-session nil
@@ -806,14 +805,18 @@ region"
                          "r" #'dired-do-rename
                          "c" #'dirvish-cd
                          "$" #'dired-run-command
+                         "g" #'beginning-of-buffer
+                         "G" #'end-of-buffer
                          "+d" #'dired-create-directory
                          "+f" #'dired-create-empty-file
-                         "D" nil)
+                         "D" nil
+                         (kbd "C-r") #'revert-buffer)
   (with-eval-after-load 'evil
     (define-key-convenient dirvish-mode-map
-                           "/" #'evil-search-forward
-                           "n" #'evil-search-next
-                           "N" #'evil-search-previous)))
+                           "/" #'isearch-forward-regexp
+                           "?" #'isearch-backward-regexp
+                           "n" #'isearch-repeat-forward
+                           "N" #'isearch-repeat-backward)))
 
 (use-package which-key
   :ensure t
@@ -920,17 +923,20 @@ region"
   (defun eat-change-cwd ()
     "Changes the working directory of the current eat buffer to match the shell"
     (setq-local default-directory
-                (substring
-                 (nth 1
-                      (split-string
-                       (shell-command-to-string
-                        (format "lsof -an -dcwd -Fn -p%s"
-                                (string-trim
-                                 (shell-command-to-string
-                                  (format "ps -o pid --ppid %d --no-headers"
-                                          (process-id (get-buffer-process (buffer-name))))))))
-                       "\n"))
-                 1)))
+                (concat
+                 (substring
+                  (nth 1
+                       (split-string
+                        (shell-command-to-string
+                         (format "lsof -an -dcwd -Fn -p%s"
+                                 (string-trim
+                                  (shell-command-to-string
+                                   (format "ps -o pid --ppid %d --no-headers"
+                                           (process-id (get-buffer-process
+                                                        (buffer-name))))))))
+                        "\n"))
+                  1)
+                 "/")))
 
   (with-eval-after-load 'evil
     (evil-define-key 'motion 'global
@@ -975,16 +981,16 @@ region"
                           nil t)))
     (define-key-convenient eat-char-mode-map
                            [escape] #'eat-self-input
-                           [?\C-\S-v] (lambda () (interactive)
-                                        (eat-term-send-string-as-yank
-                                         eat-terminal
-                                         (or (gui-get-selection
-                                              'CLIPBOARD
-                                              'UTF8_STRING)
-                                             "")))
+                           [paste] (lambda () (interactive)
+                                     (eat-term-send-string-as-yank
+                                      eat-terminal
+                                      (or (gui-get-selection
+                                           'CLIPBOARD
+                                           'UTF8_STRING)
+                                          "")))
                            [?\C-\\] (lambda () (interactive)
-                                      (evil-normal-state)
                                       (read-only-mode 1)
+                                      (evil-normal-state)
                                       (eat-emacs-mode)
                                       (eat-change-cwd)))))
 
@@ -1094,7 +1100,20 @@ region"
 
 (use-package isearch
   :init
-  (setq lazy-highlight-cleanup nil))
+  (setq lazy-highlight-cleanup nil
+        isearch-wrap-pause 'no)
+  (defun isearch-forward-highlighted (beginning end)
+    (interactive "r")
+    (isearch-mode t t)
+    (isearch-yank-string (buffer-substring-no-properties beginning end))
+    (isearch-done)
+    (deactivate-mark))
+  :config
+  (define-key isearch-mode-map
+              [?\C-\S-v] (lambda () (interactive)
+                           (isearch-yank-string
+                            (or (gui-get-selection 'CLIPBOARD 'UTF8_STRING)
+                                "")))))
 
 (use-package info
   :config
@@ -1118,6 +1137,7 @@ region"
   :hook (before-save-hook . whitespace-cleanup)
   :init
   (setq require-final-newline t)
+  (add-to-list 'exec-path (concat (file-name-directory user-init-file) "bin"))
   (defun find-file-config ()
     "Open `user-init-file'"
     (interactive)
@@ -1128,12 +1148,18 @@ region"
     (interactive "MFile Extension: ")
     (find-file (format "/tmp/test.%s" file-extension)))
 
+  (defun find-notes-file ()
+    "Open `org-default-notes-file'"
+    (interactive)
+    (find-file org-default-notes-file))
+
   (with-eval-after-load 'evil
     (evil-define-key 'motion 'global
       (kbd "<leader>oo") #'find-file
       (kbd "<leader>oa") #'find-alternate-file
       (kbd "<leader>oc") #'find-file-config
       (kbd "<leader>ot") #'find-tmp-file
+      (kbd "<leader>on") #'find-notes-file
       (kbd "<leader>op") #'ffap)))
 
 (use-package imenu
@@ -1155,6 +1181,7 @@ region"
         org-hide-emphasis-markers t
         org-log-done t
         org-export-with-toc nil
+        org-default-notes-file "~/Notes/index.org"
         ;; src block indentation settings
         org-edit-src-content-indentation 0
         org-src-tab-acts-natively t
@@ -1200,8 +1227,36 @@ region"
 
 (use-package eglot
   :ensure t
+  :hook 
+  ((after-init-hook . (lambda ()
+                        "Make sure eglot-booster is installed"
+                        (unless (fboundp 'eglot-booster-mode)
+                          (package-vc-install "https://github.com/jdtsmith/eglot-booster"))
+                        (eglot-booster-mode))))
   :init
   (setq eglot-autoshutdown t)
+
+  (defun install/emacs-lsp-booster ()
+    (interactive)
+    "Installs `emacs-lsp-booster' from https://github.com/blahgeek/emacs-lsp-booster"
+    (let* ((api-url "https://api.github.com/repos/blahgeek/emacs-lsp-booster/releases/latest")
+           (dir-path (concat (file-name-directory user-init-file) "bin/"))
+           (regex (cond
+                   ((eq system-type 'gnu/linux) "-unknown-linux-musl\\.zip$")
+                   ((eq system-type 'darwin) "-apple-darwin\\.zip$")
+                   ((eq system-type 'windows-nt) "-pc-windows-gnu\\.zip$")))
+           (exe-url (with-current-buffer (url-retrieve-synchronously api-url nil t)
+                      (goto-char (point-max))
+                      (beginning-of-line)
+                      (gethash "browser_download_url"
+                               (seq-find (lambda (release)
+                                           (string-match-p regex (gethash "browser_download_url" release)))
+                                         (gethash "assets" (json-parse-string (buffer-substring-no-properties (point) (point-max)))))))))
+      (unless (file-directory-p dir-path)
+        (make-directory dir-path))
+      (url-copy-file exe-url (concat dir-path "emacs-lsp-booster.zip"))
+      (shell-command (format "unzip %semacs-lsp-booster.zip" dir-path))
+      (delete-file (concat dir-path "emacs-lsp-booster.zip"))))
 
   (defun eglot-toggle ()
     "Turn eglot either on or off"
@@ -1222,6 +1277,10 @@ region"
       (kbd "<leader>cr") #'eglot-rename
       (kbd "<leader>ca") #'eglot-code-actions
       (kbd "<leader>cf") #'eglot-format)))
+
+(use-package yasnippet
+  :ensure t
+  :hook (prog-mode-hook . yas-minor-mode))
 
 (use-package project
   :init
@@ -1552,9 +1611,10 @@ region"
      (when (eq mode-line-selected-window (get-buffer-window))
        (setq face
              (list :foreground
-                   (cond (buffer-read-only (aref ansi-color-names-vector 1))
-                         ((buffer-modified-p) (aref ansi-color-names-vector 3))
-                         (t (face-attribute 'default :foreground))))))
+                   (face-foreground
+                    (cond (buffer-read-only 'ansi-color-red)
+                          ((buffer-modified-p) 'ansi-color-yellow)
+                          (t 'default))))))
      (when (require 'vc-git nil t)
        (setq git-branch (vc-git--run-command-string
                          nil "branch" "--show-current")
@@ -1571,7 +1631,7 @@ region"
                                    (propertize
                                     (char-to-string evil-this-macro)
                                     'face `(:foreground
-                                            ,(aref ansi-color-names-vector 2))))
+                                            ,(face-foreground 'ansi-color-green))))
                          "")
                        ;; `which-function-mode'
                        (when (bound-and-true-p which-function-mode)

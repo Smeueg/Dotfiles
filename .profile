@@ -8,7 +8,7 @@ export XCURSOR_PATH=/usr/share/icons:$XDG_DATA_HOME/icons
 export XAUTHORITY="${XDG_RUNTIME_DIR}"/Xauthority
 
 # Add directories to PATH if they don't exist already
-for dir in /sbin/ "${HOME}"/.local/bin/ "${HOME}"/.local/share/cargo/bin; do
+for dir in /sbin/ "${HOME}"/.local/bin/ "${HOME}"/.local/share/cargo/bin "${HOME}"/.local/share/npm/bin; do
 	[ "${PATH##*${dir%/}*}" ] || continue
 	PATH="${dir%/}:${PATH}"
 done

@@ -6,22 +6,5 @@ Xft.hinting: 1
 Xft.antialias: 1
 Xft.rgba: rgb
 
-! herbe !
-herbe.background_color: #100B0D
-herbe.border_color: #CEA04E
-herbe.font_color: #CEA04E
-herbe.font_pattern: JetBrains Mono:size=11
-herbe.line_spacing: 8
-herbe.padding: 15
-herbe.width: 250
-herbe.border_size: 1
-herbe.pos_x: 2
-herbe.pos_y: 42
-! 0 = TOP_LEFT, 1 = TP_RIGHT, 2 = BOTTOM_LEFT, 3 = BOTTOM_RIGHT
-herbe.corner: 1
-herbe.duration: 3
-
-! sxiv !
-Sxiv.background: #100B0D
-Sxiv.foreground: #CEA04E
-Sxiv.font: JetBrains Mono:size=11
+! Cursor
+Xcursor.theme: Capitaine Cursors (Gruvbox)
