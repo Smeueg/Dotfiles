@@ -41,8 +41,9 @@
    `(fringe ((,display (:background ,base0))))
    `(highlight ((,display (:background ,base8))))
    `(region ((,display (:background ,base8))))
-   `(isearch ((,display (:background ,base3))))
-   `(lazy-highlight ((,display (:background ,base8))))
+   `(isearch ((,display (:foreground ,base0 :background ,base3 :weight bold))))
+   `(isearch-fail ((,display (:background ,base1))))
+   `(lazy-highlight ((,display (:inherit isearch :weight normal))))
    `(trailing-whitespace ((,display (:foreground ,base1 :background ,base8))))
    ;; Mode line faces
    `(mode-line ((,display (:foreground ,base8 :background ,base0 :weight bold :box (:line-width 7 :color ,base0)))))
@@ -68,6 +69,9 @@
    `(font-lock-property-face ((,display (:foreground ,base4))))
    `(font-lock-warning-face ((,display (:foreground ,base1))))
    `(show-paren-match ((,display (:foreground ,base7 :background ,base2))))
+   ;; Shell Script highlighting
+   `(sh-heredoc ((,display (:foreground ,base3 :weight bold))))
+   `(sh-quoted-exec ((,display (:foreground ,base5 :weight bold))))
    ;; Button and link faces
    `(link ((,display (:foreground ,base6 :underline t))))
    `(link-visited ((,display (:foreground ,base5 :underline t))))
