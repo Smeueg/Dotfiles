@@ -45,6 +45,8 @@
    `(isearch-fail ((,display (:background ,base1))))
    `(lazy-highlight ((,display (:inherit isearch :weight normal))))
    `(trailing-whitespace ((,display (:foreground ,base1 :background ,base8))))
+   `(whitespace-empty ((,display (:background ,base3))))
+   `(whitespace-indentation ((,display (:background ,base3))))
    ;; Mode line faces
    `(mode-line ((,display (:foreground ,base8 :background ,base0 :weight bold :box (:line-width 7 :color ,base0)))))
    `(mode-line-inactive ((,display (:foreground ,base8 :background ,base0 :weight bold :box (:line-width 7 :color ,base0)))))
@@ -69,6 +71,12 @@
    `(font-lock-property-face ((,display (:foreground ,base4))))
    `(font-lock-warning-face ((,display (:foreground ,base1))))
    `(show-paren-match ((,display (:foreground ,base7 :background ,base2))))
+   ;; Flymake & Flyspell
+   `(flymake-error ((,display (:underline ,base1))))
+   `(flymake-note ((,display (:underline ,base2))))
+   `(flymake-warning ((,display (:underline ,base3))))
+   `(flyspell-incorrect ((,display (:inherit flymake-error))))
+   `(flyspell-duplicate ((,display (:inherit flymake-warning))))
    ;; Shell Script highlighting
    `(sh-heredoc ((,display (:foreground ,base3 :weight bold))))
    `(sh-quoted-exec ((,display (:foreground ,base5 :weight bold))))
