@@ -248,6 +248,9 @@ STRING is the string to format and display to the user"
   (interactive)
   (mapc (lambda (theme) (load-theme theme t)) custom-enabled-themes))
 
+(defvar emacs-bin-dir (concat (file-name-directory user-init-file) "bin/")
+  "A directory to put binaries specifically for emacs")
+
 
 ;;; HOOKS
 (add-hook 'buffer-list-update-hook ;; Always have `*scratch*' ready to go
@@ -409,10 +412,7 @@ region"
               right-margin-width 1)
 (add-to-list 'fringe-indicator-alist '(truncation nil right-arrow))
 (use-package whitespace
-  :hook (prog-mode-hook . whitespace-mode)
   :init
-  (let ((turn-off-whitespace-mode (lambda () (whitespace-mode -1))))
-    (add-hook 'html-mode-hook turn-off-whitespace-mode))
   (setq whitespace-style '(face lines-tail empty)
         whitespace-line-column 80))
 
@@ -1138,7 +1138,6 @@ region"
   :hook (before-save-hook . whitespace-cleanup)
   :init
   (setq require-final-newline t)
-  (add-to-list 'exec-path (concat (file-name-directory user-init-file) "bin"))
   (defun find-file-config ()
     "Open `user-init-file'"
     (interactive)
@@ -1236,12 +1235,31 @@ region"
                         (eglot-booster-mode))))
   :init
   (setq eglot-autoshutdown t)
+  (add-to-list 'exec-path emacs-bin-dir)
+
+  (defun install--bin-tar (url name relative-path)
+    "Installs a tarball as a binary locally for Emacs"
+    (unless (executable-find "tar") (error "Command `tar' not found"))
+    (let* ((directory (format "%s/%s-dir" emacs-bin-dir name))
+           (tar-path (format "%s.tar.gz" directory))
+           (bin-path (format "%s/%s" emacs-bin-dir name)))
+      (unless (file-directory-p directory) (make-directory directory t))
+      (url-copy-file url tar-path)
+      (shell-command (format "tar xf %s -C %s" tar-path directory))
+      (delete-file tar-path)
+      (write-region (format "#!/bin/sh\nexec '%s/bin/%s' \"$@\"" directory name) nil bin-path)
+      ;; Make buffer executable
+      (let* ((current-mode (file-modes bin-path))
+             (add-mode (logand ?\111 (default-file-modes))))
+        (or (/= (logand ?\111 current-mode) 0)
+            (zerop add-mode)
+            (set-file-modes bin-path
+                            (logior current-mode add-mode))))))
 
   (defun install/emacs-lsp-booster ()
     (interactive)
     "Installs `emacs-lsp-booster' from https://github.com/blahgeek/emacs-lsp-booster"
     (let* ((api-url "https://api.github.com/repos/blahgeek/emacs-lsp-booster/releases/latest")
-           (dir-path (concat (file-name-directory user-init-file) "bin/"))
            (regex (cond
                    ((eq system-type 'gnu/linux) "-unknown-linux-musl\\.zip$")
                    ((eq system-type 'darwin) "-apple-darwin\\.zip$")
@@ -1252,12 +1270,53 @@ region"
                       (gethash "browser_download_url"
                                (seq-find (lambda (release)
                                            (string-match-p regex (gethash "browser_download_url" release)))
-                                         (gethash "assets" (json-parse-string (buffer-substring-no-properties (point) (point-max)))))))))
-      (unless (file-directory-p dir-path)
-        (make-directory dir-path))
-      (url-copy-file exe-url (concat dir-path "emacs-lsp-booster.zip"))
-      (shell-command (format "unzip %semacs-lsp-booster.zip" dir-path))
-      (delete-file (concat dir-path "emacs-lsp-booster.zip"))))
+                                         (gethash "assets" (json-parse-buffer)))))))
+      (unless (file-directory-p emacs-bin-dir)
+        (make-directory emacs-bin-dir))
+      (url-copy-file exe-url (concat emacs-bin-dir "emacs-lsp-booster.zip"))
+      (shell-command (format "unzip %semacs-lsp-booster.zip" emacs-bin-dir))
+      (delete-file (concat emacs-bin-dir "emacs-lsp-booster.zip"))))
+
+  (defun lsp-install/jdtls ()
+    "Installs the latest version of `jdtls' from http://download.eclipse.org/jdtls/milestones/"
+    (interactive)
+    (let ((jdtls-dir (format "%s/jdt-language-server" emacs-bin-dir))
+          (tar-path (format "%s/jdtls.tar.gz" emacs-bin-dir))
+          (bin-path (format "%s/jdtls" emacs-bin-dir))
+          (main-repo-url "https://download.eclipse.org/jdtls/milestones/")
+          (latest-version nil))
+      (unless (file-directory-p jdtls-dir) (make-directory jdtls-dir t))
+      (with-current-buffer (url-retrieve-synchronously main-repo-url nil t)
+        (goto-char (point-min))
+        (while (re-search-forward "/jdtls/milestones/[0-9]+\.[0-9]+\.[0-9]+" nil t)
+          (let* ((string (buffer-substring-no-properties (save-excursion (search-backward "/")) (point)))
+                 (version (save-match-data
+                            (string-match "\\([0-9]+\.[0-9]+\.[0-9]+\\)" string)
+                            (match-string 1 string))))
+            (when (or (not latest-version) (version< latest-version version))
+              (setq latest-version version))))
+        (with-current-buffer (url-retrieve-synchronously (format "https://download.eclipse.org/jdtls/milestones/%s/" latest-version))
+          (goto-char (point-min))
+          (search-forward ".tar.gz'")
+          (install--bin-tar (buffer-substring-no-properties (save-excursion (search-backward "https")) (- (point) 1))
+                            "jdtls"
+                            "bin/jdtls")))))
+
+  (defun lsp-install/lua-language-server ()
+    "Installs the latest release of `lua-language-server'"
+    (interactive)
+    (let ((api-url "https://api.github.com/repos/LuaLS/lua-language-server/releases/latest")
+          (regex (cond ((eq system-type 'gnu/linux) "-linux-x64\\.tar\\.gz")
+                       ((eq system-type 'darwin) "-darwin-x64\\.tar\\.gz"))))
+      (with-current-buffer (url-retrieve-synchronously api-url)
+        (goto-char (point-max))
+        (beginning-of-line)
+        (install--bin-tar (gethash "browser_download_url"
+                                   (seq-find (lambda (release)
+                                               (string-match-p regex (gethash "browser_download_url" release)))
+                                             (gethash "assets" (json-parse-buffer))))
+                          "lua-language-server"
+                          "bin/lua-language-server"))))
 
   (defun eglot-toggle ()
     "Turn eglot either on or off"
