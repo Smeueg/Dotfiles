@@ -14,6 +14,7 @@
    'default-dark
    ;; Base faces
    `(default ((,display (:foreground ,base7 :background ,base0))))
+   `(shadow ((,display (:foreground ,base8))))
    `(cursor ((,display (:background ,base7))))
    `(italic ((,display (:underline nil :slant italic))))
    `(window-divider ((,display (:foreground ,base8))))
@@ -90,6 +91,9 @@
    ;; Headerline
    `(header-line ((,display (:background ,base0 :weight bold))))
    ;; Dired
-   `(dired-broken-symlink ((,display (:foreground ,base3 :background ,base1 :weight bold))))))
+   `(dired-broken-symlink ((,display (:foreground ,base3 :background ,base1 :weight bold))))
+   ;; Marginalia
+   `(marginalia-documentation ((,display (:foreground ,base7 :slant italic))))))
+
 
 (provide-theme 'default-dark)
