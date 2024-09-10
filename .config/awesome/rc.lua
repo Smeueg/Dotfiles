@@ -420,6 +420,10 @@ local clientkeys = gears.table.join(
 	awful.key(
 		{ modkey }, "o", function(c) c:move_to_screen() end,
 		{ group = "Client", description = "Move client to the current screen" }
+	),
+	awful.key(
+		{ modkey, "Shift" }, "t", function(c) c.ontop = not c.ontop end,
+		{ group = "Client", description = "Toggle ontop for the client" }
 	)
 )
 
