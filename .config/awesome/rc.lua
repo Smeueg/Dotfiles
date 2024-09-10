@@ -148,6 +148,7 @@ table.map(
 	{
 		"setxkbmap -option keypad:pointerkeys -option compose:paus",
 		"xrandr --output DP1 --mode 1280x1024 --scale 1.3x1.3",
+		"xsetroot -cursor_name left_ptr",
 		"xset r rate 250 50 s off -dpms", -- Set keyboard rate and disable dpms
 		"xset b off" -- Disable "beep" noises
 	},
