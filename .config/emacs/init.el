@@ -376,6 +376,7 @@ region"
     (kbd "M-j") #'evil-scroll-line-down
     (kbd "M-k") #'evil-scroll-line-up
     (kbd "<leader>d") #'dired
+    (kbd "<leader>D") #'dired-home
     (kbd "<leader>b") #'switch-to-buffer
     (kbd "<leader>h") #'help
     (kbd "<leader>sL") #'global-display-line-numbers-mode
@@ -788,6 +789,11 @@ region"
           (dired-unmark 1)
         (dired-mark 1)))
     (dired-next-line 1))
+
+  (defun dired-home ()
+    "Open dired at \"~\""
+    (interactive)
+    (dired "~"))
 
   (defun dirvish-cd (directory)
     "Open a different directory immediately in dirvish"
