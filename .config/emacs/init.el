@@ -311,6 +311,7 @@ region"
         (evil-search string t t))))
   :config
   (evil-set-leader 'motion (kbd "SPC"))
+  (delete 'magit-diff-mode evil-emacs-state-modes)
   (add-to-list 'evil-emacs-state-modes 'dired-mode)
   (add-hook 'evil-jumps-post-jump-hook
             (lambda () (call-interactively #'evil-scroll-line-to-center)))
