@@ -116,10 +116,9 @@
          (sh-mode (:cmd ,file)
                   (:func executable-make-buffer-file-executable-if-script-p))
          (emacs-lisp-mode (:func ,(lambda ()
-                                    (if mark-active
-                                        (call-interactively #'eval-region)
-                                      (call-interactively #'eval-defun)))))))
-
+                                    (call-interactively (if mark-active
+                                                            #'eval-region
+                                                          #'eval-defun)))))))
       (setq chosen (cdr
                     (assoc
                      (intern-soft
@@ -439,7 +438,7 @@ region"
           (let ((tab-face (funcall tab-bar-tab-face-function tab))
                 (close-color (face-foreground 'ansi-color-red)))
             (concat
-             (propertize (format " %s" (alist-get 'name tab)) 'face tab-face)
+             (concat " " (propertize (alist-get 'name tab) 'face tab-face))
              (propertize " ⤫ "
                          'close-tab t
                          'face (list :weight 'bold
