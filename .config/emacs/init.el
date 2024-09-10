@@ -1248,7 +1248,7 @@ region"
       (shell-command (format "tar xf %s -C %s" tar-path directory))
       (delete-file tar-path)
       (write-region (format "#!/bin/sh\nexec '%s/bin/%s' \"$@\"" directory name) nil bin-path)
-      ;; Make buffer executable
+      ;; Make file executable
       (let* ((current-mode (file-modes bin-path))
              (add-mode (logand ?\111 (default-file-modes))))
         (or (/= (logand ?\111 current-mode) 0)
@@ -1256,9 +1256,37 @@ region"
             (set-file-modes bin-path
                             (logior current-mode add-mode))))))
 
+  (defun install--archive (url name relative-path)
+    "Installs an archive as a binary locally for Emacs"
+    (let* ((unarchive-cmd (if (string-suffix-p ".zip" url) 'unzip 'tar))
+           (binary-path (format "%s/%s" emacs-bin-dir name))
+           (directory-path (format "%s-dir" emacs-bin-dir))
+           (archive-path (format "%s.%s" binary-path
+                                 (if (eq unarchive-cmd 'unzip)
+                                     "zip" "tar.gz"))))
+      (unless (file-directory-p directory-path)
+        (make-directory directory-path t))
+      (unless (executable-find (symbol-name unarchive-cmd))
+        (error (format "unable to find command `%s'" (symbol-name unarchive-cmd))))
+      (url-copy-file url archive-path)
+      (shell-command (format (if (eq unarchive-cmd 'zip)
+                                 "unzip %s -d %s"
+                               "tar xf %s -C %s")
+                             archive-path directory-path))
+      (delete-file archive-path)
+      (write-region (format "#!/bin/sh\nexec '%s/%s' \"$@\"" directory-path relative-path)
+                    nil binary-path)
+      ;; Make file executable
+      (let* ((current-mode (file-modes binary-path))
+             (add-mode (logand ?\111 (default-file-modes))))
+        (or (/= (logand ?\111 current-mode) 0)
+            (zerop add-mode)
+            (set-file-modes binary-path
+                            (logior current-mode add-mode))))))
+
   (defun install/emacs-lsp-booster ()
-    (interactive)
     "Installs `emacs-lsp-booster' from https://github.com/blahgeek/emacs-lsp-booster"
+    (interactive)
     (let* ((api-url "https://api.github.com/repos/blahgeek/emacs-lsp-booster/releases/latest")
            (regex (cond
                    ((eq system-type 'gnu/linux) "-unknown-linux-musl\\.zip$")
@@ -1271,11 +1299,7 @@ region"
                                (seq-find (lambda (release)
                                            (string-match-p regex (gethash "browser_download_url" release)))
                                          (gethash "assets" (json-parse-buffer)))))))
-      (unless (file-directory-p emacs-bin-dir)
-        (make-directory emacs-bin-dir))
-      (url-copy-file exe-url (concat emacs-bin-dir "emacs-lsp-booster.zip"))
-      (shell-command (format "unzip %semacs-lsp-booster.zip" emacs-bin-dir))
-      (delete-file (concat emacs-bin-dir "emacs-lsp-booster.zip"))))
+      (install--archive exe-url "emacs-lsp-booster" "emacs-lsp-booster")))
 
   (defun lsp-install/jdtls ()
     "Installs the latest version of `jdtls' from http://download.eclipse.org/jdtls/milestones/"
@@ -1298,7 +1322,7 @@ region"
         (with-current-buffer (url-retrieve-synchronously (format "https://download.eclipse.org/jdtls/milestones/%s/" latest-version))
           (goto-char (point-min))
           (search-forward ".tar.gz'")
-          (install--bin-tar (buffer-substring-no-properties (save-excursion (search-backward "https")) (- (point) 1))
+          (install--archive (buffer-substring-no-properties (save-excursion (search-backward "https")) (- (point) 1))
                             "jdtls"
                             "bin/jdtls")))))
 
@@ -1311,7 +1335,7 @@ region"
       (with-current-buffer (url-retrieve-synchronously api-url)
         (goto-char (point-max))
         (beginning-of-line)
-        (install--bin-tar (gethash "browser_download_url"
+        (install--archive (gethash "browser_download_url"
                                    (seq-find (lambda (release)
                                                (string-match-p regex (gethash "browser_download_url" release)))
                                              (gethash "assets" (json-parse-buffer))))
