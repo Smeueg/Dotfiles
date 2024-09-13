@@ -10,6 +10,7 @@
 local dbus = require("system.dbus")
 local naughty = require("naughty")
 local Gio = require("lgi").Gio
+local beautiful = require("beautiful")
 
 local GlobalTimeNotification
 local GlobalLowBatNotification
@@ -62,13 +63,15 @@ function BatInfo:notify_when_low(threshold)
 	if self.percentage <= threshold and self.state == upower.state.DISCHARGING then
 		GlobalLowBatNotification = naughty.notify {
 			title = "Warning",
-			text = string.format("Your battery is at %d%%", self.percentage)
+			text = string.format("Your battery is at %d%%", self.percentage),
+			fg = beautiful.notification_error
 		}
 	elseif GlobalLowBatNotification then
 		naughty.destroy(GlobalLowBatNotification, nil)
 		GlobalLowBatNotification = nil
 	end
 end
+
 
 --- Sends a notification of the battery's progress,
 --- could either be the time till it's full or the time till it's empty

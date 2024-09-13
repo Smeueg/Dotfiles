@@ -7,9 +7,9 @@
 --- Relevant Documentation:
 --- * https://www.cairographics.org/tutorial/
 --------------------------------------------------------------------------------
+local beautiful = require("beautiful")
 local cairo = require("lgi").cairo
 local gears = require("gears")
-local beautiful = require("beautiful")
 local shape = gears.shape
 local icon_color = gears.color(beautiful.icon_color)
 local icon_color2 = gears.color(beautiful.fg_normal)
@@ -171,7 +171,7 @@ do
 	cr:set_source(icon_color)
 	shape.transform(shape.circle):translate(4, 4)(cr, 32, 32)
 	cr:fill()
-	cr:set_operator(cr, cairo.Operator.clear)
+	cr:set_operator(cr, cairo.Operator.CLEAR)
 	shape.transform(shape.circle):translate(0, 0)(cr, 24, 24)
 	cr:fill()
 end
@@ -199,6 +199,30 @@ do
 		:translate(16, 15)(cr, 14, 2)
 	shape.transform(shape.rounded_rect)
 		:translate(17, 6)(cr, 6, 4, 2)
+	cr:fill()
+end
+
+--- Brightness
+do
+	module.brightness, cr = icon_create()
+	cr:set_source(icon_color)
+	cr:set_line_width(2)
+	cr:move_to(20, 5)
+	cr:line_to(20, 35)
+	cr:move_to(5, 20)
+	cr:line_to(35, 20)
+	cr:move_to(10, 10)
+	cr:line_to(30, 30)
+	cr:move_to(30, 10)
+	cr:line_to(10, 30)
+	cr:stroke()
+	cr:set_operator(cairo.Operator.CLEAR)
+	shape.transform(shape.circle)
+		:translate(10, 10)(cr, 20, 20)
+	cr:fill()
+	cr:set_operator(cairo.Operator.ADD)
+	shape.transform(shape.circle)
+		:translate(13, 13)(cr, 14, 14)
 	cr:fill()
 end
 

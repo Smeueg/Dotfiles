@@ -11,9 +11,24 @@ local gears = require("gears")
 --- Only spawn the command if it is installed. Else, notify the user
 ---@param command string The command to run
 function awful.spawn.if_installed(command)
+		local bin = command:match("^[^ ]+")
+		if gears.filesystem.get_command_path(bin) then
+		awful.spawn(command, false)
+	else
+		notify {
+			title = "WARNING",
+			text = string.format("'%s' isn't installed", bin)
+		}
+	end
+end
+
+--- Only spawn the command if it is installed. Else, notify the user
+---@param command string The command to run
+---@param callback function The callback to run
+function awful.spawn.if_installed_easy_async(command, callback)
 	local bin = command:match("^[^ ]+")
 	if gears.filesystem.get_command_path(bin) then
-		awful.spawn(command, false)
+		awful.spawn.easy_async(command, callback)
 	else
 		notify {
 			title = "WARNING",

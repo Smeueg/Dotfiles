@@ -8,9 +8,12 @@
 --- * brightnessctl(1)
 --------------------------------------------------------------------------------
 local awful = require("awful")
+local brightness_notification = require("ui.popup.brightness_notification")
 
 local brightness = {}
 
+--- Change the current brightness of the screen with `brightnessctl`
+---@param v number The number used to decrement the brightness 
 function brightness.modify(v)
 	-- Type Check
 	assert(type(v) == "number" and v % 1 == 0, "modify(v) expects an integer")
@@ -22,7 +25,10 @@ function brightness.modify(v)
 		value_string = string.format("%d%%-", v * -1)
 	end
 
-	awful.spawn.if_installed("brightnessctl set " .. value_string)
+	awful.spawn.if_installed_easy_async(
+        "brightnessctl set " .. value_string,
+		brightness_notification
+	)
 end
 
 return brightness

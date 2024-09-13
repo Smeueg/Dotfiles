@@ -27,8 +27,6 @@ local dpi = beautiful.xresources.apply_dpi
 local notify = naughty.notify
 local cairo = lgi.cairo
 local Gio = lgi.Gio
-local pulseaudio = require("system.pulseaudio")
-local brightness = require("system.brightness")
 -- Error Handling --
 do
 	local in_error = false
@@ -90,8 +88,8 @@ do
 	-- Windows
 	settings.useless_gap = dpi(10)
 	settings.border_width = dpi(2)
-	settings.border_focus = colors.accent
-	settings.border_normal = settings.wallpaper
+	settings.border_focus = colors.white
+	settings.border_normal = colors.accent
 	-- Titlebar
 	settings.titlebar_bg = colors.black_brighter
 	settings.titlebar_btn_max = colors.green
@@ -108,7 +106,11 @@ do
 	-- Notifications
 	settings.notification_border_color = settings.border_focus
 	settings.notification_shape = nil
+	settings.notification_error = colors.red
 	naughty.config.spacing = dpi(5)
+	-- Brightness Notification
+	settings.brightness_notification_icon_size = dpi(50)
+	settings.brightness_notification_delay = 0.5
 	-- Tags
 	settings.tag_amount = 3
 	settings.taglist_fg_focus = colors.white
@@ -137,6 +139,8 @@ do
 	root.cursor("left_ptr")
 end
 
+local pulseaudio = require("system.pulseaudio")
+local brightness = require("system.brightness")
 local screenshot_popup = require("ui.popup.screenshot")
 local dashboard_popup = require("ui.popup.dashboard")
 local widgets = require("ui.widgets")
@@ -148,6 +152,7 @@ table.map(
 	{
 		"setxkbmap -option keypad:pointerkeys -option compose:paus",
 		"xrandr --output DP1 --mode 1280x1024 --scale 1.3x1.3",
+		"xrdb ~/.config/X11/Xresources",
 		"xsetroot -cursor_name left_ptr",
 		"xset r rate 250 50 s off -dpms", -- Set keyboard rate and disable dpms
 		"xset b off" -- Disable "beep" noises
@@ -331,18 +336,34 @@ local globalkeys = gears.table.join(
 	-- Brightness
 	awful.key(
 		{}, "XF86MonBrightnessUp",
-		function() brightness.modify(1) end,
+		function() brightness.modify(5) end,
 		{
 			group = "Brightness",
-			description = "Increase the screen's brightness"
+			description = "Increase the screen's brightness by 5%"
 		}
 	),
 	awful.key(
 		{}, "XF86MonBrightnessDown",
+		function() brightness.modify(-5) end,
+		{
+			group = "Brightness",
+			description = "Decrease the screen's brightness by 5%"
+		}
+	),
+	awful.key(
+		{ "Control" }, "XF86MonBrightnessUp",
+		function() brightness.modify(1) end,
+		{
+			group = "Brightness",
+			description = "Increase the screen's brightness by 1%"
+		}
+	),
+	awful.key(
+		{ "Control" }, "XF86MonBrightnessDown",
 		function() brightness.modify(-1) end,
 		{
 			group = "Brightness",
-			description = "Decrease the screen's brightness"
+			description = "Decrease the screen's brightness by 1%"
 		}
 	),
 	-- Screenshot
