@@ -397,7 +397,7 @@ region"
 (blink-cursor-mode 0)
 (tool-bar-mode 0)
 (tooltip-mode 0)
-(fringe-mode 3)
+(when (fboundp 'fringe-mode) (fringe-mode 3))
 (show-paren-mode 1)
 (set-window-buffer nil (current-buffer))
 (setq ring-bell-function #'ignore
@@ -1143,7 +1143,9 @@ region"
 (use-package files
   :hook (before-save-hook . whitespace-cleanup)
   :init
-  (setq require-final-newline t)
+  (setq require-final-newline t
+        major-mode-remap-alist '((java-mode . java-ts-mode)))
+
   (defun find-file-config ()
     "Open `user-init-file'"
     (interactive)
@@ -1177,6 +1179,10 @@ region"
   :init
   (global-eldoc-mode 0)
   (setq eldoc-echo-area-use-multiline-p t))
+
+(use-package newcomment
+  :init
+  (global-unset-key (kbd "M-;")))
 
 
 ;;; ORG
@@ -1217,19 +1223,7 @@ region"
 
 
 ;;; PROGRAMMING
-(use-package conf-mode
-  :config
-  (add-hook 'conf-desktop-mode-hook
-            (lambda ()
-              (when (= (buffer-size) 0)
-                (insert "[Desktop Entry]\n"
-                        "Encoding=UTF-8\n"
-                        "Version=1.0\n"
-                        "Type=Application\n"
-                        "Terminal=false\n"
-                        "Name=\n"
-                        "Icon=\n"
-                        "Exec=")))))
+(use-package conf-mode :config (add-hook 'conf-desktop-mode-hook (lambda () (when (= (buffer-size) 0) (insert "[Desktop Entry]\n" "Encoding=UTF-8\n" "Version=1.0\n" "Type=Application\n" "Terminal=false\n" "Name=\n" "Icon=\n" "Exec=")))))
 
 (use-package eglot
   :ensure t
@@ -1421,31 +1415,32 @@ region"
       (evil-define-key 'normal 'flymake-mode
         (kbd "<leader>ii") #'consult-flymake)))
   :config
-  (let ((v [#b00000000
-            #b11000000
-            #b11000000
-            #b11000000
-            #b11000000
-            #b11000000
-            #b11000000
-            #b11000000
-            #b11000000
-            #b11000000
-            #b11000000
-            #b11000000
-            #b11000000
-            #b11000000
-            #b11000000
-            #b00000000]))
-    (define-fringe-bitmap 'bar-error v) ;; nil nil 'center
-    (define-fringe-bitmap 'bar-warning v)
-    (define-fringe-bitmap 'bar-note v)
-    (set-fringe-bitmap-face 'bar-error 'font-lock-keyword-face)
-    (set-fringe-bitmap-face 'bar-warning 'font-lock-function-name-face)
-    (set-fringe-bitmap-face 'bar-note 'font-lock-doc-face)
-    (setq flymake-error-bitmap 'bar-error
-          flymake-warning-bitmap 'bar-warning
-          flymake-note-bitmap 'bar-note)))
+  (when (display-graphic-p)
+    (let ((v [#b00000000
+              #b11000000
+              #b11000000
+              #b11000000
+              #b11000000
+              #b11000000
+              #b11000000
+              #b11000000
+              #b11000000
+              #b11000000
+              #b11000000
+              #b11000000
+              #b11000000
+              #b11000000
+              #b11000000
+              #b00000000]))
+      (define-fringe-bitmap 'bar-error v) ;; nil nil 'center
+      (define-fringe-bitmap 'bar-warning v)
+      (define-fringe-bitmap 'bar-note v)
+      (set-fringe-bitmap-face 'bar-error 'font-lock-keyword-face)
+      (set-fringe-bitmap-face 'bar-warning 'font-lock-function-name-face)
+      (set-fringe-bitmap-face 'bar-note 'font-lock-doc-face)
+      (setq flymake-error-bitmap 'bar-error
+            flymake-warning-bitmap 'bar-warning
+            flymake-note-bitmap 'bar-note))))
 
 (use-package flymake-shellcheck
   :ensure t
