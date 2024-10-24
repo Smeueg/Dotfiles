@@ -146,23 +146,22 @@
   "Resize a window interactively"
   (interactive)
   (if (length> (window-list) 1)
-      (while (length> (window-list) 1)
-        (message
-         (concat
-          (propertize "──── Resize Window Mode ────\n" 'face
-                      (list :foreground (aref ansi-color-names-vector 3)))
-          "h:\t Shrink Window Horizontally\n"
-          "j:\t Shrink Window Vertically\n"
-          "k:\t Enlarge Window Vertically\n"
-          "l:\t Enlarge Window Horizontally\n"
-          "C-g: Quit"))
-        (let ((key (read-key)))
-          (cond
-           ((equal key ?h) (call-interactively 'shrink-window-horizontally))
-           ((equal key ?j) (call-interactively 'shrink-window))
-           ((equal key ?k) (call-interactively 'enlarge-window))
-           ((equal key ?l) (call-interactively 'enlarge-window-horizontally))
-           ((equal key ?\C-g) (keyboard-quit) (message "")))))
+      (let ((message (concat
+                      (propertize "──── Resize Window Mode ────\n" 'face `(:foreground ,(face-foreground 'ansi-color-yellow)))
+                      "h:\t Shrink Window Horizontally\n"
+                      "j:\t Shrink Window Vertically\n"
+                      "k:\t Enlarge Window Vertically\n"
+                      "l:\t Enlarge Window Horizontally\n"
+                      "C-g: Quit")))
+        (while t
+          (message message)
+          (let ((key (read-key)))
+            (cond
+             ((equal key ?h) (call-interactively 'shrink-window-horizontally))
+             ((equal key ?j) (call-interactively 'shrink-window))
+             ((equal key ?k) (call-interactively 'enlarge-window))
+             ((equal key ?l) (call-interactively 'enlarge-window-horizontally))
+             ((equal key ?\C-g) (keyboard-quit) (message ""))))))
     (message "Won't resize ONLY window")))
 
 (defun define-key-convenient (mode-map key fn &rest args)
@@ -412,6 +411,7 @@ region"
               left-margin-width 1
               right-margin-width 1)
 (add-to-list 'fringe-indicator-alist '(truncation nil right-arrow))
+
 (use-package whitespace
   :init
   (setq whitespace-style '(face lines-tail empty)
@@ -467,130 +467,10 @@ region"
   (setq underline-minimum-offset 3)
   (load-theme 'default-dark t))
 
-(use-package gruvbox-theme
-  :ensure t
-  :if (display-graphic-p)
-  :demand t
-  :disabled t
+(use-package disp-table
   :init
-  (setq underline-minimum-offset 3)
-  (load-theme 'gruvbox-dark-soft t)
-  :config
-  (let ((bg-darker (color-darken-name (face-background 'default) 10)))
-    (set-face-attribute 'link nil
-                        :foreground (aref ansi-color-names-vector 4)
-                        :overline nil
-                        :underline t)
-    (set-face-attribute 'link-visited nil
-                        :foreground (aref ansi-color-names-vector 5))
-    (set-face-attribute 'window-divider nil
-                        :foreground (face-attribute 'vertical-border :foreground))
-    (set-face-attribute 'highlight nil
-                        :background bg-darker)
-    (set-face-attribute 'internal-border nil
-		                :background (face-attribute 'default :background))
-    (set-face-attribute 'line-number nil
-		                :background (face-attribute 'default :background))
-    (set-face-attribute 'line-number-current-line nil
-                        :weight 'bold
-                        :background (face-attribute 'default :background))
-    (set-face-attribute 'mode-line nil
-                        :foreground (face-attribute 'mode-line :background)
-                        :background
-                        (face-attribute 'default :background)
-                        :weight 'bold
-                        :box
-                        (list :line-width 7 :color
-                              (face-attribute 'default :background)))
-    (set-face-attribute 'mode-line-inactive nil
-                        :foreground (face-attribute 'ansi-color-black :foreground)
-                        :background (face-attribute 'default :background)
-                        :box
-                        (face-attribute 'mode-line :box))
-    ;; Tab Bar
-    (set-face-attribute 'tab-bar nil
-                        :foreground (face-foreground 'default)
-                        :background bg-darker
-                        :box
-                        `(:line-width 7 :color ,bg-darker))
-    (set-face-attribute 'tab-bar-tab nil
-                        :weight 'bold
-                        :foreground (face-foreground 'tab-bar)
-                        :background (face-background 'default)
-                        :box
-                        `(:line-width 7 :color ,(face-background 'default)))
-    (set-face-attribute 'tab-bar-tab-inactive nil
-                        :weight 'bold
-                        :foreground
-                        (face-attribute 'ansi-color-black :foreground)
-                        :background
-                        (face-attribute 'tab-bar :background))
-    (set-face-attribute 'header-line nil
-                        :box
-                        (list :line-width 5 :color
-                              (face-attribute 'header-line :background)))
-    ;; xref
-    (eval-after-load 'xref
-      `(set-face-attribute 'xref-match 'nil
-                           :background ,bg-darker
-                           :box '(:line-width 7 :color ,bg-darker)))
-    
-    
-    ;; Dired
-    (with-eval-after-load 'dired
-      (set-face-attribute 'dired-symlink nil
-                          :foreground (aref ansi-color-names-vector 6))
-      (add-to-list 'dired-font-lock-keywords ;; Recolor executables in dired
-                   (list dired-re-exe
-                         '(".+" (dired-move-to-filename) nil
-                           (0 `(:foreground ,(aref ansi-color-names-vector 2)))))
-                   'append))
-    (with-eval-after-load 'info
-      (set-face-attribute 'info-node nil
-                          :foreground (aref ansi-color-names-vector 3))
-      (set-face-attribute 'info-menu-star nil
-                          :foreground (aref ansi-color-names-vector 1))
-      (set-face-attribute 'Info-quoted nil
-                          :italic t
-                          :foreground (aref ansi-color-names-vector 5))
-      (set-face-attribute 'fixed-pitch-serif nil
-                          :family
-                          (face-attribute 'default :family)))
-    (setq hl-todo-keyword-faces
-          `(("TODO" . ,(aref ansi-color-names-vector 5))))
-    (set-face-attribute 'variable-pitch nil
-                        :font "JetBrainsMono Nerd Font Mono")
-    (add-hook 'eww-mode-hook
-              (lambda ()
-                (set-face-attribute
-                 'eww-form-submit nil
-                 :font "JetBrainsMono Nerd Font Mono"
-                 :foreground (face-attribute 'default :foreground)
-                 :background (face-attribute 'mode-line :background)
-                 :box
-                 (list
-                  :line-width 5
-                  :color (face-attribute 'mode-line :background)
-                  :style nil))
-                (set-face-attribute
-                 'eww-form-text nil
-                 :background (face-attribute 'header-line :background)
-                 :box
-                 (list :line-width 2 :color (aref ansi-color-names-vector 3)))))
-
-    (add-hook
-     'flymake-mode-hook
-     (lambda ()
-       (set-face-attribute
-        'flymake-error nil
-        :underline (face-attribute 'error :foreground))
-       (set-face-attribute
-        'flymake-note nil
-        :underline (face-attribute 'font-lock-doc-face :foreground))
-       (set-face-attribute
-        'flymake-warning nil :underline
-        (face-attribute 'font-lock-function-name-face :foreground))))))
-
+  ;; Set the split separator as a continuous line in `no-window' mode
+  (set-display-table-slot standard-display-table 'vertical-border (make-glyph-code ?┃)))
 
 
 
@@ -642,8 +522,7 @@ region"
                     (message
                      (concat
                       (propertize "──── Buffer is Modified ────\n" 'face
-                                  (list :foreground
-                                        (aref ansi-color-names-vector 3)))
+                                  `(:foreground ,(face-foreground 'ansi-color-green)))
                       "s:\t Save and Kill\n"
                       "k:\t Kill anyway\n"
                       "C-g: Cancel"))
@@ -731,9 +610,9 @@ region"
 
 (use-package nerd-icons-completion
   :ensure t
-  :hook (marginalia-mode-hook . nerd-icons-completion-marginalia-setup)
-  :config
-  (nerd-icons-completion-mode))
+  :hook
+  (marginalia-mode-hook . nerd-icons-completion-marginalia-setup)
+  (after-init-hook . nerd-icons-completion-mode))
 
 (use-package nerd-icons-ibuffer
   :ensure t
@@ -749,7 +628,7 @@ region"
 (use-package dirvish
   :ensure t
   :hook
-  (dirvish-setup-hook . #'dirvish-emerge-mode)
+  (dirvish-setup-hook . dirvish-emerge-mode)
   (dired-mode-hook . (lambda () (setq-local whitespace-style nil)))
   ((dirvish-find-entry-hook dirvish-directory-view-mode-hook) .
    (lambda (&rest _) (setq truncate-lines t)))
@@ -827,8 +706,7 @@ region"
 
 (use-package which-key
   :ensure t
-  :hook
-  (after-init-hook . which-key-mode)
+  :hook (after-init-hook . which-key-mode)
   :init
   (setq which-key-idle-delay 0.25
         which-key-sort-order 'which-key-prefix-then-key-order)
@@ -987,7 +865,6 @@ region"
                             (eat-char-mode))
                           nil t)))
     (define-key-convenient eat-char-mode-map
-                           [escape] #'eat-self-input
                            [paste] (lambda () (interactive)
                                      (eat-term-send-string-as-yank
                                       eat-terminal
@@ -1061,43 +938,6 @@ region"
            (push (format "GIT_WORK_TREE=%s" (expand-file-name work-tree)) env)
            (push (format "GIT_DIR=%s" (expand-file-name bare-repo)) env))))
      env)))
-
-(use-package magit-todos
-  :ensure t
-  :disabled t
-  :init
-  (with-eval-after-load 'magit (magit-todos-mode))
-  :config
-  (magit-todos-defscanner "git grep bare"
-    :test
-    (and (string-match "--erl-regexp"
-                       (shell-command-to-string
-                        "git grep --magit-todos-testing-git-grep")))
-    :command (list "git"
-                   (format "--git-dir=%s" (expand-file-name "~/.local/dots"))
-                   (format "--work-tree=%s" (expand-file-name "~"))
-                   "--no-pager" "grep" "--full-name" "--no-color" "-n"
-                   (when depth (list "--max-depth" depth))
-                   (when magit-todos-ignore-case "--ignore-case")
-                   "--perl-regexp"
-                   "-e" search-regexp-pcre
-                   extra-args "--" directory
-                   (when magit-todos-exclude-globs
-                     (--map (concat ":!" it)
-                            magit-todos-exclude-globs))
-                   (unless magit-todos-submodule-list
-                     (--map (list "--glob" (concat "!" it))
-                            (magit-list-module-paths)))))
-  (add-hook 'magit-mode-hook
-            (lambda ()
-              (when (and (file-directory-p "~/.local/dots")
-                         (file-in-directory-p default-directory "~")
-                         (not (vc-call-backend 'Git 'root default-directory)))
-                (setq-local magit-todos-scanner
-                            #'magit-todos--scan-with-git-grep-bare))))
-  (with-eval-after-load 'evil
-    (define-key magit-todos-section-map "j" #'evil-next-line)
-    (define-key magit-todos-item-section-map "j" #'evil-next-line)))
 
 
 ;;; BUILTIN
@@ -1223,7 +1063,18 @@ region"
 
 
 ;;; PROGRAMMING
-(use-package conf-mode :config (add-hook 'conf-desktop-mode-hook (lambda () (when (= (buffer-size) 0) (insert "[Desktop Entry]\n" "Encoding=UTF-8\n" "Version=1.0\n" "Type=Application\n" "Terminal=false\n" "Name=\n" "Icon=\n" "Exec=")))))
+(use-package conf-mode
+  :hook
+  (conf-desktop-mode-hook . (lambda ()
+                              (when (= (buffer-size) 0)
+                                (insert "[Desktop Entry]\n"
+                                        "Encoding=UTF-8\n"
+                                        "Version=1.0\n"
+                                        "Type=Application\n"
+                                        "Terminal=false\n"
+                                        "Name=\n"
+                                        "Icon=\n"
+                                        "Exec=")))))
 
 (use-package eglot
   :ensure t
@@ -1232,7 +1083,8 @@ region"
                         "Make sure eglot-booster is installed"
                         (unless (fboundp 'eglot-booster-mode)
                           (package-vc-install "https://github.com/jdtsmith/eglot-booster"))
-                        (eglot-booster-mode))))
+                        (when (executable-find "emacs-lsp-booster")
+                          (eglot-booster-mode)))))
   :init
   (setq eglot-autoshutdown t)
   (add-to-list 'exec-path emacs-bin-dir)
@@ -1526,13 +1378,10 @@ region"
     (sh-electric-here-document-mode 0)
     (indent-tabs-mode 0)
     (when (= (buffer-size) 0) (insert "#!/bin/sh\n\n")))
-  (add-hook (if (boundp 'sh-base-mode-hook) 'sh-base-mode-hook 'sh-mode-hook)
-            #'insert-shebang))
+  (add-hook 'sh-base-mode-hook #'insert-shebang))
 
 (use-package emacs-lisp
-  :init
-  (add-hook 'emacs-lisp-mode-hook
-			(lambda () (setq-local indent-tabs-mode nil))))
+  :hook (emacs-lisp-mode-hook . (lambda () (indent-tabs-mode 0))))
 
 (use-package python
   :hook
@@ -1648,18 +1497,19 @@ region"
                             `(:foreground ,color :weight 'bold))))
          (lines `(,(concat (funcall fmt (concat "GNU Emacs " emacs-version)
                                     color-bold)
-                           (funcall fmt " ── a Text Editor" color-rest))
+                           (funcall fmt " ── a Text Editor?" color-rest))
                   ,(funcall fmt (format "%s Packages Were Loaded in %ss"
                                         (length package-activated-list)
                                         (emacs-init-time "%.2f"))
                             color-rest))))
     (when window
       (with-current-buffer buffer
+        (setq-local scroll-margin 0)
         (read-only-mode 0)
         (erase-buffer)
         (let* ((width (window-width window))
                (height (window-height window))
-               (space (format (format "%%%ss" width) " "))
+               (space (format (format "%%%ss" (- width 1)) " "))
                (indent-tabs-mode nil)
                (fill-column width))
           (dotimes (_ (- height 3)) (insert space "\n"))
@@ -1668,9 +1518,12 @@ region"
           (dolist (line lines)
             (insert line)
             (center-line)
-            (insert-char (string-to-char " ") (- width (current-column)))
+            (insert-char (string-to-char " ") (- width (current-column) 1))
             (insert "\n"))
           (delete-backward-char 1))
+        (goto-char (point-min))
+        (forward-line)
+        (goto-char (+ (point) 1))
         (read-only-mode 1)))))
 
 (when (length< command-line-args 2)
