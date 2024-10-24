@@ -1089,7 +1089,8 @@ region"
                         (when (executable-find "emacs-lsp-booster")
                           (eglot-booster-mode)))))
   :init
-  (setq eglot-autoshutdown t)
+  (setq eglot-autoshutdown t
+        eglot-events-buffer-config '(:size 0 :format full))
   (add-to-list 'exec-path emacs-bin-dir)
 
   (defun install--bin-tar (url name relative-path)
