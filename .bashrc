@@ -73,7 +73,8 @@ print_prompt() {
 export PS1="\$(print_prompt)"
 
 
-# Aliases #
+# @section Aliases
+export SMEUESIC_URL="https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc"
 alias mkdir="mkdir -pv"
 alias diff="diff --color=always"
 alias less="less -r"
@@ -83,17 +84,13 @@ alias mv="mv -i"
 alias rm="rm -i"
 alias cp="cp -i"
 alias ip="ip --color=auto"
-alias dit="git --git-dir=${HOME}/.local/dots --work-tree=${HOME}"
-alias smeuesic="sh <(curl -sNL https://raw.githubusercontent.com/Smeueg/ytpl-sync/main/ytpl-sync) --url 'https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc'"
-alias ytpl="sh <(curl -sNL https://raw.githubusercontent.com/Smeueg/ytpl-sync/main/ytpl-sync)"
+alias dit='git --git-dir=${HOME}/.local/dots --work-tree=${HOME}'
 alias sudo="sudo --preserve-env=TERMINFO"
 alias protonvpn='{ [ "$(pidof nm-applet)" ] || nm-applet & } ; protonvpn-cli'
 
 
 
 # @section Custom Functions/Commands
-
-
 # @description A wrapper around `droidcam-cli` to automatically use audio
 # @noargs
 dra() {
