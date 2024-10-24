@@ -24,7 +24,7 @@ elif [ "${ZSH_NAME}" ]; then
 fi
 
 
-# Prompt #
+# @section Prompt
 # Should work on dash, bash, zsh, and ksh
 print_prompt() {
 	ret=$?
@@ -99,7 +99,7 @@ dra() {
 		return 127
 	fi
 
-	for arg in ${@}; do
+	for arg in "${@}"; do
 		if [ "${arg}" = "-a" ]; then
 			{
 				while sleep 1; do [ "$(ps -c droidcam-cli)" ] && break; done
@@ -120,7 +120,7 @@ dra() {
 		fi
 	done
 
-	droidcam-cli ${@}
+	droidcam-cli "${@}"
 }
 
 
@@ -181,9 +181,9 @@ sx() {
 # @noargs
 e() {
 	if [ "${EDITOR}" = "emacs" ] && [ "$(command -v emacsclient)" ]; then
-		emacsclient -a ${EDITOR} $@ &
+		emacsclient -a "${EDITOR}" "$@" &
 	else
-		${EDITOR} $@
+		${EDITOR} "$@"
 	fi
 }
 
@@ -229,6 +229,26 @@ rcmnt() {
 		printf "Mounted ${remote%:}\n"
 		rclone mount "${remote}" "/tmp/${remote%:}" &
 	fi
+}
+
+
+# @description Displays all the supported colors
+# @noargs
+colors() {
+    i=0
+    while [ ${i} -le 15 ]; do
+		[ $((i % 8)) -eq 1 ] && printf "\n"
+        printf '\033[48;5;%dm  \033[m' "${i}"
+        i=$((i + 1))
+    done
+
+	printf "\n"
+    while [ ${i} -le 225 ]; do
+        [ $(((i - 16) % 6)) -eq 0 ] && printf "\n"
+        printf '\033[48;5;%dm  \033[m' "${i}"
+        i=$((i + 1))
+    done
+	printf "\n"
 }
 
 
