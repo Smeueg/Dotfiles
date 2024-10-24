@@ -152,12 +152,19 @@ table.map(
 	{
 		"setxkbmap -option keypad:pointerkeys -option compose:paus",
 		"xrandr --output DP1 --mode 1280x1024 --scale 1.3x1.3",
-		"xrdb ~/.config/X11/Xresources",
-		"xsetroot -cursor_name left_ptr",
+		-- string.format("xrdb %s/.config/X11/Xresources", os.getenv("HOME")),
+		-- "xsetroot -cursor_name left_ptr",
 		"xset r rate 250 50 s off -dpms", -- Set keyboard rate and disable dpms
 		"xset b off" -- Disable "beep" noises
 	},
 	awful.spawn.if_installed
+)
+
+awful.spawn.easy_async(
+	string.format("xrdb %s/.config/X11/Xresources", os.getenv("HOME")),
+	function()
+		awful.spawn.if_installed("xsetroot -cursor_name left_ptr")
+	end
 )
 
 
