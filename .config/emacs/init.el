@@ -1024,6 +1024,9 @@ region"
   :init
   (global-unset-key (kbd "M-;")))
 
+(use-package comp
+  :hook (emacs-startup-hook . (lambda () (kill-buffer comp-async-buffer-name))))
+
 
 ;;; ORG
 (use-package org
