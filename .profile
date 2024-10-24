@@ -82,25 +82,26 @@ if [ "$(command -v simplescreenrecorder)" ]; then
 	mkdir -vp "${XDG_CONFIG_HOME}/simplescreenrecorder/"
 fi
 
-while ! [ "${DISPLAY}" ] && [ "$(command -v startx)" ]; do
-    printf "Start Xorg? [\033[32mY\033[m/\033[31mn\033[m] "
-    read response
-    case ${response} in
-        [Yy]|[Yy][Ee][Ss]|"")
-            if [ -f "${HOME}/.config/X11/xinitrc" ]; then
-                startx "${HOME}/.config/X11/xinitrc"
-            else
-                startx
-            fi
-            ;;
-        [Nn]|[Nn][Oo])
-            printf "Won't start Xorg\n"
-            break
-            ;;
-        *)
-            printf "Invalid Response"
-            ;;
-    esac
-done
+# TTY colors
+if [ "$TERM" = "linux" ]; then
+	printf "%b" \
+		   "\033]P0202020" \
+		   "\033]P1AC4142" \
+		   "\033]P290A959" \
+		   "\033]P3F4BF75" \
+		   "\033]P46A9FB5" \
+		   "\033]P5AA759F" \
+		   "\033]P675B5AA" \
+		   "\033]P7D0D0D0" \
+		   "\033]P8404040" \
+		   "\033]P9AC4142" \
+		   "\033]PA90A959" \
+		   "\033]PBF4BF75" \
+		   "\033]PC6A9FB5" \
+		   "\033]PDAA759F" \
+		   "\033]PE75B5AA" \
+		   "\033]PFF5F5F5"
+    clear #for background artifacting
+fi
 
 [ "${DISPLAY}" ] || . ${HOME}/.bashrc
