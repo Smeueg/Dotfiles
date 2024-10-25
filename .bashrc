@@ -133,8 +133,8 @@ e() {
 colors() {
     i=0
     while [ ${i} -le 15 ]; do
-		[ $((i % 8)) -eq 1 ] && printf "\n"
         printf '\033[48;5;%dm  \033[m' "${i}"
+		[ $i -eq 7 ] && printf "\n"
         i=$((i + 1))
     done
 
