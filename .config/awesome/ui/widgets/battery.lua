@@ -73,6 +73,10 @@ if bat_info then
 				bat_info.percentage = value
 				bat_info:notify_when_low(beautiful.battery_warn_threshold)
 				battery_widget:update()
+			elseif name == "TimeToEmpty" then
+				bat_info.time_to_empty = value
+			elseif name == "TimeToFull" then
+				bat_info.time_to_full = value
 			end
 		end
 	)
