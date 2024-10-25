@@ -905,6 +905,10 @@ region"
   :config
   (with-eval-after-load 'evil
     (evil-set-initial-state 'magit-status-mode 'motion)
+    (evil-define-key 'visual magit-mode-map
+      "s" #'magit-stage
+      "j" #'evil-next-line
+      "k" #'evil-previous-line)
     (evil-define-key 'motion magit-mode-map
       "J" #'magit-section-forward
       "K" #'magit-section-backward
