@@ -91,39 +91,6 @@ alias protonvpn='{ [ "$(pidof nm-applet)" ] || nm-applet & } ; protonvpn-cli'
 
 
 # @section Custom Functions/Commands
-# @description A wrapper around `droidcam-cli` to automatically use audio
-# @noargs
-dra() {
-	if ! [ "$(command -v droidcam-cli)" ]; then
-		printf "\033[1;31m|\033[0m 'droidcam-cli' isn't installed\n" >&2
-		return 127
-	fi
-
-	for arg in "${@}"; do
-		if [ "${arg}" = "-a" ]; then
-			{
-				while sleep 1; do [ "$(ps -c droidcam-cli)" ] && break; done
-				if [ "$(pactl list short | grep "DroidcamAudio")" ]; then
-					pactl load-module module-alsa-source \
-						  device=hw:Loopback,1,0 \
-						  source_properties=device.description=DroidcamAudio
-					if [ ${?} = 0 ]; then
-						printf "\033[1;32m|\033[0m Loaded pulseaudio module\n"
-					else
-						printf "\033[1;31m|\033[0m Failed to load pulseaudio module\n" >&2
-					fi
-				fi
-				pactl set-default-source "alsa_input.hw_Loopback_1_0"
-				pactl set-source-volume @DEFAULT_SINK@ 150%
-			} &
-			break
-		fi
-	done
-
-	droidcam-cli "${@}"
-}
-
-
 # @description Fix time desync in Linux
 # @noargs
 fix_time() {
@@ -139,34 +106,6 @@ fix_time() {
 }
 
 
-# @description Automatically mount a phone's filesystem using `jmtpfs`
-# @noargs
-jmtpfs_auto() {
-	if ! [ "$(command -v jmtpfs)" ]; then
-		printf "\033[1;31m|\033[0m Command 'jmtpfs' not found\n" >&2
-		return 1
-	fi
-
-	if ! jmtpfs -l | { read _; read line; [ "${line}" ]; }; then
-		printf "\033[1;31m|\033[0m No devices found\n" >&2
-		return 1
-	fi
-
-	if ! [ -d "/tmp/jmtpfs" ]; then
-		mkdir "/tmp/jmtpfs"
-		jmtpfs "/tmp/jmtpfs"\
-			   -o direct_io\
-			   -o no_remote_lock\
-			   -o use_ino\
-			   -o default_permissions
-		[ $? -ne 0 ] && rmdir "/tmp/jmtpfs"
-	else
-		umount "/tmp/jmtpfs"
-		rmdir "/tmp/jmtpfs"
-	fi
-}
-
-
 # @description A shortcut to start the X server using `xinitrc`
 # @noargs
 sx() {
@@ -177,6 +116,7 @@ sx() {
 	fi
 }
 
+
 # @description A shortcut to edit using `emacsclient` if $EDITOR is `emacs`
 # @noargs
 e() {
@@ -184,50 +124,6 @@ e() {
 		emacsclient -a "${EDITOR}" "$@" &
 	else
 		${EDITOR} "$@"
-	fi
-}
-
-
-# @description Automatically mount rclone
-# @noargs
-rcmnt() {
-	if ! [ "$(command -v rclone)" ]; then
-		printf "\033[1;31m|\033[0m Command 'rclone' not found\n" >&2
-		return 1
-	fi
-
-	remotes=$(rclone listremotes); i=0
-	while read remote; do
-		i=$((i + 1))
-		printf "  %d. %s\n" ${i} "${remote%:}"
-	done <<-EOF
-	${remotes}
-	EOF
-
-	printf "Select Remote: "; read remote_id
-	case ${remote_id} in
-		*[!0-9]*|"")
-			printf "\033[1;31m|\033[0m Not a number\n" >&2
-			exit 1
-			;;
-	esac
-
-	if [ ${remote_id} -gt ${i} ] || [ ${remote_id} -lt 1 ]; then
-		printf "\033[1;31m|\033[0m Not a valid remote\n" >&2
-		return 1
-	fi
-
-	i=0
-	while [ ${i} -ne ${remote_id} ]; do
-		i=$((i + 1))
-		read remote
-	done <<-EOF
-	${remotes}
-	EOF
-
-	if mkdir -pv "/tmp/${remote%:}"; then
-		printf "Mounted ${remote%:}\n"
-		rclone mount "${remote}" "/tmp/${remote%:}" &
 	fi
 }
 
