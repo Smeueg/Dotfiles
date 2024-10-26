@@ -1050,6 +1050,10 @@ region"
 (use-package comp
   :hook (emacs-startup-hook . (lambda () (kill-buffer comp-async-buffer-name))))
 
+(use-package tramp
+  :init
+  (require 'tramp))
+
 
 ;;; ORG
 (use-package org
