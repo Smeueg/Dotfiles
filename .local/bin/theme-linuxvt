@@ -4,8 +4,6 @@
 # @description
 #     Adds kernel paramaters to grub to change the Linux VT colors
 #     Requires the file location of a theme.ini as an argument
-# @example
-#     theme-linuxvt ~/.config/theme.ini
 
 # @section Variable Definitions
 color0=
