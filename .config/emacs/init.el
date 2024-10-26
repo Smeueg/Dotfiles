@@ -295,6 +295,7 @@ STRING is the string to format and display to the user"
         evil-replace-state-message nil
         evil-want-keybinding nil
         evil-want-C-i-jump nil)
+
   (defun evil-search-highlighted (region-beginning region-end)
     "Search the buffer for another occurance of text the same as the selected
 region"
@@ -307,6 +308,23 @@ region"
                                                     region-end)))
         (evil-push-search-history string t)
         (evil-search string t t))))
+
+  (defun evil-surround (start end)
+    "Surround the highlighted text with a character (or character pair)"
+    (interactive "r")
+    (let* ((char (read-char))
+           (insert-spaces (memq char '(?\) ?\} ?\]))))
+      (save-excursion
+        (goto-char end)
+        (when insert-spaces
+          (setq char (- char 1))
+          (insert " "))
+        (if (memq char '(?\( ?\{ ?\[))
+            (insert (+ 1 char))
+          (insert char))
+        (goto-char start)
+        (insert char)
+        (when insert-spaces (insert " ")))))
   :config
   (evil-set-leader 'motion (kbd "SPC"))
   (delete 'magit-diff-mode evil-emacs-state-modes)
@@ -351,6 +369,7 @@ region"
   ;; Visual Mode Keybindings
   (evil-define-key 'visual 'global
     "ga" #'mark-whole-buffer
+    "gs" #'evil-surround
     "*" #'evil-search-highlighted
     "C" '("copy-to-clipboard" .
           (lambda (beg end)
