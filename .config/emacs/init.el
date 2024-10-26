@@ -1404,12 +1404,11 @@ region"
   :ensure t)
 
 (use-package sh-script
-  :init
-  (defun insert-shebang ()
-    (sh-electric-here-document-mode 0)
-    (indent-tabs-mode 0)
-    (when (= (buffer-size) 0) (insert "#!/bin/sh\n\n")))
-  (add-hook 'sh-base-mode-hook #'insert-shebang))
+  :hook
+  (sh-base-mode-hook . (lambda ()
+                         (sh-electric-here-document-mode 0)
+                         (indent-tabs-mode 0)
+                         (when (= (buffer-size) 0) (insert "#!/bin/sh\n\n")))))
 
 (use-package emacs-lisp
   :hook (emacs-lisp-mode-hook . (lambda () (indent-tabs-mode 0))))
