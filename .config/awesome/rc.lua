@@ -152,12 +152,17 @@ table.map(
 	{
 		"setxkbmap -option keypad:pointerkeys -option compose:paus",
 		"xrandr --output DP1 --mode 1280x1024 --scale 1.3x1.3",
-		-- string.format("xrdb %s/.config/X11/Xresources", os.getenv("HOME")),
-		-- "xsetroot -cursor_name left_ptr",
 		"xset r rate 250 50 s off -dpms", -- Set keyboard rate and disable dpms
 		"xset b off" -- Disable "beep" noises
 	},
 	awful.spawn.if_installed
+)
+
+awful.spawn.easy_async( -- Load pulseaudio's bluetooth modules
+	string.format("pactl unload-module module-bluetooth-policy module-bluetooth-discover", os.getenv("HOME")),
+	function()
+		awful.spawn.if_installed("pactl load-module module-bluetooth-policy module-bluetooth-discover")
+	end
 )
 
 awful.spawn.easy_async(
