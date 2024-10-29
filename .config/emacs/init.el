@@ -285,7 +285,9 @@ STRING is the string to format and display to the user"
 
 (use-package evil
   :ensure t
-  :hook (after-init-hook . evil-mode)
+  :hook
+  (after-init-hook . evil-mode)
+  (dired-mode-hook . (lambda () (setq-local evil-emacs-state-cursor '(bar . 0))))
   :init
   (defvaralias 'evil-shift-width 'tab-width)
   (setq evil-undo-system 'undo-redo
@@ -295,60 +297,6 @@ STRING is the string to format and display to the user"
         evil-replace-state-message nil
         evil-want-keybinding nil
         evil-want-C-i-jump nil)
-
-  (defun evil-search-highlighted (region-beginning region-end)
-    "Search the buffer for another occurance of text the same as the selected
-region"
-    (interactive (if (use-region-p)
-                     (list (region-beginning) (region-end))
-                   (list nil nil)))
-    (when (and region-beginning region-end)
-      (when (evil-visual-state-p) (evil-exit-visual-state))
-      (let ((string (buffer-substring-no-properties region-beginning
-                                                    region-end)))
-        (evil-push-search-history string t)
-        (evil-search string t t))))
-
-  (defun evil-surround (start end)
-    "Surround the highlighted text with a character (or character pair)"
-    (interactive "r")
-    (let* ((char (read-char))
-           (insert-spaces (memq char '(?\) ?\} ?\]))))
-      (save-excursion
-        (goto-char end)
-        (when insert-spaces
-          (setq char (- char 1))
-          (insert " "))
-        (if (memq char '(?\( ?\{ ?\[))
-            (insert (+ 1 char))
-          (insert char))
-        (goto-char start)
-        (insert char)
-        (when insert-spaces (insert " ")))))
-  :config
-  (evil-set-leader 'motion (kbd "SPC"))
-  (delete 'magit-diff-mode evil-emacs-state-modes)
-  (add-to-list 'evil-emacs-state-modes 'dired-mode)
-  (add-hook 'evil-jumps-post-jump-hook
-            (lambda () (call-interactively #'evil-scroll-line-to-center)))
-  (add-hook 'dired-mode-hook
-            (lambda () (setq-local evil-emacs-state-cursor '(bar . 0))))
-  ;; Keybindings
-  (evil-define-key '(motion emacs) 'global ":" #'execute-extended-command)
-  (evil-define-key 'motion 'global
-    [remap evil-window-split] (lambda ()
-                                (interactive)
-                                (select-window (split-window-below)))
-    [remap evil-window-vsplit] (lambda ()
-                                 (interactive)
-                                 (select-window (split-window-right)))
-    [remap evil-next-line] #'evil-next-visual-line
-    [remap evil-previous-line] #'evil-previous-visual-line)
-  (evil-define-key 'motion 'global
-    (kbd "<leader>il") #'next-long-line
-    (kbd "<leader>iL") #'prev-long-line
-    [?\C-\S-o] #'evil-jump-forward)
-  (evil-define-key 'normal 'global "J" #'evil-join "K" #'man)
   (defmacro evil-define-escape-key (&rest keys)
     (let ((key-pairs '()))
       (dolist (key keys)
@@ -359,7 +307,49 @@ region"
               key-pairs)
         (push (kbd (format "M-%s" key)) key-pairs))
       `(evil-define-key '(insert replace) 'global ,@key-pairs)))
+  :config
+  (evil-set-leader 'motion (kbd "SPC"))
+  (delete 'magit-diff-mode evil-emacs-state-modes)
+  (add-to-list 'evil-emacs-state-modes 'dired-mode)
+  (add-hook 'evil-jumps-post-jump-hook
+            (lambda () (call-interactively #'evil-scroll-line-to-center)))
+  ;; Custom Motions/Operators
+  (evil-define-operator evil-surround (beg end type char)
+    "Surround a thing with a character"
+    (interactive "<R><C>")
+    (let ((pairs (cond ((eq char ?\() '("(" ")"))
+                       ((eq char ?\{) '("{" "}"))
+                       ((eq char ?\[) '("[" "]"))
+                       ((memq char '(?\" ?\' ?\`)) (list char char))))
+          (add-spaces (memq char '(?\) ?\} ?\]))))
+      (when (memq char '(?\) ?\} ?\]))
+        (setq pairs (list (concat (car pairs) " ")
+                          (concat " " (cadr pairs)))))
+      (if (eq type 'block)
+          (evil-apply-on-rectangle
+           (lambda (beg end)
+             (evil-goto-column end)
+             (insert (cadr pairs))
+             (evil-goto-column beg)
+             (insert (car pairs)))
+           beg end)
+        (evil-goto-char end)
+        (insert (cadr pairs))
+        (evil-goto-char beg)
+        (insert (car pairs)))))
+
+  (evil-define-operator evil-isearch-forward (beg end)
+    "Search a thing"
+    (interactive "<r>")
+    (isearch-mode t t)
+    (isearch-yank-string (buffer-substring-no-properties beg end))
+    (isearch-done)
+    (isearch-update))
+
+  
   (evil-define-escape-key "h" "j" "k" "l")
+
+  ;; Keybindings
   ;; Insert Mode Keybindings
   (evil-define-key 'insert 'global
     [?\C-n] nil
@@ -368,26 +358,34 @@ region"
     [?\C-e] #'evil-scroll-line-down)
   ;; Visual Mode Keybindings
   (evil-define-key 'visual 'global
-    "ga" #'mark-whole-buffer
-    "gs" #'evil-surround
-    "*" #'evil-search-highlighted
-    "C" '("copy-to-clipboard" .
-          (lambda (beg end)
-            (interactive "r")
-            (gui-set-selection 'CLIPBOARD
-                               (substring-no-properties
-                                (filter-buffer-substring beg end)))
-            (evil-normal-state 1))))
+    "*" #'evil-search-highlighted)
   ;; Normal/Motion Mode Keybindings
+  (evil-define-key 'normal 'global
+    "J" #'evil-join
+    "K" #'man)
   (evil-define-key 'motion 'global
-    "*" #'isearch-forward-highlighted
+    [remap evil-window-split] (lambda ()
+                                (interactive)
+                                (select-window (split-window-below)))
+    [remap evil-window-vsplit] (lambda ()
+                                 (interactive)
+                                 (select-window (split-window-right)))
+    [remap evil-next-line] #'evil-next-visual-line
+    [remap evil-previous-line] #'evil-previous-visual-line
+    ":" #'execute-extended-command
+    (kbd "<leader>il") #'next-long-line
+    (kbd "<leader>iL") #'prev-long-line
+    "gs" #'evil-surround
+    "ga" #'mark-whole-buffer
+    "*" #'evil-isearch-forward
     "/" #'isearch-forward-regexp
     "?" #'isearch-backward-regexp
     "n" #'isearch-repeat-forward
     "N" #'isearch-repeat-backward
-    (kbd "C--") (lambda () (interactive) (text-scale-decrease 0.5))
-    (kbd "C-=") (lambda () (interactive) (text-scale-increase 0.5))
-    (kbd "C-0") (lambda () (interactive) (text-scale-set 0))
+    [?\C-i] #'evil-jump-forward
+    [?\C--] (lambda () (interactive) (text-scale-decrease 0.5))
+    [?\C-=] (lambda () (interactive) (text-scale-increase 0.5))
+    [?\C-0] (lambda () (interactive) (text-scale-set 0))
     (kbd "C-w r") #'resize-window
     (kbd "C-w m") #'toggle-maximize-window
     (kbd "C-w C") #'quit-window-kill
