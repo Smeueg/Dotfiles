@@ -72,7 +72,6 @@ function BatInfo:notify_when_low(threshold)
 	end
 end
 
-
 --- Sends a notification of the battery's progress,
 --- could either be the time till it's full or the time till it's empty
 --- depending whether it's currently charging or not

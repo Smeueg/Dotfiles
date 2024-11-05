@@ -1,0 +1,182 @@
+#!/bin/sh
+# @file theme-linuxvt
+# @brief Changes the colors of the Linux VT
+# @description
+#     Adds kernel paramaters to grub to change the Linux VT colors
+#     Requires the file location of a theme.ini as an argument
+
+# @section Variable Definitions
+color0=
+color1=
+color2=
+color3=
+color4=
+color5=
+color6=
+color7=
+color8=
+color9=
+color10=
+color11=
+color12=
+color13=
+color14=
+color15=
+help_string="Usage: theme-linuxvt [OPTION] FILE
+Change the colors of the Linux VT by adding kernel parameters
+
+  -h, --help    display this help and exit"
+
+
+# @section Function Definitions
+# @description Print a formatted error message
+# @arg $1 string The error message to print
+err() {
+    printf "[\033[1;31mERR\033[m] %s\n" "${1}" >&2
+}
+
+
+# @description Print a formatted info message
+# @arg $1 string The info message to print
+info() {
+    printf "[\033[1;32mINFO\033[m] %s\n" "${1}"
+}
+
+
+# @description Print the help message
+# @noargs
+print_help() {
+    printf "%b\n" "${help_string}"
+    exit 0
+}
+
+
+# @description Split a string on a delimiter
+# @arg $1 string The string to split
+# @arg $2 string The delimiter to use
+split_string() {
+    string=${1}
+    delimiter=${2}
+
+    string="${string}${delimiter}"
+    while [ "${string}" ]; do
+        printf "%s\n" "${string%%${delimiter}*}"
+        string=${string#*${delimiter}};
+    done
+}
+
+
+# @description Define the colors as variables from theme file
+# @arg $1 string The theme file path
+# @exitcode 0 If all the needed colors were defined
+# @exitcode 1 If all the needed colors failed to be defined
+define_colors() {
+    theme_file=${1}
+    while IFS=" =" read -r key value; do
+        [ "${key%%#*}" ] || continue
+
+        color_identifier=${key#color}
+        [ "${color_identifier##*[!0-9]*}" ] || continue
+
+        if ! [ "${value%%#*}" ] && [ ${#value} -eq 7 ] && [ "${value%%*[!#0-9a-fA-F]*}" ]; then
+            eval "color${color_identifier}=${value}"
+        else
+            err "Invalid color detected for color${color_identifier}: ${value}"
+            continue
+        fi
+    done < "${theme_file}"
+
+    should_error=false
+    i=0
+    while [ ${i} -le 15 ]; do
+        if ! eval "[ \"\${color${i}}\" ]"; then
+            err "color${i} not found"
+            should_error=true
+        fi
+        i=$((i + 1))
+    done
+
+    ${should_error} && return 1
+    return 0
+}
+
+
+# @description Genereate the kernel parameters
+# @noargs
+# @stdout The generated kernel parameters
+get_colors_as_params() {
+    reds="vt.default_red="
+    greens="vt.default_grn="
+    blues="vt.default_blu="
+    i=0
+    while [ ${i} -le 15 ]; do
+        color=
+        eval "color=\${color${i}}"
+
+        red=${color#?}
+        red=${red%????}
+        reds="${reds}0x${red},"
+
+        green=${color#???}
+        green=${green%??}
+        greens="${greens}0x${green},"
+
+        blue=${color#?????}
+        blues="${blues}0x${blue},"
+        i=$((i + 1))
+    done
+    printf "%s %s %s\n" "${reds%?}" "${greens%?}" "${blues%?}"
+}
+
+
+# @description The main function
+# @noargs
+main() {
+    for arg in "${@}"; do
+        case ${arg} in
+            -h|--help) print_help
+        esac
+    done
+    [ ${#} -ne 1 ] && print_help
+
+    theme_file=${1}
+    [ -f "${theme_file}" ] || {
+        err "'${theme_file}' not found"
+        exit 1
+    }
+    
+    if ! define_colors "${theme_file}"; then
+        err "Failed to define all the required colors"
+        exit 1
+    fi
+
+    [ -f /etc/default/grub ] || { err "'/etc/default/grub' doesn't seem to exist"; return 1; }
+    [ -w /etc/default/grub ] || {
+        err "Unable to write to '/etc/default/grub', you might need root privilages"
+        return 1
+    }
+
+    existing_params=
+    while IFS= read -r line; do
+        [ "${line%%#*}" ] || continue
+        [ "${line%%GRUB_CMDLINE_LINUX_DEFAULT=\"*\"}" ] && continue
+        existing_params=${line#*\"}
+        existing_params=${existing_params%\"}
+    done < /etc/default/grub
+
+    updated_params=
+    for param in $(split_string "${existing_params}" " "); do
+        [ "${param%%vt.default_red*}" ] || continue
+        [ "${param%%vt.default_grn*}" ] || continue
+        [ "${param%%vt.default_blu*}" ] || continue
+        updated_params="${updated_params}${param} "
+    done
+    updated_params="${updated_params}$(get_colors_as_params)"
+
+    sed -i "s/GRUB_CMDLINE_LINUX_DEFAULT=\".*\"/GRUB_CMDLINE_LINUX_DEFAULT=\"${updated_params}\"/"\
+        /etc/default/grub
+    grub-mkconfig -o /boot/grub/grub.cfg
+}
+
+
+main "${@}"

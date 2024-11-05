@@ -295,6 +295,7 @@ STRING is the string to format and display to the user"
         evil-replace-state-message nil
         evil-want-keybinding nil
         evil-want-C-i-jump nil)
+
   (defun evil-search-highlighted (region-beginning region-end)
     "Search the buffer for another occurance of text the same as the selected
 region"
@@ -307,6 +308,23 @@ region"
                                                     region-end)))
         (evil-push-search-history string t)
         (evil-search string t t))))
+
+  (defun evil-surround (start end)
+    "Surround the highlighted text with a character (or character pair)"
+    (interactive "r")
+    (let* ((char (read-char))
+           (insert-spaces (memq char '(?\) ?\} ?\]))))
+      (save-excursion
+        (goto-char end)
+        (when insert-spaces
+          (setq char (- char 1))
+          (insert " "))
+        (if (memq char '(?\( ?\{ ?\[))
+            (insert (+ 1 char))
+          (insert char))
+        (goto-char start)
+        (insert char)
+        (when insert-spaces (insert " ")))))
   :config
   (evil-set-leader 'motion (kbd "SPC"))
   (delete 'magit-diff-mode evil-emacs-state-modes)
@@ -351,6 +369,7 @@ region"
   ;; Visual Mode Keybindings
   (evil-define-key 'visual 'global
     "ga" #'mark-whole-buffer
+    "gs" #'evil-surround
     "*" #'evil-search-highlighted
     "C" '("copy-to-clipboard" .
           (lambda (beg end)
@@ -905,6 +924,10 @@ region"
   :config
   (with-eval-after-load 'evil
     (evil-set-initial-state 'magit-status-mode 'motion)
+    (evil-define-key 'visual magit-mode-map
+      "s" #'magit-stage
+      "j" #'evil-next-line
+      "k" #'evil-previous-line)
     (evil-define-key 'motion magit-mode-map
       "J" #'magit-section-forward
       "K" #'magit-section-backward
@@ -1026,6 +1049,10 @@ region"
 
 (use-package comp
   :hook (emacs-startup-hook . (lambda () (kill-buffer comp-async-buffer-name))))
+
+(use-package tramp
+  :init
+  (require 'tramp))
 
 
 ;;; ORG
@@ -1377,12 +1404,11 @@ region"
   :ensure t)
 
 (use-package sh-script
-  :init
-  (defun insert-shebang ()
-    (sh-electric-here-document-mode 0)
-    (indent-tabs-mode 0)
-    (when (= (buffer-size) 0) (insert "#!/bin/sh\n\n")))
-  (add-hook 'sh-base-mode-hook #'insert-shebang))
+  :hook
+  (sh-base-mode-hook . (lambda ()
+                         (sh-electric-here-document-mode 0)
+                         (indent-tabs-mode 0)
+                         (when (= (buffer-size) 0) (insert "#!/bin/sh\n\n")))))
 
 (use-package emacs-lisp
   :hook (emacs-lisp-mode-hook . (lambda () (indent-tabs-mode 0))))
