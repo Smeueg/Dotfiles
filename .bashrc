@@ -1,7 +1,10 @@
 #!/bin/sh
 # Basic interactive shell config that should work on every posix compliant shell
 set -o vi   # Vi mode, works on most shells
-export HISTFILE=/tmp/shell_history
+
+if [ -d "/tmp" ] && [ -w "/tmp" ]; then
+    export HISTFILE=/tmp/shell_history
+fi
 
 
 # Shell Options #
@@ -74,7 +77,7 @@ export PS1="\$(print_prompt)"
 
 
 # @section Aliases
-export SMEUESIC_URL="https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc"
+SMEUESIC_URL="https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc"
 alias mkdir="mkdir -pv"
 alias diff="diff --color=always"
 alias less="less -r"
@@ -87,66 +90,7 @@ alias ip="ip --color=auto"
 alias dit='git --git-dir=${HOME}/.local/dots --work-tree=${HOME}'
 alias sudo="sudo --preserve-env=TERMINFO"
 alias protonvpn='{ [ "$(pidof nm-applet)" ] || nm-applet & } ; protonvpn-cli'
-
-
-
-# @section Custom Functions/Commands
-# @description Fix time desync in Linux
-# @noargs
-fix_time() {
-	err=false
-	for dep in ntpd hwclock sudo; do
-		[ "$(command -v ${dep})" ] && continue
-		printf "\033[1;31m|\033[0m Command '${dep}' not found\n" >&2
-		err=true
-	done
-	${err} && return 1
-	printf "Running 'ntpd -qg; hwclock --systohc'\n"
-	sudo "${SHELL}" -c  'ntpd -qg; hwclock --systohc'
-}
-
-
-# @description A shortcut to start the X server using `xinitrc`
-# @noargs
-sx() {
-	if [ -f "${HOME}/.config/X11/xinitrc" ]; then
-		startx "${HOME}/.config/X11/xinitrc"
-	else
-		startx
-	fi
-}
-
-
-# @description A shortcut to edit using `emacsclient` if $EDITOR is `emacs`
-# @noargs
-e() {
-	if [ "${TERM}" = "eat-truecolor" ] && [ "${EDITOR}" = "emacs" ] && [ "$(command -v emacsclient)" ]; then
-		emacsclient -a "${EDITOR}" "$@" &
-	else
-		${EDITOR} "$@"
-	fi
-}
-
-
-# @description Displays all the supported colors
-# @noargs
-colors() {
-    i=0
-    while [ ${i} -le 15 ]; do
-        printf '\033[48;5;%dm  \033[m' "${i}"
-		[ $i -eq 7 ] && printf "\n"
-        i=$((i + 1))
-    done
-
-	printf "\n"
-    while [ ${i} -le 225 ]; do
-        [ $(((i - 16) % 6)) -eq 0 ] && printf "\n"
-        printf '\033[48;5;%dm  \033[m' "${i}"
-        i=$((i + 1))
-    done
-	printf "\n"
-}
-
+alias e="\${EDITOR}"
 
 # @section Configuration for `git`
 if [ "$(command -v git)" ]; then
@@ -161,3 +105,8 @@ fi
 # @section Configuration for `cargo`
 [ -f "${HOME}/.local/share/cargo/env" ] &&
 	. "${HOME}/.local/share/cargo/env"
+
+# @section Change ${EDITOR} when inside an emacs shell
+if [ "${TERM}" = "eat-truecolor" ]; then
+	export EDITOR="emacsclient"
+fi
