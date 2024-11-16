@@ -161,25 +161,3 @@ fi
 # @section Configuration for `cargo`
 [ -f "${HOME}/.local/share/cargo/env" ] &&
 	. "${HOME}/.local/share/cargo/env"
-
-# @section Configuration for `less`
-export LESS_TERMCAP_mb=$'\033[1;32m'
-export LESS_TERMCAP_md=$'\033[1;32m'
-export LESS_TERMCAP_so=$'\033[1;33m'
-export LESS_TERMCAP_me=$'\033[m'
-export LESS_TERMCAP_se=$'\033[m'
-export LESS_TERMCAP_ue=$'\033[m'
-export LESS_TERMCAP_us=$'\033[1;4;31m'
-
-
-# @section Give warnings based on XDG_BASE_DIRECTORY compliance
-# Emacs
-if [ -f "${XDG_CONFIG_HOME}/emacs/init.el" ]; then
-    for file in "${HOME}/.emacs" "${HOME}/.emacs.d"; do
-        { [ -f "${file}" ] || [ -d "${file}" ]; } || continue
-        printf "%b: '%s' exists but '%s' is used instead\n" \
-               "\033[1;31mWARN\033[m" \
-               "${XDG_CONFIG_HOME}/emacs/init.el" \
-               "${file}"
-    done
-fi
