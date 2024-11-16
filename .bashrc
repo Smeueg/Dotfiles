@@ -120,7 +120,7 @@ sx() {
 # @description A shortcut to edit using `emacsclient` if $EDITOR is `emacs`
 # @noargs
 e() {
-	if [ "${EDITOR}" = "emacs" ] && [ "$(command -v emacsclient)" ]; then
+	if [ "${TERM}" = "eat-truecolor" ] && [ "${EDITOR}" = "emacs" ] && [ "$(command -v emacsclient)" ]; then
 		emacsclient -a "${EDITOR}" "$@" &
 	else
 		${EDITOR} "$@"

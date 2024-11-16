@@ -1043,9 +1043,6 @@ STRING is the string to format and display to the user"
   :init
   (global-unset-key (kbd "M-;")))
 
-(use-package comp
-  :hook (emacs-startup-hook . (lambda () (kill-buffer comp-async-buffer-name))))
-
 (use-package tramp
   :init
   (require 'tramp))
@@ -1116,30 +1113,11 @@ STRING is the string to format and display to the user"
         eglot-events-buffer-config '(:size 0 :format full))
   (add-to-list 'exec-path emacs-bin-dir)
 
-  (defun install--bin-tar (url name relative-path)
-    "Installs a tarball as a binary locally for Emacs"
-    (unless (executable-find "tar") (error "Command `tar' not found"))
-    (let* ((directory (format "%s/%s-dir" emacs-bin-dir name))
-           (tar-path (format "%s.tar.gz" directory))
-           (bin-path (format "%s/%s" emacs-bin-dir name)))
-      (unless (file-directory-p directory) (make-directory directory t))
-      (url-copy-file url tar-path)
-      (shell-command (format "tar xf %s -C %s" tar-path directory))
-      (delete-file tar-path)
-      (write-region (format "#!/bin/sh\nexec '%s/bin/%s' \"$@\"" directory name) nil bin-path)
-      ;; Make file executable
-      (let* ((current-mode (file-modes bin-path))
-             (add-mode (logand ?\111 (default-file-modes))))
-        (or (/= (logand ?\111 current-mode) 0)
-            (zerop add-mode)
-            (set-file-modes bin-path
-                            (logior current-mode add-mode))))))
-
   (defun install--archive (url name relative-path)
     "Installs an archive as a binary locally for Emacs"
     (let* ((unarchive-cmd (if (string-suffix-p ".zip" url) 'unzip 'tar))
-           (binary-path (format "%s/%s" emacs-bin-dir name))
-           (directory-path (format "%s-dir" emacs-bin-dir))
+           (binary-path (format "%s%s" emacs-bin-dir name))
+           (directory-path (format "%s-dir" binary-path))
            (archive-path (format "%s.%s" binary-path
                                  (if (eq unarchive-cmd 'unzip)
                                      "zip" "tar.gz"))))
@@ -1148,7 +1126,7 @@ STRING is the string to format and display to the user"
       (unless (executable-find (symbol-name unarchive-cmd))
         (error (format "unable to find command `%s'" (symbol-name unarchive-cmd))))
       (url-copy-file url archive-path)
-      (shell-command (format (if (eq unarchive-cmd 'zip)
+      (shell-command (format (if (eq unarchive-cmd 'unzip)
                                  "unzip %s -d %s"
                                "tar xf %s -C %s")
                              archive-path directory-path))
@@ -1183,12 +1161,8 @@ STRING is the string to format and display to the user"
   (defun lsp-install/jdtls ()
     "Installs the latest version of `jdtls' from http://download.eclipse.org/jdtls/milestones/"
     (interactive)
-    (let ((jdtls-dir (format "%s/jdt-language-server" emacs-bin-dir))
-          (tar-path (format "%s/jdtls.tar.gz" emacs-bin-dir))
-          (bin-path (format "%s/jdtls" emacs-bin-dir))
-          (main-repo-url "https://download.eclipse.org/jdtls/milestones/")
+    (let ((main-repo-url "https://download.eclipse.org/jdtls/milestones/")
           (latest-version nil))
-      (unless (file-directory-p jdtls-dir) (make-directory jdtls-dir t))
       (with-current-buffer (url-retrieve-synchronously main-repo-url nil t)
         (goto-char (point-min))
         (while (re-search-forward "/jdtls/milestones/[0-9]+\.[0-9]+\.[0-9]+" nil t)
@@ -1436,7 +1410,10 @@ STRING is the string to format and display to the user"
                         "master" "typescript/src")
             (tsx "https://github.com/tree-sitter/tree-sitter-typescript"
                  "master" "tsx/src")
-            (python "https://github.com/tree-sitter/tree-sitter-python"))))
+            (python "https://github.com/tree-sitter/tree-sitter-python")
+            (java "https://github.com/tree-sitter/tree-sitter-java"
+                  )
+            )))
 
   (use-package treesit-auto
     :ensure t
