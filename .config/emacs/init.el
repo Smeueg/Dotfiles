@@ -346,11 +346,9 @@ STRING is the string to format and display to the user"
     (isearch-done)
     (isearch-update))
 
-  
-  (evil-define-escape-key "h" "j" "k" "l")
-
   ;; Keybindings
   ;; Insert Mode Keybindings
+  (evil-define-escape-key "h" "j" "k" "l")
   (evil-define-key 'insert 'global
     [?\C-n] nil
     [?\C-p] nil
