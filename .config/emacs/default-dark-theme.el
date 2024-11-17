@@ -41,7 +41,7 @@
    ;; Highlight faces
    `(fringe ((,display (:background ,base0))))
    `(highlight ((,display (:background ,base8))))
-   `(region ((,display (:background ,base8))))
+   `(region ((,display (:background ,base7 :foreground ,base0))))
    `(isearch ((,display (:foreground ,base0 :background ,base3 :weight bold))))
    `(isearch-fail ((,display (:background ,base1))))
    `(lazy-highlight ((,display (:inherit isearch :weight normal))))
