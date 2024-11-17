@@ -617,17 +617,32 @@ client.connect_signal("unfocus", function(c)
 	c.border_color = beautiful.border_normal
 end)
 
+client.connect_signal("manage", function(c)
+		if c.icon == nil then
+			local looped_client = c
+			while looped_client.transient_for and looped_client.icon == nil do
+				looped_client = looped_client.transient_for
+			end
+
+			c.icon = looped_client.icon
+
+			if c.floating then
+				c:emit_signal("request::titlebars")
+			end
+		end
+end)
+
 
 client.connect_signal("property::floating", function(c)
-	if c.floating then
-		awful.titlebar.show(c)
-		c.border_width = 0
-	else
-		awful.titlebar.hide(c)
-		if root.tags()[1].layout ~= awful.layout.suit.max then
-			c.border_width = beautiful.border_width
+		if c.floating then
+			awful.titlebar.show(c)
+			c.border_width = 0
+		else
+			awful.titlebar.hide(c)
+			if root.tags()[1].layout ~= awful.layout.suit.max then
+				c.border_width = beautiful.border_width
+			end
 		end
-	end
 end)
 
 
@@ -657,36 +672,43 @@ local function titlebar_create_btn(btn_color, callback)
 end
 
 client.connect_signal("request::titlebars", function(c)
-	awful.titlebar(c, { size = dpi(40) }):setup {
-		layout = wibox.layout.align.horizontal,
-		wibox.widget {},
-		{
-			layout = wibox.layout.flex.horizontal,
-			buttons = gears.table.join(
-				awful.button({}, 1, function()
-					awful.mouse.client.move(c)
+		awful.titlebar(c, { size = dpi(40) }):setup {
+			layout = wibox.layout.align.horizontal,
+			{
+				widget = wibox.container.margin;
+				margins = dpi(10);
+				{
+					widget = wibox.widget.imagebox,
+					image = c.icon;
+				}
+			},
+			{
+				layout = wibox.layout.flex.horizontal,
+				buttons = gears.table.join(
+					awful.button({}, 1, function()
+							awful.mouse.client.move(c)
+					end),
+					awful.button({}, 3, function()
+							awful.mouse.client.resize(c)
+					end)
+				)
+			},
+			{
+				widget = wibox.container.background,
+				layout = wibox.layout.fixed.horizontal,
+				spacing = dpi(10),
+				titlebar_create_btn(beautiful.titlebar_btn_max, function()
+						c.maximized = not c.maximized
 				end),
-				awful.button({}, 3, function()
-					awful.mouse.client.resize(c)
-				end)
-			)
-		},
-		{
-			widget = wibox.container.background,
-			layout = wibox.layout.fixed.horizontal,
-			spacing = dpi(10),
-			titlebar_create_btn(beautiful.titlebar_btn_max, function()
-				c.maximized = not c.maximized
-			end),
-			titlebar_create_btn(beautiful.titlebar_btn_min, function()
-				c.minimized = not c.minimized
-			end),
-			titlebar_create_btn(beautiful.titlebar_btn_close, function()
-				c:kill()
-			end),
-			wibox.widget {}
-		}
-	}
+				titlebar_create_btn(beautiful.titlebar_btn_min, function()
+						c.minimized = not c.minimized
+				end),
+				titlebar_create_btn(beautiful.titlebar_btn_close, function()
+						c:kill()
+					end),
+					wibox.widget {}
+				}
+			}
 end)
 
 
