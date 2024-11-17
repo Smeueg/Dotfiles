@@ -378,7 +378,6 @@ STRING is the string to format and display to the user"
     (kbd "M-j") #'evil-scroll-line-down
     (kbd "M-k") #'evil-scroll-line-up
     (kbd "<leader>d") #'dired
-    (kbd "<leader>D") #'dired-home
     (kbd "<leader>b") #'switch-to-buffer
     (kbd "<leader>h") #'help
     (kbd "<leader>sL") #'global-display-line-numbers-mode
@@ -672,22 +671,20 @@ STRING is the string to format and display to the user"
         (dired-mark 1)))
     (dired-next-line 1))
 
-  (defun dired-home ()
-    "Open dired at \"~\""
-    (interactive)
-    (dired "~"))
-
   (defun dirvish-cd (directory)
     "Open a different directory immediately in dirvish"
     (interactive "DGo to directory: ")
     (dirvish directory))
   :config
   (define-key-convenient dirvish-mode-map
+                         ":" #'execute-extended-command
                          " " #'dired-toggle-mark
                          "h" #'dired-up-directory
                          "j" #'dired-next-line
                          "k" #'dired-previous-line
                          "l" #'dired-find-file
+                         [left] #'dired-up-directory
+                         [right] #'dired-find-file
                          "p" #'dirvish-yank
                          "d" #'dired-do-delete
                          "m" #'dirvish-move
@@ -699,13 +696,11 @@ STRING is the string to format and display to the user"
                          "+d" #'dired-create-directory
                          "+f" #'dired-create-empty-file
                          "D" nil
-                         (kbd "C-r") #'revert-buffer)
-  (with-eval-after-load 'evil
-    (define-key-convenient dirvish-mode-map
-                           "/" #'isearch-forward-regexp
-                           "?" #'isearch-backward-regexp
-                           "n" #'isearch-repeat-forward
-                           "N" #'isearch-repeat-backward)))
+                         "/" #'isearch-forward-regexp
+                         "?" #'isearch-backward-regexp
+                         "n" #'isearch-repeat-forward
+                         "N" #'isearch-repeat-backward
+                         (kbd "C-r") #'revert-buffer))
 
 (use-package which-key
   :ensure t
@@ -913,6 +908,7 @@ STRING is the string to format and display to the user"
       "j" #'evil-next-line
       "k" #'evil-previous-line)
     (evil-define-key 'motion magit-mode-map
+      (kbd "TAB") #'magit-section-cycle
       "J" #'magit-section-forward
       "K" #'magit-section-backward
       "j" #'magit-next-line
