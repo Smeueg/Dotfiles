@@ -142,27 +142,15 @@
             (term (getenv "SHELL"))
             (term-send-raw-string (format "clear; %s\n" cmd))))))))
 
-(defun resize-window ()
-  "Resize a window interactively"
-  (interactive)
-  (if (length> (window-list) 1)
-      (let ((message (concat
-                      (propertize "──── Resize Window Mode ────\n" 'face `(:foreground ,(face-foreground 'ansi-color-yellow)))
-                      "h:\t Shrink Window Horizontally\n"
-                      "j:\t Shrink Window Vertically\n"
-                      "k:\t Enlarge Window Vertically\n"
-                      "l:\t Enlarge Window Horizontally\n"
-                      "C-g: Quit")))
-        (while t
-          (message message)
-          (let ((key (read-key)))
-            (cond
-             ((equal key ?h) (call-interactively 'shrink-window-horizontally))
-             ((equal key ?j) (call-interactively 'shrink-window))
-             ((equal key ?k) (call-interactively 'enlarge-window))
-             ((equal key ?l) (call-interactively 'enlarge-window-horizontally))
-             ((equal key ?\C-g) (keyboard-quit) (message ""))))))
-    (message "Won't resize ONLY window")))
+(transient-define-prefix resize-window ()
+  "A demo transient menu."
+  :transient-suffix 'transient--do-stay
+  [["Resize Window"
+    ("h" "Shrink Window Horizontally" shrink-window-horizontally)
+    ("j" "Shrink Window Vertically" shrink-window)
+    ("k" "Enlarge Window Vertically" enlarge-window)
+    ("l" "Enlarge Window Horizontally" enlarge-window-horizontally)
+    ("C-g" "Quit" my-message)]])
 
 (defun define-key-convenient (mode-map key fn &rest args)
   (define-key mode-map key fn)
