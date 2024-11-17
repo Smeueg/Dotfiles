@@ -9,6 +9,8 @@
 ;;  - https://github.com/minad/org-modern
 ;;  - https://github.com/magit/forge
 ;;  - https://github.com/m00natic/vlfi
+;; Things to do once emacs 30 comes out:
+;;  - Checkout `flymake-indicator-type` (https://www.reddit.com/r/emacs/comments/1bawdau/making_flymake_supports_error_indicators_in_margin/)
 
 ;;; FASTER STARTUP
 (setq gc-cons-threshold most-positive-fixnum ; 2^61 bytes
