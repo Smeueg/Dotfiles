@@ -516,28 +516,17 @@ STRING is the string to format and display to the user"
 
 (use-package simple
   :config
-  ;; Replaces the default "Kill Unsaved Buffer" UI/UX
+  ;; Replaces the default "Kill Unsaved Buffer" UI
   (advice-add 'kill-buffer--possibly-save :override
-              (lambda (buffer &rest _)
-                (let ((run t) key response)
-                  (while run
-                    (message
-                     (concat
-                      (propertize "──── Buffer is Modified ────\n" 'face
-                                  `(:foreground ,(face-foreground 'ansi-color-green)))
-                      "s:\t Save and Kill\n"
-                      "k:\t Kill anyway\n"
-                      "C-g: Cancel"))
-                    (setq run nil
-                          key (read-key)
-                          response
-                          (cond
-                           ((= key ?s)
-                            (with-current-buffer buffer (save-buffer)) t)
-                           ((= key ?k) t)
-                           ((= key ?\C-g) nil)
-                           (t (setq run t)))))
-                  response))))
+              (lambda (buffer &rest -)
+                (cl-case (car (read-multiple-choice "Buffer is modified, kill anyway?"
+                                                    '((?y "yes")
+                                                      (?s "save"))))
+                  (?y t)
+                  (?s (with-current-buffer buffer
+                        (save-buffer)
+                        t))))))
+
 
 (use-package saveplace
   :custom
