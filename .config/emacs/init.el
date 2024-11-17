@@ -494,60 +494,6 @@ STRING is the string to format and display to the user"
       (kbd "<leader>Pi") #'package-install
       (kbd "<leader>Pu") #'package-upgrade-all)))
 
-(use-package autorevert
-  ;;; Auto revert buffers (automatically update the buffer when a filebuffer is
-  ;;; changed)
-  :hook (after-init-hook . global-auto-revert-mode))
-
-(use-package elec-pair
-  ;;; Auto close parentheses, double quotes, etc.
-  :hook (after-init-hook . electric-pair-mode))
-
-(use-package window
-  :init
-  (add-to-list 'display-buffer-alist
-               `(,(lambda (buffer arg)
-                    "Always open files in an already existing window"
-                    (buffer-file-name (get-buffer buffer)))
-                 display-buffer-same-window)))
-
-(use-package simple
-  :config
-  ;; Replaces the default "Kill Unsaved Buffer" UI
-  (advice-add 'kill-buffer--possibly-save :override
-              (lambda (buffer &rest -)
-                (cl-case (car (read-multiple-choice "Buffer is modified, kill anyway?"
-                                                    '((?y "yes")
-                                                      (?s "save"))))
-                  (?y t)
-                  (?s (with-current-buffer buffer
-                        (save-buffer)
-                        t))))))
-
-(use-package saveplace
-  :custom
-  (save-place-forget-unreadable-files nil)
-  :init
-  (save-place-mode 1)
-  (when (file-writable-p "/tmp/emacs-places")
-    (setq save-place-file "/tmp/emacs-places")))
-
-(use-package company
-  :ensure t
-  :hook (after-init-hook . global-company-mode)
-  :custom
-  (company-minimum-prefix-length 2)
-  (company-idle-delay 0)
-  (company-selection-wrap-around t)
-  (company-require-match nil)
-  (company-tooltip-align-annotations t))
-
-(use-package aggressive-indent
-  :ensure t
-  :hook (after-init-hook . global-aggressive-indent-mode)
-  :config
-  (push 'python-base-mode aggressive-indent-excluded-modes))
-
 (use-package vertico
   :ensure t
   :hook
@@ -572,20 +518,21 @@ STRING is the string to format and display to the user"
       (kbd "<leader>an") #'avy-next
       (kbd "<leader>ap") #'avy-prev)))
 
-(use-package hideshow
-  :hook
-  (prog-mode-hook . (lambda ()
-                      (hs-minor-mode)
-                      (unless (derived-mode-p 'html-mode)
-                        (hs-hide-all))))
-  :init
-  (setq hs-hide-comments-when-hiding-all nil)
+(use-package company
+  :ensure t
+  :hook (after-init-hook . global-company-mode)
+  :custom
+  (company-minimum-prefix-length 2)
+  (company-idle-delay 0)
+  (company-selection-wrap-around t)
+  (company-require-match nil)
+  (company-tooltip-align-annotations t))
+
+(use-package aggressive-indent
+  :ensure t
+  :hook (after-init-hook . global-aggressive-indent-mode)
   :config
-  (with-eval-after-load 'evil
-    (evil-define-key 'normal hs-minor-mode-map
-      (kbd "<leader>ff") #'hs-toggle-hiding
-      (kbd "<leader>fs") #'hs-show-all
-      (kbd "<leader>fh") #'hs-hide-all)))
+  (push 'python-base-mode aggressive-indent-excluded-modes))
 
 (use-package nerd-icons-completion
   :ensure t
@@ -679,73 +626,16 @@ STRING is the string to format and display to the user"
                          "N" #'isearch-repeat-backward
                          (kbd "C-r") #'revert-buffer))
 
-(use-package which-key
-  :ensure t
-  :hook (after-init-hook . which-key-mode)
-  :init
-  (setq which-key-idle-delay 0.25
-        which-key-sort-order 'which-key-prefix-then-key-order)
-  :config
-  (which-key-add-key-based-replacements
-    "SPC c" "Code Prefix"
-    "SPC i" "Intellisense Prefix"
-    "SPC P" "Package Prefix"
-    "SPC p" "Project Prefix"
-    "SPC o" "Open Prefix"
-    "SPC s" "Settings Prefix"
-    "SPC m" "Music Prefix"
-    "SPC a" "Jump Prefix"
-    "SPC f" "Fold Prefix"
-    "SPC l" "Lorem Prefix"
-    "SPC e" "Eat Prefix"
-    "SPC C" "Consult Prefix"))
-
-(use-package ibuffer
-  :commands ibuffer
-  :init
-  (defun ibuffer-toggle-mark ()
-    "Toggle mark on the current file"
-    (interactive)
-    (save-excursion
-      (beginning-of-line)
-      (if (eq (following-char) ibuffer-marked-char)
-          (call-interactively 'ibuffer-unmark-forward)
-        (call-interactively 'ibuffer-mark-forward)))
-    (dired-next-line 1))
-  (with-eval-after-load 'evil
-    (add-hook 'ibuffer-mode-hook
-              (lambda () (setq-local evil-emacs-state-cursor '(bar . 0))))
-    (evil-define-key 'emacs ibuffer-mode-map
-      "j" #'ibuffer-forward-line
-      "k" #'ibuffer-backward-line
-      "d" #'ibuffer-do-delete
-      " " #'ibuffer-toggle-mark
-      [return] (lambda ()
-                 (interactive)
-                 (call-interactively 'ibuffer-visit-buffer)
-                 (kill-buffer "*Ibuffer*"))))
-  :config
-  (add-hook 'ibuffer-mode-hook
-            (lambda ()
-              (setq-local cursor-type nil)
-              (hl-line-mode 1))))
-
 (use-package visual-regexp
   :ensure t
   :init
   (defalias 's 'vr/query-replace))
 
-(use-package auth-source
-  :init
-  (setq auth-source-save-behavior nil))
-
-(use-package server
-  :autoload (server-running-p server-start))
-
 (use-package eat
   :ensure t
   :init
   (setq eat-kill-buffer-on-exit t)
+
   (defun eat-new ()
     "Spawn a new `*eat*' terminal when one already exists"
     (interactive)
@@ -853,19 +743,116 @@ STRING is the string to format and display to the user"
                                       (eat-emacs-mode)
                                       (eat-change-cwd)))))
 
-(use-package which-function-mode
+(use-package which-key
+  :ensure t
+  :hook (after-init-hook . which-key-mode)
+  :init
+  (setq which-key-idle-delay 0.25
+        which-key-sort-order 'which-key-prefix-then-key-order)
+  :config
+  (which-key-add-key-based-replacements
+    "SPC c" "Code Prefix"
+    "SPC i" "Intellisense Prefix"
+    "SPC P" "Package Prefix"
+    "SPC p" "Project Prefix"
+    "SPC o" "Open Prefix"
+    "SPC s" "Settings Prefix"
+    "SPC m" "Music Prefix"
+    "SPC a" "Jump Prefix"
+    "SPC f" "Fold Prefix"
+    "SPC l" "Lorem Prefix"
+    "SPC e" "Eat Prefix"
+    "SPC C" "Consult Prefix"))
+
+(use-package autorevert
+  ;;; Auto revert buffers (automatically update the buffer when a filebuffer is
+  ;;; changed)
+  :hook (after-init-hook . global-auto-revert-mode))
+
+(use-package elec-pair
+  ;;; Auto close parentheses, double quotes, etc.
+  :hook (after-init-hook . electric-pair-mode))
+
+(use-package window
+  :init
+  (add-to-list 'display-buffer-alist
+               `(,(lambda (buffer arg)
+                    "Always open files in an already existing window"
+                    (buffer-file-name (get-buffer buffer)))
+                 display-buffer-same-window)))
+
+(use-package simple
+  :config
+  ;; Replaces the default "Kill Unsaved Buffer" UI
+  (advice-add 'kill-buffer--possibly-save :override
+              (lambda (buffer &rest -)
+                (cl-case (car (read-multiple-choice "Buffer is modified, kill anyway?"
+                                                    '((?y "yes")
+                                                      (?s "save"))))
+                  (?y t)
+                  (?s (with-current-buffer buffer
+                        (save-buffer)
+                        t))))))
+
+(use-package saveplace
+  :custom
+  (save-place-forget-unreadable-files nil)
+  :init
+  (save-place-mode 1)
+  (when (file-writable-p "/tmp/emacs-places")
+    (setq save-place-file "/tmp/emacs-places")))
+
+(use-package hideshow
+  :hook
+  (prog-mode-hook . (lambda ()
+                      (hs-minor-mode)
+                      (unless (derived-mode-p 'html-mode)
+                        (hs-hide-all))))
+  :init
+  (setq hs-hide-comments-when-hiding-all nil)
   :config
   (with-eval-after-load 'evil
-    (evil-define-key 'normal prog-mode-map
-      (kbd "<leader>sF") #'which-function-mode)))
+    (evil-define-key 'normal hs-minor-mode-map
+      (kbd "<leader>ff") #'hs-toggle-hiding
+      (kbd "<leader>fs") #'hs-show-all
+      (kbd "<leader>fh") #'hs-hide-all)))
 
-(use-package centered-cursor-mode
-  :ensure t
+(use-package ibuffer
+  :commands ibuffer
   :init
+  (defun ibuffer-toggle-mark ()
+    "Toggle mark on the current file"
+    (interactive)
+    (save-excursion
+      (beginning-of-line)
+      (if (eq (following-char) ibuffer-marked-char)
+          (call-interactively 'ibuffer-unmark-forward)
+        (call-interactively 'ibuffer-mark-forward)))
+    (dired-next-line 1))
   (with-eval-after-load 'evil
-    (evil-define-key '(normal motion) 'global
-      (kbd "<leader>ss") #'centered-cursor-mode
-      (kbd "<leader>sS") #'global-centered-cursor-mode)))
+    (add-hook 'ibuffer-mode-hook
+              (lambda () (setq-local evil-emacs-state-cursor '(bar . 0))))
+    (evil-define-key 'emacs ibuffer-mode-map
+      "j" #'ibuffer-forward-line
+      "k" #'ibuffer-backward-line
+      "d" #'ibuffer-do-delete
+      " " #'ibuffer-toggle-mark
+      [return] (lambda ()
+                 (interactive)
+                 (call-interactively 'ibuffer-visit-buffer)
+                 (kill-buffer "*Ibuffer*"))))
+  :config
+  (add-hook 'ibuffer-mode-hook
+            (lambda ()
+              (setq-local cursor-type nil)
+              (hl-line-mode 1))))
+
+(use-package auth-source
+  :init
+  (setq auth-source-save-behavior nil))
+
+(use-package server
+  :autoload (server-running-p server-start))
 
 
 ;;; MAGIT
@@ -892,6 +879,7 @@ STRING is the string to format and display to the user"
       "k" #'magit-previous-line
       "v" #'evil-visual-char
       "V" #'evil-visual-line))
+
   (defun magit-kill-diffs ()
     "Kill the diff buffers that's associated with the current repo"
     (kill-buffer (magit-get-mode-buffer 'magit-diff-mode)))
@@ -1008,9 +996,25 @@ STRING is the string to format and display to the user"
   :init
   (require 'tramp))
 
+(use-package help
+  :init
+  (add-to-list 'display-buffer-alist '("\\*Help\\*" display-buffer-same-window))
+  (add-to-list 'display-buffer-alist
+               '("\\*Metahelp\\*" display-buffer-same-window))
+  (with-eval-after-load 'evil
+    (evil-define-key 'motion help-mode-map
+      [return] #'push-button
+      (kbd "<leader>n") #'forward-button
+      (kbd "<leader>p") #'backward-button)))
+
 
 ;;; ORG
 (use-package org
+  :hook (org-mode-hook . (lambda ()
+                           (setq-local indent-tabs-mode nil)
+                           (display-line-numbers-mode 0)
+                           (org-indent-mode 1)
+                           (turn-on-auto-fill)))
   :init
   (setq org-ellipsis " ▼"
         org-startup-folded t
@@ -1022,12 +1026,6 @@ STRING is the string to format and display to the user"
         org-edit-src-content-indentation 0
         org-src-tab-acts-natively t
         org-src-preserve-indentation t)
-  (add-hook 'org-mode-hook
-            (lambda ()
-              (setq-local indent-tabs-mode nil)
-              (display-line-numbers-mode 0)
-              (org-indent-mode 1)
-              (turn-on-auto-fill)))
   :config
   (with-eval-after-load 'evil
     (evil-define-key 'motion org-mode-map
@@ -1379,42 +1377,47 @@ STRING is the string to format and display to the user"
       (kbd "<leader>lp") #'lorem-ipsum-insert-paragraphs
       (kbd "<leader>ll") #'lorem-ipsum-insert-list)))
 
-(unless (version< emacs-version "29")
-  (use-package treesit
-    :init
-    (setq treesit-language-source-alist
-          '((astro "https://github.com/virchau13/tree-sitter-astro")
-            (css "https://github.com/tree-sitter/tree-sitter-css")
-            (typescript "https://github.com/tree-sitter/tree-sitter-typescript"
-                        "master" "typescript/src")
-            (tsx "https://github.com/tree-sitter/tree-sitter-typescript"
-                 "master" "tsx/src")
-            (python "https://github.com/tree-sitter/tree-sitter-python")
-            (java "https://github.com/tree-sitter/tree-sitter-java"))))
+(use-package which-function-mode
+  :init
+  (with-eval-after-load 'evil
+    (evil-define-key 'normal prog-mode-map
+      (kbd "<leader>sF") #'which-function-mode)))
 
-  (use-package treesit-auto
-    :ensure t
-    :hook (after-init-hook . global-treesit-auto-mode)
-    :init
-    (setq treesit-auto-install 'prompt
-          treesit-auto-langs '(python rust bash c))
-    :config
-    (treesit-auto-add-to-auto-mode-alist 'all))
+(use-package treesit
+  :init
+  (setq treesit-language-source-alist
+        '((astro "https://github.com/virchau13/tree-sitter-astro")
+          (css "https://github.com/tree-sitter/tree-sitter-css")
+          (typescript "https://github.com/tree-sitter/tree-sitter-typescript"
+                      "master" "typescript/src")
+          (tsx "https://github.com/tree-sitter/tree-sitter-typescript"
+               "master" "tsx/src")
+          (python "https://github.com/tree-sitter/tree-sitter-python")
+          (java "https://github.com/tree-sitter/tree-sitter-java"))))
 
-  (use-package astro-ts-mode
-    :ensure t
-    :init
-    (defvaralias 'astro-ts-mode-indent-offset 'tab-width)
-    (add-to-list 'auto-mode-alist '("\\.astro\\'" . astro-ts-mode))
-    (defun treesit-grammar-ensure (mode &rest _)
-      (when (eq mode 'astro-ts-mode)
-        (let ((treesit-languages '(astro css tsx typescript)))
-          (dolist (language treesit-languages)
-            (unless (treesit-language-available-p language)
-              (message "Installing the \"%s\" language grammar" language)
-              (let ((inhibit-message t))
-                (treesit-install-language-grammar language)))))))
-    (advice-add 'set-auto-mode-0 :before #'treesit-grammar-ensure)))
+(use-package treesit-auto
+  :ensure t
+  :hook (after-init-hook . global-treesit-auto-mode)
+  :init
+  (setq treesit-auto-install 'prompt
+        treesit-auto-langs '(python rust bash c))
+  :config
+  (treesit-auto-add-to-auto-mode-alist 'all))
+
+(use-package astro-ts-mode
+  :ensure t
+  :init
+  (defvaralias 'astro-ts-mode-indent-offset 'tab-width)
+  (add-to-list 'auto-mode-alist '("\\.astro\\'" . astro-ts-mode))
+  (defun treesit-grammar-ensure (mode &rest _)
+    (when (eq mode 'astro-ts-mode)
+      (let ((treesit-languages '(astro css tsx typescript)))
+        (dolist (language treesit-languages)
+          (unless (treesit-language-available-p language)
+            (message "Installing the \"%s\" language grammar" language)
+            (let ((inhibit-message t))
+              (treesit-install-language-grammar language)))))))
+  (advice-add 'set-auto-mode-0 :before #'treesit-grammar-ensure))
 
 
 ;;; MISC
@@ -1453,16 +1456,6 @@ STRING is the string to format and display to the user"
 				  (bongo-insert-file dir)
 				  (goto-char (point-min)))))))
 
-(use-package help
-  :init
-  (add-to-list 'display-buffer-alist '("\\*Help\\*" display-buffer-same-window))
-  (add-to-list 'display-buffer-alist
-               '("\\*Metahelp\\*" display-buffer-same-window))
-  (with-eval-after-load 'evil
-    (evil-define-key 'motion help-mode-map
-      [return] #'push-button
-      (kbd "<leader>n") #'forward-button
-      (kbd "<leader>p") #'backward-button)))
 
 
 ;;; CUSTOM SPLASH SCREEN
@@ -1514,7 +1507,6 @@ STRING is the string to format and display to the user"
             buffer))))
 
 
-
 ;;; CUSTOM MODELINE
 (defvar mode-line-selected-window nil)
 (add-function :before pre-redisplay-function
@@ -1556,7 +1548,7 @@ STRING is the string to format and display to the user"
                          (let ((cur-fn (gethash (selected-window)
                                                 which-func-table))
                                (face `(:foreground
-                                       ,(aref ansi-color-names-vector 3))))
+                                       ,(face-foreground 'ansi-color-magenta))))
                            (if cur-fn
                                (format "[%s]  " (propertize cur-fn 'face face))
                              "[-]  ")))
