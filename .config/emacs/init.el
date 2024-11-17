@@ -234,9 +234,6 @@ STRING is the string to format and display to the user"
   (interactive)
   (mapc (lambda (theme) (load-theme theme t)) custom-enabled-themes))
 
-(defvar emacs-bin-dir (concat (file-name-directory user-init-file) "bin/")
-  "A directory to put binaries specifically for emacs")
-
 
 ;;; HOOKS
 (add-hook 'buffer-list-update-hook ;; Always have `*scratch*' ready to go
@@ -527,7 +524,6 @@ STRING is the string to format and display to the user"
                         (save-buffer)
                         t))))))
 
-
 (use-package saveplace
   :custom
   (save-place-forget-unreadable-files nil)
@@ -565,14 +561,6 @@ STRING is the string to format and display to the user"
   :ensure t
   :hook (after-init-hook . marginalia-mode))
 
-(use-package consult
-  :ensure t
-  :init
-  (global-set-key [remap switch-to-buffer] #'consult-buffer)
-  (with-eval-after-load 'evil
-    (evil-define-key 'normal 'global
-      (kbd "<leader>Cl") #'consult-line)))
-
 (use-package avy
   :ensure t
   :init
@@ -585,16 +573,16 @@ STRING is the string to format and display to the user"
       (kbd "<leader>ap") #'avy-prev)))
 
 (use-package hideshow
+  :hook
+  (prog-mode-hook . (lambda ()
+                      (hs-minor-mode)
+                      (unless (derived-mode-p 'html-mode)
+                        (hs-hide-all))))
   :init
   (setq hs-hide-comments-when-hiding-all nil)
-  (add-hook 'prog-mode-hook
-            (lambda ()
-              (hs-minor-mode)
-              (unless (derived-mode-p 'html-mode)
-                (hs-hide-all))))
   :config
   (with-eval-after-load 'evil
-    (evil-define-key 'normal 'hs-minor-mode
+    (evil-define-key 'normal hs-minor-mode-map
       (kbd "<leader>ff") #'hs-toggle-hiding
       (kbd "<leader>fs") #'hs-show-all
       (kbd "<leader>fh") #'hs-hide-all)))
@@ -1059,38 +1047,65 @@ STRING is the string to format and display to the user"
 
 
 ;;; PROGRAMMING
-(use-package conf-mode
-  :hook
-  (conf-desktop-mode-hook . (lambda ()
-                              (when (= (buffer-size) 0)
-                                (insert "[Desktop Entry]\n"
-                                        "Encoding=UTF-8\n"
-                                        "Version=1.0\n"
-                                        "Type=Application\n"
-                                        "Terminal=false\n"
-                                        "Name=\n"
-                                        "Icon=\n"
-                                        "Exec=")))))
+(use-package prog-mode
+  :hook (prog-mode-hook . (lambda () (visual-line-mode 0)))
+  :config
+  (with-eval-after-load 'evil
+    (evil-define-key 'visual prog-mode-map "gc" #'comment-dwim)
+    (evil-define-key 'insert prog-mode-map
+      (kbd "<M-RET>") #'comment-indent-new-line)
+    (evil-define-key 'motion prog-mode-map
+      (kbd "<leader>ce") #'run
+      (kbd "<leader>cs") #'shell-command)
+    (evil-define-key 'normal prog-mode-map
+      "gc" #'comment-line)))
 
 (use-package eglot
   :ensure t
-  :hook 
-  ((after-init-hook . (lambda ()
-                        "Make sure eglot-booster is installed"
-                        (unless (fboundp 'eglot-booster-mode)
-                          (package-vc-install "https://github.com/jdtsmith/eglot-booster"))
-                        (when (executable-find "emacs-lsp-booster")
-                          (eglot-booster-mode)))))
   :init
   (setq eglot-autoshutdown t
         eglot-events-buffer-config '(:size 0 :format full))
-  (add-to-list 'exec-path emacs-bin-dir)
 
-  (defun install--archive (url name relative-path)
+  (defvar emacs-bin-dir (concat (file-name-directory user-init-file) "bin/")
+    "A directory to put binaries specifically for emacs")
+
+  (add-to-list 'exec-path emacs-bin-dir)
+  (setenv "PATH" (concat
+                  emacs-bin-dir
+                  ":"
+                  (getenv "PATH")))
+
+  (defun install--get-release-url (repo regex)
+    "Get an asset download url from the latest release from Github"
+    (let ((api-url (format "https://api.github.com/repos/%s/releases/latest" repo)))
+      (with-current-buffer (url-retrieve-synchronously api-url t)
+        (end-of-buffer)
+        (beginning-of-line)
+        (gethash "browser_download_url"
+                 (seq-find (lambda (release)
+                             (string-match-p regex (gethash "browser_download_url" release)))
+                           (gethash "assets" (json-parse-buffer)))))))
+
+  (defun install--npm (name)
+    "Installs an npm package as a binary locally for emacs"
+    (if (not (executable-find "npm"))
+        (error "`npm' isn't installed")
+      (let* ((binary-path (file-name-concat emacs-bin-dir name))
+             (directory-path (concat binary-path "-dir")))
+        (unless (file-directory-p directory-path)
+          (make-directory directory-path t))
+        (let ((default-directory directory-path))
+          (when (eq 0 (call-process "npm" nil nil nil "install" name))
+            (write-region (format "#!/bin/sh\nexec '%s' \"$@\"\n"
+                                  (file-name-concat directory-path "node_modules" ".bin" name))
+                          nil binary-path)
+            (set-file-modes binary-path #o755))))))
+
+  (defun install--archive (url name relative-path &optional movable)
     "Installs an archive as a binary locally for Emacs"
     (let* ((unarchive-cmd (if (string-suffix-p ".zip" url) 'unzip 'tar))
-           (binary-path (format "%s%s" emacs-bin-dir name))
-           (directory-path (format "%s-dir" binary-path))
+           (binary-path (file-name-concat emacs-bin-dir name))
+           (directory-path (concat binary-path "-dir"))
            (archive-path (format "%s.%s" binary-path
                                  (if (eq unarchive-cmd 'unzip)
                                      "zip" "tar.gz"))))
@@ -1104,34 +1119,15 @@ STRING is the string to format and display to the user"
                                "tar xf %s -C %s")
                              archive-path directory-path))
       (delete-file archive-path)
-      (write-region (format "#!/bin/sh\nexec '%s/%s' \"$@\"" directory-path relative-path)
-                    nil binary-path)
-      ;; Make file executable
-      (let* ((current-mode (file-modes binary-path))
-             (add-mode (logand ?\111 (default-file-modes))))
-        (or (/= (logand ?\111 current-mode) 0)
-            (zerop add-mode)
-            (set-file-modes binary-path
-                            (logior current-mode add-mode))))))
+      (let ((absolute-path (car (file-expand-wildcards (file-name-concat directory-path relative-path)))))
+        (if (not movable)
+            (write-region (format "#!/bin/sh\nexec '%s' \"$@\"" absolute-path)
+                          nil binary-path)
+          (rename-file absolute-path binary-path)
+          (delete-directory directory-path t)))
+      (set-file-modes binary-path #o755)))
 
-  (defun install/emacs-lsp-booster ()
-    "Installs `emacs-lsp-booster' from https://github.com/blahgeek/emacs-lsp-booster"
-    (interactive)
-    (let* ((api-url "https://api.github.com/repos/blahgeek/emacs-lsp-booster/releases/latest")
-           (regex (cond
-                   ((eq system-type 'gnu/linux) "-unknown-linux-musl\\.zip$")
-                   ((eq system-type 'darwin) "-apple-darwin\\.zip$")
-                   ((eq system-type 'windows-nt) "-pc-windows-gnu\\.zip$")))
-           (exe-url (with-current-buffer (url-retrieve-synchronously api-url nil t)
-                      (goto-char (point-max))
-                      (beginning-of-line)
-                      (gethash "browser_download_url"
-                               (seq-find (lambda (release)
-                                           (string-match-p regex (gethash "browser_download_url" release)))
-                                         (gethash "assets" (json-parse-buffer)))))))
-      (install--archive exe-url "emacs-lsp-booster" "emacs-lsp-booster")))
-
-  (defun lsp-install/jdtls ()
+  (defun lsp-install/java ()
     "Installs the latest version of `jdtls' from http://download.eclipse.org/jdtls/milestones/"
     (interactive)
     (let ((main-repo-url "https://download.eclipse.org/jdtls/milestones/")
@@ -1152,7 +1148,7 @@ STRING is the string to format and display to the user"
                             "jdtls"
                             "bin/jdtls")))))
 
-  (defun lsp-install/lua-language-server ()
+  (defun lsp-install/lua ()
     "Installs the latest release of `lua-language-server'"
     (interactive)
     (let ((api-url "https://api.github.com/repos/LuaLS/lua-language-server/releases/latest")
@@ -1167,6 +1163,23 @@ STRING is the string to format and display to the user"
                                              (gethash "assets" (json-parse-buffer))))
                           "lua-language-server"
                           "bin/lua-language-server"))))
+
+  (defun lsp-install/bash ()
+    "Installs the latest release of `bash-language-server' using `npm' and `shellcheck'"
+    (interactive)
+    (install--npm "bash-language-server")
+    (let ((shellcheck-url-regex (concat
+                                 (cond ((eq system-type 'gnu/linux) "linux")
+                                       ((eq system-type 'darwin) "darwin")
+                                       (t ""))
+                                 "."
+                                 (cond ((string-prefix-p "x86_64" system-configuration) "x86_64")
+                                       ((string-prefix-p "aarch64" system-configuration) "aarch64")
+                                       (t "zip")))))
+      (install--archive (install--get-release-url "koalaman/shellcheck" shellcheck-url-regex)
+                        "shellcheck"
+                        "shellcheck*/shellcheck"
+                        t)))
 
   (defun eglot-toggle ()
     "Turn eglot either on or off"
@@ -1191,6 +1204,95 @@ STRING is the string to format and display to the user"
 (use-package yasnippet
   :ensure t
   :hook (prog-mode-hook . yas-minor-mode))
+
+(use-package conf-mode
+  :hook
+  (conf-desktop-mode-hook . (lambda ()
+                              (when (= (buffer-size) 0)
+                                (insert "[Desktop Entry]\n"
+                                        "Encoding=UTF-8\n"
+                                        "Version=1.0\n"
+                                        "Type=Application\n"
+                                        "Terminal=false\n"
+                                        "Name=\n"
+                                        "Icon=\n"
+                                        "Exec=")))))
+
+(use-package lua-mode
+  :ensure t
+  :init
+  (setq lua-indent-level 4
+        lua-indent-string-contents t
+        lua-indent-close-paren-align nil
+        lua-indent-nested-block-content-align nil)
+  (defun lua-heading (description)
+    "Insert a heading for the current file"
+    (interactive "MDescription: ")
+    (let ((border (concat (make-string 80 ?-) "\n"))
+          (comment "---")
+          (contents `((,description)
+                      ("")
+                      ("@author Smeueg (https://github.com/Smeueg)")
+                      ("@copyright %s Smeueg" ,(format-time-string "%Y"))
+                      ("")
+                      ("Relevant Documentation:")
+                      ("* "))))
+      (save-excursion
+        (goto-char (point-min))
+        (insert border)
+        (dolist (content contents)
+          (insert comment)
+          (insert " ")
+          (insert (apply #'format content))
+          (newline))
+        (insert border)))))
+
+(use-package emmet-mode
+  :ensure t
+  :init
+  (dolist (mode '(mhtml-mode-hook css-mode-hook astro-ts-mode-hook astro-mode-hook))
+    (add-hook mode #'emmet-mode)))
+
+(use-package mhtml-mode
+  :hook (mhtml-mode-hook . (lambda () (setq-local tab-width 2)))
+  :init
+  (with-eval-after-load 'evil
+    (evil-define-key 'visual mhtml-mode-map "gc" #'comment-dwim)
+    (evil-define-key 'normal mhtml-mode-map
+      "gc" #'comment-line
+      (kbd "<leader>ce") #'run)))
+
+(use-package rust-mode
+  :ensure t
+  :config
+  (with-eval-after-load 'evil
+    (evil-define-key 'normal rust-mode-map
+      (kbd "<leader>cf") #'rust-format-buffer
+      (kbd "<leader>cc") #'rust-compile
+      (kbd "<leader>ck") #'rust-check
+      (kbd "<leader>cm") #'rust-toggle-mutability))
+  (add-hook 'rust-mode-hook (lambda () (indent-tabs-mode 0))))
+
+(use-package markdown-mode
+  :ensure t)
+
+(use-package sh-script
+  :hook
+  (sh-base-mode-hook . (lambda ()
+                         (sh-electric-here-document-mode 0)
+                         (indent-tabs-mode 0)
+                         (when (= (buffer-size) 0) (insert "#!/bin/sh\n\n")))))
+
+(use-package emacs-lisp
+  :hook (emacs-lisp-mode-hook . (lambda () (indent-tabs-mode 0))))
+
+(use-package python
+  :hook
+  ((python-mode-hook python-base-mode-hook) .
+   (lambda ()
+     (setq-local tab-width (default-value 'tab-width))))
+  :init
+  (setq python-indent-guess-indent-offset nil))
 
 (use-package project
   :init
@@ -1267,102 +1369,6 @@ STRING is the string to format and display to the user"
       (setq flymake-error-bitmap 'bar-error
             flymake-warning-bitmap 'bar-warning
             flymake-note-bitmap 'bar-note))))
-
-(use-package flymake-shellcheck
-  :ensure t
-  :init
-  (setq flymake-shellcheck-use-file t)
-  (add-hook (if (boundp 'sh-base-mode-hook) 'sh-base-mode-hook 'sh-mode-hook)
-            #'flymake-shellcheck-load))
-
-(use-package lua-mode
-  :ensure t
-  :init
-  (setq lua-indent-level 4
-        lua-indent-string-contents t
-        lua-indent-close-paren-align nil
-        lua-indent-nested-block-content-align nil)
-  (defun lua-heading (description)
-    "Insert a heading for the current file"
-    (interactive "MDescription: ")
-    (let ((border (concat (make-string 80 ?-) "\n"))
-          (comment "---")
-          (contents `((,description)
-                      ("")
-                      ("@author Smeueg (https://github.com/Smeueg)")
-                      ("@copyright %s Smeueg" ,(format-time-string "%Y"))
-                      ("")
-                      ("Relevant Documentation:")
-                      ("* "))))
-      (save-excursion
-        (goto-char (point-min))
-        (insert border)
-        (dolist (content contents)
-          (insert comment)
-          (insert " ")
-          (insert (apply #'format content))
-          (newline))
-        (insert border)))))
-
-(use-package emmet-mode
-  :ensure t
-  :init
-  (dolist (mode '(mhtml-mode-hook css-mode-hook astro-ts-mode-hook astro-mode-hook))
-    (add-hook mode #'emmet-mode)))
-
-(use-package mhtml-mode
-  :hook (mhtml-mode-hook . (lambda () (setq-local tab-width 2)))
-  :init
-  (with-eval-after-load 'evil
-    (evil-define-key 'visual mhtml-mode-map "gc" #'comment-dwim)
-    (evil-define-key 'normal mhtml-mode-map
-      "gc" #'comment-line
-      (kbd "<leader>ce") #'run)))
-
-(use-package prog-mode
-  :config
-  (with-eval-after-load 'evil
-    (evil-define-key 'visual prog-mode-map "gc" #'comment-dwim)
-    (evil-define-key 'insert prog-mode-map
-      (kbd "<M-RET>") #'comment-indent-new-line)
-    (evil-define-key 'normal prog-mode-map
-      "gc" #'comment-line
-      (kbd "<leader>ce") #'run
-      (kbd "<leader>cs") #'shell-command))
-  (add-hook 'prog-mode-hook ;; Disable line wrapping
-            (lambda () (visual-line-mode 0))))
-
-(use-package rust-mode
-  :ensure t
-  :config
-  (with-eval-after-load 'evil
-    (evil-define-key 'normal rust-mode-map
-      (kbd "<leader>cf") #'rust-format-buffer
-      (kbd "<leader>cc") #'rust-compile
-      (kbd "<leader>ck") #'rust-check
-      (kbd "<leader>cm") #'rust-toggle-mutability))
-  (add-hook 'rust-mode-hook (lambda () (indent-tabs-mode 0))))
-
-(use-package markdown-mode
-  :ensure t)
-
-(use-package sh-script
-  :hook
-  (sh-base-mode-hook . (lambda ()
-                         (sh-electric-here-document-mode 0)
-                         (indent-tabs-mode 0)
-                         (when (= (buffer-size) 0) (insert "#!/bin/sh\n\n")))))
-
-(use-package emacs-lisp
-  :hook (emacs-lisp-mode-hook . (lambda () (indent-tabs-mode 0))))
-
-(use-package python
-  :hook
-  ((python-mode-hook python-base-mode-hook) .
-   (lambda ()
-     (setq-local tab-width (default-value 'tab-width))))
-  :init
-  (setq python-indent-guess-indent-offset nil))
 
 (use-package lorem-ipsum
   :ensure t
