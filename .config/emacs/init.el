@@ -1384,9 +1384,7 @@ STRING is the string to format and display to the user"
             (tsx "https://github.com/tree-sitter/tree-sitter-typescript"
                  "master" "tsx/src")
             (python "https://github.com/tree-sitter/tree-sitter-python")
-            (java "https://github.com/tree-sitter/tree-sitter-java"
-                  )
-            )))
+            (java "https://github.com/tree-sitter/tree-sitter-java"))))
 
   (use-package treesit-auto
     :ensure t
