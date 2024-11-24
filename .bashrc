@@ -110,3 +110,8 @@ fi
 if [ "${TERM}" = "eat-truecolor" ]; then
 	export EDITOR="emacsclient"
 fi
+
+#@section Fix GPG agent issues in TERMUX
+if [ "${TERMUX_VERSION}" ]; then
+    export GPG_TTY=$(tty)
+fi
