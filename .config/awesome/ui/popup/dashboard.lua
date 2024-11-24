@@ -15,10 +15,15 @@ local icons = require("ui.icons")
 local lgi = require("lgi")
 local cairo = lgi.cairo
 local Gio = lgi.Gio
+local Gtk = lgi.Gtk
+local GLib = lgi.GLib
+local default_icon_theme = Gtk.IconTheme.get_default()
 
 local dashboard = {}
 
-
+--- Execute a keybinding in Awesome
+---@param modifiers string[]|nil
+---@param key string
 local function execute_keybinding(modifiers, key)
 	local conversion = {
 		Mod4 = "Super_L",
@@ -206,18 +211,27 @@ end
 ---@class Entry
 ---@field name string
 ---@field height number
----@field appinfo AppInfo
+---@field appinfo Gio.AppInfo
 local Entry = {}
+Entry.mt = {
+	__lt = function(first_entry, second_entry)
+		return first_entry.name < second_entry.name
+	end,
+	__le = function(first_entry, second_entry)
+		return first_entry.name <= second_entry.name
+	end,
+	__index = Entry
+}
 
 --- Creates a new Entry object
----@param launcher_section LauncherSection
----@param appinfo AppInfo
-function Entry:new(launcher_section, appinfo)
+---@param appinfo Gio.AppInfo
+function Entry.new(appinfo)
 	local name = appinfo:get_name()
+
 	local textbox = wibox.widget {
 		widget = wibox.widget.textbox,
 		forced_width = beautiful.dashboard_text_width,
-		text = name:gsub(
+		text = " " .. name:gsub(
 			".*",
 			{
 				["&"] = "&amp;",
@@ -227,6 +241,8 @@ function Entry:new(launcher_section, appinfo)
 		)
 	}
 	local _, textbox_height = textbox:get_preferred_size(awful.screen.focused())
+	textbox.forced_height = textbox_height
+
 	local entry = wibox.widget {
 		widget = wibox.container.background,
 		name = name,
@@ -236,34 +252,33 @@ function Entry:new(launcher_section, appinfo)
 			widget = wibox.container.margin,
 			margins = beautiful.dashboard_margins,
 			{
-				widget = wibox.widget.textbox,
-				forced_width = beautiful.dashboard_text_width,
-				text = name:gsub(
-					".*",
-					{
-						["&"] = "&amp;",
-						["<"] = "&lt;",
-						["'"] = "&#39;",
-					}
-				)
+				layout = wibox.layout.fixed.horizontal,
+				{
+					widget = wibox.widget.imagebox,
+					forced_height = textbox_height,
+					forced_width = textbox_height,
+					id = "imagebox"
+				},
+				textbox
 			}
 		}
 
 	}
-	setmetatable(entry, { __index = self })
-	entry:connect_signal(
-		"mouse::enter",
-		function(hovered_entry)
-			for i, e in ipairs(launcher_section.entries_filtered) do
-				e:unhighlight()
-				if e == hovered_entry then
-					e:highlight()
-					launcher_section.chosen = i
-				end
-			end
-		end
-	)
+	setmetatable(entry, Entry.mt)
 	return entry
+end
+
+function Entry:load_icon()
+	local imagebox = self:get_children_by_id("imagebox")[1]
+	if imagebox._private.image ~= nil then return end
+
+	local icon = self.appinfo:get_icon()
+	if icon == nil then return end
+	imagebox.image = default_icon_theme:lookup_icon(
+		icon:get_names()[1],
+		16,
+		0
+	):get_filename()
 end
 
 --- Launch an entry
@@ -294,6 +309,7 @@ end
 ---@field scrollbar wibox.widget.imagebox
 local LauncherSection = {}
 local LauncherSection_mt = { __index = LauncherSection }
+
 --- Create a new LauncherSection
 function LauncherSection:new()
 	local section
@@ -310,14 +326,15 @@ function LauncherSection:new()
 	section = wibox.widget {
 		layout = wibox.layout.fixed.vertical,
 		spacing = beautiful.dashboard_launcher_spacing,
-		buttons = awful.button(
-			{}, 1,
-			function()
-				local entry = section.entries_filtered[section.chosen]
-				if not entry then return end
-				entry:run()
-				dashboard.toggle()
-			end
+        buttons = gears.table.join(
+			awful.button({}, 1, function()
+					local entry = section.entries_filtered[section.chosen]
+					if not entry then return end
+					entry:run()
+					dashboard.toggle()
+            end),
+			awful.button({}, 4, function() section:scrollUp() end),
+			awful.button({}, 5, function() section:scrollDown() end)
 		),
 		{
 			layout = wibox.layout.fixed.horizontal,
@@ -344,13 +361,29 @@ function LauncherSection:new()
 	section.saved_text = ""
 	setmetatable(section, LauncherSection_mt)
 
-	--- Get/Create Entries
-	section.entries = {}
-	for _, appinfo in ipairs(Gio.AppInfo.get_all()) do
-		if appinfo:should_show() then
-			table.insert(section.entries, Entry:new(section, appinfo))
+	local mouse_handler = function(entry)
+		for i, e in ipairs(section.entries_filtered) do
+			if e == entry then
+				e:highlight()
+				section.chosen = i
+            else
+				e:unhighlight()
+			end
 		end
 	end
+
+	--- Get/Create Entries
+		section.entries = {}
+	for _, appinfo in ipairs(Gio.AppInfo.get_all()) do
+		if appinfo:should_show() then
+			local entry = Entry.new(appinfo)
+
+            entry:connect_signal("mouse::enter", mouse_handler)
+
+			table.insert(section.entries, entry)
+		end
+	end
+	table.sort(section.entries)
 
 	section:focus()
 
@@ -361,20 +394,25 @@ function LauncherSection:new()
 				execute_keybinding(nil, "Tab")
 			end
 		end
-	)
+    )
 	return section
 end
 
 --- Filter and redraw the grid and scrollbar of a LauncherSection
----@param search_string string
+---@param search_string string | nil
 function LauncherSection:filter_and_redisplay(search_string)
-	self.entries_filtered = {}
-	local entry_amount = 0
-	for _, entry in ipairs(self.entries) do
-		if entry.name:lower():match(search_string:lower()) then
-			entry_amount = entry_amount + 1
-			table.insert(self.entries_filtered, entry)
+	local entry_amount
+	if search_string then
+		self.entries_filtered = {}
+		entry_amount = 0
+		for _, entry in ipairs(self.entries) do
+			if entry.name:lower():match(search_string:lower()) then
+				entry_amount = entry_amount + 1
+				table.insert(self.entries_filtered, entry)
+			end
 		end
+	else
+		entry_amount = #self.entries_filtered
 	end
 
 	self.chosen = math.max(self.chosen, 1)
@@ -399,6 +437,10 @@ function LauncherSection:filter_and_redisplay(search_string)
 	for i = index_start, index_end do
 		local entry = self.entries_filtered[i]
 		if entry then
+			-- Load icon first
+			entry:load_icon()
+
+			-- Add entry to grid
 			self.grid:add(self.entries_filtered[i])
 			if i == self.chosen then
 				entry:highlight()
@@ -492,6 +534,22 @@ function LauncherSection:focus()
 	self:filter_and_redisplay("")
 end
 
+--- Scroll the LauncherSection up
+function LauncherSection:scrollUp()
+	if self.offset < 1 then return end
+	self.offset = self.offset - 1
+	self.chosen = self.chosen - 1
+	self:filter_and_redisplay()
+end
+
+--- Scroll the LauncherSection down
+function LauncherSection:scrollDown()
+	if self.offset == #self.entries_filtered - beautiful.dashboard_limit then return end
+	self.offset = self.offset + 1
+	self.chosen = self.chosen + 1
+	self:filter_and_redisplay()
+end
+
 --- Toggle the dashboard
 function dashboard.toggle()
 	if dashboard.popup then
@@ -544,4 +602,23 @@ function dashboard.toggle()
 	dashboard.popup.x = dashboard.popup.x - beautiful.border_width
 end
 
+--- Cache all the needed and available appinfo icons
+GLib.Thread.new("cacheIcons", function()
+		gears.timer.delayed_call(function()
+				for _, appinfo in ipairs(Gio.AppInfo.get_all()) do
+					if appinfo:should_show() then
+						local icon = appinfo:get_icon()
+						if icon then
+							gears.surface.load(
+								default_icon_theme:lookup_icon(
+									icon:get_names()[1],
+									16,
+									0
+								):get_filename()
+							)
+						end
+					end
+				end
+		end)
+end)
 return dashboard

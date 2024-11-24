@@ -2,7 +2,7 @@
 # @name test.sh
 # @description Run a Xephyr session to test AwesomeWM
 # Use Ctrl-c to stop it
-display=:3
+display=:1
 
 # @section Color definitions
 color_error="\033[1;31m"
