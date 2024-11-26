@@ -18,8 +18,27 @@ local Gio = lgi.Gio
 local Gtk = lgi.Gtk
 local GLib = lgi.GLib
 local default_icon_theme = Gtk.IconTheme.get_default()
+local Gdk = lgi.Gdk
 
 local dashboard = {}
+
+--- Cache all the needed and available icons 
+local function cache_icon()
+	for _, appinfo in ipairs(Gio.AppInfo.get_all()) do
+		if appinfo:should_show() then
+			local icon = appinfo:get_icon()
+			if icon ~= nil then
+				local icon_name = icon:to_string()
+				local icon_path = default_icon_theme:lookup_icon(
+					icon_name,
+					64,
+					0
+				):get_filename()
+				gears.surface.load(icon_path)
+			end
+		end
+	end
+end
 
 --- Execute a keybinding in Awesome
 ---@param modifiers string[]|nil
@@ -243,6 +262,21 @@ function Entry.new(appinfo)
 	local _, textbox_height = textbox:get_preferred_size(awful.screen.focused())
 	textbox.forced_height = textbox_height
 
+	local icon = appinfo:get_icon()
+	local imagebox = nil
+	if icon then
+        imagebox = {
+            widget = wibox.widget.imagebox,
+            forced_height = textbox_height,
+            forced_width = textbox_height,
+            image = default_icon_theme:lookup_icon(
+                icon:to_string(),
+                64,
+				0
+			):get_filename()
+		}
+	end
+
 	local entry = wibox.widget {
 		widget = wibox.container.background,
 		name = name,
@@ -253,12 +287,7 @@ function Entry.new(appinfo)
 			margins = beautiful.dashboard_margins,
 			{
 				layout = wibox.layout.fixed.horizontal,
-				{
-					widget = wibox.widget.imagebox,
-					forced_height = textbox_height,
-					forced_width = textbox_height,
-					id = "imagebox"
-				},
+				imagebox,
 				textbox
 			}
 		}
@@ -266,19 +295,6 @@ function Entry.new(appinfo)
 	}
 	setmetatable(entry, Entry.mt)
 	return entry
-end
-
-function Entry:load_icon()
-	local imagebox = self:get_children_by_id("imagebox")[1]
-	if imagebox._private.image ~= nil then return end
-
-	local icon = self.appinfo:get_icon()
-	if icon == nil then return end
-	imagebox.image = default_icon_theme:lookup_icon(
-		icon:get_names()[1],
-		16,
-		0
-	):get_filename()
 end
 
 --- Launch an entry
@@ -326,13 +342,13 @@ function LauncherSection:new()
 	section = wibox.widget {
 		layout = wibox.layout.fixed.vertical,
 		spacing = beautiful.dashboard_launcher_spacing,
-        buttons = gears.table.join(
+		buttons = gears.table.join(
 			awful.button({}, 1, function()
 					local entry = section.entries_filtered[section.chosen]
 					if not entry then return end
 					entry:run()
 					dashboard.toggle()
-            end),
+			end),
 			awful.button({}, 4, function() section:scrollUp() end),
 			awful.button({}, 5, function() section:scrollDown() end)
 		),
@@ -366,19 +382,19 @@ function LauncherSection:new()
 			if e == entry then
 				e:highlight()
 				section.chosen = i
-            else
+			else
 				e:unhighlight()
 			end
 		end
 	end
 
 	--- Get/Create Entries
-		section.entries = {}
+	section.entries = {}
 	for _, appinfo in ipairs(Gio.AppInfo.get_all()) do
 		if appinfo:should_show() then
 			local entry = Entry.new(appinfo)
 
-            entry:connect_signal("mouse::enter", mouse_handler)
+			entry:connect_signal("mouse::enter", mouse_handler)
 
 			table.insert(section.entries, entry)
 		end
@@ -394,12 +410,12 @@ function LauncherSection:new()
 				execute_keybinding(nil, "Tab")
 			end
 		end
-    )
+	)
 	return section
 end
 
 --- Filter and redraw the grid and scrollbar of a LauncherSection
----@param search_string string | nil
+---@param search_string string|nil Won't filter if search_string is nil
 function LauncherSection:filter_and_redisplay(search_string)
 	local entry_amount
 	if search_string then
@@ -436,19 +452,12 @@ function LauncherSection:filter_and_redisplay(search_string)
 	)
 	for i = index_start, index_end do
 		local entry = self.entries_filtered[i]
-		if entry then
-			-- Load icon first
-			entry:load_icon()
-
-			-- Add entry to grid
-			self.grid:add(self.entries_filtered[i])
-			if i == self.chosen then
-				entry:highlight()
-			else
-				entry:unhighlight()
-			end
+		-- Add entry to grid
+		self.grid:add(entry)
+		if i == self.chosen then
+			entry:highlight()
 		else
-			break
+			entry:unhighlight()
 		end
 	end
 
@@ -602,23 +611,7 @@ function dashboard.toggle()
 	dashboard.popup.x = dashboard.popup.x - beautiful.border_width
 end
 
---- Cache all the needed and available appinfo icons
-GLib.Thread.new("cacheIcons", function()
-		gears.timer.delayed_call(function()
-				for _, appinfo in ipairs(Gio.AppInfo.get_all()) do
-					if appinfo:should_show() then
-						local icon = appinfo:get_icon()
-						if icon then
-							gears.surface.load(
-								default_icon_theme:lookup_icon(
-									icon:get_names()[1],
-									16,
-									0
-								):get_filename()
-							)
-						end
-					end
-				end
-		end)
-end)
+
+-- GLib.idle_add(1, cache_icon)
+Gdk.threads_add_idle(GLib.PRIORITY_DEFAULT_IDLE, cache_icon)
 return dashboard
