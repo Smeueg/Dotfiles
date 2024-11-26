@@ -74,7 +74,7 @@ local function create_popup()
 	}
 
     popup_timer = gears.timer {
-        timeout = 1,
+        timeout = delay,
         autostart = true,
 		callback = destroy_popup
 	}
