@@ -151,8 +151,7 @@
     ("h" "Shrink Window Horizontally" shrink-window-horizontally)
     ("j" "Shrink Window Vertically" shrink-window)
     ("k" "Enlarge Window Vertically" enlarge-window)
-    ("l" "Enlarge Window Horizontally" enlarge-window-horizontally)
-    ("C-g" "Quit" my-message)]])
+    ("l" "Enlarge Window Horizontally" enlarge-window-horizontally)]])
 
 (defun define-key-convenient (mode-map key fn &rest args)
   (define-key mode-map key fn)
@@ -213,10 +212,7 @@ window configuration"
 STRING is the string to format and display to the user"
   (let ((message (format "[%s]: %s" (propertize "ERR" 'face 'error) string)))
     (message message)
-    (unless (get-buffer config--error-buffer)
-      (split-window)
-      (switch-to-buffer config--error-buffer))
-    (with-current-buffer config--error-buffer
+    (with-current-buffer (get-buffer-create config--error-buffer)
       (read-only-mode -1)
       (goto-char (point-max))
       (insert (format-time-string "[%d-%m-%Y %T:%3N] ") message "\n")
@@ -518,7 +514,24 @@ STRING is the string to format and display to the user"
       (kbd "<leader>aJ") #'avy-goto-char
       (kbd "<leader>al") #'avy-goto-line
       (kbd "<leader>an") #'avy-next
-      (kbd "<leader>ap") #'avy-prev)))
+      (kbd "<leader>ap") #'avy-prev))
+  :config
+  (set-face-attribute 'avy-lead-face nil
+                      :weight 'bold
+                      :background (face-foreground 'ansi-color-red)
+                      :foreground (face-background 'ansi-color-white))
+  (set-face-attribute 'avy-lead-face-0 nil
+                      :weight 'bold
+                      :background (face-foreground 'ansi-color-blue)
+                      :foreground (face-background 'ansi-color-white))
+  (set-face-attribute 'avy-lead-face-1 nil
+                      :weight 'bold
+                      :background (face-foreground 'ansi-color-red)
+                      :foreground (face-background 'ansi-color-white))
+  (set-face-attribute 'avy-lead-face-2 nil
+                      :weight 'bold
+                      :background (face-foreground 'ansi-color-blue)
+                      :foreground (face-background 'ansi-color-white)))
 
 (use-package company
   :ensure t
@@ -962,9 +975,12 @@ STRING is the string to format and display to the user"
     (find-file user-init-file))
 
   (defun find-tmp-file (file-extension)
-    "Opens a temporary file in '/tmp/'"
+    "Opens a temporary file in '/tmp/test/'"
     (interactive "MFile Extension: ")
-    (find-file (format "/tmp/test.%s" file-extension)))
+    (let ((dir "/tmp/"))
+      (if (not (file-writable-p dir))
+          (config--user-error (format "Unable to write to '%s'" dir))
+        (find-file (file-name-concat dir "test" (concat "test." file-extension))))))
 
   (defun find-notes-file ()
     "Open `org-default-notes-file'"

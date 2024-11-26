@@ -57,8 +57,8 @@
    `(homoglyph ((,display (:foreground ,base6))))
    ;; Info faces
    `(error ((,display (:foreground ,base1 :weight bold))))
-   `(warning ((,display (:foreground ,base2 :weight bold))))
-   `(success ((,display (:foreground ,base3 :weight bold))))
+   `(success ((,display (:foreground ,base2 :weight bold))))
+   `(warning ((,display (:foreground ,base3 :weight bold))))
    ;; Font Locks
    `(font-lock-builtin-face ((,display (:foreground ,base3))))
    `(font-lock-function-name-face ((,display (:foreground ,base3))))
