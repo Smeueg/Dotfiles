@@ -59,25 +59,13 @@ local function tasklist_styled(s)
 					widget = wibox.container.place,
 					halign = "center",
 					{
-						widget = wibox.widget.imagebox,
-						id = "imagebox",
+							widget = wibox.widget.imagebox,
+							id = "imagebox",
+						}
 					}
-				}
-			},
+				},
 			create_callback = function(self, c)
-				local client = c
-				local icon
-
-				if client.icon_sizes[1] ~= nil then
-					while client.icon_sizes[1] == nil do
-						client = client.transient_for
-					end
-					icon = client.icon
-				else
-					icon = icons.tasklist_no_icon
-				end
-
-				self:get_children_by_id("imagebox")[1].image = icon
+				self:get_children_by_id("imagebox")[1].image = c.icon
 				cursor.add_clickable_to_wibox(self)
 			end
 		}
