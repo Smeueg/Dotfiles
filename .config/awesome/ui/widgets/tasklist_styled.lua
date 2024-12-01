@@ -65,7 +65,8 @@ local function tasklist_styled(s)
 					}
 				},
 			create_callback = function(self, c)
-				self:get_children_by_id("imagebox")[1].image = c.icon
+                self:get_children_by_id("imagebox")[1].image = c.icon or
+					icons.default_client_icon
 				cursor.add_clickable_to_wibox(self)
 			end
 		}

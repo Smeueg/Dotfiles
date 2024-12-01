@@ -6,6 +6,7 @@
             "button",
             "dbus",
             "client",
+						"tag",
             "screen",
             "mouse",
             "root",

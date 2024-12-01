@@ -612,7 +612,6 @@ client.connect_signal("manage", function(c)
 		awful.placement.no_offscreen(c)
 end)
 
-
 client.connect_signal("property::floating", function(c)
 		if c.floating then
 			awful.titlebar.show(c)
@@ -623,7 +622,6 @@ client.connect_signal("property::floating", function(c)
 			end
 		end
 end)
-
 
 local function titlebar_create_btn(btn_color, callback)
 	local radius = dpi(15)

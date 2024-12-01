@@ -264,9 +264,9 @@ function module.create_battery_charging(percentage)
 	return surface
 end
 
---- Tasklist
+--- client
 do
-	module.tasklist_no_icon, cr = icon_create()
+	module.default_client_icon, cr = icon_create()
 	local dimensions = 40
 	local outer_size = 30
 	local titlebar_size = 3
