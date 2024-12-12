@@ -977,10 +977,12 @@ STRING is the string to format and display to the user"
   (defun find-tmp-file (file-extension)
     "Opens a temporary file in '/tmp/test/'"
     (interactive "MFile Extension: ")
-    (let ((dir "/tmp/"))
-      (if (not (file-writable-p dir))
-          (config--user-error (format "Unable to write to '%s'" dir))
-        (find-file (file-name-concat dir "test" (concat "test." file-extension))))))
+    (let ((dirs (mapcar #'expand-file-name '("/tmp/test/" "~/test/"))))
+      (catch 'break
+        (dolist (dir dirs)
+          (when (ignore-error permission-denied (make-directory dir t) t)
+            (find-file (file-name-concat dir (format "test.%s" file-extension)))
+            (throw 'break t))))))
 
   (defun find-notes-file ()
     "Open `org-default-notes-file'"
@@ -1079,8 +1081,7 @@ STRING is the string to format and display to the user"
 (use-package eglot
   :ensure t
   :init
-  (setq eglot-autoshutdown t
-        eglot-events-buffer-config '(:size 0 :format full))
+  (setq eglot-autoshutdown t)
 
   (defvar emacs-bin-dir (concat (file-name-directory user-init-file) "bin/")
     "A directory to put binaries specifically for emacs")
