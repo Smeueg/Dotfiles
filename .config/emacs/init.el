@@ -337,9 +337,6 @@ STRING is the string to format and display to the user"
     [?\C-p] nil
     [?\C-y] #'evil-scroll-line-up
     [?\C-e] #'evil-scroll-line-down)
-  ;; Visual Mode Keybindings
-  (evil-define-key 'visual 'global
-    "*" #'evil-search-highlighted)
   ;; Normal/Motion Mode Keybindings
   (evil-define-key 'normal 'global
     "J" #'evil-join
@@ -373,6 +370,7 @@ STRING is the string to format and display to the user"
     (kbd "M-j") #'evil-scroll-line-down
     (kbd "M-k") #'evil-scroll-line-up
     (kbd "<leader>d") #'dired
+    (kbd "<leader>D") (lambda () (interactive) (dired "."))
     (kbd "<leader>b") #'switch-to-buffer
     (kbd "<leader>h") #'help
     (kbd "<leader>sL") #'global-display-line-numbers-mode
@@ -613,7 +611,7 @@ STRING is the string to format and display to the user"
   (defun dirvish-cd (directory)
     "Open a different directory immediately in dirvish"
     (interactive "DGo to directory: ")
-    (dirvish directory))
+    (dirvish-dwim directory))
   :config
   (define-key-convenient dirvish-mode-map
                          ":" #'execute-extended-command
@@ -1298,7 +1296,7 @@ STRING is the string to format and display to the user"
   (sh-base-mode-hook . (lambda ()
                          (sh-electric-here-document-mode 0)
                          (indent-tabs-mode 0)
-                         (when (= (buffer-size) 0) (insert "#!/bin/sh\n\n")))))
+                         (when (= (buffer-size) 0) (insert "#!/usr/bin/env sh\n\n")))))
 
 (use-package emacs-lisp
   :hook (emacs-lisp-mode-hook . (lambda () (indent-tabs-mode 0))))
@@ -1323,7 +1321,8 @@ STRING is the string to format and display to the user"
       (kbd "<leader>pp") #'project-switch-project
       (kbd "<leader>pb") #'project-switch-to-buffer
       (kbd "<leader>pk") #'project-kill-buffers
-      (kbd "<leader>pd") #'project-dired)))
+      (kbd "<leader>pd") #'project-dired
+      (kbd "<leader>pc") #'project-compile)))
 
 (use-package xref
   :init
