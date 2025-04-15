@@ -110,7 +110,7 @@
        pair
        `((rust-mode (:cmd "cargo run"))
          (c++-mode (:cmd ,(format "g++ %s -o %s && %s" file bin bin)))
-         (c-mode (:cmd ,(format "cc %s -o %s && %s" file bin bin)))
+         (c-mode (:cmd ,(format "cc %s -o %s -g -s && %s" file bin bin)))
          (mhtml-mode (:cmd ,(format "setsid xdg-open %s; exit" file)))
          (python-mode (:cmd ,(format "python3 %s" file)))
          (lua-mode (:cmd ,(format "lua %s" file)))
@@ -613,6 +613,9 @@ STRING is the string to format and display to the user"
     (interactive "DGo to directory: ")
     (dirvish-dwim directory))
   :config
+  (with-eval-after-load 'evil
+    (evil-define-key 'motion 'global
+      (kbd "<leader>sd") #'dirvish-side))
   (define-key-convenient dirvish-mode-map
                          ":" #'execute-extended-command
                          " " #'dired-toggle-mark
@@ -632,6 +635,8 @@ STRING is the string to format and display to the user"
                          "G" #'end-of-buffer
                          "+d" #'dired-create-directory
                          "+f" #'dired-create-empty-file
+                         (kbd "<tab>") #'dirvish-subtree-toggle
+                         (kbd "<backtab>") #'dirvish-subtree-clear
                          "D" nil
                          "/" #'isearch-forward-regexp
                          "?" #'isearch-backward-regexp
@@ -1405,20 +1410,25 @@ STRING is the string to format and display to the user"
   :init
   (setq treesit-language-source-alist
         '((astro "https://github.com/virchau13/tree-sitter-astro")
+          (c "https://github.com/tree-sitter/tree-sitter-c")
+          (cpp "https://github.com/tree-sitter/tree-sitter-cpp")
           (css "https://github.com/tree-sitter/tree-sitter-css")
           (typescript "https://github.com/tree-sitter/tree-sitter-typescript"
                       "master" "typescript/src")
           (tsx "https://github.com/tree-sitter/tree-sitter-typescript"
                "master" "tsx/src")
           (python "https://github.com/tree-sitter/tree-sitter-python")
-          (java "https://github.com/tree-sitter/tree-sitter-java"))))
+          (java "https://github.com/tree-sitter/tree-sitter-java")))
+  (defvaralias 'c-ts-mode-indent-offset 'tab-width)
+  (setq c-ts-mode-indent-style 'k&r)
+  (c-set-offset 'case-label '+))
 
 (use-package treesit-auto
   :ensure t
   :hook (after-init-hook . global-treesit-auto-mode)
   :init
   (setq treesit-auto-install 'prompt
-        treesit-auto-langs '(python rust bash c))
+        treesit-auto-langs '(python rust bash c cpp))
   :config
   (treesit-auto-add-to-auto-mode-alist 'all))
 
