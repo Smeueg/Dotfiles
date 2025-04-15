@@ -4,7 +4,6 @@
 --- @author Smeueg (https://github.com/Smeueg)
 --- @copyright 2024 Smeueg
 --------------------------------------------------------------------------------
-local cursor = require("lib.cursor")
 local wibox = require("wibox")
 local gears = require("gears")
 local awful = require("awful")
@@ -30,6 +29,6 @@ local widget = wibox.widget {
 	}
 }
 
-cursor.add_clickable_to_wibox(widget)
+wibox.add_clickable(widget)
 
 return widget

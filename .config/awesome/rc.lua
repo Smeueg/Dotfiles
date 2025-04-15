@@ -11,10 +11,8 @@
 --- TODO: Provide a lock screen
 --- TODO: Show a popup to display keybindings
 --- TODO: Add USEFULL comments
---- TODO: More efficient resource usage
 --- TODO: Create a right click menu to kill clients from tasklist using awful.menu
 --------------------------------------------------------------------------------
-pcall(require, "luarocks.loader") -- Make sure LuaRocks packages is loaded
 require("awful.autofocus")
 require("libmods")
 local beautiful = require("beautiful")
@@ -27,6 +25,7 @@ local dpi = beautiful.xresources.apply_dpi
 local notify = naughty.notify
 local cairo = lgi.cairo
 local Gio = lgi.Gio
+
 -- Error Handling --
 do
 	local in_error = false
@@ -65,7 +64,7 @@ do
 	}
 	-- Default
 	settings.wallpaper = colors.bg
-	settings.font = "JetBrainsMono Nerd Font Mono 11"
+	settings.font = "JetBrainsMono Nerd Font 11"
 	settings.bg_normal = colors.black_bright
 	settings.fg_normal = colors.white
 	settings.icon_color = colors.white
@@ -75,6 +74,7 @@ do
 	settings.border_width = dpi(2)
 	settings.border_focus = colors.white
 	settings.border_normal = colors.accent
+	settings.titlebar_height = dpi(40)
 	-- Titlebar
 	settings.titlebar_bg = colors.black_brighter
 	settings.titlebar_btn_max = colors.green
@@ -150,12 +150,14 @@ awful.spawn.easy_async( -- Load pulseaudio's bluetooth modules
 	end
 )
 
-awful.spawn.easy_async(
-	string.format("xrdb %s/.config/X11/Xresources", os.getenv("HOME")),
-	function()
-		awful.spawn.if_installed("xsetroot -cursor_name left_ptr")
-	end
-)
+gears.timer.delayed_call(function ()
+		awful.spawn.easy_async(
+			string.format("xrdb %s/.config/X11/Xresources", os.getenv("HOME")),
+			function()
+				awful.spawn.if_installed("xsetroot -cursor_name left_ptr")
+			end
+		)
+end)
 
 
 -- Keybindings --
@@ -514,6 +516,8 @@ awful.rules.rules = {
 }
 
 
+-- UI
+require("ui.titlebar")
 
 -- Wibar --
 awful.screen.connect_for_each_screen(function(s)
@@ -622,72 +626,6 @@ client.connect_signal("property::floating", function(c)
 			end
 		end
 end)
-
-local function titlebar_create_btn(btn_color, callback)
-	local radius = dpi(15)
-	local btn = wibox.widget {
-		buttons = awful.button({}, 1, callback),
-		widget = wibox.container.background,
-		shape = gears.shape.circle,
-		bg = btn_color,
-		{
-			widget = wibox.container.constraint,
-			forced_height = radius,
-			forced_width = radius
-		}
-	}
-
-	btn:connect_signal("mouse::enter", function()
-			btn.bg = cairo.surface_to_rgba(btn.bg) .. "90"
-	end)
-
-	btn:connect_signal("mouse::leave", function()
-			btn.bg = cairo.surface_to_rgba(btn.bg)
-	end)
-
-	return btn
-end
-
-client.connect_signal("request::titlebars", function(c)
-		awful.titlebar(c, { size = dpi(40) }):setup {
-			layout = wibox.layout.align.horizontal,
-			{
-				widget = wibox.container.margin,
-				margins = dpi(10),
-				{
-					widget = wibox.widget.imagebox,
-					image = c.icon,
-				}
-			},
-			{
-				layout = wibox.layout.flex.horizontal,
-				buttons = gears.table.join(
-					awful.button({}, 1, function()
-							awful.mouse.client.move(c)
-					end),
-					awful.button({}, 3, function()
-							awful.mouse.client.resize(c)
-					end)
-				)
-			},
-			{
-				widget = wibox.container.background,
-				layout = wibox.layout.fixed.horizontal,
-				spacing = dpi(10),
-				titlebar_create_btn(beautiful.titlebar_btn_max, function()
-						c.maximized = not c.maximized
-				end),
-				titlebar_create_btn(beautiful.titlebar_btn_min, function()
-						c.minimized = not c.minimized
-				end),
-				titlebar_create_btn(beautiful.titlebar_btn_close, function()
-						c:kill()
-				end),
-				wibox.widget {}
-			}
-		}
-end)
-
 
 tag.connect_signal("property::layout", function(t)
 		local titlebar_show = false

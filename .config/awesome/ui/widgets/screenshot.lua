@@ -9,7 +9,6 @@ local beautiful        = require("beautiful")
 local wibox            = require("wibox")
 local awful            = require("awful")
 local icons            = require("ui.icons")
-local cursor           = require("lib.cursor")
 
 local widget = wibox.widget {
 	widget = wibox.container.background,
@@ -22,6 +21,6 @@ local widget = wibox.widget {
 	}
 }
 
-cursor.add_clickable_to_wibox(widget)
+wibox.add_clickable(widget)
 
 return widget

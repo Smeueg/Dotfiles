@@ -4,9 +4,7 @@
 --- @author Smeueg (https://github.com/Smeueg)
 --- @copyright 2024 Smeueg
 --------------------------------------------------------------------------------
-local border_wrapper = require("ui.popup.utils").border_wrapper
 local beautiful = require("beautiful")
-local cursor = require("lib.cursor")
 local notify = require("naughty").notify
 local gears = require("gears")
 local wibox = require("wibox")
@@ -22,7 +20,7 @@ local Gdk = lgi.Gdk
 
 local dashboard = {}
 
---- Cache all the needed and available icons 
+--- Cache all the needed and available icons
 local function cache_icon()
 	for _, appinfo in ipairs(Gio.AppInfo.get_all()) do
 		if appinfo:should_show() then
@@ -130,7 +128,7 @@ function PowerSection:new()
 		PowerOpt:new(icons.reboot, "reboot"),
 		PowerOpt:new(icons.shutdown, "poweroff")
 	}
-	cursor.add_clickable_to_wibox(section)
+	wibox.add_clickable(section)
 	setmetatable(section, { __index = self })
 	section.chosen = 1
 
@@ -265,13 +263,13 @@ function Entry.new(appinfo)
 	local icon = appinfo:get_icon()
 	local imagebox = nil
 	if icon then
-        imagebox = {
-            widget = wibox.widget.imagebox,
-            forced_height = textbox_height,
-            forced_width = textbox_height,
-            image = default_icon_theme:lookup_icon(
-                icon:to_string(),
-                64,
+		imagebox = {
+			widget = wibox.widget.imagebox,
+			forced_height = textbox_height,
+			forced_width = textbox_height,
+			image = default_icon_theme:lookup_icon(
+				icon:to_string(),
+				64,
 				0
 			):get_filename()
 		}
@@ -344,10 +342,10 @@ function LauncherSection:new()
 		spacing = beautiful.dashboard_launcher_spacing,
 		buttons = gears.table.join(
 			awful.button({}, 1, function()
-					local entry = section.entries_filtered[section.chosen]
-					if not entry then return end
-					entry:run()
-					dashboard.toggle()
+				local entry = section.entries_filtered[section.chosen]
+				if not entry then return end
+				entry:run()
+				dashboard.toggle()
 			end),
 			awful.button({}, 4, function() section:scrollUp() end),
 			awful.button({}, 5, function() section:scrollDown() end)
@@ -572,7 +570,9 @@ function dashboard.toggle()
 	dashboard.popup = awful.popup {
 		ontop = true,
 		visible = true,
-		widget = border_wrapper(
+		widget = {
+			widget = wibox.container.border,
+			borders = { "right", "bottom" },
 			{
 				widget = wibox.container.margin,
 				margins = beautiful.dashboard_margins,
@@ -592,11 +592,10 @@ function dashboard.toggle()
 						widget = wibox.container.margin,
 						margins = beautiful.dashboard_margins,
 						dashboard.launcher
-					},
+					}
 				}
-			},
-			{ "left", "right", "bottom" }
-		)
+			}
+		}
 	}
 
 	awful.placement.next_to(
@@ -610,7 +609,6 @@ function dashboard.toggle()
 	dashboard.popup.y = dashboard.popup.y - beautiful.border_width
 	dashboard.popup.x = dashboard.popup.x - beautiful.border_width
 end
-
 
 -- GLib.idle_add(1, cache_icon)
 Gdk.threads_add_idle(GLib.PRIORITY_DEFAULT_IDLE, cache_icon)

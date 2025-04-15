@@ -12,14 +12,12 @@ require = setmetatable(
 
 			while true do
 				local info = iterator:next_file()
-				if info then
-					local file = info:get_name()
-					if file ~= "init.lua" then
-						file = file:gsub(".lua$", "")
-						modules[file] = oldrequire(dir.."."..file)
-					end
-				else
-					break
+				if not info then break end
+
+				local file = info:get_name()
+				if file ~= "init.lua" then
+					file = file:gsub(".lua$", "")
+					modules[file] = oldrequire(dir.."."..file)
 				end
 			end
 

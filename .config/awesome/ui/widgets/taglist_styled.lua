@@ -3,7 +3,6 @@ local gears = require("gears")
 local beautiful = require("beautiful")
 local dpi = beautiful.xresources.apply_dpi
 local wibox = require("wibox")
-local cursor = require("lib.cursor")
 
 local function update(self, t)
 	local widget = self:get_children_by_id("icon")[1]
@@ -16,7 +15,7 @@ local function update(self, t)
 end
 
 local function init(self, t)
-	cursor.add_clickable_to_wibox(self.widget)
+	wibox.add_clickable(self.widget)
 	update(self, t)
 end
 

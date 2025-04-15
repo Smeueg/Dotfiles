@@ -8,7 +8,6 @@ local icon = require("ui.icons")
 local beautiful = require("beautiful")
 local wibox = require("wibox")
 local awful = require("awful")
-
 local capi = {
 	root = root,
 	tag = tag
@@ -35,6 +34,8 @@ local widget = wibox.widget {
 	buttons = awful.button({}, 1, switch_to_next_layout),
 	{ widget = wibox.widget.imagebox }
 }
+
+wibox.add_clickable(widget)
 
 --- Updates the Widget's imagebox
 ---@param t tag

@@ -9,10 +9,8 @@ local beautiful      = require("beautiful")
 local wibox          = require("wibox")
 local awful          = require("awful")
 local icons          = require("ui.icons")
-local cursor         = require("lib.cursor")
 
-local bat_info       = upower.get_info()
-
+local bat_info = upower.get_info()
 local battery_widget = wibox.widget {
 	widget = wibox.container.background,
 	shape = beautiful.wibar_widget_shape,
@@ -41,7 +39,7 @@ local battery_widget = wibox.widget {
 	}
 }
 
-cursor.add_clickable_to_wibox(battery_widget)
+wibox.add_clickable(battery_widget)
 
 
 function battery_widget:update()

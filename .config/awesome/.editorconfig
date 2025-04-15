@@ -1,0 +1,7 @@
+[*.lua]
+indent_style = tab
+tab_width = 4
+quote_style = double
+call_arg_parentheses = remove_tab_only
+max_line_length = 80
+align_function_params = false

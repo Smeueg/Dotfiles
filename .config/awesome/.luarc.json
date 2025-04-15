@@ -17,6 +17,8 @@
 				"path": [
             "/usr/share/awesome/lib/?.lua",
             "/usr/share/awesome/lib/?/init.lua",
+						"?.lua",
+						"?/init.lua"
         ]
     },
     "workspace": {
@@ -28,5 +30,8 @@
         "maxPreload": 2000,
         "preloadFileSize": 1000
     },
+		"completion": {
+				"callSnippet": "Both"
+		},
     "telemetry.enable": false
 }

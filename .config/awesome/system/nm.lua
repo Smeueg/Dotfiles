@@ -12,7 +12,6 @@ local dbus = require("system.dbus")
 local Gio = lgi.Gio
 local GLib = lgi.GLib
 local active_watcher_id
-local load_watcher_id
 
 local nm = {
 	---@class NetworkManagerDeviceType
@@ -204,12 +203,12 @@ end
 --- Returns true if Network Manager is active
 ---@return boolean
 function nm.is_active()
-		return dbus.call {
-			name = "org.freedesktop.DBus",
-			path = "/org/freedesktop/dbus",
-			method = "org.freedesktop.DBus.NameHasOwner",
-			parameters = GLib.Variant("(s)", {"org.freedesktop.NetworkManager"})
-		}
+	return dbus.call {
+		name = "org.freedesktop.DBus",
+		path = "/org/freedesktop/dbus",
+		method = "org.freedesktop.DBus.NameHasOwner",
+		parameters = GLib.Variant("(s)", { "org.freedesktop.NetworkManager" })
+	}
 end
 
 --- Runs a callback function when NetworkManager is loaded
@@ -227,6 +226,112 @@ function nm.run_when_loaded(callback)
 			callback()
 		end
 	)
+end
+
+---@class WifiAccessPoint
+---@field ssid string
+---@field strength number
+nm.WifiAccessPoint = {}
+
+--- Create a new WifiAccessPoint Object
+---@param ssid string
+---@param strength number
+---@return WifiAccessPoint
+function nm.WifiAccessPoint.new(ssid, strength)
+	return {
+		ssid = ssid,
+		strength = strength
+	}
+end
+
+--- Get the current wireless device path
+---@return string|nil
+local function get_wireless_device_path()
+	local devices = dbus.call {
+		name = "org.freedesktop.NetworkManager",
+		path = "/org/freedesktop/NetworkManager",
+		method = "org.freedesktop.NetworkManager.GetDevices"
+	}
+
+	for _, device in ipairs(devices) do
+		local device_type = dbus.get_property {
+			name = "org.freedesktop.NetworkManager",
+			path = device,
+			property = "org.freedesktop.NetworkManager.Device.DeviceType"
+		}
+
+		if device_type == nm.DEVICE.TYPE.WIFI then
+			return device
+		end
+	end
+end
+
+
+local wifi_access_point_watcher_id
+--- Rescans for all the available wifi networks
+---@param callback function
+function nm.WifiAccessPoint.rescan(callback)
+	local wireless_device_path = get_wireless_device_path()
+
+	if wireless_device_path == nil then return end
+
+	dbus.call {
+		name = "org.freedesktop.NetworkManager",
+		path = wireless_device_path,
+		method = "org.freedesktop.NetworkManager.Device.Wireless.RequestScan",
+		parameters = GLib.Variant.new_tuple({ GLib.Variant("a{sv}", {}) })
+	}
+
+	wifi_access_point_watcher_id = dbus.BusSYSTEM:signal_subscribe(
+		"org.freedesktop.NetworkManager",     -- sender
+		"org.freedesktop.DBus.Properties",    -- interface
+		"PropertiesChanged",                  -- member/signal
+		wireless_device_path,                 -- Object Path
+		nil,                                  -- arg0
+		Gio.DBusSignalFlags.NONE,             -- flags
+		function(...)                         -- callback
+			local changed_properties = ({ ... })[6][2]
+            if changed_properties.LastScan == nil then return end
+			callback()
+			dbus.BusSYSTEM:signal_unsubscribe(wifi_access_point_watcher_id)
+			wifi_access_point_watcher_id = nil
+		end
+	)
+end
+
+--- Gets all available connections from NetworkManager
+---@return (WifiAccessPoint|nil)
+function nm.WifiAccessPoint.get_all()
+	local wireless_device_path = get_wireless_device_path()
+	if wireless_device_path == nil then return end
+
+	local access_point_paths = dbus.call {
+		name = "org.freedesktop.NetworkManager",
+		path = wireless_device_path,
+		method = "org.freedesktop.NetworkManager.Device.Wireless.GetAccessPoints"
+	}
+
+	local access_points = {}
+	for _, access_point in ipairs(access_point_paths) do
+		local properties = dbus.get_properties {
+			name = "org.freedesktop.NetworkManager",
+			path = access_point,
+			interface = "org.freedesktop.NetworkManager.AccessPoint"
+		}
+
+		for i, byte in ipairs(properties.Ssid) do
+			properties.Ssid[i] = string.char(byte)
+		end
+
+		table.insert(
+			access_points,
+			nm.WifiAccessPoint.new(
+				table.concat(properties.Ssid),
+				properties.Strength)
+		)
+	end
+
+	return access_points
 end
 
 return nm

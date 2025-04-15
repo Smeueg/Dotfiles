@@ -9,11 +9,15 @@ local nm = require("system.nm")
 local wibox = require("wibox")
 local beautiful = require("beautiful")
 local icon = require("ui.icons")
+local awful = require("awful")
+local network_toggle_popup = require("ui.popup.network")
 
 local network_widget = wibox.widget {
 	widget = wibox.container.background,
 	shape = beautiful.wibar_widget_shape,
 	bg = "#00000030",
+	buttons = awful.button({}, 1, network_toggle_popup.toggle),
+	id = "wibar_network",
 	{
 		widget = wibox.container.background,
 		layout = wibox.layout.fixed.horizontal,

@@ -4,37 +4,26 @@
 --- @author Smeueg (https://github.com/Smeueg)
 --- @copyright 2024 Smeueg
 --------------------------------------------------------------------------------
--- require("libmods")
-local enum = require("lib.enum")
-local cursor = require("lib.cursor")
 local awful = require("awful")
 local beautiful = require("beautiful")
 local dpi = beautiful.xresources.apply_dpi
 local wibox = require("wibox")
-local utils = require("ui.popup.utils")
 local notify = require("naughty").notify
-require("libmods")
-
 local module = {}
-
----@class ScreenshotType
----@field Full table
----@field Partial table
-local ScreenshotType = enum { "Full", "Partial" }
 
 
 --- Takes a screenshot of the system
 --- (see: import(1))
---- @param screenshot_type ScreenshotType
+--- @param screenshot_type "full"|"partial"
 local function screenshot(screenshot_type)
 	local import_flags
 	local filepath = os.date("'/tmp/Screenshot %d-%m-%Y %X.png'")
-	if screenshot_type == ScreenshotType.Full then
+	if screenshot_type == "full" then
 		import_flags = "-window root"
-	elseif screenshot_type == ScreenshotType.Partial then
+	elseif screenshot_type == "partial" then
 		import_flags = ""
 	else
-		error("screenshot() expects a ScreenshotType as an argument")
+		error("screenshot() expects a \"full\" or \"partial\"as an argument")
 	end
 
 	awful.spawn.easy_async(
@@ -54,26 +43,26 @@ end
 
 
 --- Applies a template for an option for the popup widget
----@param text string The text to be displayed on the option
----@param screenshot_type ScreenshotType The type of the screenshot
+---@param text string
+---@param screenshot_type "full"|"partial"
 local function option(text, screenshot_type)
-		local widget = wibox.widget {
-			widget = wibox.container.background,
-			screenshot_type = screenshot_type,
-			id = "option",
+	local widget = wibox.widget {
+		widget = wibox.container.background,
+		screenshot_type = screenshot_type,
+		id = "option",
+		{
+			widget = wibox.container.margin,
+			margins = dpi(10),
 			{
-				widget = wibox.container.margin,
-				margins = dpi(10),
-				{
-					widget = wibox.widget.textbox,
-					markup = text:to_pango { font = 12 },
-					cursor = "hand1",
-					align = "center"
-				}
+				widget = wibox.widget.textbox,
+				markup = text:to_pango { font = 12 },
+				cursor = "hand1",
+				align = "center"
 			}
 		}
-		cursor.add_clickable_to_wibox(widget)
-		return widget
+	}
+	wibox.add_clickable(widget)
+	return widget
 end
 
 
@@ -89,21 +78,24 @@ local ScreenshotPopup = setmetatable(
 	{
 		--- Creates a new popup
 		__call = function(self)
-			local screenshot_popup = setmetatable({}, {__index = self})
+			local screenshot_popup = setmetatable({}, { __index = self })
 
 			screenshot_popup.option_index = 1
 			screenshot_popup.options = {
-				option("Full", ScreenshotType.Full),
-				option("Partial", ScreenshotType.Partial)
+				option("Full", "full"),
+				option("Partial", "partial")
 			}
 
 			screenshot_popup.popup = awful.popup {
 				placement = self.place,
 				ontop = true,
 				visible = true,
-				widget = utils.border_wrapper({
-						id = "widget",
+				widget = {
+					widget = wibox.container.border,
+					borders = { "left", "right", "bottom" },
+					{
 						widget = wibox.container.margin,
+						id = "widget",
 						buttons = awful.button(
 							nil, 1, nil,
 							function() screenshot_popup:press() end
@@ -128,29 +120,30 @@ local ScreenshotPopup = setmetatable(
 								table.unpack(screenshot_popup.options)
 							}
 						}
-				}, { "left", "right", "bottom" })
+					}
+				}
 			}
 
 			local fn_press = function() screenshot_popup:press() end
 			local fn_prev = function()
-				screenshot_popup:change_chosen(screenshot_popup.option_index-1)
+				screenshot_popup:change_chosen(screenshot_popup.option_index - 1)
 			end
 			local fn_next = function()
-				screenshot_popup:change_chosen(screenshot_popup.option_index+1)
+				screenshot_popup:change_chosen(screenshot_popup.option_index + 1)
 			end
 
 			screenshot_popup.keygrabber = awful.keygrabber {
 				keybindings = {
-					{ {},          "Left",   fn_prev },
-					{ {},          "Right",  fn_next },
-					{ {},          "h",      fn_prev },
-					{ {},          "l",      fn_next },
-					{ {},          "Escape", module.toggle },
-					{ {},          "Return", fn_press },
-					{ { "Control" }, "p",    fn_prev },
-					{ { "Control" }, "n",    fn_next },
-					{ { "Control" }, "g",    module.toggle },
-					{ { "Control" }, "j",    fn_press }
+					{ {},            "Left",   fn_prev },
+					{ {},            "Right",  fn_next },
+					{ {},            "h",      fn_prev },
+					{ {},            "l",      fn_next },
+					{ {},            "Escape", module.toggle },
+					{ {},            "Return", fn_press },
+					{ { "Control" }, "p",      fn_prev },
+					{ { "Control" }, "n",      fn_next },
+					{ { "Control" }, "g",      module.toggle },
+					{ { "Control" }, "j",      fn_press }
 				}
 			}
 
@@ -172,6 +165,7 @@ local ScreenshotPopup = setmetatable(
 
 --- Positions the popup to the bottom center of the wibar
 function ScreenshotPopup:place()
+	self.visible = false
 	awful.placement.next_to(
 		self,
 		{
@@ -181,6 +175,7 @@ function ScreenshotPopup:place()
 		}
 	)
 	self.y = self.y - beautiful.border_width
+	self.visible = true
 end
 
 --- Destroys the popup while also turning of the keygrabber

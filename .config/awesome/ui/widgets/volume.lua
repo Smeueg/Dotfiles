@@ -34,6 +34,8 @@ local widget = wibox.widget {
 	}
 }
 
+wibox.add_clickable(widget)
+
 local widget_vol = widget:get_children_by_id("vol")[1]
 local widget_icon = widget:get_children_by_id("icon")[1]
 
