@@ -144,6 +144,7 @@
             (term (getenv "SHELL"))
             (term-send-raw-string (format "clear; %s\n" cmd))))))))
 
+(require 'transient)
 (transient-define-prefix resize-window ()
   "A demo transient menu."
   :transient-suffix 'transient--do-stay
