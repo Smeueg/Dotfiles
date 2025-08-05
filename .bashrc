@@ -26,6 +26,48 @@ elif [ "${ZSH_NAME}" ]; then
 	setopt PROMPT_SUBST
 fi
 
+# @section Python Automatic VEnv Activation
+# shellcheck source=/dev/null
+auto_toggle_venv() {
+    python_cmd=
+    if [ "$(command -v python3)" ]; then
+        python_cmd="python3"
+    elif [ "$(command -v python)" ]; then
+        python_cmd="python"
+    fi
+
+    if ! [ "${python_cmd}" ]; then
+        return
+    fi
+
+
+    if [ "$(command -v deactivate)" ]; then
+        # If inside a venv
+        project_directory=${VIRTUAL_ENV%/}
+        project_directory=${project_directory%/.venv}
+        if [ "${PWD%${project_directory}*}" ]; then
+            deactivate
+            printf "\033[1;32m|\033[m Exiting out of project %s, deactivated venv\n" "${project_directory##*/}"
+        fi
+    else
+        # If *not* inside a venv
+        dir=${PWD%/}
+        while [ "${dir}" ]; do
+            venv_activate_path="${dir}/.venv/bin/activate" 
+            if [ -f "${venv_activate_path}" ]; then
+                printf "\033[1;32m|\033[m Entering project %s, activated venv\n" "${dir##*/}"
+                . "${venv_activate_path}"
+                break
+            fi
+
+            dir=${dir%/}
+            dir=${dir%/*}
+        done
+    fi
+}
+
+export PROMPT_COMMAND="auto_toggle_venv"
+
 
 # @section Prompt
 # Should work on dash, bash, zsh, and ksh
@@ -77,7 +119,7 @@ export PS1="\$(print_prompt)"
 
 
 # @section Aliases
-SMEUESIC_URL="https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc"
+export SMEUESIC_URL="https://www.youtube.com/playlist?list=PLRV1hc8TIW-7znQIWaVarxdUxf7lskmBc"
 alias mkdir="mkdir -pv"
 alias diff="diff --color=always"
 alias less="less -r"

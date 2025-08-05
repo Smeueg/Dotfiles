@@ -98,51 +98,27 @@
   (interactive)
   (when (kill-buffer) (delete-window)))
 
-(defun run ()
-  "Run the current buffer"
+
+(defun run (&optional exit-after-done)
+  "Compile and run the current buffer"
   (interactive)
-  (if (not buffer-file-name)
-      (message "[%s] Buffer isn't a file" (propertize "ERROR" 'face 'error))
-    (let ((bin "/tmp/emacs-output")
-          (file (format "./'%s'" (file-name-nondirectory buffer-file-name)))
-          (pair nil) (chosen nil) (cmd nil) (func nil))
-      (setq
-       pair
-       `((rust-mode (:cmd "cargo run"))
-         (c++-mode (:cmd ,(format "g++ %s -o %s && %s" file bin bin)))
-         (c-mode (:cmd ,(format "cc %s -o %s -g -s && %s" file bin bin)))
-         (mhtml-mode (:cmd ,(format "setsid xdg-open %s; exit" file)))
-         (python-mode (:cmd ,(format "python3 %s" file)))
-         (lua-mode (:cmd ,(format "lua %s" file)))
-         (java-mode (:cmd ,(format "java %s" file)))
-         (sh-mode (:cmd ,file)
-                  (:func executable-make-buffer-file-executable-if-script-p))
-         (emacs-lisp-mode (:func ,(lambda ()
-                                    (call-interactively (if mark-active
-                                                            #'eval-region
-                                                          #'eval-defun)))))))
-      (setq chosen (cdr
-                    (assoc
-                     (intern-soft
-                      (string-replace
-                       "-ts-"
-                       "-"  (string-replace "bash" "sh"
-                                            (symbol-name major-mode))))
-                     pair))
-            cmd (cadr (assq :cmd chosen))
-            func (cadr (assq :func chosen)))
-      (save-buffer)
-      (when func (funcall func))
-      (when cmd
-        (if (fboundp #'eat-new)
-            (with-current-buffer (eat-new)
-              (eat-term-send-string-as-yank eat-terminal "clear")
-              (eat-input-char ?\n 1)
-              (eat-term-send-string-as-yank eat-terminal cmd)
-              (eat-input-char ?\n 1))
-          (progn
-            (term (getenv "SHELL"))
-            (term-send-raw-string (format "clear; %s\n" cmd))))))))
+  (call-interactively #'save-buffer)
+  (let ((cmd compile-command))
+    (if (fboundp #'eat-new)
+        (with-current-buffer (eat-new)
+          (eat-term-send-string-as-yank eat-terminal "clear")
+          (eat-input-char ?\n 1)
+          (when exit-after-done
+            (setq cmd (concat cmd ";read -n1;exit")))
+          (eat-term-send-string-as-yank eat-terminal cmd)
+          (eat-input-char ?\n 1))
+      (progn
+        (term (getenv "SHELL"))
+        (term-send-raw-string (format "clear;%s;read -n1;exit\n" cmd))))))
+
+(defun run-and-exit ()
+  (interactive)
+  (run t))
 
 (require 'transient)
 (transient-define-prefix resize-window ()
@@ -371,7 +347,6 @@ STRING is the string to format and display to the user"
     (kbd "M-j") #'evil-scroll-line-down
     (kbd "M-k") #'evil-scroll-line-up
     (kbd "<leader>d") #'dired
-    (kbd "<leader>D") (lambda () (interactive) (dired "."))
     (kbd "<leader>b") #'switch-to-buffer
     (kbd "<leader>h") #'help
     (kbd "<leader>sL") #'global-display-line-numbers-mode
@@ -570,8 +545,6 @@ STRING is the string to format and display to the user"
   :hook
   (dirvish-setup-hook . dirvish-emerge-mode)
   (dired-mode-hook . (lambda () (setq-local whitespace-style nil)))
-  ((dirvish-find-entry-hook dirvish-directory-view-mode-hook) .
-   (lambda (&rest _) (setq truncate-lines t)))
   :init
   (global-set-key [remap dired] #'dirvish)
   (setq
@@ -1078,6 +1051,7 @@ STRING is the string to format and display to the user"
       (kbd "<M-RET>") #'comment-indent-new-line)
     (evil-define-key 'motion prog-mode-map
       (kbd "<leader>ce") #'run
+      (kbd "<leader>cE") #'run-and-exit
       (kbd "<leader>cs") #'shell-command)
     (evil-define-key 'normal prog-mode-map
       "gc" #'comment-line)))
@@ -1216,6 +1190,8 @@ STRING is the string to format and display to the user"
                '(astro-mode . ("astro-ls" "--stdio"
                                :initializationOptions
                                (:typescript (:tsdk "./node_modules/typescript/lib")))))
+  (add-to-list 'eglot-server-programs
+               '((python-mode python-ts-mode) . ("basedpyright-langserver" "--stdio")))
   (with-eval-after-load 'evil
     (evil-define-key 'normal 'eglot--managed-mode
       (kbd "<leader>cr") #'eglot-rename
@@ -1241,6 +1217,8 @@ STRING is the string to format and display to the user"
 
 (use-package lua-mode
   :ensure t
+  :hook
+  (lua-mode-hook . (lambda () (setq-local compile-command (format "lua %s" (buffer-file-name)))))
   :init
   (setq lua-indent-level 4
         lua-indent-string-contents t
@@ -1275,7 +1253,9 @@ STRING is the string to format and display to the user"
     (add-hook mode #'emmet-mode)))
 
 (use-package mhtml-mode
-  :hook (mhtml-mode-hook . (lambda () (setq-local tab-width 2)))
+  :hook
+  (mhtml-mode-hook . (lambda () (setq-local tab-width 2
+                                            compile-command (format "setsid xdg-open %s" (buffer-file-name)))))
   :init
   (with-eval-after-load 'evil
     (evil-define-key 'visual mhtml-mode-map "gc" #'comment-dwim)
@@ -1286,13 +1266,26 @@ STRING is the string to format and display to the user"
 (use-package rust-mode
   :ensure t
   :config
+  (add-hook 'rust-mode-hook (lambda ()
+                              (indent-tabs-mode 0)
+                              (setq-local compile-command "cargo run")))
   (with-eval-after-load 'evil
     (evil-define-key 'normal rust-mode-map
       (kbd "<leader>cf") #'rust-format-buffer
       (kbd "<leader>cc") #'rust-compile
       (kbd "<leader>ck") #'rust-check
-      (kbd "<leader>cm") #'rust-toggle-mutability))
-  (add-hook 'rust-mode-hook (lambda () (indent-tabs-mode 0))))
+      (kbd "<leader>cm") #'rust-toggle-mutability)))
+
+(use-package cc-mode
+  :hook
+  (c++-mode-hook . (lambda () (setq-local compile-command (format "g++ %s -o %s && %s" (buffer-file-name) "/tmp/emacs-output" "/tmp/emacs-output"))))
+  (c-mode-hook . (lambda () (setq-local compile-command (format "cc %s -o %s && %s" (buffer-file-name) "/tmp/emacs-output" "/tmp/emacs-output"))))
+  (java-mode-hook . (lambda () (setq-local compile-command (format "java %s" (buffer-file-name))))))
+
+(use-package c-ts-mode
+  :hook
+  (c++-ts-mode-hook . (lambda () (setq-local compile-command (format "g++ %s -o %s && %s" (buffer-file-name) "/tmp/emacs-output" "/tmp/emacs-output"))))
+  (c-ts-mode-hook . (lambda () (setq-local compile-command (format "cc %s -o %s && %s" (buffer-file-name) "/tmp/emacs-output" "/tmp/emacs-output")))))
 
 (use-package markdown-mode
   :ensure t)
@@ -1302,6 +1295,8 @@ STRING is the string to format and display to the user"
   (sh-base-mode-hook . (lambda ()
                          (sh-electric-here-document-mode 0)
                          (indent-tabs-mode 0)
+                         (add-hook 'after-save-hook #'executable-make-buffer-file-executable-if-script-p nil t)
+                         (setq-local compile-command (buffer-file-name))
                          (when (= (buffer-size) 0) (insert "#!/usr/bin/env sh\n\n")))))
 
 (use-package emacs-lisp
@@ -1311,9 +1306,19 @@ STRING is the string to format and display to the user"
   :hook
   ((python-mode-hook python-base-mode-hook) .
    (lambda ()
-     (setq-local tab-width (default-value 'tab-width))))
+     (setq-local tab-width (default-value 'tab-width)
+                 compile-command (format "python3 '%s'" (buffer-file-name))
+                 compilation-read-command nil)))
   :init
   (setq python-indent-guess-indent-offset nil))
+
+(use-package pyvenv
+  :ensure t
+  :hook
+  ((python-mode-hook python-base-mode-hook) .
+   (lambda ()
+     (when (file-directory-p "./.venv")
+       (pyvenv-activate "./.venv")))))
 
 (use-package project
   :init

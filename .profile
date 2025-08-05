@@ -47,10 +47,15 @@ export PYTHON_HISTORY=${XDG_STATE_HOME}/python/history
 export PYTHONPYCACHEPREFIX=${XDG_CACHE_HOME}/python
 export PYTHONUSERBASE=${XDG_DATA_HOME}/python
 
-
 # Android
-export ANDROID_PREFS_ROOT="$XDG_CONFIG_HOME"/android
-export ANDROID_EMULATOR_HOME="$XDG_DATA_HOME"/android/emulator
+export ANDROID_PREFS_ROOT="${XDG_DATA_HOME}/android"
+export ANDROID_SDK_ROOT="${ANDROID_PREFS_ROOT}"
+export ANDROID_HOME="${ANDROID_PREFS_ROOT}"
+export ANDROID_EMULATOR_HOME="${ANDROID_HOME}/emulator"
+for file in ${ANDROID_HOME}/ndk/*; do
+    export NDK_HOME="${file}"
+done
+export PATH="${PATH}:${ANDROID_EMULATOR_HOME}:${ANDROID_HOME}/platform-tools:${ANDROID_PREFS_ROOT}/cmdline-tools/latest/bin/"
 
 # Wget
 export WGETRC="${XDG_CONFIG_HOME}/wgetrc"

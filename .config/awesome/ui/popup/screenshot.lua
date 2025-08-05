@@ -92,7 +92,7 @@ local ScreenshotPopup = setmetatable(
 				visible = true,
 				widget = {
 					widget = wibox.container.border,
-					borders = { "left", "right", "bottom" },
+					borders = { "left", "right", "top" },
 					{
 						widget = wibox.container.margin,
 						id = "widget",
@@ -163,18 +163,10 @@ local ScreenshotPopup = setmetatable(
 )
 
 
---- Positions the popup to the bottom center of the wibar
+--- Positions the popup to the bottom center of the screen
 function ScreenshotPopup:place()
 	self.visible = false
-	awful.placement.next_to(
-		self,
-		{
-			preferred_positions = "bottom",
-			preferred_anchors = "middle",
-			geometry = awful.screen.focused().wibar
-		}
-	)
-	self.y = self.y - beautiful.border_width
+	awful.placement.bottom(self)
 	self.visible = true
 end
 
