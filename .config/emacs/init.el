@@ -1455,6 +1455,18 @@ STRING is the string to format and display to the user"
               (treesit-install-language-grammar language)))))))
   (advice-add 'set-auto-mode-0 :before #'treesit-grammar-ensure))
 
+(use-package flyover
+  :ensure t
+  :disabled t ;; Wait 'till flyover is fully independent from Flycheck
+  :hook
+  (flymake-mode-hook . flyover-mode)
+  :init
+  (setq flyover-use-theme-colors t
+        flyover-checkers '(flymake)
+        flyover-debug nil))
+
+
+
 
 ;;; MISC
 (use-package bongo
