@@ -98,7 +98,6 @@
   (interactive)
   (when (kill-buffer) (delete-window)))
 
-
 (defun run (&optional exit-after-done)
   "Compile and run the current buffer"
   (interactive)
@@ -208,7 +207,6 @@ STRING is the string to format and display to the user"
   "Reload the currently enabled themes"
   (interactive)
   (mapc (lambda (theme) (load-theme theme t)) custom-enabled-themes))
-
 
 ;;; HOOKS
 (add-hook 'buffer-list-update-hook ;; Always have `*scratch*' ready to go
@@ -1286,6 +1284,10 @@ STRING is the string to format and display to the user"
   :hook
   (c++-ts-mode-hook . (lambda () (setq-local compile-command (format "g++ %s -o %s && %s" (buffer-file-name) "/tmp/emacs-output" "/tmp/emacs-output"))))
   (c-ts-mode-hook . (lambda () (setq-local compile-command (format "cc %s -o %s && %s" (buffer-file-name) "/tmp/emacs-output" "/tmp/emacs-output")))))
+
+(use-package java-ts-mode
+  :hook
+  (java-ts-mode-hook . (lambda () (setq-local compile-command (format "java %s" (buffer-file-name))))))
 
 (use-package markdown-mode
   :ensure t)
