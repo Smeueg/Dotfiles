@@ -1467,6 +1467,13 @@ STRING is the string to format and display to the user"
 
 
 
+;; ANDROID
+(use-package pixel-scroll
+  :init
+  (when (getenv "TERMUX_VERSION")
+    (pixel-scroll-precision-mode 1)))
+
+
 
 ;;; MISC
 (use-package bongo
