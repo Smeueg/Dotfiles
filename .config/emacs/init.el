@@ -179,6 +179,11 @@ window configuration"
     (if pos (goto-char pos) (message "No more long lines found")))
   (message "No more long lines found"))
 
+(defun indent-buffer ()
+  (interactive)
+  (save-excursion
+    (indent-region (point-min) (point-max))))
+
 (defvar config--error-buffer "*Config Errors*"
   "The buffer name for configuration errors")
 
@@ -727,6 +732,7 @@ STRING is the string to format and display to the user"
                                            'CLIPBOARD
                                            'UTF8_STRING)
                                           "")))
+                           ;; (kbd "ESC") #'eat-self-input
                            [?\C-\\] (lambda () (interactive)
                                       (read-only-mode 1)
                                       (evil-normal-state)
@@ -1048,6 +1054,7 @@ STRING is the string to format and display to the user"
     (evil-define-key 'insert prog-mode-map
       (kbd "<M-RET>") #'comment-indent-new-line)
     (evil-define-key 'motion prog-mode-map
+      (kbd "<leader>ci") #'indent-buffer
       (kbd "<leader>ce") #'run
       (kbd "<leader>cE") #'run-and-exit
       (kbd "<leader>cs") #'shell-command)
@@ -1416,6 +1423,7 @@ STRING is the string to format and display to the user"
 
 (use-package treesit
   :init
+  :disabled t
   (setq treesit-language-source-alist
         '((astro "https://github.com/virchau13/tree-sitter-astro")
           (c "https://github.com/tree-sitter/tree-sitter-c")
@@ -1435,8 +1443,12 @@ STRING is the string to format and display to the user"
   :ensure t
   :hook (after-init-hook . global-treesit-auto-mode)
   :init
+  :disabled t
   (setq treesit-auto-install 'prompt
         treesit-auto-langs '(python rust bash c cpp))
+
+  (setq treesit-language-source-alist '((bash "https://github.com/tree-sitter/tree-sitter-bash")))
+
   :config
   (treesit-auto-add-to-auto-mode-alist 'all))
 
