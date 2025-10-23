@@ -513,6 +513,10 @@ awful.rules.rules = {
 			screen = awful.screen.preferred,
 			placement = awful.placement.no_overlap + awful.placement.no_offscreen
 		}
+	},
+	{
+		rule = { role = "pop-up" },
+		properties = { floating = true, ontop = true }
 	}
 }
 
