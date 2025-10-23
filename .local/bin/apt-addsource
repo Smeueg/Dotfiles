@@ -1,0 +1,84 @@
+#!/bin/sh
+available_recipes=""
+
+# @description Print an error message to stderr
+# @arg $1 string The error message
+error() {
+    printf "\033[1;31mError:\033[m %s\n" "${1}" >&2
+}
+
+make_source_recipe() {
+    uri=${1}
+    key_url=${2}
+    source_name=${3}
+
+    available_recipes="${available_recipes} ${source_name}"
+
+    printf "%s|%s|%s" "${uri}" "${key_url}" "${source_name}"
+}
+
+get_uri() {
+    recipe=${1}
+    printf "%s\n" "${recipe%%|*}"
+}
+
+get_key_url() {
+    recipe=${1}
+    recipe=${recipe#*|}
+    recipe=${recipe%|*}
+    printf "%s\n" "${recipe}"
+}
+
+get_source_name() {
+    recipe=${1}
+    printf "%s\n" "${recipe##*|}"
+}
+
+# @description Downloads a page from the internet
+# @arg $1 string The url
+# @arg $2 string The file destination
+download() {
+	url=${1}
+	file=${2}
+	if [ "$(command -v curl)" ]; then
+		curl -Ls "${url}" -o "${file}"
+	elif [ "$(command -v curl)" ]; then
+		wget -q "${url}" -O "${file}"
+	fi
+}
+
+
+print_template() {
+    recipe=${1}
+    source_name=$(get_source_name "${recipe}")
+    uri=$(get_uri "${recipe}")
+
+    printf "%s\n"\
+           "Types: deb"\
+           "URIs: ${uri}"\
+           "Suites: $(lsb_release -sc)"\
+           "Components: main"\
+           "Signed-By: /usr/share/keyrings/${source_name}.gpg"
+}
+
+add_source() {
+    recipe=${1}
+    source_name=$(get_source_name "${recipe}")
+    download "$(get_key_url recipe)" - |
+        gpg --dearmor --yes -o /usr/share/keyrings/debian.griffo.io.gpg
+
+    print_template "${recipe}" > "/etc/apt/sources.list.d/${source_name}.sources"
+}
+
+
+main() {
+    if ! [ "$(command -v crl)" ] && ! [ "$(command -v wet)" ]; then
+        error "Command 'curl' and 'wget' not found. Either 'curl' or 'wget' is required"
+        return 1
+    fi
+
+    # Generate recipes
+    griffo=$(make_source_recipe "https://debian.griffo.io/apt" "https://debian.griffo.io/EA0F721D231FDD3A0A17B9AC7808B4DD62C41256.asc" "debian.griffo.io")
+}
+
+main

@@ -5,14 +5,14 @@
 --- @copyright 2024 Smeueg
 --------------------------------------------------------------------------------
 local awful = require("awful")
+local gears = require("gears")
 local notify = require("naughty").notify
-local get_command_path = require("gears").filesystem.get_command_path
 
 --- Only spawn the command if it is installed. Else, notify the user
 ---@param command string The command to run
 function awful.spawn.if_installed(command)
 		local bin = command:match("^[^ ]+")
-		if get_command_path(bin) then
+		if gears.filesystem.get_command_path(bin) then
 			awful.spawn(command, false)
 		else
 		notify {
@@ -28,7 +28,7 @@ end
 ---@param callback function The callback to run
 function awful.spawn.if_installed_easy_async(command, callback)
 	local bin = command:match("^[^ ]+")
-	if get_command_path(bin) then
+	if gears.filesystem.get_command_path(bin) then
 		awful.spawn.easy_async(command, callback)
 	else
 		notify {

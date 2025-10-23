@@ -284,7 +284,8 @@ local globalkeys = gears.table.join(
 		{ modkey }, "b",
 		function()
 			local AppInfo = Gio.AppInfo
-			local app = AppInfo.get_default_for_type("text/html")
+			local app = AppInfo.get_default_for_type("x-scheme-handler/https", false)
+
 			if app then
 				awful.spawn.launch(
 					AppInfo.get_name(app),
