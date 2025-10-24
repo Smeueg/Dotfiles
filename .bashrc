@@ -130,7 +130,7 @@ alias rm="rm -i"
 alias cp="cp -i"
 alias ip="ip --color=auto"
 alias dit='git --git-dir=${HOME}/.local/dots --work-tree=${HOME}'
-alias sudo="sudo --preserve-env=TERMINFO"
+alias sudo="sudo env \"PATH=${PATH}\" --preserve-env=TERMINFO"
 alias protonvpn='{ [ "$(pidof nm-applet)" ] || nm-applet & } ; protonvpn-cli'
 alias e="\${EDITOR}"
 
