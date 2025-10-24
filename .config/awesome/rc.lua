@@ -517,7 +517,11 @@ awful.rules.rules = {
 	{
 		rule = { role = "pop-up" },
 		properties = { floating = true, ontop = true }
-	}
+	},
+	{
+		rule = { role = "bubble" },
+		properties = { floating = true, ontop = true }
+	},
 }
 
 
