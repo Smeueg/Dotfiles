@@ -130,9 +130,9 @@ alias rm="rm -i"
 alias cp="cp -i"
 alias ip="ip --color=auto"
 alias dit='git --git-dir=${HOME}/.local/dots --work-tree=${HOME}'
-alias sudo="sudo env \"PATH=${PATH}\" --preserve-env=TERMINFO"
+alias sudo="sudo --preserve-env=TERMINFO env \"PATH=\$PATH\""
 alias protonvpn='{ [ "$(pidof nm-applet)" ] || nm-applet & } ; protonvpn-cli'
-alias e="\${EDITOR}"
+alias e="setsid \${EDITOR}"
 
 # @section Configuration for `git`
 if [ "$(command -v git)" ]; then
