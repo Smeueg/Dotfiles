@@ -6,22 +6,22 @@
 #     Requires the file location of a theme.ini as an argument
 
 # @section Variable Definitions
-color0=
-color1=
-color2=
-color3=
-color4=
-color5=
-color6=
-color7=
-color8=
-color9=
-color10=
-color11=
-color12=
-color13=
-color14=
-color15=
+color0="#202020"
+color1="#AC4142"
+color2="#90A959"
+color3="#F4BF75"
+color4="#6A9FB5"
+color5="#AA759F"
+color6="#75B5AA"
+color7="#D0D0D0"
+color8="#404040"
+color9="#AC4142"
+color10="#90A959"
+color11="#F4BF75"
+color12="#6A9FB5"
+color13="#AA759F"
+color14="#75B5AA"
+color15="#F5F5F5"
 help_string="Usage: theme-linuxvt [OPTION] FILE
 Change the colors of the Linux VT by adding kernel parameters
 
@@ -66,41 +66,6 @@ split_string() {
 }
 
 
-# @description Define the colors as variables from theme file
-# @arg $1 string The theme file path
-# @exitcode 0 If all the needed colors were defined
-# @exitcode 1 If all the needed colors failed to be defined
-define_colors() {
-    theme_file=${1}
-    while IFS=" =" read -r key value; do
-        [ "${key%%#*}" ] || continue
-
-        color_identifier=${key#color}
-        [ "${color_identifier##*[!0-9]*}" ] || continue
-
-        if ! [ "${value%%#*}" ] && [ ${#value} -eq 7 ] && [ "${value%%*[!#0-9a-fA-F]*}" ]; then
-            eval "color${color_identifier}=${value}"
-        else
-            err "Invalid color detected for color${color_identifier}: ${value}"
-            continue
-        fi
-    done < "${theme_file}"
-
-    should_error=false
-    i=0
-    while [ ${i} -le 15 ]; do
-        if ! eval "[ \"\${color${i}}\" ]"; then
-            err "color${i} not found"
-            should_error=true
-        fi
-        i=$((i + 1))
-    done
-
-    ${should_error} && return 1
-    return 0
-}
-
-
 # @description Genereate the kernel parameters
 # @noargs
 # @stdout The generated kernel parameters
@@ -129,6 +94,28 @@ get_colors_as_params() {
 }
 
 
+# @description Generate the edited grub config
+# @noargs
+# @stdout The generated grub config
+generate_grub_config() {
+    while IFS= read -r line; do
+        if [ "${line}" ] && ! [ "${line%%GRUB_CMDLINE_LINUX_DEFAULT=\"*\"}" ]; then
+            param=${line#*=\"}
+            param=${param%\"}
+            if [ "${param}" ]; then
+                param="${param} "
+            fi
+
+            param="${param}$(get_colors_as_params)"
+
+            printf "GRUB_CMDLINE_LINUX_DEFAULT=\"%s\"\n" "${param}"
+        else
+            printf "%s\n" "${line}"
+        fi
+    done < /etc/default/grub
+}
+
+
 # @description The main function
 # @noargs
 main() {
@@ -137,44 +124,17 @@ main() {
             -h|--help) print_help
         esac
     done
-    [ ${#} -ne 1 ] && print_help
-
-    theme_file=${1}
-    [ -f "${theme_file}" ] || {
-        err "'${theme_file}' not found"
-        exit 1
-    }
-    
-    if ! define_colors "${theme_file}"; then
-        err "Failed to define all the required colors"
-        exit 1
-    fi
 
     [ -f /etc/default/grub ] || { err "'/etc/default/grub' doesn't seem to exist"; return 1; }
     [ -w /etc/default/grub ] || {
-        err "Unable to write to '/etc/default/grub', you might need root privilages"
+        err "Unable to write to '/etc/default/grub', permission denied"
         return 1
     }
 
-    existing_params=
-    while IFS= read -r line; do
-        [ "${line%%#*}" ] || continue
-        [ "${line%%GRUB_CMDLINE_LINUX_DEFAULT=\"*\"}" ] && continue
-        existing_params=${line#*\"}
-        existing_params=${existing_params%\"}
-    done < /etc/default/grub
+    grub_config=$(generate_grub_config)
 
-    updated_params=
-    for param in $(split_string "${existing_params}" " "); do
-        [ "${param%%vt.default_red*}" ] || continue
-        [ "${param%%vt.default_grn*}" ] || continue
-        [ "${param%%vt.default_blu*}" ] || continue
-        updated_params="${updated_params}${param} "
-    done
-    updated_params="${updated_params}$(get_colors_as_params)"
+    printf "%s\n" "${grub_config}" > /etc/default/grub
 
-    sed -i "s/GRUB_CMDLINE_LINUX_DEFAULT=\".*\"/GRUB_CMDLINE_LINUX_DEFAULT=\"${updated_params}\"/"\
-        /etc/default/grub
     grub-mkconfig -o /boot/grub/grub.cfg
 }
 
