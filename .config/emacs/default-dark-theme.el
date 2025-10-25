@@ -93,7 +93,15 @@
    ;; Dired
    `(dired-broken-symlink ((,display (:foreground ,base3 :background ,base1 :weight bold))))
    ;; Marginalia
-   `(marginalia-documentation ((,display (:foreground ,base7 :slant italic))))))
+   `(marginalia-documentation ((,display (:foreground ,base7 :slant italic))))
+
+   ;; tldr.el
+   `(tldr-code-block ((,display (:foreground ,base7 :background ,base0))))
+   `(tldr-command-argument ((,display (:foreground ,base7 :background ,base0))))
+   `(tldr-command-itself ((,display (:foreground ,base3 :background ,base0))))
+   `(tldr-description ((,display (:foreground ,base4))))
+   `(tldr-introduction ((,display (:foreground ,base8))))
+   `(tldr-title ((,display (:foreground ,base3 :weight bold))))))
 
 
 (provide-theme 'default-dark)
