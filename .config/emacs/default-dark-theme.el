@@ -109,7 +109,15 @@
    `(magit-branch-local ((,display (:foreground ,base4))))
    `(magit-header-line ((,display (:foreground ,base3))))
    `(magit-tag ((,display (:foreground ,base3))))
-   `(magit-section-heading ((,display (:foreground ,base3 :weight bold))))))
+   `(magit-section-heading ((,display (:foreground ,base3 :weight bold))))
+
+   ;; transient
+   `(transient-key-stack ((,display (:foreground ,base2))))
+   `(transient-key-stay ((,display (:foreground ,base2))))
+   `(transient-key-exit ((,display (:foreground ,base5))))
+
+   ;; elisp
+   `(elisp-shorthand-font-lock-face ((,display (:foreground ,base4))))))
 
 
 (provide-theme 'default-dark)
