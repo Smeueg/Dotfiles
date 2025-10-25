@@ -101,7 +101,15 @@
    `(tldr-command-itself ((,display (:foreground ,base3 :background ,base0))))
    `(tldr-description ((,display (:foreground ,base4))))
    `(tldr-introduction ((,display (:foreground ,base8))))
-   `(tldr-title ((,display (:foreground ,base3 :weight bold))))))
+   `(tldr-title ((,display (:foreground ,base3 :weight bold))))
+
+   ;; Magit
+   `(magit-branch-warning ((,display (:foreground ,base3 :weight bold))))
+   `(magit-branch-remote ((,display (:foreground ,base2))))
+   `(magit-branch-local ((,display (:foreground ,base4))))
+   `(magit-header-line ((,display (:foreground ,base3))))
+   `(magit-tag ((,display (:foreground ,base3))))
+   `(magit-section-heading ((,display (:foreground ,base3 :weight bold))))))
 
 
 (provide-theme 'default-dark)
