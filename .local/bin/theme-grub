@@ -85,18 +85,27 @@ terminal-height: \"100%\"
 generate_grub_config() {
     entry_added=false
     while read -r line; do
-        if ! [ "${line}" ]; then
-            printf "\n"
-        elif ! [ "${line%%GRUB_THEME=*}" ]; then
+        if [ "${line}" ] && ! [ "${line%%GRUB_THEME=*}" ]; then
             printf "GRUB_THEME=/boot/grub/themes/theme.txt\n"
             entry_added=true
+        elif [ "${line}" ] && ! [ "${line%%GRUB_CMDLINE_LINUX_DEFAULT=*}" ]; then
+            params=${line#GRUB_CMDLINE_LINUX_DEFAULT=\"}
+            params=${params%\"}
+
+            if [ "${params}" ]; then
+                params="${params} "
+            fi
+
+            params="${params}loglevel=3"
+
+            printf "GRUB_CMDLINE_LINUX_DEFAULT=\"%s\"\n" "${params}"
         else
             printf "%s\n" "${line}"
         fi
     done < /etc/default/grub
 
     if ! ${entry_added}; then
-        printf "# Added"
+        printf "\n# Custom theme\n"
         printf "GRUB_THEME=/boot/grub/themes/theme.txt\n"
     fi
 }
@@ -109,49 +118,54 @@ main() {
         exit 1
     fi
 
-    case ${1} in
-        -h|--help) print_help
-                   exit 0
-                   ;;
-    esac
+     case ${1} in
+         -h|--help) print_help
+                    exit 0
+                    ;;
+     esac
 
-    if ! [ "$(command -v update-grub)" ]; then
-        err "Executable \`update-grub\` not found"
-        exit 1
-    fi
+     if ! [ "$(command -v update-grub)" ]; then
+         err "Executable \`update-grub\` not found"
+         exit 1
+     fi
 
-    file="${1:-${HOME}/.config/theme.ini}"
-    bg=
-    fg_selected=
-    fg_unselected=
-    while IFS= read -r line; do
-        [ "${line%%#*}" ] || continue # Skip comments
-        IFS=" =" read -r key value << EOF
+     file="${1:-${HOME}/.config/theme.ini}"
+     bg=
+     fg_selected=
+     fg_unselected=
+     while IFS= read -r line; do
+         [ "${line%%#*}" ] || continue # Skip comments
+         IFS=" =" read -r key value << EOF
 ${line}
 EOF
-        [ "${key}" = "color0" ] && bg=${value} && continue
-        [ "${key}" = "color7" ] && fg_selected=${value} && continue
-        [ "${key}" = "color8" ] && fg_unselected=${value}
-    done <"${file}"
+         [ "${key}" = "color0" ] && bg=${value} && continue
+         [ "${key}" = "color7" ] && fg_selected=${value} && continue
+         [ "${key}" = "color8" ] && fg_unselected=${value}
+     done <"${file}"
 
-    if ! { [ "${bg}" ] && [ "${fg_selected}" ] && [ "${fg_unselected}" ]; }; then
-        err "Missing essential colors"
-        exit 1
-    fi
+     if ! { [ "${bg}" ] && [ "${fg_selected}" ] && [ "${fg_unselected}" ]; }; then
+         err "Missing essential colors"
+         exit 1
+     fi
 
-    if ! [ -w /boot/grub/themes/ ]; then
-        err "Unable to write to /boot/grub/themes/, you might need escalated permissions"
-        exit 1
-    fi
+     mkdir -pv /boot/grub/themes
 
-    if ! [ -w /etc/default/grub ]; then
-        err "Unable to write to /etc/default/grub, you might need escalated permissions"
-        exit 1
-    fi
+     if ! [ -w /boot/grub/themes/ ]; then
+         err "Unable to write to \"/boot/grub/themes/\", permission denied"
+         exit 1
+     fi
 
-    generate_theme "${bg}" "${fg_selected}" "${fg_unselected}" > /boot/grub/themes/theme.txt
-    generate_grub_config > /etc/default/grub 
-    update-grub
+     if ! [ -w /etc/default/grub ]; then
+         err "Unable to write to \"/etc/default/grub/\", permission denied"
+         exit 1
+     fi
+
+     generate_theme "${bg}" "${fg_selected}" "${fg_unselected}" > /boot/grub/themes/theme.txt
+
+     grub_config=$(generate_grub_config)
+     printf "%s\n" "${grub_config}" > /etc/default/grub
+
+     update-grub
 }
 
 main "${@}"
