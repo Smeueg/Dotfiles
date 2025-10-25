@@ -1527,6 +1527,14 @@ STRING is the string to format and display to the user"
 				  (bongo-insert-file dir)
 				  (goto-char (point-min)))))))
 
+(use-package tldr
+  :ensure t)
+
+(use-package pinentry
+  :ensure t
+  :init
+  (setq epg-pinentry-mode 'loopback))
+
 
 
 ;;; CUSTOM SPLASH SCREEN
