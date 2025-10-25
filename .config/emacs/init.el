@@ -349,6 +349,8 @@ STRING is the string to format and display to the user"
     (kbd "C-w C") #'quit-window-kill
     (kbd "M-j") #'evil-scroll-line-down
     (kbd "M-k") #'evil-scroll-line-up
+    (kbd "M-h") (lambda () (interactive) (scroll-right 1))
+    (kbd "M-l") (lambda () (interactive) (scroll-left 1))
     (kbd "<leader>d") #'dired
     (kbd "<leader>b") #'switch-to-buffer
     (kbd "<leader>h") #'help
@@ -363,7 +365,9 @@ STRING is the string to format and display to the user"
 (use-package mwheel
   :init
   (setq mouse-wheel-scroll-amount '(1)
-        mouse-wheel-progressive-speed nil))
+        mouse-wheel-progressive-speed nil
+        mouse-wheel-tilt-scroll t
+        mouse-wheel-flip-direction t))
 
 
 ;;; UI
