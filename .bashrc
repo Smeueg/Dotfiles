@@ -153,7 +153,10 @@ if [ "${TERM}" = "eat-truecolor" ]; then
 	export EDITOR="emacsclient"
 fi
 
-#@section Fix GPG agent issues in TERMUX
-if [ "${TERMUX_VERSION}" ]; then
-    export GPG_TTY=$(tty)
-fi
+# @section Fix GPG agent issues in TERMUX
+export GPG_TTY=$(tty)
+
+
+# @section Homebrew
+[ -f /home/linuxbrew/.linuxbrew/bin/brew ] &&
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
