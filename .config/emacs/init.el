@@ -276,6 +276,7 @@ STRING is the string to format and display to the user"
   (add-to-list 'evil-emacs-state-modes 'dired-mode)
   (add-hook 'evil-jumps-post-jump-hook
             (lambda () (call-interactively #'evil-scroll-line-to-center)))
+
   ;; Custom Motions/Operators
   (evil-define-operator evil-surround (beg end type char)
     "Surround a thing with a character"
@@ -736,7 +737,7 @@ STRING is the string to format and display to the user"
                                            'CLIPBOARD
                                            'UTF8_STRING)
                                           "")))
-                           ;; (kbd "ESC") #'eat-self-input
+                           (kbd "<escape>") #'eat-self-input
                            [?\C-\\] (lambda () (interactive)
                                       (read-only-mode 1)
                                       (evil-normal-state)
