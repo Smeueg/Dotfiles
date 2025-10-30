@@ -76,7 +76,7 @@ do
 	settings.border_normal = colors.accent
 	settings.titlebar_height = dpi(40)
 	-- Titlebar
-	settings.titlebar_bg = colors.black_brighter
+	settings.titlebar_bg = colors.black_bright
 	settings.titlebar_btn_max = colors.green
 	settings.titlebar_btn_min = colors.yellow
 	settings.titlebar_btn_close = colors.red
@@ -613,6 +613,7 @@ client.connect_signal("manage", function(c)
 
 		if c.floating then
 			c:emit_signal("request::titlebars")
+			c.border_width = 0
 		end
 
 		-- Disable the border when the layout is the max layout
@@ -629,7 +630,9 @@ end)
 client.connect_signal("property::floating", function(c)
 		if c.floating then
 			awful.titlebar.show(c)
+			c.border_width = 0
 		else
+			c.border_width = beautiful.border_width
 			awful.titlebar.hide(c)
 			if root.tags()[1].layout ~= awful.layout.suit.max then
 				c.border_width = beautiful.border_width
@@ -651,6 +654,7 @@ tag.connect_signal("property::layout", function(t)
 
 		if t.layout == layouts.floating then
 			titlebar_show = true
+			client_border = 0
 		end
 
 		for _, c in ipairs(t:clients()) do

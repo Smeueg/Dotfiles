@@ -6,6 +6,7 @@ local gshape = gears.shape
 local gtable = gears.table
 local beautiful = require("beautiful")
 local apply_dpi = beautiful.xresources.apply_dpi
+local diameter = apply_dpi(15)
 
 --- Handler for titlebar buttons
 ---@param widget wibox.container.background
@@ -22,9 +23,9 @@ end
 -- Create a circular button
 ---@param color string
 ---@param callback function(c: client)
+---@param client client
 ---@return wibox.widget
 local function create_btn(color, callback)
-	local diameter = apply_dpi(15)
 	local btn = wibox.widget {
 		buttons = awful.button({}, 1, callback),
 		widget = wibox.container.background,
@@ -45,40 +46,86 @@ end
 
 client.connect_signal("request::titlebars", function(c)
 		local titlebar_height = beautiful.titlebar_height or apply_dpi(40)
-		awful.titlebar(c, { size = titlebar_height }):setup {
-			widget = wibox.container.margin,
-			margins = apply_dpi(10),
+		local max_button = create_btn(
+			beautiful.titlebar_btn_max,
+			function() c.maximized = not c.maximized end
+		)
+		local min_button = create_btn(
+			beautiful.titlebar_btn_min,
+			function() c.minimized = not c.minimized end
+		)
+		local close_button = create_btn(
+			beautiful.titlebar_btn_close,
+			function() c:kill() end
+		)
+
+		local titlebar = awful.titlebar(c, { size = titlebar_height })
+
+		titlebar:setup {
+			widget = wibox.container.background,
+			shape = gshape.rectangle,
+			shape_border_width = beautiful.border_width,
+			shape_border_color = beautiful.border_focus,
 			{
-				layout = wibox.layout.align.horizontal,
+				widget = wibox.container.margin,
+				margins = apply_dpi(10),
 				{
-					widget = wibox.widget.imagebox,
-					image = c.icon
-				},
-				{
-					layout = wibox.layout.flex.horizontal,
-					buttons = gtable.join(
-						awful.button({}, 1, function()
-								awful.mouse.client.move(c)
-						end),
-						awful.button({}, 3, function()
-								awful.mouse.client.resize(c)
-						end)
-					)
-				},
-				{
-					widget = wibox.container.background,
-					layout = wibox.layout.fixed.horizontal,
-					spacing = apply_dpi(10),
-					create_btn(beautiful.titlebar_btn_max, function()
-							c.maximized = not c.maximized
-					end),
-					create_btn(beautiful.titlebar_btn_min, function()
-							c.minimized = not c.minimized
-					end),
-					create_btn(beautiful.titlebar_btn_close, function()
-							c:kill()
-					end)
+					layout = wibox.layout.align.horizontal,
+					{
+						widget = wibox.widget.imagebox,
+						image = c.icon
+					},
+					{
+						layout = wibox.layout.flex.horizontal,
+						buttons = gtable.join(
+							awful.button({}, 1, function()
+									awful.mouse.client.move(c)
+							end),
+							awful.button({}, 3, function()
+									awful.mouse.client.resize(c)
+							end)
+						)
+					},
+					{
+						widget = wibox.container.background,
+						layout = wibox.layout.fixed.horizontal,
+						spacing = apply_dpi(10),
+						max_button,
+						min_button,
+						close_button
+					}
 				}
 			}
 		}
+
+		local highlight_decorator = function()
+			max_button.bg = beautiful.titlebar_btn_max
+			min_button.bg = beautiful.titlebar_btn_min
+			close_button.bg = beautiful.titlebar_btn_close
+			titlebar.widget.shape_border_color = beautiful.border_focus
+		end
+
+		local unhighlight_decorator = function()
+			max_button.bg = beautiful.border_normal
+			min_button.bg = beautiful.border_normal
+			close_button.bg = beautiful.border_normal
+			titlebar.widget.shape_border_color = beautiful.border_normal
+		end
+
+		c:connect_signal("focus", highlight_decorator)
+		c:connect_signal("unfocus", unhighlight_decorator)
+
+		titlebar.widget:connect_signal("mouse::enter", highlight_decorator)
+		titlebar.widget:connect_signal(
+			"mouse::leave",
+			function ()
+				if c ~= client.focus then
+					unhighlight_decorator()
+				end
+			end
+		)
+
+		if c ~= client.focus then
+			unhighlight_decorator()
+		end
 end)
