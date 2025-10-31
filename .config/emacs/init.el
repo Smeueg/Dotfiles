@@ -1201,7 +1201,7 @@ STRING is the string to format and display to the user"
                                :initializationOptions
                                (:typescript (:tsdk "./node_modules/typescript/lib")))))
   (add-to-list 'eglot-server-programs
-               '((python-mode python-ts-mode) . ("basedpyright-langserver" "--stdio")))
+               '((python-mode python-ts-mode) . ("ty" "server")))
   (with-eval-after-load 'evil
     (evil-define-key 'normal 'eglot--managed-mode
       (kbd "<leader>cr") #'eglot-rename
