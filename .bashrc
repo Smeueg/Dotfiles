@@ -132,7 +132,7 @@ alias ip="ip --color=auto"
 alias dit='git --git-dir=${HOME}/.local/dots --work-tree=${HOME}'
 alias sudo="sudo --preserve-env=TERMINFO env \"PATH=\$PATH\""
 alias protonvpn='{ [ "$(pidof nm-applet)" ] || nm-applet & } ; protonvpn-cli'
-alias e="setsid \${EDITOR}"
+alias e="\${EDITOR}"
 
 # @section Configuration for `git`
 if [ "$(command -v git)" ]; then
@@ -150,7 +150,7 @@ fi
 
 # @section Change ${EDITOR} when inside an emacs shell
 if [ "${TERM}" = "eat-truecolor" ]; then
-	export EDITOR="emacsclient"
+	export EDITOR="emacsclient -n"
 fi
 
 # @section Fix GPG agent issues in TERMUX
