@@ -1482,6 +1482,19 @@ STRING is the string to format and display to the user"
         flyover-checkers '(flymake)
         flyover-debug nil))
 
+(use-package apheleia
+  :ensure t
+  :init
+  (apheleia-global-mode 1)
+  (with-eval-after-load 'evil
+    (evil-define-key 'normal prog-mode-map
+      (kbd "<leader>cf") #'apheleia-format-buffer))
+  :config
+  (push '(ruff . ("ruff" "format" "-")) apheleia-formatters)
+  (push '(rustfmt . ("rustfmt")) apheleia-formatters)
+  (setf (alist-get 'python-mode apheleia-mode-alist) '(ruff))
+  (setf (alist-get 'rust-mode apheleia-mode-alist) '(rustfmt)))
+
 
 
 ;; ANDROID
