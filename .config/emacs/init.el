@@ -1069,7 +1069,8 @@ STRING is the string to format and display to the user"
 (use-package eglot
   :ensure t
   :init
-  (setq eglot-autoshutdown t)
+  (setq eglot-autoshutdown t
+        eglot-ignored-server-capabilities '(:documentOnTypeFormattingProvider))
 
   (defvar emacs-bin-dir (concat (file-name-directory user-init-file) "bin/")
     "A directory to put binaries specifically for emacs")
