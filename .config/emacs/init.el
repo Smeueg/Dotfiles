@@ -816,7 +816,8 @@ STRING is the string to format and display to the user"
     (evil-define-key 'normal hs-minor-mode-map
       (kbd "<leader>ff") #'hs-toggle-hiding
       (kbd "<leader>fs") #'hs-show-all
-      (kbd "<leader>fh") #'hs-hide-all)))
+      (kbd "<leader>fh") #'hs-hide-all
+      (kbd "<leader>fl") #'hs-hide-level)))
 
 (use-package ibuffer
   :commands ibuffer
