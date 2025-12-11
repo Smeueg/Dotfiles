@@ -561,7 +561,7 @@ STRING is the string to format and display to the user"
    dired-listing-switches "-lAhX --group-directories-first"
    dirvish-path-separators '("  ⌂" "  /" " ⋗ ")
    dirvish-cache-dir "/tmp/dirvish/"
-   dirvish-reuse-session nil
+   dirvish-reuse-session 'open
    dirvish-emerge-groups '(("Directories" (predicate . directories))
                            ("Executables" (predicate . executables))
                            ("Documents" (extensions "pdf" "tex" "bib" "epub"))
