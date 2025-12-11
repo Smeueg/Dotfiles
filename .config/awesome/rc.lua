@@ -119,7 +119,7 @@ do
 	settings.snap_border_width = settings.border_width
 	settings.snap_bg = settings.border_focus
 	-- UPower/Battery
-	settings.battery_warn_threshold = 15
+	settings.battery_warn_threshold = 20
 	beautiful.init(settings)
 	root.cursor("left_ptr")
 end
