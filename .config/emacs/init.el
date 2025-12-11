@@ -103,17 +103,16 @@
   (interactive)
   (call-interactively #'save-buffer)
   (let ((cmd compile-command))
+    (when exit-after-done (setq cmd (concat cmd ";read -n1;exit")))
     (if (fboundp #'eat-new)
         (with-current-buffer (eat-new)
           (eat-term-send-string-as-yank eat-terminal "clear")
           (eat-input-char ?\n 1)
-          (when exit-after-done
-            (setq cmd (concat cmd ";read -n1;exit")))
           (eat-term-send-string-as-yank eat-terminal cmd)
           (eat-input-char ?\n 1))
       (progn
         (term (getenv "SHELL"))
-        (term-send-raw-string (format "clear;%s;read -n1;exit\n" cmd))))))
+        (term-send-raw-string (format "clear;%s\n" cmd))))))
 
 (defun run-and-exit ()
   (interactive)
