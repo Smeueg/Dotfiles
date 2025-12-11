@@ -478,9 +478,12 @@ STRING is the string to format and display to the user"
   :hook
   (after-init-hook . vertico-mode)
   (vertico-mode-hook . vertico-mouse-mode)
+  (vertico-mode-hook . vertico-multiform-mode)
   :init
   (setq read-buffer-completion-ignore-case t
-        read-file-name-completion-ignore-case t))
+        read-file-name-completion-ignore-case t
+        vertico-sort-override-function nil
+        vertico-multiform-categories '((project-file (vertico-sort-function . vertico-sort-directories-first)))))
 
 (use-package marginalia
   :ensure t
