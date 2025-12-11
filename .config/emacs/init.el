@@ -1330,7 +1330,7 @@ STRING is the string to format and display to the user"
   ((python-mode-hook python-base-mode-hook) .
    (lambda ()
      (setq-local tab-width (default-value 'tab-width)
-                 compile-command (format "uvx %s" (project-root (project-current)))
+                 compile-command (format "python3 %s" (buffer-file-name))
                  compilation-read-command nil)))
   :init
   (setq python-indent-guess-indent-offset nil))
