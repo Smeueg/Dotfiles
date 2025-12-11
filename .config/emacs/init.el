@@ -1203,6 +1203,10 @@ STRING is the string to format and display to the user"
                                :initializationOptions
                                (:typescript (:tsdk "./node_modules/typescript/lib")))))
   (add-to-list 'eglot-server-programs
+               '((c-mode c-ts-mode c++-mode c++-ts-mode objc-mode)
+                 ;; --fallback-style={IndentWidth:4,TabWidth:4,UseTab:Always}
+                 . ("clangd" "--fallback-style=google")))
+  (add-to-list 'eglot-server-programs
                '((python-mode python-ts-mode) . ("ty" "server")))
   (with-eval-after-load 'evil
     (evil-define-key 'normal 'eglot--managed-mode
