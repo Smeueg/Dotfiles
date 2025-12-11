@@ -716,7 +716,8 @@ STRING is the string to format and display to the user"
                       (face-attribute 'font-lock-builtin-face :foreground))
   (add-hook 'eat-exec-hook
             (lambda (&rest r)
-              (setq-local scroll-margin 0)
+              (setq-local scroll-margin 0
+                          window-point-insertion-type t)
               (eat-char-mode)
               (when (require 'server)
                 (unless (server-running-p) (server-start)))))
