@@ -1504,6 +1504,9 @@ STRING is the string to format and display to the user"
   (setf (alist-get 'python-mode apheleia-mode-alist) '(ruff))
   (setf (alist-get 'rust-mode apheleia-mode-alist) '(rustfmt)))
 
+(use-package ediff
+  :init
+  (setq ediff-window-setup-function 'ediff-setup-windows-plain))
 
 
 ;; ANDROID
