@@ -525,7 +525,9 @@ STRING is the string to format and display to the user"
   (company-idle-delay 0)
   (company-selection-wrap-around t)
   (company-require-match nil)
-  (company-tooltip-align-annotations t))
+  (company-tooltip-align-annotations t)
+  :init
+  (define-key company-active-map (kbd "M-h") nil))
 
 (use-package aggressive-indent
   :ensure t
@@ -1202,10 +1204,6 @@ STRING is the string to format and display to the user"
       (kbd "<leader>sE") #'eglot-reconnect))
   :config
   (add-to-list 'eglot-server-programs
-               '(astro-mode . ("astro-ls" "--stdio"
-                               :initializationOptions
-                               (:typescript (:tsdk "./node_modules/typescript/lib")))))
-  (add-to-list 'eglot-server-programs
                '((c-mode c-ts-mode c++-mode c++-ts-mode objc-mode)
                  ;; --fallback-style={IndentWidth:4,TabWidth:4,UseTab:Always}
                  . ("clangd" "--fallback-style=google")))
@@ -1268,7 +1266,7 @@ STRING is the string to format and display to the user"
 (use-package emmet-mode
   :ensure t
   :init
-  (dolist (mode '(mhtml-mode-hook css-mode-hook astro-ts-mode-hook astro-mode-hook))
+  (dolist (mode '(mhtml-mode-hook css-mode-hook))
     (add-hook mode #'emmet-mode)))
 
 (use-package mhtml-mode
@@ -1439,8 +1437,7 @@ STRING is the string to format and display to the user"
   :init
   :disabled t
   (setq treesit-language-source-alist
-        '((astro "https://github.com/virchau13/tree-sitter-astro")
-          (c "https://github.com/tree-sitter/tree-sitter-c")
+        '((c "https://github.com/tree-sitter/tree-sitter-c")
           (cpp "https://github.com/tree-sitter/tree-sitter-cpp")
           (css "https://github.com/tree-sitter/tree-sitter-css")
           (typescript "https://github.com/tree-sitter/tree-sitter-typescript"
@@ -1465,21 +1462,6 @@ STRING is the string to format and display to the user"
 
   :config
   (treesit-auto-add-to-auto-mode-alist 'all))
-
-(use-package astro-ts-mode
-  :ensure t
-  :init
-  (defvaralias 'astro-ts-mode-indent-offset 'tab-width)
-  (add-to-list 'auto-mode-alist '("\\.astro\\'" . astro-ts-mode))
-  (defun treesit-grammar-ensure (mode &rest _)
-    (when (eq mode 'astro-ts-mode)
-      (let ((treesit-languages '(astro css tsx typescript)))
-        (dolist (language treesit-languages)
-          (unless (treesit-language-available-p language)
-            (message "Installing the \"%s\" language grammar" language)
-            (let ((inhibit-message t))
-              (treesit-install-language-grammar language)))))))
-  (advice-add 'set-auto-mode-0 :before #'treesit-grammar-ensure))
 
 (use-package flyover
   :ensure t
