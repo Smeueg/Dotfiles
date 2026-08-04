@@ -262,17 +262,22 @@ function Entry.new(appinfo)
 
 	local icon = appinfo:get_icon()
 	local imagebox = nil
+	
 	if icon then
-		imagebox = {
-			widget = wibox.widget.imagebox,
-			forced_height = textbox_height,
-			forced_width = textbox_height,
-			image = default_icon_theme:lookup_icon(
-				icon:to_string(),
-				64,
-				0
-			):get_filename()
-		}
+		local icon_lookup = default_icon_theme:lookup_icon(
+			icon:to_string(),
+			64,
+			0
+		)
+
+		if icon_lookup ~= nil then
+			imagebox = {
+				widget = wibox.widget.imagebox,
+				forced_height = textbox_height,
+				forced_width = textbox_height,
+				image = icon_lookup:get_filename()
+			}
+		end
 	end
 
 	local entry = wibox.widget {
