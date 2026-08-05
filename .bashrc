@@ -149,7 +149,14 @@ fi
 [ -f "${HOME}/.local/share/cargo/env" ] &&
 	. "${HOME}/.local/share/cargo/env"
 
-# @section Change ${EDITOR} when inside an emacs shell
+# @section Configuration for `eat`
+__eat_update_cwd() {
+    printf '\e]51;e;A;%s;%s\e\\' \
+           "$(printf "%s" "$HOSTNAME" | base64)" \
+           "$(printf "%s" "$PWD" | base64)"
+}
+PROMPT_COMMAND="__eat_update_cwd"
+
 if [ "${TERM}" = "eat-truecolor" ]; then
 	export EDITOR="emacsclient -n"
 fi
