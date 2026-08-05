@@ -7,4 +7,5 @@ Xft.antialias: 1
 Xft.rgba: rgb
 
 ! Cursor
-Xcursor.theme: Capitaine Cursors (Gruvbox)
+Xcursor.theme: Vimix-cursors
+Xcursor.size: 24
