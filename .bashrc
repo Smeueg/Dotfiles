@@ -4,6 +4,7 @@ set -o vi   # Vi mode, works on most shells
 
 if [ -d "/tmp" ] && [ -w "/tmp" ]; then
     export HISTFILE=/tmp/shell_history
+    touch "${HISTFILE}"
 fi
 
 
