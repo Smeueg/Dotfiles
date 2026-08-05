@@ -526,7 +526,7 @@ STRING is the string to format and display to the user"
   (company-selection-wrap-around t)
   (company-require-match nil)
   (company-tooltip-align-annotations t)
-  :init
+  :config
   (define-key company-active-map (kbd "M-h") nil))
 
 (use-package aggressive-indent
@@ -637,9 +637,10 @@ STRING is the string to format and display to the user"
 
 (use-package eat
   :ensure t
+  :custom
+  (eat-enable-shell-prompt-annotation nil)
+  (eat-kill-buffer-on-exit t)
   :init
-  (setq eat-kill-buffer-on-exit t)
-
   (defun eat-new ()
     "Spawn a new `*eat*' terminal when one already exists"
     (interactive)
@@ -673,24 +674,6 @@ STRING is the string to format and display to the user"
                               eat-buffer-list))
           (eat-term-send-string-as-yank eat-terminal "!!")
           (eat-input-char ?\n 1)))))
-
-  (defun eat-change-cwd ()
-    "Changes the working directory of the current eat buffer to match the shell"
-    (setq-local default-directory
-                (concat
-                 (substring
-                  (nth 1
-                       (split-string
-                        (shell-command-to-string
-                         (format "lsof -an -dcwd -Fn -p%s"
-                                 (string-trim
-                                  (shell-command-to-string
-                                   (format "ps -o pid --ppid %d --no-headers"
-                                           (process-id (get-buffer-process
-                                                        (buffer-name))))))))
-                        "\n"))
-                  1)
-                 "/")))
 
   (with-eval-after-load 'evil
     (evil-define-key 'motion 'global
@@ -746,8 +729,7 @@ STRING is the string to format and display to the user"
                            [?\C-\\] (lambda () (interactive)
                                       (read-only-mode 1)
                                       (evil-normal-state)
-                                      (eat-emacs-mode)
-                                      (eat-change-cwd)))))
+                                      (eat-emacs-mode)))))
 
 (use-package which-key
   :ensure t
