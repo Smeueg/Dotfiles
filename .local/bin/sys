@@ -38,7 +38,7 @@ Options:
     -h, --help      display this help and exit
 
 Available bugs:
-    screentear
+    intel_graphics
     touchpad_taptoclick"
 
 help_msg_config="\
@@ -51,7 +51,8 @@ Available configs:
     grub
     linuxvt
     auto_cpufreq
-    termux"
+    termux
+    cursor"
 
 # @section Helper Functions
 # @description Print an error message to stderr
@@ -73,11 +74,30 @@ get_dir() {
     printf "%s/\n" "${path%/*}"
 }
 
+# @description Find if command exists
+# @arg $@ string The commands
+ensure_deps() {
+    commands=${*}
+
+    for cmd in ${commands}; do
+        if [ "$(command -v "${cmd}")" ]; then
+            return 1
+        fi
+    done
+}
+
+# @description Print a formatted header
+# @arg $@ string The header
+print_header() {
+    header="${1}"
+    printf "\033[7;1m %s \033[m\n" "${header}"
+}
+
 # @section "fix" command
 
 # @description Subcommand to fix screentearing
 # @noargs
-_fix_screentear() {
+_fix_intel_graphics() {
     path=/etc/X11/xorg.conf.d/20-intel.conf
     dir=$(get_dir "${path}")
 
@@ -93,7 +113,9 @@ _fix_screentear() {
     printf "%s\n"\
            'Section "Device"'\
            '    Identifier "Intel Graphics"'\
-           '    Driver "intel"'\
+           '    Driver "modesetting"'\
+           '    BusID "PCI:0:2:0"'\
+           '    Option "AccelMethod" "glamor"'\
            '    Option "TearFree" "true"'\
            'EndSection' > ${path}
 }
@@ -114,7 +136,7 @@ _fix_touchpad_taptoclick() {
 		   '    Option "Tapping" "on"' \
 		   '    Option "TappingButtonMap" "lmr"' \
 		   'EndSection' \
-		   > ${file}
+		   > "${file}"
 }
 
 # @description Fix the system of known bugs
@@ -152,7 +174,7 @@ fix() {
             print_newline=true
         fi
 
-        printf "\033[4mFixing %s\033[m\n" "${item}"
+        print_header "Fixing ${item}"
         "_fix_${item}"
     done
 }
@@ -399,6 +421,46 @@ _config_termux() {
     generate_termux_theme > "${file}"
 }
 
+
+# @description Configure the cursor (installs vimix)
+# @noargs
+_config_cursor() {
+    tmpdir="/tmp"
+    version="2020-02-24"
+    tar_path="${tmpdir}/vimix-cursors.tar.gz"
+    extracted_path="${tmpdir}/Vimix-cursors-${version}"
+    xresources_path="${XDG_CONFIG_HOME}/X11/Xresources"
+
+    curl "https://github.com/vinceliuice/Vimix-cursors/archive/refs/tags/${version}.tar.gz" -L -o "${tar_path}"
+
+    (
+        cd "${tmpdir}" || exit
+        tar xf "${tar_path}"
+        cd "${extracted_path}" || exit
+        ./install.sh
+    )
+
+    if ! [ -d "${xresources_path%/*}" ]; then
+        mkdir -p "${xresources_path%/*}"
+    fi
+    printf "%s\n" \
+           ""\
+           "! Cursor" \
+           "Xcursor.theme: Vimix-cursors" \
+           "Xcursor.size: 24" >> "${xresources_path}"
+
+    if ! [ -d "${HOME}/.local/share/icons/default"  ]; then
+        mkdir -p "${HOME}/.local/share/icons/default"
+    fi
+
+    printf "%s\n" \
+           "[Icon Theme]" \
+           "Inherits=Vimix Cursors" > "${HOME}/.local/share/icons/default/index.theme"
+
+    rm -rf "${tar_path}" "${extracted_path}"
+
+}
+
 # @description Configure the system
 # @arg $@ string The items to configure
 config() {
@@ -431,6 +493,7 @@ config() {
         fi
 
         printf "\033[4mConfiguring %s\033[m\n" "${item}"
+        header "Configuring ${item}"
         "_config_${item}"
     done
 
