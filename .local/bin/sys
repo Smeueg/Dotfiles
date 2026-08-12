@@ -29,7 +29,9 @@ Options:
 
 Available commands:
     fix             fix a bug
+    install         install a tool
     config          configure the environment"
+
 
 help_msg_fix="\
 Usage: sys fix <bugs>
@@ -54,6 +56,15 @@ Available configs:
     termux
     cursor"
 
+help_msg_install="\
+Usage: sys install <tool>
+
+Options:
+    -h, --help      display this help and exit
+
+Available tools:
+    nix"
+
 # @section Helper Functions
 # @description Print an error message to stderr
 # @arg $1 string The error message
@@ -76,11 +87,11 @@ get_dir() {
 
 # @description Find if command exists
 # @arg $@ string The commands
-ensure_deps() {
+has_deps() {
     commands=${*}
 
     for cmd in ${commands}; do
-        if [ "$(command -v "${cmd}")" ]; then
+        if ! [ "$(command -v "${cmd}")" ]; then
             return 1
         fi
     done
@@ -91,6 +102,23 @@ ensure_deps() {
 print_header() {
     header="${1}"
     printf "\033[7;1m %s \033[m\n" "${header}"
+}
+
+# @description Ensure ~/.config/gtk-3.0/settings.ini has [Settings]
+# @noargs
+ensure_gtk_settings() {
+    exists=false
+    settings_path="${HOME}/.config/gtk-3.0/settings.ini"
+    while read -r line; do
+        if ! [ "${line##*\[Settings\]*}" ]; then
+            exists=true
+            break
+        fi
+    done < "${settings_path}"
+
+    if ! ${exists}; then
+        printf "[Settings]" >> "${settings_path}"
+    fi
 }
 
 # @section "fix" command
@@ -125,7 +153,7 @@ _fix_intel_graphics() {
 _fix_touchpad_taptoclick() {
 	path=/etc/X11/xorg.conf.d/99-synaptics-overrides.conf
 
-    ensure_deps Xorg || return 1;
+    has_deps Xorg || return 1;
     mkdir -pv "$(get_dir "${path}")" || return 1
 
 	printf "%s\n" \
@@ -410,7 +438,14 @@ _config_auto_cpufreq() {
         return 1
     fi
 
+    if ! has_deps "auto-cpufreq"; then
+        error "\"auto-cpufreq\" isn't installed"
+        return 1
+    fi
+
     generate_auto_cpufreq_config > "${file}"
+
+    auto-cpufreq --install
 }
 
 # @description Configure termux (colors)
@@ -440,6 +475,7 @@ _config_cursor() {
         ./install.sh
     )
 
+    # Xresources
     if ! [ -d "${xresources_path%/*}" ]; then
         mkdir -p "${xresources_path%/*}"
     fi
@@ -453,12 +489,22 @@ _config_cursor() {
         mkdir -p "${HOME}/.local/share/icons/default"
     fi
 
+    # Default Xcursor
     printf "%s\n" \
            "[Icon Theme]" \
-           "Inherits=Vimix Cursors" > "${HOME}/.local/share/icons/default/index.theme"
+           "Inherits=Vimix-cursors" > "${HOME}/.local/share/icons/default/index.theme"
+
+    # GTK
+    ensure_gtk_settings
+    settings_path="${HOME}/.config/gtk-3.0/settings.ini"
+    settings=$(cat "${settings_path}")
+    printf "%s\n" "${settings}" |
+        sed '/^gtk-cursor-theme-name=/d' |
+        sed '/^gtk-cursor-theme-size=/d' |
+        sed 's/\[Settings\]/\[Settings\]\ngtk-cursor-theme-name=Vimix-cursors\ngtk-cursor-theme-size=24/' > "${settings_path}"
+
 
     rm -rf "${tar_path}" "${extracted_path}"
-
 }
 
 # @description Configure the system
@@ -492,11 +538,54 @@ config() {
             print_newline=true
         fi
 
-        printf "\033[4mConfiguring %s\033[m\n" "${item}"
-        header "Configuring ${item}"
+        print_header "Configuring ${item}"
         "_config_${item}"
     done
 
+}
+
+_install_nix() {
+    if ! has_deps curl; then
+        error "\"curl\" isn't installed"
+    fi
+
+    curl --proto '=https' --tlsv1.2 -L https://nixos.org/nix/install | sh -s -- --no-daemon
+}
+
+# @description Install a tool
+# @arg $@ string The tool to install
+install() {
+    OPTIND=1
+    while getopts ":h-:" opt "$@"; do
+        case "${opt}" in
+	        *) printf "%s\n" "${help_msg_install}"
+               return 0
+		       ;;
+        esac
+    done
+
+    if ! [ "${1}" ]; then
+        printf "%s\n" "${help_msg_install}"
+    fi
+
+    for item in "${@}"; do
+        if ! [ "$(command -v "_install_${item}")" ]; then
+            error "Unknown item \"${item}\""
+            return 1
+        fi
+    done
+
+    print_newline=false
+    for item in "${@}"; do
+        if ${print_newline}; then
+            printf "\n"
+        else
+            print_newline=true
+        fi
+
+        print_header "Installing ${item}"
+        "_install_${item}"
+    done
 }
 
 # @section The main function
