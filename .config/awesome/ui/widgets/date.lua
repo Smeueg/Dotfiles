@@ -13,6 +13,7 @@ local widget = {
 	bg = "#00000030",
 	{
 		widget = wibox.widget.textclock,
+		refresh = 1,
 		format = " %a  %d·%m·%y  %H:%M "
 	}
 }
