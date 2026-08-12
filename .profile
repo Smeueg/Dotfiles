@@ -85,6 +85,13 @@ export ZDOTDIR="${HOME}/.config/shellconfig"
 # Cargo
 export CARGO_HOME="${XDG_DATA_HOME}"/cargo
 
+# Go
+export GOPATH="$XDG_DATA_HOME"/go
+export GOMODCACHE="$XDG_CACHE_HOME"/go/mod
+
+# Nix
+export PATH="${PATH}:${XDG_STATE_HOME}/nix/profile/bin"
+
 if [ "$(command -v simplescreenrecorder)" ]; then
 	mkdir -vp "${XDG_CONFIG_HOME}/simplescreenrecorder/"
 fi
